@@ -20,7 +20,13 @@ import { tryCatch } from "@/lib/utils/tryCatch";
 const { FSFileRegistry } = fsContracts;
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
 
-const { files, fileParticipants, fileSignatures, users } = db.schema;
+const {
+	files,
+	fileAcknowledgements,
+	fileParticipants,
+	fileSignatures,
+	users,
+} = db.schema;
 
 export default new Hono()
 	.post("/upload/start", authenticated, async (ctx) => {
@@ -99,7 +105,6 @@ export default new Hono()
 		if (valid.error) {
 			return respond.err(ctx, `Error validating signature ${valid.error}`, 500);
 		}
-		console.log("LAMO");
 		if (!valid.data) {
 			return respond.err(ctx, "Invalid signature", 400);
 		}
@@ -130,7 +135,9 @@ export default new Hono()
 		]);
 		const ds = await getOrCreateUserDataset(sender);
 		const actualSize = bytes.byteLength;
-		const preflight = await ds.preflightUpload(Math.ceil(actualSize));
+		const preflight = await ds.preflightUpload({
+			size: Math.ceil(actualSize),
+		});
 		if (!preflight.allowanceCheck.sufficient) {
 			return respond.err(
 				ctx,
@@ -171,7 +178,7 @@ export default new Hono()
 			return insertResult;
 		});
 
-		ds.upload(bytes).then(async (uploadResult) => {
+		ds.upload(new Uint8Array(bytes), { pieceCid }).then(async (uploadResult) => {
 			await file.delete();
 
 			if (uploadResult.pieceCid.toString() !== pieceCid) {

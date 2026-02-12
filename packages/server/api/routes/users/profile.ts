@@ -14,6 +14,7 @@ export default new Hono()
 		const [userData] = await db
 			.select({
 				walletAddress: users.walletAddress,
+				encryptionPublicKey: users.encryptionPublicKey,
 				keygenData: users.keygenDataJson,
 				createdAt: users.createdAt,
 				email: users.email,

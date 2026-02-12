@@ -59,14 +59,14 @@ export default function () {
 						{isDone("login") && <TestThisUserInfo notify={notifyDone} />}
 
 						{isDone("check-this-user-info") && (
-							<TestOtherUserInfo notify={notifyDone} />
-						)}
-
-						{isDone("check-other-user-info") && (
 							<TestApproveSender notify={notifyDone} />
 						)}
 
 						{isDone("approve-sender") && (
+							<TestOtherUserInfo notify={notifyDone} />
+						)}
+
+						{isDone("check-other-user-info") && (
 							<TestCheckCanSendTo notify={notifyDone} />
 						)}
 

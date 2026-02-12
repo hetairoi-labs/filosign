@@ -1,5 +1,7 @@
-import { RPC_URLS, Synapse } from "@filoz/synapse-sdk";
+import { calibration, Synapse } from "@filoz/synapse-sdk";
 import { eq } from "drizzle-orm";
+import { privateKeyToAccount } from "viem/accounts";
+import { http } from "viem";
 import type { Address } from "viem";
 import env from "../../env";
 import db from "../db";
@@ -8,9 +10,15 @@ import { tryCatch } from "../utils/tryCatch";
 // because filbeam links are very useful
 const WITH_CDN = true;
 
-export const synapse = await Synapse.create({
-	privateKey: env.EVM_PRIVATE_KEY_SYNAPSE,
-	rpcURL: RPC_URLS.calibration.websocket,
+const account = privateKeyToAccount(
+	(env.EVM_PRIVATE_KEY_SYNAPSE.startsWith("0x")
+		? env.EVM_PRIVATE_KEY_SYNAPSE
+		: `0x${env.EVM_PRIVATE_KEY_SYNAPSE}`) as `0x${string}`,
+);
+
+export const synapse = Synapse.create({
+	account,
+	transport: http(calibration.rpcUrls.default.http[0]),
 	withCDN: WITH_CDN,
 });
 
@@ -23,8 +31,8 @@ export async function getOrCreateUserDataset(walletAddress: Address) {
 	if (existing) {
 		const ctx = await tryCatch(
 			synapse.storage.createContext({
-				dataSetId: existing.dataSetId,
-				providerAddress: existing.providerAddress,
+				dataSetId: BigInt(existing.dataSetId),
+				providerAddress: existing.providerAddress as Address,
 				metadata: { filosign_user: walletAddress },
 			}),
 		);
@@ -52,7 +60,7 @@ export async function getOrCreateUserDataset(walletAddress: Address) {
 	if (ctx.data.dataSetId !== undefined) {
 		await db.insert(db.schema.usersDatasets).values({
 			walletAddress,
-			dataSetId: ctx.data.dataSetId,
+			dataSetId: Number(ctx.data.dataSetId),
 			providerAddress: ctx.data.provider.serviceProvider,
 		});
 	}

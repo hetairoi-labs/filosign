@@ -15,15 +15,13 @@ import { getAddress } from "viem";
 import z from "zod";
 import { calculatePieceCid } from "../../../utils/piece";
 import { useFilosignContext } from "../../context/FilosignProvider";
-import { useUserProfileByQuery } from "../users";
+import { useUserProfile } from "../users";
 
 type FileData = z.infer<ReturnType<typeof zFileData>>;
 
 export function useSendFile() {
 	const { contracts, wallet, api } = useFilosignContext();
-	const { data: user } = useUserProfileByQuery({
-		address: wallet?.account.address,
-	});
+	const { data: user } = useUserProfile();
 
 	const queryClient = useQueryClient();
 
@@ -41,10 +39,8 @@ export function useSendFile() {
 			const { signers, viewers, bytes, metadata } = args;
 			const timestamp = Math.floor(Date.now() / 1000);
 
-			console.log({ contracts, wallet, user });
-
 			if (!contracts || !wallet || !user) {
-				throw new Error("not conected iido");
+				throw new Error("Not connected: contracts, wallet, and profile required");
 			}
 
 			const data = encodeFileData({

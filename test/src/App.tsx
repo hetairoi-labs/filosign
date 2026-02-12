@@ -67,40 +67,41 @@ export function useOtherReload() {
 	};
 }
 
+// Singleton: Emscripten FS can only init once. React Strict Mode double-mounts,
+// causing "File exists" when createDefaultDevices runs a second time.
+let dilithiumPromise: Promise<unknown> | null = null;
+
+function initDilithium() {
+	if (dilithiumPromise) return dilithiumPromise;
+	dilithiumPromise = (async () => {
+		// Mock chrome for the dilithium library
+		(globalThis as any).chrome = {
+			runtime: {
+				getURL: () => "/dilithium.wasm",
+			},
+		};
+
+		// Provide arguments object for dilithium library (needed for Emscripten)
+		(globalThis as any).arguments = (globalThis as any).arguments || [];
+
+		const { createDilithium } = await import("./dilithium.min.js");
+		return createDilithium();
+	})();
+	return dilithiumPromise;
+}
+
 function App() {
-	const [dilithium, setDilithium] = useState(null);
+	const [dilithium, setDilithium] = useState<unknown>(null);
 
 	useEffect(() => {
 		let mounted = true;
-
-		async function init() {
-			try {
-				// Mock chrome for the dilithium library
-				(globalThis as any).chrome = {
-					runtime: {
-						getURL: () => null, // Return null to prevent file access since WASM is embedded
-					},
-				};
-
-				// Provide arguments object for dilithium library (needed for Emscripten)
-				(globalThis as any).arguments = (globalThis as any).arguments || [];
-
-				// Import dilithium as ES module
-				const dilithiumModule = await import("./dilithium.min.js");
-
-				// Initialize dilithium with options to use embedded WASM
-				const dil = await dilithiumModule.createDilithium({
-					locateFile: () => null, // Prevent external file loading
-				});
-
-				if (!mounted) return;
-				setDilithium(dil);
-			} catch (err: unknown) {
+		initDilithium()
+			.then((dil) => {
+				if (mounted) setDilithium(dil);
+			})
+			.catch((err: unknown) => {
 				console.error("Failed to init Dilithium:", err);
-			}
-		}
-
-		init();
+			});
 		return () => {
 			mounted = false;
 		};

@@ -14,6 +14,7 @@ export function useUserProfile() {
 			const user = await api.rpc.getSafe(
 				{
 					walletAddress: zHexString(),
+					encryptionPublicKey: zHexString(),
 					keygenData: z.any().nullable(),
 					createdAt: z.string(),
 					email: z.string().nullable(),
