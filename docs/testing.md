@@ -146,7 +146,7 @@ const { reload: reloadOther } = useOtherReload();
 - ✅ `useSendableTo`, `useReceivableFrom`
 - ✅ `useRequestApproval`, `useApproveSender`, `useRevokeSender`
 - ✅ `useReceivedRequests`, `useSentRequests`
-- ✅ `useAcceptRequest`, `useRejectRequest`, `useCancelRequest`
+- ✅ `useRejectRequest`, `useCancelRequest`
 
 ### **User Profile (5 hooks)**
 - ✅ `useUserProfile`, `useUserProfileByQuery`

@@ -33,19 +33,7 @@ export default function AddSignaturePage() {
 					"fsQ-user-info-by-address",
 					{ address: recipient.walletAddress },
 				],
-				queryFn: async (): Promise<{
-					recipient: typeof recipient;
-					profile: {
-						walletAddress: string;
-						encryptionPublicKey: string;
-						lastActiveAt: string;
-						createdAt: string;
-						firstName: string | null;
-						lastName: string | null;
-						avatarUrl: string | null;
-						has: { email: boolean; mobile: boolean };
-					};
-				} | null> => {
+				queryFn: async () => {
 					if (!api || !recipient.walletAddress) return null;
 					try {
 						// Replicate the SDK's useUserProfileByQuery query function
@@ -237,7 +225,7 @@ export default function AddSignaturePage() {
 			const sendPromises = [];
 			for (const doc of createForm.documents) {
 				// Convert data URL back to file
-				const response = await fetch(doc.dataUrl!);
+				const response = await fetch(doc.dataUrl);
 				const blob = await response.blob();
 				const file = new File([blob], doc.name, { type: doc.type });
 				const fileData = new Uint8Array(await file.arrayBuffer());

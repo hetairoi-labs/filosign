@@ -7,4 +7,4 @@ find . -name "node_modules" -type d -prune -exec rm -rf '{}' +
 rm -f bun.lock
 rm -f bun.lockb
 
-bun install --force
+bun install

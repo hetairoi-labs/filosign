@@ -8,6 +8,7 @@
 		"dev": "bun --hot dev.ts",
 		"start": "NODE_ENV=production bun prod.ts",
 		"build": "bun run build.ts",
+		"check": "bunx biome check --write",
 		"analyze": "bun install --analyze src/**/*.tsx",
 		"sdk:update:force": "rm -rf node_modules/@filosign/sdk; rm -rf ../../node_modules/@filosign/sdk; bun install"
 	},

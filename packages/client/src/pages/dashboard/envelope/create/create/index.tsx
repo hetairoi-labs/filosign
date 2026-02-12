@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 import { Form } from "@/src/lib/components/ui/form";
+import { Separator } from "@/src/lib/components/ui/separator";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import type { EnvelopeForm, StoredDocument } from "../types";
 import DocumentsSection from "./_components/DocumentUpload";
@@ -131,6 +132,7 @@ export default function CreateEnvelopePage() {
 							remove={removeRecipient}
 						/>
 					</main>
+
 					<motion.div
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
@@ -140,7 +142,7 @@ export default function CreateEnvelopePage() {
 							damping: 25,
 							delay: 0.7,
 						}}
-						className="flex justify-end p-8 pt-0 mx-auto max-w-4xl gap-4"
+						className="flex justify-end px-8 mx-auto max-w-4xl gap-4"
 					>
 						<Button
 							type="button"

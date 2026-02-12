@@ -55,7 +55,7 @@ function DocumentManager() {
 - `useSendableTo`, `useReceivableFrom` - Network discovery
 - `useRequestApproval`, `useApproveSender`, `useRevokeSender` - Permission management
 - `useReceivedRequests`, `useSentRequests` - Request management
-- `useAcceptRequest`, `useRejectRequest`, `useCancelRequest` - Request actions
+- `useRejectRequest`, `useCancelRequest` - Request actions
 
 ### 👤 User Profile (5 hooks)
 - `useUserProfile` - Get current profile

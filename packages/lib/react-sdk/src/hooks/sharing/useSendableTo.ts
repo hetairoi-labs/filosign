@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useAuthedApi } from "../auth/useAuthedApi";
 
 export function useSendableTo() {
-	const { api } = useFilosignContext();
+	const { data: api } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["sendable-to"],
@@ -28,7 +28,7 @@ export function useSendableTo() {
 
 // Hook to get people who have accepted your requests (for envelope creation)
 export function useAcceptedRecipients() {
-	const { api } = useFilosignContext();
+	const { data: api } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["accepted-recipients"],

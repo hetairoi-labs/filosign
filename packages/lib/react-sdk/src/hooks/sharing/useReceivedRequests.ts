@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useAuthedApi } from "../auth/useAuthedApi";
 
 export function useReceivedRequests() {
-	const { api } = useFilosignContext();
+	const { data: api } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["received-requests"],
@@ -27,5 +27,6 @@ export function useReceivedRequests() {
 
 			return response.data.requests;
 		},
+		enabled: !!api,
 	});
 }

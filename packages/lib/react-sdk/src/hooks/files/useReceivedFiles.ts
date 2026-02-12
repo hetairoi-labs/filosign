@@ -1,10 +1,10 @@
 import { zHexString } from "@filosign/shared/zod";
 import { useQuery } from "@tanstack/react-query";
 import z from "zod";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useAuthedApi } from "../auth/useAuthedApi";
 
 export function useReceivedFiles() {
-	const { api } = useFilosignContext();
+	const { data: api } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["received-files"],
@@ -26,5 +26,6 @@ export function useReceivedFiles() {
 
 			return response.data.files;
 		},
+		enabled: !!api,
 	});
 }

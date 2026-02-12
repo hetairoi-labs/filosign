@@ -2,9 +2,11 @@ import { useMutation } from "@tanstack/react-query";
 import { type Address, isAddress } from "viem";
 import { z } from "zod";
 import { useFilosignContext } from "../../context/FilosignProvider";
+import { useAuthedApi } from "../auth/useAuthedApi";
 
 export function useRequestApproval() {
-	const { wallet, api } = useFilosignContext();
+	const { data: api } = useAuthedApi();
+	const { wallet } = useFilosignContext();
 
 	return useMutation({
 		mutationFn: async (args: {
@@ -12,8 +14,8 @@ export function useRequestApproval() {
 			recipientEmail?: string;
 			message?: string;
 		}) => {
-			if (!wallet) {
-				throw new Error("Wallet not connected");
+			if (!wallet || !api) {
+				throw new Error("Wallet not connected or API not authenticated");
 			}
 
 			const { recipientEmail, message } = args;

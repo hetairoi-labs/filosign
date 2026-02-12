@@ -1,21 +1,28 @@
 import { useAcceptedPeople } from "@filosign/react/hooks";
 import {
 	CaretDownIcon,
-	MagnifyingGlassIcon,
+	CheckIcon,
 	MinusIcon,
-	PlusIcon,
-	UsersThree,
-	XIcon,
+	PaperPlaneTiltIcon,
+	UserIcon,
+	UsersIcon,
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type {
 	Control,
 	FieldArrayWithId,
 	UseFieldArrayAppend,
 	UseFieldArrayRemove,
 } from "react-hook-form";
+import { toast } from "sonner";
+import { getAddress, isAddress } from "viem";
 import AddRecipientDialog from "@/src/lib/components/custom/AddRecipientDialog";
+import {
+	Avatar,
+	AvatarFallback,
+	AvatarImage,
+} from "@/src/lib/components/ui/avatar";
 import { Button } from "@/src/lib/components/ui/button";
 import {
 	Collapsible,
@@ -23,12 +30,24 @@ import {
 	CollapsibleTrigger,
 } from "@/src/lib/components/ui/collapsible";
 import {
-	FormControl,
+	Command,
+	CommandEmpty,
+	CommandInput,
+	CommandItem,
+	CommandList,
+} from "@/src/lib/components/ui/command";
+import {
 	FormField,
 	FormItem,
 	FormLabel,
 	FormMessage,
 } from "@/src/lib/components/ui/form";
+import { Input } from "@/src/lib/components/ui/input";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/src/lib/components/ui/popover";
 import {
 	Select,
 	SelectContent,
@@ -36,9 +55,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/src/lib/components/ui/select";
-import { Textarea } from "@/src/lib/components/ui/textarea";
 import { cn } from "@/src/lib/utils/utils";
-import type { EnvelopeForm, Recipient } from "../../types";
+import type { EnvelopeForm } from "../../types";
 
 interface RecipientsSectionProps {
 	control: Control<EnvelopeForm>;
@@ -54,29 +72,54 @@ export default function RecipientsSection({
 	remove,
 }: RecipientsSectionProps) {
 	const [isRecipientsOpen, setIsRecipientsOpen] = useState(true);
-	const { data: acceptedPeople, refetch } = useAcceptedPeople();
+	const [selectPopoverOpen, setSelectPopoverOpen] = useState(false);
+	const [searchQuery, setSearchQuery] = useState("");
 
-	const handleAddRecipient = (person: {
+	const acceptedPeople = useAcceptedPeople();
+
+	const filteredConnections = useMemo(() => {
+		if (!acceptedPeople.data?.people) return [];
+		const query = searchQuery.toLowerCase();
+		return acceptedPeople.data.people.filter((person) => {
+			const wallet = (person.walletAddress || "").toLowerCase();
+			const displayName = (person.displayName || "").toLowerCase();
+			const username = (person.username || "").toLowerCase();
+			return (
+				displayName.includes(query) ||
+				wallet.includes(query) ||
+				username.includes(query)
+			);
+		});
+	}, [acceptedPeople.data, searchQuery]);
+
+	const existingAddresses = useMemo(
+		() => new Set(fields.map((f) => f.walletAddress?.toLowerCase())),
+		[fields],
+	);
+
+	const handleSelectConnection = (person: {
 		walletAddress: string;
 		displayName: string | null;
-		username: string | null;
+		avatarUrl: string | null;
 	}) => {
+		const normalized = getAddress(person.walletAddress);
+		if (existingAddresses.has(normalized.toLowerCase())) {
+			toast.error("Recipient already added");
+			return;
+		}
+
 		append({
-			name: person.displayName || person.username || person.walletAddress,
+			name: person.displayName || "",
 			email: "",
-			walletAddress: person.walletAddress,
+			walletAddress: normalized,
 			role: "signer",
 		});
+		setSelectPopoverOpen(false);
+		setSearchQuery("");
+		toast.success("Recipient added");
 	};
 
-	// Get list of already selected wallet addresses
-	const selectedWalletAddresses = fields.map((field) => field.walletAddress);
-
-	// Filter out already selected people
-	const availablePeople =
-		acceptedPeople?.people.filter(
-			(person) => !selectedWalletAddresses.includes(person.walletAddress),
-		) || [];
+	const handleRequestSuccess = () => {};
 
 	return (
 		<motion.section
@@ -87,20 +130,25 @@ export default function RecipientsSection({
 				type: "spring",
 				stiffness: 200,
 				damping: 25,
-				delay: 0.3,
+				delay: 0.4,
 			}}
 		>
 			<Collapsible open={isRecipientsOpen} onOpenChange={setIsRecipientsOpen}>
 				<CollapsibleTrigger asChild>
 					<div className="flex items-center justify-between cursor-pointer hover:bg-accent/50 transition-colors p-2 -m-2 rounded-md group/add-recipients">
 						<h4 className="flex items-center gap-3">
-							<MagnifyingGlassIcon
+							<UsersIcon
 								className={cn(
-									"size-5 text-muted-foreground group-hover/add-recipients:scale-110 transition-transform duration-200",
-									isRecipientsOpen && "scale-110",
+									"size-5 text-muted-foreground group-hover/add-recipients:rotate-45 transition-transform duration-200",
+									isRecipientsOpen && "rotate-45",
 								)}
 							/>
-							Recipients {fields.length > 0 && `(${fields.length})`}
+							Add recipients
+							{fields.length > 0 && (
+								<span className="text-sm text-muted-foreground">
+									({fields.length})
+								</span>
+							)}
 						</h4>
 						<CaretDownIcon
 							className={cn(
@@ -113,173 +161,316 @@ export default function RecipientsSection({
 				</CollapsibleTrigger>
 
 				<CollapsibleContent className="mt-6">
-					<div className="space-y-6">
-						{/* Recipients List */}
-						<div className="space-y-3">
-							<FormLabel>Recipients</FormLabel>
-							{fields.length === 0 ? (
-								<div className="flex flex-col items-center justify-center py-8 px-4 border border-dashed rounded-lg bg-muted/30">
-									<UsersThree
-										className="w-10 h-10 mb-3 text-muted-foreground opacity-50"
-										weight="duotone"
-									/>
-									<p className="text-sm font-medium text-muted-foreground">
-										No recipients added
-									</p>
-									<p className="text-xs mt-1 text-center text-muted-foreground">
-										Add recipients below to get started
-									</p>
-								</div>
-							) : (
-								<div className="space-y-2">
-									{fields.map((field, index) => (
-										<FormField
-											key={field.id}
-											control={control}
-											name={`recipients.${index}`}
-											rules={{
-												required: "Recipient is required",
-											}}
-											render={({ field: formField }) => (
-												<FormItem>
-													<FormControl>
-														<div className="flex items-center gap-2 p-3 border rounded-lg bg-background hover:bg-accent/50 transition-colors">
-															<div className="flex-1 min-w-0">
-																<div className="flex items-center gap-2">
-																	<span className="text-sm font-medium text-foreground">
-																		{formField.value.name ||
-																			formField.value.walletAddress.slice(
-																				0,
-																				6,
-																			) +
-																				"..." +
-																				formField.value.walletAddress.slice(-4)}
-																	</span>
-																	{formField.value.role && (
-																		<span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-																			{formField.value.role}
-																		</span>
-																	)}
-																</div>
-																<p className="text-xs text-muted-foreground mt-0.5 truncate">
-																	{formField.value.walletAddress}
-																</p>
-															</div>
-															<Button
-																type="button"
-																variant="ghost"
-																size="icon"
-																className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-																onClick={() => remove(index)}
-																aria-label={`Remove recipient ${index + 1}`}
-															>
-																<XIcon className="size-4" />
-															</Button>
-														</div>
-													</FormControl>
-													<FormMessage />
-												</FormItem>
-											)}
-										/>
-									))}
-								</div>
-							)}
-						</div>
-
-						{/* Add Recipient */}
-						<div className="space-y-2">
-							<FormLabel>Add Recipient</FormLabel>
-							{availablePeople.length > 0 ? (
-								<Select
-									onValueChange={(value) => {
-										const selectedPerson = availablePeople.find(
-											(person) => person.walletAddress === value,
-										);
-										if (selectedPerson) {
-											handleAddRecipient(selectedPerson);
-										}
-									}}
-									value=""
-								>
-									<FormControl>
-										<SelectTrigger>
-											<SelectValue placeholder="Select a recipient to add" />
-										</SelectTrigger>
-									</FormControl>
-									<SelectContent>
-										{availablePeople.map((person) => (
-											<SelectItem
-												key={person.walletAddress}
-												value={person.walletAddress}
+					<FormField
+						control={control}
+						name="recipients"
+						rules={{
+							validate: (value) => {
+								if (!value || value.length === 0) {
+									return "At least 1 recipient is required";
+								}
+								return true;
+							},
+						}}
+						render={() => (
+							<FormItem>
+								<div className="space-y-4">
+									<div className="flex items-center justify-between gap-2">
+										<FormLabel>Recipients</FormLabel>
+										<div className="flex items-center gap-3">
+											<AddRecipientDialog
+												trigger={
+													<Button type="button" variant="primary">
+														<PaperPlaneTiltIcon className="size-4" />
+														<p className="hidden md:block">Send Request</p>
+													</Button>
+												}
+												onSuccess={handleRequestSuccess}
+											/>
+											<Popover
+												open={selectPopoverOpen}
+												onOpenChange={setSelectPopoverOpen}
 											>
-												<div className="flex items-center gap-2">
-													{person.displayName ||
-														person.username ||
-														person.walletAddress}
-													<span className="text-muted-foreground text-sm">
-														({person.walletAddress.slice(0, 6)}...
-														{person.walletAddress.slice(-4)})
-													</span>
-												</div>
-											</SelectItem>
-										))}
-									</SelectContent>
-								</Select>
-							) : (
-								<div className="flex flex-col items-center justify-center py-4 px-4 border border-dashed rounded-lg bg-muted/30">
-									<UsersThree
-										className="w-8 h-8 mb-2 text-muted-foreground opacity-50"
-										weight="duotone"
-									/>
-									<p className="text-sm text-muted-foreground text-center">
-										{acceptedPeople?.people &&
-										acceptedPeople.people.length === 0
-											? "No recipients available yet"
-											: "All available recipients have been added"}
-									</p>
-									<p className="text-xs mt-1 text-center text-muted-foreground">
-										Send sharing requests to add more people you can send
-										documents to.
-									</p>
-								</div>
-							)}
-							<div className="pt-2">
-								<AddRecipientDialog
-									onSuccess={() => refetch()}
-									trigger={
-										<Button
-											type="button"
-											variant="outline"
-											size="sm"
-											className="w-full"
-										>
-											<PlusIcon className="w-4 h-4 mr-2" />
-											Add new recipient
-										</Button>
-									}
-								/>
-							</div>
-						</div>
+												<PopoverTrigger asChild>
+													<Button type="button" variant="outline">
+														<UserIcon className="size-4" />
+														<p className="hidden md:block">Select Recipient</p>
+													</Button>
+												</PopoverTrigger>
+												<PopoverContent className="w-80 p-0 mt-2" align="end">
+													<Command>
+														<CommandInput
+															placeholder="Search connections..."
+															value={searchQuery}
+															onValueChange={setSearchQuery}
+														/>
+														<CommandList>
+															<CommandEmpty>
+																{acceptedPeople.isLoading
+																	? "Loading..."
+																	: "No connections found"}
+															</CommandEmpty>
+															{filteredConnections.map((person) => {
+																const normalized = getAddress(
+																	person.walletAddress,
+																).toLowerCase();
+																const isSelected =
+																	existingAddresses.has(normalized);
+																return (
+																	<CommandItem
+																		key={person.walletAddress}
+																		onSelect={() =>
+																			handleSelectConnection(person)
+																		}
+																		disabled={isSelected}
+																		className={cn(
+																			isSelected &&
+																				"opacity-50 cursor-not-allowed",
+																		)}
+																	>
+																		<div className="flex items-center gap-3 w-full">
+																			<Avatar className="size-8">
+																				{person.avatarUrl && (
+																					<AvatarImage src={person.avatarUrl} />
+																				)}
+																				<AvatarFallback>
+																					<UserIcon className="size-4" />
+																				</AvatarFallback>
+																			</Avatar>
+																			<div className="flex-1 min-w-0">
+																				<div className="font-medium text-sm truncate">
+																					{person.displayName ||
+																						`${person.walletAddress.slice(0, 6)}...${person.walletAddress.slice(-4)}`}
+																				</div>
+																				<div className="text-xs text-muted-foreground font-mono truncate">
+																					{person.walletAddress.slice(0, 10)}...
+																				</div>
+																			</div>
+																			{isSelected && (
+																				<CheckIcon className="size-4 text-primary" />
+																			)}
+																		</div>
+																	</CommandItem>
+																);
+															})}
+														</CommandList>
+													</Command>
+												</PopoverContent>
+											</Popover>
+										</div>
+									</div>
 
-						{/* Message */}
-						<FormField
-							control={control}
-							name="emailMessage"
-							render={({ field }) => (
-								<FormItem>
-									<FormLabel>Message</FormLabel>
-									<FormControl>
-										<Textarea
-											placeholder="Enter your message..."
-											className="min-h-[100px]"
-											{...field}
-										/>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
-					</div>
+									{fields.length === 0 ? (
+										<motion.div
+											className="border-2 border-primary/20 rounded-lg p-16 text-center transition-colors bg-muted/5 hover:border-muted-foreground/50"
+											transition={{ duration: 0.2 }}
+										>
+											<motion.div
+												initial={{ opacity: 0, y: 20 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{
+													type: "spring",
+													stiffness: 230,
+													damping: 25,
+													delay: 0.1,
+												}}
+												className="space-y-6"
+											>
+												<motion.div
+													className="flex justify-center"
+													initial={{ opacity: 0 }}
+													animate={{ opacity: 1 }}
+													transition={{
+														type: "spring",
+														stiffness: 230,
+														damping: 25,
+														delay: 0.2,
+													}}
+												>
+													<motion.div
+														className="p-6 rounded-full bg-muted/20"
+														transition={{
+															type: "spring",
+															stiffness: 230,
+															damping: 25,
+															duration: 0.3,
+														}}
+													>
+														<UsersIcon className="h-12 w-12 text-primary" />
+													</motion.div>
+												</motion.div>
+												<motion.div
+													className="space-y-4"
+													initial={{ opacity: 0, y: 10 }}
+													animate={{ opacity: 1, y: 0 }}
+													transition={{
+														type: "spring",
+														stiffness: 230,
+														damping: 25,
+														delay: 0.3,
+													}}
+												>
+													<p className="text-muted-foreground">
+														No recipients selected
+													</p>
+													<p className="text-xs text-muted-foreground">
+														Add recipients to send documents to
+													</p>
+												</motion.div>
+											</motion.div>
+										</motion.div>
+									) : (
+										<motion.div
+											className="space-y-3"
+											initial={{ opacity: 0, y: 20 }}
+											animate={{ opacity: 1, y: 0 }}
+											transition={{
+												type: "spring",
+												stiffness: 230,
+												damping: 25,
+												delay: 0.1,
+											}}
+										>
+											{fields.map((field, index) => (
+												<motion.div
+													key={field.id}
+													className="p-4 rounded-lg border-1 border-border/60 bg-background space-y-3"
+													initial={{ opacity: 0, scale: 0.9 }}
+													animate={{ opacity: 1, scale: 1 }}
+													transition={{
+														type: "spring",
+														stiffness: 230,
+														damping: 25,
+														duration: 0.3,
+													}}
+												>
+													<div className="flex items-start justify-between gap-4">
+														<div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+															<FormField
+																control={control}
+																name={`recipients.${index}.name`}
+																rules={{
+																	required: "Name is required",
+																}}
+																render={({ field }) => (
+																	<FormItem>
+																		<FormLabel className="text-sm font-semibold text-foreground">
+																			Name
+																		</FormLabel>
+																		<Input
+																			{...field}
+																			placeholder="Recipient name"
+																		/>
+																		<FormMessage />
+																	</FormItem>
+																)}
+															/>
+															<FormField
+																control={control}
+																name={`recipients.${index}.email`}
+																rules={{
+																	pattern: {
+																		value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+																		message: "Invalid email format",
+																	},
+																}}
+																render={({ field }) => (
+																	<FormItem>
+																		<FormLabel className="text-sm font-semibold text-foreground">
+																			Email
+																		</FormLabel>
+																		<Input
+																			{...field}
+																			type="email"
+																			placeholder="email@example.com"
+																		/>
+																		<FormMessage />
+																	</FormItem>
+																)}
+															/>
+															<FormField
+																control={control}
+																name={`recipients.${index}.walletAddress`}
+																rules={{
+																	required: "Wallet address is required",
+																	validate: (value) => {
+																		if (!value)
+																			return "Wallet address is required";
+																		if (!isAddress(value)) {
+																			return "Invalid wallet address";
+																		}
+																		return true;
+																	},
+																}}
+																render={({ field }) => (
+																	<FormItem>
+																		<FormLabel className="text-sm font-semibold text-foreground">
+																			Wallet Address
+																		</FormLabel>
+																		<Input
+																			{...field}
+																			placeholder="0x..."
+																			className="font-mono"
+																			onBlur={(e) => {
+																				const value = e.target.value;
+																				if (isAddress(value)) {
+																					field.onChange(getAddress(value));
+																				}
+																			}}
+																		/>
+																		<FormMessage />
+																	</FormItem>
+																)}
+															/>
+															<FormField
+																control={control}
+																name={`recipients.${index}.role`}
+																render={({ field }) => (
+																	<FormItem>
+																		<FormLabel className="text-sm font-semibold text-foreground">
+																			Role
+																		</FormLabel>
+																		<Select
+																			value={field.value}
+																			onValueChange={field.onChange}
+																		>
+																			<SelectTrigger>
+																				<SelectValue />
+																			</SelectTrigger>
+																			<SelectContent>
+																				<SelectItem value="signer">
+																					Signer
+																				</SelectItem>
+																				<SelectItem value="cc">CC</SelectItem>
+																				<SelectItem value="approver">
+																					Approver
+																				</SelectItem>
+																			</SelectContent>
+																		</Select>
+																		<FormMessage />
+																	</FormItem>
+																)}
+															/>
+														</div>
+														<Button
+															type="button"
+															variant="ghost"
+															size="sm"
+															onClick={() => remove(index)}
+															className="text-destructive hover:text-destructive"
+														>
+															<MinusIcon className="size-4" />
+														</Button>
+													</div>
+												</motion.div>
+											))}
+										</motion.div>
+									)}
+								</div>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 				</CollapsibleContent>
 			</Collapsible>
 		</motion.section>

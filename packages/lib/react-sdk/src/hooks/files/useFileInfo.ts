@@ -3,12 +3,29 @@ import { useQuery } from "@tanstack/react-query";
 import z from "zod";
 import { useFilosignContext } from "../../context/FilosignProvider";
 
+export type FileInfo = {
+	pieceCid: string;
+	sender: string;
+	status: string;
+	onchainTxHash: `0x${string}`;
+	createdAt: string;
+	signers: string[];
+	viewers: string[];
+	signatures: Array<{
+		signer: string;
+		timestamp: string;
+		onchainTxHash: `0x${string}`;
+	}>;
+	kemCiphertext: `0x${string}` | null;
+	encryptedEncryptionKey: `0x${string}` | null;
+};
+
 export function useFileInfo(args: { pieceCid: string | undefined }) {
 	const { api } = useFilosignContext();
 
-	return useQuery({
+	return useQuery<FileInfo>({
 		queryKey: ["fsQ-file-info", args.pieceCid],
-		queryFn: async () => {
+		queryFn: async (): Promise<FileInfo> => {
 			const response = await api.rpc.getSafe(
 				{
 					pieceCid: z.string(),
@@ -31,7 +48,7 @@ export function useFileInfo(args: { pieceCid: string | undefined }) {
 				`/files/${args.pieceCid}`,
 			);
 
-			return response.data;
+			return response.data as FileInfo;
 		},
 		enabled: !!args.pieceCid,
 	});

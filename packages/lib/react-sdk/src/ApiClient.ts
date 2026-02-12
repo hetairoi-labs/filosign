@@ -38,7 +38,11 @@ export default class ApiClient {
 	}
 
 	setJwt(authToken: string | null) {
-		this._authHeader = { Authorization: `Bearer ${authToken}` };
+		if (authToken === null || authToken === undefined) {
+			this._authHeader = { Authorization: "Bearer null" };
+		} else {
+			this._authHeader = { Authorization: `Bearer ${authToken}` };
+		}
 		this._client = this.createClient();
 	}
 }

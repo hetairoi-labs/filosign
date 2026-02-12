@@ -51,15 +51,25 @@ async function main() {
 	try {
 		const existingContent = await definitionsFile.text();
 
-		const definitionsJson = existingContent.slice(
-			DEFINITIONS_FILE_PREFIX.length,
-			existingContent.length - DEFINITIONS_FILE_SUFFIX.length,
-		);
-		existingDefinitions = JSON.parse(definitionsJson);
-		existingDefinitions[toHex(chainId)] = definitions;
+		// Validate file format before parsing
+		if (
+			existingContent.startsWith(DEFINITIONS_FILE_PREFIX) &&
+			existingContent.endsWith(DEFINITIONS_FILE_SUFFIX)
+		) {
+			const definitionsJson = existingContent.slice(
+				DEFINITIONS_FILE_PREFIX.length,
+				existingContent.length - DEFINITIONS_FILE_SUFFIX.length,
+			);
+			existingDefinitions = JSON.parse(definitionsJson);
+		}
 	} catch (error) {
 		console.error("Error reading definitions.ts:", error);
+		// Reset to empty object if parsing fails
+		existingDefinitions = {};
 	}
+
+	// Always add the new definitions, even if parsing failed
+	existingDefinitions[toHex(chainId)] = definitions;
 
 	await definitionsFile.write(
 		DEFINITIONS_FILE_PREFIX +

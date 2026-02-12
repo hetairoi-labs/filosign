@@ -5,16 +5,30 @@ import z from "zod";
 import { idb } from "../../../utils/idb";
 import { useFilosignContext } from "../../context/FilosignProvider";
 
+type ViewFileArgs = {
+	pieceCid: string;
+	kemCiphertext: string;
+	encryptedEncryptionKey: string;
+	status: "s3" | "foc";
+};
+
+type ViewFileMetadata = {
+	name: string;
+	mimeType?: string;
+};
+
+type ViewFileResult = {
+	fileBytes: Uint8Array;
+	sender: `0x${string}`;
+	timestamp: number;
+	metadata: ViewFileMetadata;
+};
+
 export function useViewFile() {
 	const { contracts, wallet, api, runtime } = useFilosignContext();
 
-	return useMutation({
-		mutationFn: async (args: {
-			pieceCid: string;
-			kemCiphertext: string;
-			encryptedEncryptionKey: string;
-			status: "s3" | "foc";
-		}) => {
+	return useMutation<ViewFileResult, Error, ViewFileArgs>({
+		mutationFn: async (args) => {
 			const { pieceCid, kemCiphertext, encryptedEncryptionKey, status } = args;
 			console.log("asdasd", args);
 

@@ -41,6 +41,8 @@ export function useSendFile() {
 			const { signers, viewers, bytes, metadata } = args;
 			const timestamp = Math.floor(Date.now() / 1000);
 
+			console.log({ contracts, wallet, user });
+
 			if (!contracts || !wallet || !user) {
 				throw new Error("not conected iido");
 			}

@@ -1,5 +1,4 @@
 import {
-	useAcceptRequest,
 	useAckFile,
 	useApproveSender,
 	useFileInfo,
@@ -49,12 +48,10 @@ export function NotificationsPopover() {
 		null,
 	);
 	const queryClient = useQueryClient();
-	const navigate = useNavigate();
 
 	// Only get the actionable data - pending requests and unacknowledged files
 	const receivedRequests = useReceivedRequests();
 	const receivedFiles = useReceivedFiles();
-	const acceptRequest = useAcceptRequest();
 	const allowSharing = useApproveSender();
 
 	// Calculate notification counts - all received files and requests
@@ -96,12 +93,7 @@ export function NotificationsPopover() {
 			pendingAcceptRequestId,
 		);
 		try {
-			// First accept the share request in the database
-			await acceptRequest.mutateAsync({
-				requestId: pendingAcceptRequestId,
-			});
-
-			// Then approve the sender on the smart contract
+			// Approve the sender on the smart contract
 			console.log("Calling allowSharing.mutateAsync with:", {
 				sender: pendingAcceptWallet,
 			});
@@ -213,14 +205,10 @@ export function NotificationsPopover() {
 										subtitle={req.message || "No message provided"}
 										variant="default"
 										actionButton={{
-											label:
-												acceptRequest.isPending || allowSharing.isPending
-													? "Accepting..."
-													: "Accept",
+											label: allowSharing.isPending ? "Accepting..." : "Accept",
 											onClick: () =>
 												handleAllowSharing(req.id, req.senderWallet),
-											loading:
-												acceptRequest.isPending || allowSharing.isPending,
+											loading: allowSharing.isPending,
 											variant: "default",
 										}}
 									/>
@@ -291,11 +279,9 @@ export function NotificationsPopover() {
 						</AlertDialogCancel>
 						<AlertDialogAction
 							onClick={confirmAllowSharing}
-							disabled={acceptRequest.isPending || allowSharing.isPending}
+							disabled={allowSharing.isPending}
 						>
-							{acceptRequest.isPending || allowSharing.isPending
-								? "Accepting..."
-								: "Accept Request"}
+							{allowSharing.isPending ? "Accepting..." : "Accept Request"}
 						</AlertDialogAction>
 					</AlertDialogFooter>
 				</AlertDialogContent>
@@ -362,6 +348,7 @@ function ReceivedFileNotification({
 
 			toast.success("File downloaded!");
 		} catch (error) {
+			console.error(error);
 			toast.error("Failed to download file");
 		}
 	};

@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import z from "zod";
 import { MINUTE } from "../../constants";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useAuthedApi } from "../auth/useAuthedApi";
 
 export function useSentFiles() {
-	const { api } = useFilosignContext();
+	const { data: api } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["sent-files"],
@@ -24,6 +24,7 @@ export function useSentFiles() {
 
 			return response.data.files;
 		},
+		enabled: !!api,
 		staleTime: 5 * MINUTE,
 	});
 }

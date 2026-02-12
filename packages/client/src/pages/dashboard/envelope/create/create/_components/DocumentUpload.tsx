@@ -21,7 +21,7 @@ import {
 } from "@/src/lib/components/ui/collapsible";
 import { FormField, FormItem, FormMessage } from "@/src/lib/components/ui/form";
 import { cn } from "@/src/lib/utils/utils";
-import type { EnvelopeForm, UploadedFile } from "../../types";
+import type { AllowedFileMime, EnvelopeForm, UploadedFile } from "../../types";
 import { ACCEPTED_FILE_EXTENSIONS, ACCEPTED_FILE_MIME_SET } from "../../types";
 import FileCard from "./FileCard";
 
@@ -46,8 +46,7 @@ export default function DocumentsSection({
 	const [unsupportedFiles, setUnsupportedFiles] = useState<string[]>([]);
 	const [oversizedFiles, setOversizedFiles] = useState<string[]>([]);
 
-	// 5MB file size limit
-	const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
+	const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 	const handleFileSelect = useCallback(
 		(files: FileList | null) => {
@@ -55,7 +54,9 @@ export default function DocumentsSection({
 
 			const incoming = Array.from(files);
 			const rejected = incoming
-				.filter((file) => !ACCEPTED_FILE_MIME_SET.has(file.type as any))
+				.filter(
+					(file) => !ACCEPTED_FILE_MIME_SET.has(file.type as AllowedFileMime),
+				)
 				.map((file) => file.name);
 
 			const oversized = incoming
@@ -65,7 +66,7 @@ export default function DocumentsSection({
 			const newFiles: UploadedFile[] = incoming
 				.filter(
 					(file) =>
-						ACCEPTED_FILE_MIME_SET.has(file.type as any) &&
+						ACCEPTED_FILE_MIME_SET.has(file.type as AllowedFileMime) &&
 						file.size <= MAX_FILE_SIZE,
 				)
 				.map((file) => ({
@@ -76,7 +77,6 @@ export default function DocumentsSection({
 					type: file.type,
 				}))
 				.filter((newFile) => {
-					// Check if file with same name and size already exists
 					return !fields.some(
 						(existingFile) =>
 							existingFile.name === newFile.name &&
@@ -84,11 +84,13 @@ export default function DocumentsSection({
 					);
 				});
 
-			newFiles.forEach((file) => append(file));
+			for (const file of newFiles) {
+				append(file);
+			}
 			setUnsupportedFiles(rejected);
 			setOversizedFiles(oversized);
 		},
-		[fields, append, MAX_FILE_SIZE],
+		[fields, append],
 	);
 
 	const handleFileInputChange = (
@@ -185,7 +187,7 @@ export default function DocumentsSection({
 								return true;
 							},
 						}}
-						render={({ field }) => (
+						render={() => (
 							<FormItem>
 								{/* Hidden file input */}
 								<input
