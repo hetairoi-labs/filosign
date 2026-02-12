@@ -68,7 +68,7 @@ export function useOtherReload() {
 }
 
 function App() {
-	const [dilithium, setDilithium] = useState<any>(null);
+	const [dilithium, setDilithium] = useState(null);
 
 	useEffect(() => {
 		let mounted = true;
@@ -78,13 +78,20 @@ function App() {
 				// Mock chrome for the dilithium library
 				(globalThis as any).chrome = {
 					runtime: {
-						getURL: () => "/dilithium.wasm",
+						getURL: () => null, // Return null to prevent file access since WASM is embedded
 					},
 				};
 
+				// Provide arguments object for dilithium library (needed for Emscripten)
+				(globalThis as any).arguments = (globalThis as any).arguments || [];
+
 				// Import dilithium as ES module
-				const { createDilithium } = await import("./dilithium.min.js");
-				const dil = await createDilithium();
+				const dilithiumModule = await import("./dilithium.min.js");
+
+				// Initialize dilithium with options to use embedded WASM
+				const dil = await dilithiumModule.createDilithium({
+					locateFile: () => null, // Prevent external file loading
+				});
 
 				if (!mounted) return;
 				setDilithium(dil);
