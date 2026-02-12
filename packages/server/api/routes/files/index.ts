@@ -178,21 +178,25 @@ export default new Hono()
 			return insertResult;
 		});
 
-		ds.upload(new Uint8Array(bytes), { pieceCid }).then(async (uploadResult) => {
-			await file.delete();
+		ds.upload(new Uint8Array(bytes), { pieceCid, metadata: {} })
+			.then(async (uploadResult) => {
+				await file.delete();
 
-			if (uploadResult.pieceCid.toString() !== pieceCid) {
-				await db.delete(files).where(eq(files.pieceCid, pieceCid));
-			}
-
-			await db
-				.update(files)
-				.set({ status: "foc" })
-				.where(eq(files.pieceCid, pieceCid))
-				.catch(async (_) => {
+				if (uploadResult.pieceCid.toString() !== pieceCid) {
 					await db.delete(files).where(eq(files.pieceCid, pieceCid));
-				});
-		});
+				}
+
+				await db
+					.update(files)
+					.set({ status: "foc" })
+					.where(eq(files.pieceCid, pieceCid))
+					.catch(async (_) => {
+						await db.delete(files).where(eq(files.pieceCid, pieceCid));
+					});
+			})
+			.catch((err) => {
+				console.warn("Filecoin addPieces failed (file remains in S3):", err?.message ?? err);
+			});
 
 		return respond.ok(ctx, {}, "File uploaded to filecoin warmstorage", 201);
 	})

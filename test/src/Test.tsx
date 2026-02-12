@@ -114,7 +114,7 @@ function TestLogin(props: { notify: NotifierFn }) {
 	}, [isLoggedIn.data]);
 
 	return (
-		<div className="p-4 space-y-2">
+		<div className="p-4 space-y-2 max-w-4xl">
 			{isLoggedIn.data === false && (
 				<Button mutation={login} mutationArgs={{ pin: "1234" }}>
 					Login
@@ -165,7 +165,7 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 	}, [approveSender.isSuccess]);
 
 	return (
-		<div className="p-4 space-y-2">
+		<div className="p-4 space-y-2 max-w-4xl">
 			{canReceiveFrom.data === true && (
 				<p className="text-green-600">Can already receive from sender.</p>
 			)}
@@ -198,7 +198,7 @@ function TestCheckCanSendTo(props: { notify: NotifierFn }) {
 	}, [canSendTo.isSuccess]);
 
 	return (
-		<div className="p-4 space-y-2">
+		<div className="p-4 space-y-2 max-w-4xl">
 			{canSendTo.isPending && <p>Checking if can receive from sender...</p>}
 			{canSendTo.data === true && (
 				<p className="text-green-600">Can receive from sender.</p>
@@ -221,7 +221,7 @@ function TestThisUserInfo(props: { notify: NotifierFn }) {
 	}, [selfProfile.data]);
 
 	return (
-		<div className="p-4 space-y-2">
+		<div className="p-4 space-y-2 max-w-4xl">
 			<p>This User Info:</p>
 			{selfProfile.isPending && <p>Loading user profile...</p>}
 			{selfProfile.isError && (
@@ -250,7 +250,7 @@ function TestOtherUserInfo(props: { notify: NotifierFn }) {
 	}, [otherProfile.data]);
 
 	return (
-		<div className="p-4 space-y-2">
+		<div className="p-4 space-y-2 max-w-4xl">
 			<p>Other User Info:</p>
 			{otherProfile.isPending && <p>Loading other user profile...</p>}
 			{otherProfile.isError && (
@@ -311,7 +311,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 	if (!otherProfile) return <p>loading other person profile, wait</p>;
 
 	return (
-		<div className="p-4 space-y-2">
+		<div className="p-4 space-y-2 max-w-4xl">
 			<div>
 				<label htmlFor="pdf-file" className="block text-sm font-medium mb-2">
 					Select PDF File:
@@ -363,7 +363,7 @@ function ShowReceivedFiles() {
 	const receivedFiles = useReceivedFiles();
 
 	return (
-		<div className="p-4 space-y-2">
+		<div className="p-4 space-y-2 max-w-4xl">
 			<p>Received Files:</p>
 			{receivedFiles.isPending && <p>Loading received files...</p>}
 			{receivedFiles.isError && (
@@ -409,7 +409,7 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 	const canView =
 		file.kemCiphertext !== null && file.encryptedEncryptionKey !== null;
 	return (
-		<div className="bg-gray-100 p-2 rounded">
+		<div className="bg-gray-100 p-2 rounded max-w-4xl">
 			<p>File CID: {file.pieceCid.toString()}</p>
 			<p>Sender: {file.sender}</p>
 			<p>Status: {file.status}</p>
@@ -432,7 +432,7 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 			)}{" "}
 			<div>
 				{viewFile.isSuccess && viewFile.data && (
-					<p>{decoder.decode(viewFile.data.fileBytes)}</p>
+					<p className="whitespace-pre-wrap wrap-break-word">{decoder.decode(viewFile.data.fileBytes)}</p>
 				)}
 
 				{canView && file.signatures.length === 0 && (
@@ -454,7 +454,7 @@ function ShowSentFiles() {
 	const sentFiles = useSentFiles();
 
 	return (
-		<div className="p-4 space-y-2">
+		<div className="p-4 space-y-2 max-w-4xl">
 			<p>Sent Files:</p>
 			{sentFiles.isPending && <p>Loading sent files...</p>}
 			{sentFiles.isError && (
@@ -484,7 +484,7 @@ function SentFileItem(props: { pieceCid: string }) {
 	if (!file) return <p>Loading file info...</p>;
 
 	return (
-		<div className="bg-gray-100 p-2 rounded">
+		<div className="bg-gray-100 p-2 rounded max-w-4xl">
 			<p>File CID: {file.pieceCid.toString()}</p>
 			<p>Sender: {file.sender}</p>
 			<p>Status: {file.status}</p>
@@ -502,7 +502,7 @@ function SentFileItem(props: { pieceCid: string }) {
 			</Button>
 			<div>
 				{viewFile.isSuccess && viewFile.data && (
-					<p>{decoder.decode(viewFile.data.fileBytes)}</p>
+					<p className="whitespace-pre-wrap wrap-break-word">{decoder.decode(viewFile.data.fileBytes)}</p>
 				)}
 			</div>
 		</div>
