@@ -230,7 +230,7 @@ function TestThisUserInfo(props: { notify: NotifierFn }) {
 				</p>
 			)}
 			{selfProfile.data && (
-				<pre className="bg-gray-100 p-2 rounded">
+				<pre className="bg-gray-100 p-2 rounded max-w-[30vw] overflow-scroll">
 					{JSON.stringify(selfProfile.data, null, 2)}
 				</pre>
 			)}
@@ -343,7 +343,8 @@ function TestFileSend(props: { notify: NotifierFn }) {
 					signers: [
 						{
 							address: otherAddress,
-							encryptionPublicKey: otherProfile.encryptionPublicKey,
+							encryptionPublicKey:
+								otherProfile.encryptionPublicKey as `0x${string}`,
 							signaturePosition: [10, 20, 30, 40],
 						},
 					],
@@ -432,7 +433,9 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 			)}{" "}
 			<div>
 				{viewFile.isSuccess && viewFile.data && (
-					<p className="whitespace-pre-wrap wrap-break-word">{decoder.decode(viewFile.data.fileBytes)}</p>
+					<p className="whitespace-pre-wrap wrap-break-word">
+						{decoder.decode(viewFile.data.fileBytes)}
+					</p>
 				)}
 
 				{canView && file.signatures.length === 0 && (
@@ -502,7 +505,9 @@ function SentFileItem(props: { pieceCid: string }) {
 			</Button>
 			<div>
 				{viewFile.isSuccess && viewFile.data && (
-					<p className="whitespace-pre-wrap wrap-break-word">{decoder.decode(viewFile.data.fileBytes)}</p>
+					<p className="whitespace-pre-wrap wrap-break-word">
+						{decoder.decode(viewFile.data.fileBytes)}
+					</p>
 				)}
 			</div>
 		</div>
