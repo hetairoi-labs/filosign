@@ -1,14 +1,15 @@
-import { useAuthedApi, useSendFile } from "@filosign/react/hooks";
-import { useQueries } from "@tanstack/react-query";
+import {
+	useProfilesByAddresses,
+	useSendFile,
+} from "@filosign/react/hooks";
 import { useNavigate } from "@tanstack/react-router";
 import React, { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { Address } from "viem";
-import z from "zod";
 
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { cn } from "@/src/lib/utils/utils";
-import DocumentViewer from "./_components/DocumentViewer";
+import DocumentViewer, { useDocumentDimensions } from "./_components/DocumentViewer";
 import Header from "./_components/Header";
 import MobileSignatureToolbar from "./_components/MobileSignatureToolbar";
 import SignatureFieldsSidebar from "./_components/SignatureFieldsSidebar";
@@ -23,84 +24,41 @@ export default function AddSignaturePage() {
 	const navigate = useNavigate();
 	const { createForm, clearCreateForm } = useStorePersist();
 	const sendFile = useSendFile();
-	const { data: api } = useAuthedApi();
 
-	// Fetch profiles for all recipients using SDK pattern (replicating useUserProfileByQuery)
-	const recipientProfileQueries = useQueries({
-		queries:
-			createForm?.recipients?.map((recipient) => ({
-				queryKey: [
-					"fsQ-user-info-by-address",
-					{ address: recipient.walletAddress },
-				],
-				queryFn: async () => {
-					if (!api || !recipient.walletAddress) return null;
-					try {
-						// Replicate the SDK's useUserProfileByQuery query function
-						const userInfo = await api.rpc.getSafe(
-							{
-								walletAddress: z.string(),
-								encryptionPublicKey: z.string(),
-								lastActiveAt: z.string(),
-								createdAt: z.string(),
-								firstName: z.string().nullable(),
-								lastName: z.string().nullable(),
-								avatarUrl: z.string().nullable(),
-								has: z.object({
-									email: z.boolean(),
-									mobile: z.boolean(),
-								}),
-							},
-							`/users/profile/${recipient.walletAddress}`,
-						);
-						return {
-							recipient,
-							profile: userInfo.data,
-						};
-					} catch (error) {
-						console.error(
-							`Failed to fetch profile for ${recipient.walletAddress}:`,
-							error,
-						);
-						return null;
-					}
-				},
-				enabled: !!api && !!recipient.walletAddress,
-			})) || [],
-	});
+	const recipientAddresses = useMemo(
+		() =>
+			createForm?.recipients?.map((r) => r.walletAddress as Address) ?? [],
+		[createForm?.recipients],
+	);
+	const {
+		data: recipientProfilesMap,
+		isLoading: recipientProfilesLoading,
+	} = useProfilesByAddresses(
+		recipientAddresses.length > 0 ? recipientAddresses : undefined,
+	);
 
-	// Map recipient profiles by wallet address
-	const recipientProfilesMap = useMemo(() => {
+	// Build recipient + profile map for template
+	const recipientProfilesMapWithRecipient = useMemo(() => {
 		const map = new Map<
 			Address,
 			{
-				recipient: {
-					name: string;
-					email: string;
-					walletAddress: string;
-					role: string;
-				};
-				profile: {
-					walletAddress: string;
-					encryptionPublicKey: string;
-					lastActiveAt: string;
-					createdAt: string;
-					firstName: string | null;
-					lastName: string | null;
-					avatarUrl: string | null;
-					has: { email: boolean; mobile: boolean };
-				};
+				recipient: { name: string; email: string; walletAddress: string; role: string };
+				profile: { encryptionPublicKey: string; [key: string]: unknown };
 			}
 		>();
-		createForm?.recipients?.forEach((recipient, index) => {
-			const profileQuery = recipientProfileQueries[index];
-			if (profileQuery?.data) {
-				map.set(recipient.walletAddress as Address, profileQuery.data);
+		createForm?.recipients?.forEach((recipient) => {
+			const profile = recipientProfilesMap?.get(recipient.walletAddress as Address);
+			if (profile) {
+				map.set(recipient.walletAddress as Address, {
+					recipient,
+					profile: profile as { encryptionPublicKey: string; [key: string]: unknown },
+				});
 			}
 		});
 		return map;
-	}, [createForm?.recipients, recipientProfileQueries]);
+	}, [createForm?.recipients, recipientProfilesMap]);
 
+	const { width: docWidth, height: docHeight } = useDocumentDimensions();
 	const [currentDocumentId, setCurrentDocumentId] = useState<string>("");
 	const [currentPage, setCurrentPage] = useState(1);
 	const [zoom, setZoom] = useState(100);
@@ -204,16 +162,14 @@ export default function AddSignaturePage() {
 
 		// Check if all recipient profiles are loaded
 		const missingProfiles = createForm.recipients.filter(
-			(r) => !recipientProfilesMap.has(r.walletAddress as Address),
+			(r) => !recipientProfilesMapWithRecipient.has(r.walletAddress as Address),
 		);
 		if (missingProfiles.length > 0) {
 			toast.error("Loading recipient information...");
 			return;
 		}
 
-		// Check if any queries are still loading
-		const isLoading = recipientProfileQueries.some((query) => query.isLoading);
-		if (isLoading) {
+		if (recipientProfilesLoading) {
 			toast.error("Loading recipient information...");
 			return;
 		}
@@ -245,7 +201,7 @@ export default function AddSignaturePage() {
 
 				// Process each recipient
 				for (const recipient of createForm.recipients) {
-					const recipientData = recipientProfilesMap.get(
+					const recipientData = recipientProfilesMapWithRecipient.get(
 						recipient.walletAddress as Address,
 					);
 					if (!recipientData) continue;
@@ -266,15 +222,23 @@ export default function AddSignaturePage() {
 						// Get signature position for this signer, or use default
 						const signatureField =
 							documentSignatures[signerIndex] || documentSignatures[0];
+						// encodeFileData expects percentages (0-100 exclusive); convert from viewer pixels
+						const clamp = (v: number) =>
+							Math.max(0.01, Math.min(99.99, v));
 						const signaturePosition: [number, number, number, number] =
 							signatureField
 								? [
-										signatureField.x,
-										signatureField.y,
-										200, // width
-										100, // height
+										clamp((signatureField.x / docWidth) * 100),
+										clamp((signatureField.y / docHeight) * 100),
+										clamp((200 / docWidth) * 100),
+										clamp((100 / docHeight) * 100),
 									]
-								: [10, 10, 200, 100]; // Default position
+								: [
+										clamp((10 / docWidth) * 100),
+										clamp((10 / docHeight) * 100),
+										clamp((200 / docWidth) * 100),
+										clamp((100 / docHeight) * 100),
+									];
 
 						signers.push({
 							address,

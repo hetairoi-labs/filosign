@@ -1,5 +1,5 @@
 import { useFilosignContext } from "@filosign/react";
-import { useAuthedApi, useFileInfo, useViewFile } from "@filosign/react/hooks";
+import { useFileInfo, useViewFile } from "@filosign/react/hooks";
 import {
 	ArrowClockwiseIcon,
 	ArrowCounterClockwiseIcon,
@@ -46,13 +46,11 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		height: 800,
 	});
 
-	// Ensure API is authenticated before making requests
-	const { data: authedApi, isLoading: authLoading } = useAuthedApi();
 	const { wallet } = useFilosignContext();
 
 	// Get detailed file info including decryption keys
 	const { data: fileInfo, isLoading: fileLoading } = useFileInfo({
-		pieceCid: authedApi && file ? file.pieceCid : undefined,
+		pieceCid: file?.pieceCid,
 	});
 
 	const viewFile = useViewFile();
@@ -77,48 +75,18 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 
 	// Memoize the handleViewFile function
 	const handleViewFile = useCallback(async () => {
-		console.log("handleViewFile called with fileInfo:", {
-			pieceCid: fileInfo?.pieceCid,
-			acked: fileInfo?.acked,
-			isSender,
-			hasKemCiphertext: !!fileInfo?.kemCiphertext,
-			hasSenderKemCiphertext: !!fileInfo?.senderKemCiphertext,
-			hasEncryptedKey: !!fileInfo?.encryptedEncryptionKey,
-			hasSenderEncryptedKey: !!fileInfo?.senderEncryptedEncryptionKey,
-			status: fileInfo?.status,
-		});
-
 		if (!fileInfo) {
-			const error = "File information not available";
-			console.error(error);
-			setViewError(error);
+			setViewError("File information not available");
 			return;
 		}
 
-		// Use appropriate keys based on whether user is sender or receiver
-		const kemCiphertext = isSender
-			? fileInfo.senderKemCiphertext
-			: fileInfo.kemCiphertext;
-		const encryptedEncryptionKey = isSender
-			? fileInfo.senderEncryptedEncryptionKey
-			: fileInfo.encryptedEncryptionKey;
+		// Server returns current user's participant keys (works for both sender and receiver)
+		const { kemCiphertext, encryptedEncryptionKey } = fileInfo;
 
 		if (!kemCiphertext || !encryptedEncryptionKey) {
-			const error = `Missing decryption keys for ${isSender ? "sender" : "receiver"}`;
-			console.error(error, {
-				isSender,
-				hasKemCiphertext: !!kemCiphertext,
-				hasEncryptedKey: !!encryptedEncryptionKey,
-			});
-			setViewError(error);
-			return;
-		}
-
-		// For received files, check if acknowledged
-		if (!isSender && !fileInfo.acked) {
-			const error = "File must be acknowledged before viewing";
-			console.error(error);
-			setViewError(error);
+			setViewError(
+				`Missing decryption keys. ${!isSender ? "Acknowledge the file first." : ""}`,
+			);
 			return;
 		}
 
@@ -154,12 +122,9 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 	useEffect(() => {
 		if (!fileInfo || fileData || viewFile.isPending) return;
 
-		// Check if we have the required keys based on whether user is sender or receiver
-		const hasRequiredKeys = isSender
-			? fileInfo.senderKemCiphertext && fileInfo.senderEncryptedEncryptionKey
-			: fileInfo.kemCiphertext &&
-				fileInfo.encryptedEncryptionKey &&
-				fileInfo.acked;
+		// Server returns keys only when user can read (acked or sender)
+		const hasRequiredKeys =
+			fileInfo.kemCiphertext && fileInfo.encryptedEncryptionKey;
 
 		if (hasRequiredKeys) {
 			handleViewFile();
@@ -537,21 +502,18 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 					ref={containerRef}
 					className="overflow-auto bg-transparent flex items-center justify-center px-4 py-4 @md:px-8 @md:py-8 flex-1"
 				>
-					{(authLoading || fileLoading || viewFile.isPending) && (
+					{(fileLoading || viewFile.isPending) && (
 						<div className="flex items-center justify-center w-full h-full">
 							<Loader
 								text={
-									authLoading
-										? "Authenticating..."
-										: fileLoading
-											? "Preparing document..."
-											: "Loading document..."
+									fileLoading
+										? "Preparing document..."
+										: "Loading document..."
 								}
 							/>
 						</div>
 					)}
-					{!authLoading &&
-						!fileLoading &&
+					{!fileLoading &&
 						!viewFile.isPending &&
 						fileInfo &&
 						renderFileContent()}

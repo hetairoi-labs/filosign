@@ -1,7 +1,7 @@
 import { zHexString } from "@filosign/shared/zod";
 import { useQuery } from "@tanstack/react-query";
 import z from "zod";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useAuthedApi } from "../auth/useAuthedApi";
 
 export type FileInfo = {
 	pieceCid: string;
@@ -21,11 +21,12 @@ export type FileInfo = {
 };
 
 export function useFileInfo(args: { pieceCid: string | undefined }) {
-	const { api } = useFilosignContext();
+	const { data: api } = useAuthedApi();
 
 	return useQuery<FileInfo>({
 		queryKey: ["fsQ-file-info", args.pieceCid],
 		queryFn: async (): Promise<FileInfo> => {
+			if (!api) throw new Error("API not ready");
 			const response = await api.rpc.getSafe(
 				{
 					pieceCid: z.string(),
@@ -50,6 +51,6 @@ export function useFileInfo(args: { pieceCid: string | undefined }) {
 
 			return response.data as FileInfo;
 		},
-		enabled: !!args.pieceCid,
+		enabled: !!args.pieceCid && !!api,
 	});
 }

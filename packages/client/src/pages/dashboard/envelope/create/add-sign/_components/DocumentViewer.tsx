@@ -20,7 +20,7 @@ import { Button } from "@/src/lib/components/ui/button";
 import { cn } from "@/src/lib/utils/utils";
 import type { Document, SignatureField } from "../mock";
 
-const useDocumentDimensions = () => {
+export const useDocumentDimensions = () => {
 	const [isMobile, setIsMobile] = useState(false);
 
 	useEffect(() => {

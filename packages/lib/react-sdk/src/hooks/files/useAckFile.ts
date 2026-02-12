@@ -1,17 +1,19 @@
 import { computeCidIdentifier, eip712signature } from "@filosign/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import z from "zod";
+import { useAuthedApi } from "../auth/useAuthedApi";
 import { useFilosignContext } from "../../context/FilosignProvider";
 
 export function useAckFile() {
-	const { contracts, wallet, api } = useFilosignContext();
+	const { data: api } = useAuthedApi();
+	const { contracts, wallet } = useFilosignContext();
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: async (args: { pieceCid: string }) => {
 			const { pieceCid } = args;
 
-			if (!contracts || !wallet) {
+			if (!api || !contracts || !wallet) {
 				throw new Error("not connected");
 			}
 

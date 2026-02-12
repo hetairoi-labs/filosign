@@ -1,5 +1,4 @@
 import {
-	useAuthedApi,
 	useFileInfo,
 	useSignFile,
 	useViewFile,
@@ -24,9 +23,6 @@ export default function SignDocumentPage() {
 	const search = useSearch({ from: "/dashboard/document/sign" });
 	const pieceCid = search.pieceCid;
 
-	// Ensure API is authenticated before making requests
-	const { data: authedApi, isLoading: authLoading } = useAuthedApi();
-
 	// Check if pieceCid is provided
 	if (!pieceCid) {
 		return (
@@ -44,14 +40,11 @@ export default function SignDocumentPage() {
 		);
 	}
 
-	// Only fetch file info after authentication is complete
 	const {
 		data: file,
 		isLoading: fileLoading,
 		error: fileError,
-	} = useFileInfo({
-		pieceCid: authedApi ? pieceCid : undefined,
-	});
+	} = useFileInfo({ pieceCid });
 
 	const viewFile = useViewFile();
 	const signFile = useSignFile();
@@ -89,29 +82,8 @@ export default function SignDocumentPage() {
 
 	// Memoize the handleViewFile function
 	const handleViewFile = useCallback(async () => {
-		console.log("handleViewFile called with file:", {
-			pieceCid: file?.pieceCid,
-			acked: file?.acked,
-			hasKemCiphertext: !!file?.kemCiphertext,
-			hasEncryptedKey: !!file?.encryptedEncryptionKey,
-			status: file?.status,
-		});
-
 		if (!file || !file.kemCiphertext || !file.encryptedEncryptionKey) {
-			const error = "Missing decryption keys";
-			console.error(error, {
-				hasFile: !!file,
-				hasKemCiphertext: !!file?.kemCiphertext,
-				hasEncryptedKey: !!file?.encryptedEncryptionKey,
-			});
-			setViewError(error);
-			return;
-		}
-
-		if (!file.acked) {
-			const error = "File must be acknowledged before viewing";
-			console.error(error);
-			setViewError(error);
+			setViewError("Missing decryption keys. Acknowledge the file first.");
 			return;
 		}
 
@@ -147,7 +119,6 @@ export default function SignDocumentPage() {
 	useEffect(() => {
 		if (
 			file &&
-			file.acked &&
 			file.kemCiphertext &&
 			file.encryptedEncryptionKey &&
 			!fileData &&
@@ -413,10 +384,10 @@ export default function SignDocumentPage() {
 	};
 
 	// Show loader while authenticating or loading file
-	if (authLoading || fileLoading) {
+	if (fileLoading) {
 		return (
 			<Loader
-				text={authLoading ? "Authenticating..." : "Preparing document..."}
+				text="Preparing document..."
 			/>
 		);
 	}
@@ -443,8 +414,8 @@ export default function SignDocumentPage() {
 		);
 	}
 
-	// Check if file needs to be acknowledged first
-	if (!file.acked) {
+	// Server returns kemCiphertext/encryptedEncryptionKey only when user can read (acked or sender)
+	if (!file.kemCiphertext || !file.encryptedEncryptionKey) {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-screen bg-background p-8">
 				<FileTextIcon className="h-16 w-16 text-amber-500 mb-4" />
