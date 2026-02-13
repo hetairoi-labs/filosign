@@ -1,8 +1,6 @@
 import { existsSync, statSync } from "node:fs";
 import path from "node:path";
 import { serve } from "bun";
-import hono from "./api";
-import { closeDatabase } from "./api/lib/db";
 import { env } from "./env";
 import { getMimeType } from "./utils";
 
@@ -17,10 +15,6 @@ const server = serve({
 				version: "v1.0.0",
 			}),
 		),
-		// CATCHES ONLY GET REQUEST
-		"/api/v1/*": (req) => {
-			return hono.fetch(req);
-		},
 
 		"/dilithium.wasm": () => {
 			const filePath = path.join(
@@ -124,10 +118,6 @@ const server = serve({
 	},
 
 	fetch(req) {
-		if (req.url.includes("/api/v1")) {
-			return hono.fetch(req);
-		}
-
 		const url = new URL(req.url);
 		const pathname = url.pathname;
 
@@ -197,18 +187,3 @@ const server = serve({
 
 console.log(`Prod server running at ${server.url} 🚀`);
 console.log(`BUN VERSION: ${Bun.version}`);
-
-// Handle graceful shutdown
-process.on("SIGINT", () => {
-	console.log("\nShutting down server and closing database...");
-	closeDatabase();
-	server.stop();
-	process.exit(0);
-});
-
-process.on("SIGTERM", () => {
-	console.log("\nShutting down server and closing database...");
-	closeDatabase();
-	server.stop();
-	process.exit(0);
-});
