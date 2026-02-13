@@ -5,19 +5,19 @@ import z from "zod";
 import { idb } from "../../../utils/idb";
 import { useFilosignContext } from "../../context/FilosignProvider";
 
-type ViewFileArgs = {
+export type ViewFileArgs = {
 	pieceCid: string;
 	kemCiphertext: string;
 	encryptedEncryptionKey: string;
 	status: "s3" | "foc";
 };
 
-type ViewFileMetadata = {
+export type ViewFileMetadata = {
 	name: string;
 	mimeType?: string;
 };
 
-type ViewFileResult = {
+export type ViewFileResult = {
 	fileBytes: Uint8Array;
 	sender: `0x${string}`;
 	timestamp: number;
@@ -30,7 +30,6 @@ export function useViewFile() {
 	return useMutation<ViewFileResult, Error, ViewFileArgs>({
 		mutationFn: async (args) => {
 			const { pieceCid, kemCiphertext, encryptedEncryptionKey, status } = args;
-			console.log("asdasd", args);
 
 			if (!contracts || !wallet || !runtime) {
 				throw new Error("not conected iido");

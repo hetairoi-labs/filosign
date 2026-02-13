@@ -1,4 +1,9 @@
-import { useFileInfo, useSignFile, useViewFile } from "@filosign/react/hooks";
+import {
+	useFileInfo,
+	useSignFile,
+	useViewFile,
+	type ViewFileResult,
+} from "@filosign/react/hooks";
 import {
 	ArrowLeftIcon,
 	DownloadIcon,
@@ -19,23 +24,6 @@ export default function SignDocumentPage() {
 	const search = useSearch({ from: "/dashboard/document/sign" });
 	const pieceCid = search.pieceCid;
 
-	// Check if pieceCid is provided
-	if (!pieceCid) {
-		return (
-			<div className="flex flex-col items-center justify-center min-h-screen p-8">
-				<FileTextIcon className="h-16 w-16 text-muted-foreground mb-4" />
-				<h2 className="text-xl font-semibold mb-2">Invalid Request</h2>
-				<p className="text-muted-foreground mb-4">
-					No document specified for signing.
-				</p>
-				<Button onClick={() => navigate({ to: "/dashboard" })}>
-					<ArrowLeftIcon className="h-4 w-4 mr-2" />
-					Back to Dashboard
-				</Button>
-			</div>
-		);
-	}
-
 	const {
 		data: file,
 		isLoading: fileLoading,
@@ -46,35 +34,9 @@ export default function SignDocumentPage() {
 	const signFile = useSignFile();
 	const [zoom, setZoom] = useState(100);
 	const [viewError, setViewError] = useState<string | null>(null);
-	const [fileData, setFileData] = useState<{
-		fileBytes: Uint8Array;
-		metadata: { name: string; mimeType: string };
-		sender: string;
-		timestamp: number;
-		signaturePositionOffset: { top: number; left: number };
-	} | null>(null);
+	const [fileData, setFileData] = useState<ViewFileResult | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const documentRef = useRef<HTMLDivElement>(null);
-	const [documentDimensions, setDocumentDimensions] = useState({
-		width: 600,
-		height: 800,
-	});
-	const [isMobile, setIsMobile] = useState(false);
-
-	// Detect mobile/desktop and set responsive dimensions
-	useEffect(() => {
-		const checkMobile = () => {
-			const mobile = window.innerWidth < 768;
-			setIsMobile(mobile);
-			setDocumentDimensions(
-				mobile ? { width: 300, height: 400 } : { width: 600, height: 800 },
-			);
-		};
-
-		checkMobile();
-		window.addEventListener("resize", checkMobile);
-		return () => window.removeEventListener("resize", checkMobile);
-	}, []);
 
 	// Memoize the handleViewFile function
 	const handleViewFile = useCallback(async () => {
@@ -85,20 +47,12 @@ export default function SignDocumentPage() {
 
 		try {
 			setViewError(null);
-			console.log("Starting file decryption...");
 			const result = await viewFile.mutateAsync({
 				pieceCid: file.pieceCid,
 				kemCiphertext: file.kemCiphertext,
 				encryptedEncryptionKey: file.encryptedEncryptionKey,
 				status: file.status as "s3" | "foc",
 			});
-			console.log("File decryption successful:", {
-				hasFileBytes: !!result?.fileBytes,
-				bytesLength: result?.fileBytes?.length,
-				metadata: result?.metadata,
-			});
-
-			// Store the decrypted file data in state
 			setFileData(result);
 		} catch (error) {
 			console.error("Failed to load file:", error);
@@ -173,46 +127,6 @@ export default function SignDocumentPage() {
 		return `${address.slice(0, 6)}...${address.slice(-4)}`;
 	};
 
-	// Render signature indicator overlay
-	const renderSignatureIndicator = useCallback(() => {
-		if (!fileData?.signaturePositionOffset) return null;
-
-		const { top, left } = fileData.signaturePositionOffset;
-		const fieldWidth = isMobile ? 90 : 130;
-		const fieldHeight = isMobile ? 32 : 42;
-
-		return (
-			<div
-				className="absolute border-2 border-dashed rounded-md bg-primary/20 hover:bg-primary/25 cursor-pointer select-none flex justify-center items-center gap-1.5 z-50 pointer-events-auto"
-				style={{
-					left: `${left}px`,
-					top: `${top}px`,
-					width: `${fieldWidth}px`,
-					height: `${fieldHeight}px`,
-				}}
-				onClick={handleSignFile}
-				onKeyDown={(e) => {
-					if (e.key === "Enter" || e.key === " ") {
-						handleSignFile();
-					}
-				}}
-				role="button"
-				tabIndex={0}
-				aria-label="Sign document"
-			>
-				<SignatureIcon
-					className={isMobile ? "size-4" : "size-6"}
-					weight="fill"
-				/>
-				<span
-					className={`font-medium text-primary whitespace-nowrap ${isMobile ? "text-[10px]" : "text-xs"}`}
-				>
-					Click to Sign
-				</span>
-			</div>
-		);
-	}, [fileData?.signaturePositionOffset, isMobile, handleSignFile]);
-
 	const renderFileContent = () => {
 		// Show error if decryption failed
 		if (viewError) {
@@ -270,8 +184,8 @@ export default function SignDocumentPage() {
 					<div
 						className="relative bg-white border shadow-lg border-border"
 						style={{
-							width: documentDimensions.width,
-							height: documentDimensions.height,
+							width: 600,
+							height: 800,
 							transform: `scale(${zoom / 100})`,
 							transformOrigin: "center",
 						}}
@@ -282,7 +196,6 @@ export default function SignDocumentPage() {
 							className="absolute inset-0 w-full h-full object-contain"
 							onLoad={() => URL.revokeObjectURL(imageUrl)}
 						/>
-						{renderSignatureIndicator()}
 					</div>
 				</div>
 			);
@@ -303,8 +216,8 @@ export default function SignDocumentPage() {
 					<div
 						className="relative bg-white border shadow-lg border-border"
 						style={{
-							width: documentDimensions.width,
-							height: documentDimensions.height,
+							width: 600,
+							height: 800,
 							transform: `scale(${zoom / 100})`,
 							transformOrigin: "center",
 						}}
@@ -317,10 +230,6 @@ export default function SignDocumentPage() {
 								setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
 							}}
 						/>
-						{/* Signature indicator overlay - only the indicator is clickable */}
-						<div className="absolute inset-0 pointer-events-none">
-							{renderSignatureIndicator()}
-						</div>
 					</div>
 				</div>
 			);
@@ -414,6 +323,23 @@ export default function SignDocumentPage() {
 				<p className="text-muted-foreground mb-4 text-center max-w-md">
 					This document must be acknowledged before it can be viewed and signed.
 					Please acknowledge it from your dashboard first.
+				</p>
+				<Button onClick={() => navigate({ to: "/dashboard" })}>
+					<ArrowLeftIcon className="h-4 w-4 mr-2" />
+					Back to Dashboard
+				</Button>
+			</div>
+		);
+	}
+
+	// Check if pieceCid is provided
+	if (!pieceCid) {
+		return (
+			<div className="flex flex-col items-center justify-center min-h-screen p-8">
+				<FileTextIcon className="h-16 w-16 text-muted-foreground mb-4" />
+				<h2 className="text-xl font-semibold mb-2">Invalid Request</h2>
+				<p className="text-muted-foreground mb-4">
+					No document specified for signing.
 				</p>
 				<Button onClick={() => navigate({ to: "/dashboard" })}>
 					<ArrowLeftIcon className="h-4 w-4 mr-2" />

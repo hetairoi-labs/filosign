@@ -139,8 +139,7 @@ export default function RecipientsSection({
 						<h4 className="flex items-center gap-3">
 							<UsersIcon
 								className={cn(
-									"size-5 text-muted-foreground group-hover/add-recipients:rotate-45 transition-transform duration-200",
-									isRecipientsOpen && "rotate-45",
+									"size-5 text-muted-foreground transition-transform duration-200",
 								)}
 							/>
 							Add recipients

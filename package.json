@@ -17,6 +17,7 @@
 		"client:build": "bun run --cwd packages/client build",
 		"client:start": "bun run --cwd packages/client start",
 		"server:start": "bun run --cwd packages/server index",
+		"client:test": "bun run --cwd test dev",
 		"test": "bun run --cwd packages/* test",
 		"lint": "bun run --cwd packages/* lint",
 		"check": "bunx biome check --write",

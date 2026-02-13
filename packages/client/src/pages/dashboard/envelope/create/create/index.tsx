@@ -141,7 +141,7 @@ export default function CreateEnvelopePage() {
 							damping: 25,
 							delay: 0.7,
 						}}
-						className="flex justify-end px-8 mx-auto max-w-4xl gap-4"
+						className="flex justify-end px-8 mb-8 mx-auto max-w-4xl gap-4"
 					>
 						<Button
 							type="button"
