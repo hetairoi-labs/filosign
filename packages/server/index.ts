@@ -4,13 +4,16 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { apiRouter } from "./api/routes/router";
 import env from "./env";
+import { startRedisSubscriber } from "./lib/events/bus";
+
+startRedisSubscriber()
+	.then(() => Bun.env.REDIS_URL && console.log("[REDIS] subscriber ready"))
+	.catch((e) => console.error("[REDIS] subscriber:", e));
 
 //@ts-expect-error
 BigInt.prototype.toJSON = function () {
 	return this.toString();
 };
-
-console.log(env.FRONTEND_URL);
 
 export const app = new Hono()
 	.use(logger())
@@ -27,4 +30,5 @@ export const app = new Hono()
 export default {
 	port: Bun.env.PORT ? parseInt(Bun.env.PORT, 10) : 30011,
 	fetch: app.fetch,
+	idleTimeout: 120,
 };

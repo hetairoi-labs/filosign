@@ -1,8 +1,8 @@
 import { computeCidIdentifier, eip712signature } from "@filosign/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import z from "zod";
-import { useAuthedApi } from "../auth/useAuthedApi";
 import { useFilosignContext } from "../../context/FilosignProvider";
+import { useAuthedApi } from "../auth/useAuthedApi";
 
 export function useAckFile() {
 	const { data: api } = useAuthedApi();

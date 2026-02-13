@@ -1,6 +1,8 @@
 import { eip712signature } from "@filosign/contracts";
 import { toHex, walletKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { z } from "zod";
+import { subscribeSSE, sseTopics } from "../../../utils/sse";
 import { idb } from "../../../utils/idb";
 import { useFilosignContext } from "../../context/FilosignProvider";
 import { useIsLoggedIn } from "./useIsLoggedIn";
@@ -66,10 +68,23 @@ export function useLogin() {
 					walletAddress: wallet.account.address,
 				};
 
-				await api.rpc.postSafe({}, "/users/profile", requestPayload);
-				console.log("keygen data registered");
+				const result = await api.rpc.postSafe(
+					{ txHash: z.string().optional() },
+					"/users/profile",
+					requestPayload,
+				);
 
 				await keyStore.secret.put("key-seed", new Uint8Array(keygenData.seed));
+
+				if (result.statusCode === 202 && result.data?.txHash) {
+					await subscribeSSE(
+						api.baseUrl,
+						[sseTopics.registration(result.data.txHash)],
+						{
+							matcher: (e) => e.payload?.status === "completed",
+						},
+					);
+				}
 			} else {
 				const [saltPin, saltSeed, saltChallenge, commitmentKem, commitmentSig] =
 					await contracts.FSKeyRegistry.read.keygenData([

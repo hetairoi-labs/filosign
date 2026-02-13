@@ -8,6 +8,9 @@
 		},
 		"./hooks": {
 			"default": "./hooks.ts"
+		},
+		"./sse": {
+			"default": "./utils/sse.ts"
 		}
 	},
 	"scripts": {},

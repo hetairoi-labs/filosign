@@ -4,6 +4,7 @@ import config from "../../config";
 import auth from "./auth";
 import files from "./files";
 import sharing from "./sharing";
+import subscriptions from "./subscriptions";
 import tx from "./tx";
 import users from "./users";
 import waitlist from "./waitlist";
@@ -25,6 +26,7 @@ export const apiRouter = new Hono()
 	})
 	.route("/auth", auth)
 	.route("/files", files)
+	.route("/subscriptions", subscriptions)
 	.route("/sharing", sharing)
 	.route("/users", users)
 	.route("/tx", tx)

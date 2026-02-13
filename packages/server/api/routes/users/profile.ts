@@ -128,12 +128,17 @@ export default new Hono()
 			return respond.err(ctx, "Failed to register keygen data", 500);
 		}
 
-		await processTransaction(txHash.data, {
+		processTransaction(txHash.data, {
 			encryptionPublicKey,
 			signaturePublicKey,
-		});
+		}).catch((e) => console.error("[profile] processTransaction:", e));
 
-		return respond.ok(ctx, {}, "Keygen data registered successfully", 200);
+		return respond.ok(
+			ctx,
+			{ txHash: txHash.data },
+			"Registration pending confirmation",
+			202,
+		);
 	})
 
 	.put("/", authenticated, async (ctx) => {

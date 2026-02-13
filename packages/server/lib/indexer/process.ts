@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { decodeEventLog, type Hash, isHex } from "viem";
 import db from "../db";
+import { publish, topics } from "../events/bus";
 import { evmClient, fsContracts } from "../evm";
 
 const { users, shareApprovals, shareRequests } = db.schema;
@@ -22,58 +23,72 @@ export async function processTransaction(
 		].includes(FSKeyRegistry.address.toLowerCase())
 	) {
 		for (const encodedLog of receipt.logs) {
-			const log = decodeEventLog({
-				abi: FSKeyRegistry.abi,
-				topics: encodedLog.topics,
-				data: encodedLog.data,
-			});
-			if (log.eventName === "KeygenDataRegistered") {
-				const { encryptionPublicKey, signaturePublicKey } = data;
-
-				if (
-					typeof encryptionPublicKey !== "string" ||
-					!isHex(encryptionPublicKey)
-				) {
-					throw new Error("Invalid encryption public key");
-				}
-				if (
-					typeof signaturePublicKey !== "string" ||
-					!isHex(signaturePublicKey)
-				) {
-					throw new Error("Invalid signature public key");
-				}
-
-				const keygenData = await FSKeyRegistry.read.keygenData([log.args.user]);
-
-				const [exists] = await db
-					.select()
-					.from(users)
-					.where(eq(users.walletAddress, log.args.user));
-				if (exists) continue;
-
-				try {
-					await db.insert(users).values({
-						walletAddress: log.args.user,
-						encryptionPublicKey,
-						signaturePublicKey,
-
-						lastActiveAt: new Date(),
-						keygenDataJson: {
-							saltPin: keygenData[0],
-							saltSeed: keygenData[1],
-							saltChallenge: keygenData[2],
-							commitmentKem: keygenData[3],
-							commitmentSig: keygenData[4],
-						},
-					});
-				} catch (error) {
-					console.error(`Error inserting user: ${error}`);
-					throw error;
-				}
+			if (
+				encodedLog.address?.toLowerCase() !==
+				FSKeyRegistry.address.toLowerCase()
+			) {
+				continue;
 			}
+			let log: { eventName: string; args: { user: `0x${string}` } };
+			try {
+				log = decodeEventLog({
+					abi: FSKeyRegistry.abi,
+					topics: encodedLog.topics,
+					data: encodedLog.data,
+				}) as typeof log;
+			} catch {
+				continue; // not our event
+			}
+			if (log.eventName !== "KeygenDataRegistered") continue;
+
+			const { encryptionPublicKey, signaturePublicKey } = data;
+
+			if (
+				typeof encryptionPublicKey !== "string" ||
+				!isHex(encryptionPublicKey)
+			) {
+				throw new Error("Invalid encryption public key");
+			}
+			if (
+				typeof signaturePublicKey !== "string" ||
+				!isHex(signaturePublicKey)
+			) {
+				throw new Error("Invalid signature public key");
+			}
+
+			const keygenData = await FSKeyRegistry.read.keygenData([log.args.user]);
+
+			const [exists] = await db
+				.select()
+				.from(users)
+				.where(eq(users.walletAddress, log.args.user));
+			if (exists) continue;
+
+			try {
+				await db.insert(users).values({
+					walletAddress: log.args.user,
+					encryptionPublicKey,
+					signaturePublicKey,
+
+					lastActiveAt: new Date(),
+					keygenDataJson: {
+						saltPin: keygenData[0],
+						saltSeed: keygenData[1],
+						saltChallenge: keygenData[2],
+						commitmentKem: keygenData[3],
+						commitmentSig: keygenData[4],
+					},
+				});
+			} catch (error) {
+				console.error(`Error inserting user: ${error}`);
+				throw error;
+			}
+			publish(topics.registration(txHash), {
+				status: "completed",
+				wallet: log.args.user,
+			});
 		}
 	}
-
 	if (
 		[
 			receipt.contractAddress?.toLowerCase(),

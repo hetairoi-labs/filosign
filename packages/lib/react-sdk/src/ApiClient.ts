@@ -37,6 +37,10 @@ export default class ApiClient {
 		return this._client;
 	}
 
+	get baseUrl() {
+		return this._baseUrl;
+	}
+
 	setJwt(authToken: string | null) {
 		if (authToken === null || authToken === undefined) {
 			this._authHeader = { Authorization: "Bearer null" };

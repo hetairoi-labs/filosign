@@ -1,5 +1,5 @@
 import { useIsRegistered, useLogin } from "@filosign/react/hooks";
-import { CaretRightIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, CircleNotchIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -75,6 +75,7 @@ export default function OnboardingSetPinPage() {
 
 	const currentPin = step === "enter" ? pin : confirmPin;
 	const isComplete = currentPin.length === 6;
+	const isLoading = login.isPending;
 	const isPinMismatch =
 		step === "confirm" && confirmPin.length === 6 && pin !== confirmPin;
 
@@ -115,6 +116,7 @@ export default function OnboardingSetPinPage() {
 										onChange={step === "enter" ? setPin : setConfirmPin}
 										length={6}
 										autoFocus={true}
+										disabled={isLoading}
 										onSubmit={handlePinSubmit}
 									/>
 								</div>
@@ -129,6 +131,7 @@ export default function OnboardingSetPinPage() {
 									<Button
 										variant="ghost"
 										onClick={handleBack}
+										disabled={isLoading}
 										className="flex-1"
 									>
 										Back
@@ -141,15 +144,27 @@ export default function OnboardingSetPinPage() {
 												handlePinSubmit();
 											}
 										}}
-										disabled={!isComplete}
+										disabled={!isComplete || isLoading}
 										className="flex-1 group"
 										variant="primary"
 									>
-										{step === "enter" ? "Continue" : "Confirm"}
-										<CaretRightIcon
-											className="transition-transform duration-200 size-4 group-hover:translate-x-1"
-											weight="bold"
-										/>
+										{isLoading ? (
+											<>
+												<CircleNotchIcon
+													className="size-4 animate-spin"
+													weight="bold"
+												/>
+												Registering...
+											</>
+										) : (
+											<>
+												{step === "enter" ? "Continue" : "Confirm"}
+												<CaretRightIcon
+													className="transition-transform duration-200 size-4 group-hover:translate-x-1"
+													weight="bold"
+												/>
+											</>
+										)}
 									</Button>
 								</div>
 							</CardContent>
