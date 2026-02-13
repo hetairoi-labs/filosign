@@ -5,9 +5,9 @@
 	"type": "module",
 	"scripts": {
 		"dev": "bunx --bun vite",
-		"build": "tsc -b && bunx --bun vite build",
+		"build": "bun check && tsc -b && bunx --bun vite build",
 		"preview": "vite preview",
-		"check": "clear && bunx biome check --write"
+		"check": "bunx biome check --write"
 	},
 	"dependencies": {
 		"@tailwindcss/vite": "^4.1.18",
