@@ -6,11 +6,46 @@ import { evmClient, fsContracts } from "../evm";
 
 const { users, shareApprovals, shareRequests } = db.schema;
 const { FSKeyRegistry, FSManager } = fsContracts;
+
+/** Retry waitForTransactionReceipt on Filecoin "null round" RPC errors */
+async function waitForReceiptWithRetry(txHash: Hash, maxRetries = 10) {
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		try {
+			return await evmClient.waitForTransactionReceipt({
+				hash: txHash,
+				retryCount: 6,
+				retryDelay: 5_000,
+			});
+		} catch (err) {
+			const msg =
+				err instanceof Error ? err.message : String(err);
+			const details =
+				typeof err === "object" && err !== null && "details" in err
+					? String((err as { details?: unknown }).details)
+					: "";
+			const isNullRound =
+				msg.includes("null round") ||
+				msg.includes("requested epoch") ||
+				details.includes("null round");
+			if (attempt < maxRetries && isNullRound) {
+				const delay = 15_000;
+				console.warn(
+					`[process] Filecoin null round, retry ${attempt}/${maxRetries} in ${delay / 1000}s`,
+				);
+				await new Promise((r) => setTimeout(r, delay));
+			} else {
+				throw err;
+			}
+		}
+	}
+	throw new Error(`Failed after ${maxRetries} retries`);
+}
+
 export async function processTransaction(
 	txHash: Hash,
 	data: Record<string, unknown>,
 ) {
-	const receipt = await evmClient.waitForTransactionReceipt({ hash: txHash });
+	const receipt = await waitForReceiptWithRetry(txHash);
 
 	if (!receipt) {
 		throw new Error(`Transaction receipt not found for hash: ${txHash}`);
