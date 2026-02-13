@@ -11,7 +11,6 @@ BigInt.prototype.toJSON = function () {
 };
 
 const allowedOrigins = [env.FRONTEND_URL].filter(Boolean);
-
 export const app = new Hono()
 	.use(logger())
 	.use(
