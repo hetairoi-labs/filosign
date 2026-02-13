@@ -30,7 +30,6 @@
 		"@tanstack/react-query": "^5.90.2"
 	},
 	"devDependencies": {
-		"@types/react": "^19.0.0",
-		"@tanstack/react-query": "^5.90.2"
+		"@types/react": "^19.0.0"
 	}
 }

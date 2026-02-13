@@ -2,20 +2,18 @@ import { CheckIcon, LightningIcon } from "@phosphor-icons/react";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
 import { Button } from "@/src/lib/components/ui/button";
-import { useApi } from "@/src/lib/hooks/use-api";
 
 export default function WaitlistNewSection() {
 	const [email, setEmail] = useState("");
 	const [isSubmitted, setIsSubmitted] = useState(false);
 	const [isDuplicate, setIsDuplicate] = useState(false);
-	const { joinWaitlist } = useApi();
 
 	const handleJoinWaitlist = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!email) return;
 
 		try {
-			await joinWaitlist.mutateAsync(email);
+			// await joinWaitlist.mutateAsync(email);
 			setIsSubmitted(true);
 			setIsDuplicate(false);
 			setEmail("");
@@ -91,13 +89,8 @@ export default function WaitlistNewSection() {
 										required
 										className="flex-1 rounded-lg border border-border bg-input px-4 py-3 text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring transition-all"
 									/>
-									<Button
-										type="submit"
-										disabled={joinWaitlist.isPending}
-										variant="secondary"
-										className="h-12"
-									>
-										{joinWaitlist.isPending ? "Joining..." : "Subscribe"}
+									<Button type="submit" variant="secondary" className="h-12">
+										Subscribe
 									</Button>
 								</motion.form>
 							) : (

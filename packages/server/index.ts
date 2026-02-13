@@ -10,12 +10,11 @@ BigInt.prototype.toJSON = function () {
 	return this.toString();
 };
 
-const allowedOrigins = [env.FRONTEND_URL].filter(Boolean);
 export const app = new Hono()
 	.use(logger())
 	.use(
 		cors({
-			origin: allowedOrigins,
+			origin: env.FRONTEND_URL,
 			allowHeaders: ["Content-Type", "Authorization"],
 			allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 			credentials: true,

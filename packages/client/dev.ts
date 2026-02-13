@@ -1,5 +1,4 @@
 import { serve } from "bun";
-import { closeDatabase } from "./api/lib/db";
 import html from "./src/index.html";
 
 const server = serve({
@@ -46,18 +45,3 @@ const server = serve({
 
 console.log(`Dev server running at ${server.url} 🚀`);
 console.log(`BUN VERSION: ${Bun.version}`);
-
-// Handle graceful shutdown
-process.on("SIGINT", () => {
-	console.log("\nShutting down server and closing database...");
-	closeDatabase();
-	server.stop();
-	process.exit(0);
-});
-
-process.on("SIGTERM", () => {
-	console.log("\nShutting down server and closing database...");
-	closeDatabase();
-	server.stop();
-	process.exit(0);
-});
