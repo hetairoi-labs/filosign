@@ -30,8 +30,19 @@ app.get("/", async (c) => {
 
 		stream.onAbort(() => {
 			for (const unsub of unsubscribes) unsub();
+			clearInterval(keepalive);
 			resolveClosed();
 		});
+
+		/** Keep proxy/load balancer from closing idle connection (504) */
+		const keepalive = setInterval(() => {
+			stream
+				.writeSSE({
+					data: JSON.stringify({ topic: "_", payload: { keepalive: true } }),
+					event: "message",
+				})
+				.catch(() => {});
+		}, 15_000);
 
 		for (const topic of topicList) {
 			unsubscribes.push(
