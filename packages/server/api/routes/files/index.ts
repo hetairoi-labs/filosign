@@ -5,7 +5,7 @@ import {
 	toBytes,
 } from "@filosign/crypto-utils/node";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { Hono } from "hono";
 import { getAddress } from "viem";
 import z from "zod";
@@ -230,7 +230,12 @@ export default new Hono()
 				fileParticipants,
 				eq(files.pieceCid, fileParticipants.filePieceCid),
 			)
-			.where(eq(fileParticipants.wallet, userWallet));
+			.where(
+				and(
+					eq(fileParticipants.wallet, userWallet),
+					ne(files.sender, userWallet),
+				),
+			);
 
 		return respond.ok(
 			ctx,

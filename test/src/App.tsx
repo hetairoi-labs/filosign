@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { hardhat } from "viem/chains";
-import Test from "./Test";
+import Test from "./Test.js";
 
 const wallet1 = createWalletClient({
 	chain: hardhat,

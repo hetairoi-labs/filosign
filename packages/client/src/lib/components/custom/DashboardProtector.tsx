@@ -59,7 +59,15 @@ export default function DashboardProtector({
 		) {
 			navigate({ to: "/" });
 		}
-	}, [ready, authenticated, isRegistered.data, isLoggedIn.data, navigate]);
+	}, [
+		ready,
+		authenticated,
+		isRegistered.data,
+		isLoggedIn.data,
+		navigate,
+		isLoggedIn.isPending,
+		isRegistered.isPending,
+	]);
 
 	const handlePinSubmit = async () => {
 		if (pin.length !== 6) return;
@@ -67,7 +75,6 @@ export default function DashboardProtector({
 		try {
 			setError("");
 			await login.mutateAsync({ pin });
-			// Invalidate both isRegistered and isLoggedIn queries to refetch with updated state
 			await queryClient.invalidateQueries({
 				queryKey: ["fsQ-is-registered", wallet?.account.address],
 			});
@@ -91,8 +98,6 @@ export default function DashboardProtector({
 		navigate({ to: "/" });
 	};
 
-	// Show loading while checking auth status
-	// Allow proceeding if user is registered and login check isn't actively failing
 	const shouldShowLoader =
 		!ready ||
 		isRegistered.isPending ||
@@ -102,7 +107,6 @@ export default function DashboardProtector({
 		return <Loader />;
 	}
 
-	// If PIN auth is required and not completed, show inline form
 	if (showPinAuth) {
 		return (
 			<div className="flex justify-center items-center min-h-screen">
@@ -181,6 +185,5 @@ export default function DashboardProtector({
 		);
 	}
 
-	// If all checks pass, render the protected content
 	return <>{children}</>;
 }

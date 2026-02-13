@@ -2,6 +2,8 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 ROOT_DIR="$(cd "$DIR/.." && pwd)"
 cd "$ROOT_DIR"
 
+clear
+
 while true; do
 cd "$ROOT_DIR/packages/contracts"
 
