@@ -1,5 +1,4 @@
 import { serve } from "bun";
-import hono from "./api";
 import { closeDatabase } from "./api/lib/db";
 import html from "./src/index.html";
 
@@ -12,17 +11,6 @@ const server = serve({
 	idleTimeout: 60,
 
 	routes: {
-		"/api": new Response(
-			JSON.stringify({
-				message: "Bun Server",
-				version: "v1.0.0",
-			}),
-		),
-		// CATCHES ONLY GET REQUESTS
-		"/api/v1/*": (req) => {
-			return hono.fetch(req);
-		},
-
 		"/static/*": (req) => {
 			const url = new URL(req.url);
 			const filePath = url.pathname.replace("/static/", "");
@@ -39,11 +27,6 @@ const server = serve({
 	},
 
 	fetch(req) {
-		// CATCHES ALL OTHER METHODS
-		if (req.url.includes("/api/v1")) {
-			return hono.fetch(req);
-		}
-
 		// Handle static files in fetch handler as well (for non-GET requests)
 		if (req.url.includes("/static/")) {
 			const url = new URL(req.url);
