@@ -1,9 +1,4 @@
-import {
-	PaintBrushIcon,
-	SignatureIcon,
-	TextAaIcon,
-	TrashIcon,
-} from "@phosphor-icons/react";
+import { SignatureIcon, TextAaIcon, TrashIcon } from "@phosphor-icons/react";
 import { Button } from "@/src/lib/components/ui/button";
 
 interface SignatureDrawProps {

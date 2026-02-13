@@ -18,5 +18,11 @@
 	},
 	"include": [
 		"./**/*.ts"
+	],
+	"exclude": [
+		"./**/*.test.ts",
+		"./**/*.spec.ts",
+		"./**/test.ts",
+		"./scripts/*"
 	]
 }

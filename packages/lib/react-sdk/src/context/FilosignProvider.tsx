@@ -50,7 +50,7 @@ type FilosignConfig = {
 };
 
 export function FilosignProvider(props: FilosignConfig) {
-	const { children, apiBaseUrl, wallet, wasm, loader: LoaderComponent } = props;
+	const { children, apiBaseUrl, wallet, wasm } = props;
 
 	const [contracts, setContracts] = useState<FilosignContracts | null>(null);
 

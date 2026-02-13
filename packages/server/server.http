@@ -1,0 +1,25 @@
+@baseUrl = http://localhost:30011
+@superPass = 12345
+
+###
+
+GET {{baseUrl}}/api/runtime
+
+###
+
+GET {{baseUrl}}/api/waitlist?email=kartik100100@gmail.com
+
+###
+
+POST {{baseUrl}}/api/waitlist
+Content-Type: application/json
+
+{
+	"email": "kartik100100@gmail.com"
+}
+
+
+###
+
+DELETE {{baseUrl}}/api/waitlist?email=kartik100100@gmail.com
+Super: {{superPass}}

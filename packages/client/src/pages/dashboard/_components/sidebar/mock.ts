@@ -1,10 +1,8 @@
 import {
 	ChartBarIcon,
-	FileIcon,
 	FileTextIcon,
 	GearIcon,
 	ShieldCheckIcon,
-	ShieldIcon,
 	SignatureIcon,
 	UsersIcon,
 } from "@phosphor-icons/react";

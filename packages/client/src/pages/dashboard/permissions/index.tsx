@@ -16,7 +16,6 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { useState } from "react";
 import { toast } from "sonner";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Badge } from "@/src/lib/components/ui/badge";
@@ -28,10 +27,9 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/src/lib/components/ui/card";
-import { Separator } from "@/src/lib/components/ui/separator";
 
 export default function PermissionsPage() {
-	const queryClient = useQueryClient();
+	const _queryClient = useQueryClient();
 
 	// Fetch all permission-related data
 	const sentRequests = useSentRequests();
@@ -40,7 +38,7 @@ export default function PermissionsPage() {
 	const allowedReceivers = useReceivableFrom();
 
 	// Mutations for managing permissions
-	const allowSharing = useApproveSender();
+	const _allowSharing = useApproveSender();
 	const cancelRequest = useCancelRequest();
 
 	const formatAddress = (address: string) => {
@@ -98,7 +96,7 @@ export default function PermissionsPage() {
 		try {
 			await cancelRequest.mutateAsync(requestId);
 			toast.success("Request cancelled");
-		} catch (error) {
+		} catch (_error) {
 			toast.error("Failed to cancel request");
 		}
 	};
@@ -110,7 +108,7 @@ export default function PermissionsPage() {
 				(req: any) => req.status === "PENDING" || req.status === "pending",
 			)
 		: [];
-	const allowedRequests = Array.isArray(receivedRequestsData)
+	const _allowedRequests = Array.isArray(receivedRequestsData)
 		? receivedRequestsData.filter(
 				(req: any) =>
 					req.status === "ACCEPTED" ||
@@ -119,7 +117,7 @@ export default function PermissionsPage() {
 					req.status === "allowed",
 			)
 		: [];
-	const rejectedRequests = Array.isArray(receivedRequestsData)
+	const _rejectedRequests = Array.isArray(receivedRequestsData)
 		? receivedRequestsData.filter(
 				(req: any) =>
 					req.status === "REJECTED" ||

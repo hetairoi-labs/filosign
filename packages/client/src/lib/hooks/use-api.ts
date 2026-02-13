@@ -21,25 +21,6 @@ export function useApi() {
 			},
 		}),
 
-		// Check if email exists
-		checkEmailExists: (email: string) =>
-			useQuery({
-				queryKey: ["waitlist", "check", email],
-				queryFn: async () => {
-					const result = await client.waitlist.check[":email"].$get({
-						param: { email },
-					});
-					const parsed = await result.json();
-
-					if (!parsed.success) {
-						throw new Error(parsed.error);
-					}
-
-					return parsed.data;
-				},
-				enabled: !!email, // Only run when email is provided
-			}),
-
 		// Join waitlist
 		joinWaitlist: useMutation({
 			mutationFn: async (email: string) => {
@@ -57,7 +38,7 @@ export function useApi() {
 
 				return parsed.data;
 			},
-			onSuccess: (res) => {
+			onSuccess: (_res) => {
 				toast.success("Successfully joined the waitlist!");
 				// Invalidate waitlist queries to refresh data
 				queryClient.invalidateQueries({ queryKey: ["waitlist"] });
@@ -83,7 +64,7 @@ export function useApi() {
 
 				return parsed.data;
 			},
-			onSuccess: (res) => {
+			onSuccess: (_res) => {
 				toast.success("Successfully removed from waitlist!");
 				// Invalidate waitlist queries to refresh data
 				queryClient.invalidateQueries({ queryKey: ["waitlist"] });

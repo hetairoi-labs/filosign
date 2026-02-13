@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 
 // Simplified form validation schema
@@ -63,7 +63,7 @@ export const useSectionState = (
 	// Check for changes only when form values change (not on every keystroke)
 	useEffect(() => {
 		const subscription = form.watch(
-			(value: any, { name }: { name?: string }) => {
+			(_value: unknown, { name }: { name?: string }) => {
 				if (!name) return; // Skip if no specific field changed
 
 				// Only check for changes in this section

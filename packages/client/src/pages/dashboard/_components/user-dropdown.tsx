@@ -6,7 +6,7 @@ import {
 	SignOutIcon,
 	UserIcon,
 } from "@phosphor-icons/react";
-import { usePrivy, useUser } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import * as React from "react";

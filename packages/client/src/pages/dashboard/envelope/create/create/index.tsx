@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 import { Form } from "@/src/lib/components/ui/form";
-import { Separator } from "@/src/lib/components/ui/separator";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import type { EnvelopeForm, StoredDocument } from "../types";
 import DocumentsSection from "./_components/DocumentUpload";

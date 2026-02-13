@@ -1,30 +1,19 @@
 import * as file from "./file";
 import * as shareCapability from "./sharing";
 import * as user from "./user";
+import * as waitlist from "./waitlist";
 
 // Combine all schema parts
 const schema = {
 	...shareCapability,
 	...user,
 	...file,
+	...waitlist,
 };
 
-// Re-export all named exports for direct imports
 export * from "./file";
 export * from "./sharing";
 export * from "./user";
+export * from "./waitlist";
 
 export default schema;
-
-// type DBSchema = typeof schema;
-// export type DB = {
-//   [K in keyof DBSchema as K extends `${infer Base}s` // Tables typically end with 's'
-//     ? Base // Standard table name (convert 'users' to 'user', etc.)
-//     : K extends UtilityFunctions // Exclude utility functions
-//     ? never
-//     : K]: K extends keyof DBSchema
-//     ? DBSchema[K] extends { $inferSelect: any }
-//       ? DBSchema[K]["$inferSelect"]
-//       : never
-//     : never;
-// };

@@ -1,8 +1,8 @@
 import { calibration, Synapse } from "@filoz/synapse-sdk";
 import { eq } from "drizzle-orm";
-import { privateKeyToAccount } from "viem/accounts";
-import { http } from "viem";
 import type { Address } from "viem";
+import { http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import env from "../../env";
 import db from "../db";
 import { tryCatch } from "../utils/tryCatch";

@@ -15,8 +15,6 @@ import {
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { Badge } from "@/src/lib/components/ui/badge";
-import { Button } from "@/src/lib/components/ui/button";
-import { cn } from "@/src/lib/utils";
 
 type ComparisonFeature = {
 	name: string;

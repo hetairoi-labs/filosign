@@ -48,7 +48,7 @@ export function FileTest() {
 	const [pieceCidToSign, setPieceCidToSign] = useState("");
 	const [signatureBytes, setSignatureBytes] = useState("");
 	const [encryptedEncryptionKey, setEncryptedEncryptionKey] = useState("");
-	const [signaturePosition, setSignaturePosition] = useState({
+	const [signaturePosition, _setSignaturePosition] = useState({
 		top: 10,
 		left: 20,
 	});

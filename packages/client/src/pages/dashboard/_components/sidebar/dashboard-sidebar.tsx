@@ -39,19 +39,17 @@ export function DashboardSidebar({
 	}, [state, sidebar.isOpen, setSidebar]);
 
 	return (
-		<>
-			<Sidebar className={className} collapsible="icon" {...props}>
-				<SidebarHeader>
-					<Logo
-						textClassName="text-foreground font-semibold"
-						isCollapsed={isCollapsed}
-					/>
-				</SidebarHeader>
-				<SidebarContent className="">
-					<NavMain items={sidebarData.navMain} />
-				</SidebarContent>
-				<SidebarRail />
-			</Sidebar>
-		</>
+		<Sidebar className={className} collapsible="icon" {...props}>
+			<SidebarHeader>
+				<Logo
+					textClassName="text-foreground font-semibold"
+					isCollapsed={isCollapsed}
+				/>
+			</SidebarHeader>
+			<SidebarContent className="">
+				<NavMain items={sidebarData.navMain} />
+			</SidebarContent>
+			<SidebarRail />
+		</Sidebar>
 	);
 }

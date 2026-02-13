@@ -1,8 +1,8 @@
 import { Client } from "pg";
-import env from "./env";
+import env from "../env";
 
 if (!env.DB_NAME.includes("test")) {
-	throw new Error("are y sure you want to drop the database ");
+	throw new Error("are y sure you want to drop the database");
 }
 
 const client = new Client({

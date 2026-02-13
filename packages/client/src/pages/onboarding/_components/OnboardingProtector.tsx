@@ -1,4 +1,4 @@
-import { useIsLoggedIn, useIsRegistered } from "@filosign/react/hooks";
+import { useIsRegistered } from "@filosign/react/hooks";
 import { usePrivy } from "@privy-io/react-auth";
 import { Navigate } from "@tanstack/react-router";
 

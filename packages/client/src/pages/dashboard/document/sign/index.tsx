@@ -1,8 +1,4 @@
-import {
-	useFileInfo,
-	useSignFile,
-	useViewFile,
-} from "@filosign/react/hooks";
+import { useFileInfo, useSignFile, useViewFile } from "@filosign/react/hooks";
 import {
 	ArrowLeftIcon,
 	DownloadIcon,
@@ -118,8 +114,7 @@ export default function SignDocumentPage() {
 	// Load file data when component mounts or file changes
 	useEffect(() => {
 		if (
-			file &&
-			file.kemCiphertext &&
+			file?.kemCiphertext &&
 			file.encryptedEncryptionKey &&
 			!fileData &&
 			!viewFile.isPending
@@ -385,11 +380,7 @@ export default function SignDocumentPage() {
 
 	// Show loader while authenticating or loading file
 	if (fileLoading) {
-		return (
-			<Loader
-				text="Preparing document..."
-			/>
-		);
+		return <Loader text="Preparing document..." />;
 	}
 
 	if (fileError || !file) {

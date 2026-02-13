@@ -1,10 +1,6 @@
 import {
 	CaretLeftIcon,
 	PaintBrushIcon,
-	PaletteIcon,
-	SignatureIcon,
-	TextAaIcon,
-	TrashIcon,
 	UploadIcon,
 } from "@phosphor-icons/react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -13,7 +9,6 @@ import { useEffect, useState } from "react";
 import { Image } from "@/src/lib/components/custom/Image";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
-import { Input } from "@/src/lib/components/ui/input";
 import {
 	Tabs,
 	TabsContent,
@@ -21,7 +16,6 @@ import {
 	TabsTrigger,
 } from "@/src/lib/components/ui/tabs";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
-import SignatureChoose from "./_components/SignatureChoose";
 import SignatureDialog from "./_components/SignatureDialog";
 import SignatureDraw from "./_components/SignatureDraw";
 import SignatureUpload from "./_components/SignatureUpload";
@@ -59,7 +53,7 @@ export default function CreateNewSignaturePage({
 	}, [firstName, lastName]);
 
 	// Tab state
-	const [activeTab, setActiveTab] = useState("choose");
+	const [_activeTab, setActiveTab] = useState("choose");
 
 	// Dialog states
 	const [isSignatureDialogOpen, setIsSignatureDialogOpen] = useState(false);
@@ -97,7 +91,7 @@ export default function CreateNewSignaturePage({
 	};
 
 	// Handle signature selection from options
-	const handleSignatureSelection = (selectedSignatureId: string) => {
+	const _handleSignatureSelection = (selectedSignatureId: string) => {
 		setSignatureData(selectedSignatureId);
 		setInitialsData(initials);
 		setSelectedSignatureId(selectedSignatureId);
@@ -119,7 +113,7 @@ export default function CreateNewSignaturePage({
 	};
 
 	// Calculate if save button should be disabled for each tab
-	const isChooseDisabled =
+	const _isChooseDisabled =
 		!selectedSignatureId ||
 		!firstName.trim() ||
 		!lastName.trim() ||

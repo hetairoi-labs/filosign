@@ -20,13 +20,8 @@ import { tryCatch } from "@/lib/utils/tryCatch";
 const { FSFileRegistry } = fsContracts;
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
 
-const {
-	files,
-	fileAcknowledgements,
-	fileParticipants,
-	fileSignatures,
-	users,
-} = db.schema;
+const { files, fileAcknowledgements, fileParticipants, fileSignatures, users } =
+	db.schema;
 
 export default new Hono()
 	.post("/upload/start", authenticated, async (ctx) => {
@@ -195,7 +190,10 @@ export default new Hono()
 					});
 			})
 			.catch((err) => {
-				console.warn("Filecoin addPieces failed (file remains in S3):", err?.message ?? err);
+				console.warn(
+					"Filecoin addPieces failed (file remains in S3):",
+					err?.message ?? err,
+				);
 			});
 
 		return respond.ok(ctx, {}, "File uploaded to filecoin warmstorage", 201);

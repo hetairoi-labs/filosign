@@ -1,14 +1,12 @@
 import {
 	AlienIcon,
 	AtomIcon,
-	BankIcon,
 	BuildingsIcon,
 	CoinIcon,
 	CubeIcon,
 	DatabaseIcon,
 	GlobeHemisphereWestIcon,
 	HexagonIcon,
-	ShieldCheckIcon,
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { cn } from "@/src/lib/utils";

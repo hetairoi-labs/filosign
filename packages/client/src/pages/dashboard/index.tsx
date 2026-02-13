@@ -1,8 +1,6 @@
-import { PlusIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { formatEther } from "viem";
 import { useBalance } from "wagmi";
 import { formatBalance } from "@/api/lib/utils/utils";
 import { Image } from "@/src/lib/components/custom/Image";

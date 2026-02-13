@@ -506,9 +506,7 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 						<div className="flex items-center justify-center w-full h-full">
 							<Loader
 								text={
-									fileLoading
-										? "Preparing document..."
-										: "Loading document..."
+									fileLoading ? "Preparing document..." : "Loading document..."
 								}
 							/>
 						</div>

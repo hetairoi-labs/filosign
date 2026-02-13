@@ -1,7 +1,4 @@
-import { FileTextIcon, PlusIcon } from "@phosphor-icons/react";
-import { Link } from "@tanstack/react-router";
 import Logo from "@/src/lib/components/custom/Logo";
-import { Button } from "@/src/lib/components/ui/button";
 import { SidebarTrigger } from "@/src/lib/components/ui/sidebar";
 import { NotificationsPopover } from "./notifications-popover";
 import { UserDropdown } from "./user-dropdown";

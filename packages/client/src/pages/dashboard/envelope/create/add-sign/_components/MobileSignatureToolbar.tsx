@@ -8,7 +8,6 @@ import {
 	UserIcon,
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
-import { Button } from "@/src/lib/components/ui/button";
 import { cn } from "@/src/lib/utils/utils";
 import type { SignatureField } from "../mock";
 

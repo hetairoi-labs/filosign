@@ -1,7 +1,4 @@
-import {
-	useProfilesByAddresses,
-	useSendFile,
-} from "@filosign/react/hooks";
+import { useProfilesByAddresses, useSendFile } from "@filosign/react/hooks";
 import { useNavigate } from "@tanstack/react-router";
 import React, { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -9,7 +6,9 @@ import type { Address } from "viem";
 
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { cn } from "@/src/lib/utils/utils";
-import DocumentViewer, { useDocumentDimensions } from "./_components/DocumentViewer";
+import DocumentViewer, {
+	useDocumentDimensions,
+} from "./_components/DocumentViewer";
 import Header from "./_components/Header";
 import MobileSignatureToolbar from "./_components/MobileSignatureToolbar";
 import SignatureFieldsSidebar from "./_components/SignatureFieldsSidebar";
@@ -26,32 +25,39 @@ export default function AddSignaturePage() {
 	const sendFile = useSendFile();
 
 	const recipientAddresses = useMemo(
-		() =>
-			createForm?.recipients?.map((r) => r.walletAddress as Address) ?? [],
+		() => createForm?.recipients?.map((r) => r.walletAddress as Address) ?? [],
 		[createForm?.recipients],
 	);
-	const {
-		data: recipientProfilesMap,
-		isLoading: recipientProfilesLoading,
-	} = useProfilesByAddresses(
-		recipientAddresses.length > 0 ? recipientAddresses : undefined,
-	);
+	const { data: recipientProfilesMap, isLoading: recipientProfilesLoading } =
+		useProfilesByAddresses(
+			recipientAddresses.length > 0 ? recipientAddresses : undefined,
+		);
 
 	// Build recipient + profile map for template
 	const recipientProfilesMapWithRecipient = useMemo(() => {
 		const map = new Map<
 			Address,
 			{
-				recipient: { name: string; email: string; walletAddress: string; role: string };
+				recipient: {
+					name: string;
+					email: string;
+					walletAddress: string;
+					role: string;
+				};
 				profile: { encryptionPublicKey: string; [key: string]: unknown };
 			}
 		>();
 		createForm?.recipients?.forEach((recipient) => {
-			const profile = recipientProfilesMap?.get(recipient.walletAddress as Address);
+			const profile = recipientProfilesMap?.get(
+				recipient.walletAddress as Address,
+			);
 			if (profile) {
 				map.set(recipient.walletAddress as Address, {
 					recipient,
-					profile: profile as { encryptionPublicKey: string; [key: string]: unknown },
+					profile: profile as {
+						encryptionPublicKey: string;
+						[key: string]: unknown;
+					},
 				});
 			}
 		});
@@ -223,8 +229,7 @@ export default function AddSignaturePage() {
 						const signatureField =
 							documentSignatures[signerIndex] || documentSignatures[0];
 						// encodeFileData expects percentages (0-100 exclusive); convert from viewer pixels
-						const clamp = (v: number) =>
-							Math.max(0.01, Math.min(99.99, v));
+						const clamp = (v: number) => Math.max(0.01, Math.min(99.99, v));
 						const signaturePosition: [number, number, number, number] =
 							signatureField
 								? [

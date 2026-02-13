@@ -1,4 +1,4 @@
-import path from "path";
+import path from "node:path";
 
 // Helper function to get MIME type based on file extension
 export const getMimeType = (filePath: string): string => {

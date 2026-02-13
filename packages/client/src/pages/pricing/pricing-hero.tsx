@@ -11,7 +11,7 @@ interface MarqueeProps extends React.HTMLAttributes<HTMLDivElement> {
 	repeat?: number;
 }
 
-const Marquee = ({
+const _Marquee = ({
 	className,
 	reverse,
 	children,

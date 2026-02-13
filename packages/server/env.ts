@@ -11,6 +11,7 @@ const envKeys = [
 	"DB_NAME",
 	"FRONTEND_URL",
 	"RUNTIME_CHAIN_ID",
+	"SUPER_PASS",
 ] as const;
 
 type ENV = Record<(typeof envKeys)[number], string>;

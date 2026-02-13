@@ -25,6 +25,14 @@
 			}
 		}
 	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		},
+		"formatter": {
+			"enabled": true
+		}
+	},
 	"javascript": {
 		"formatter": {
 			"quoteStyle": "double"

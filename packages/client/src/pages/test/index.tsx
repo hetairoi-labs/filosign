@@ -9,7 +9,6 @@ import {
 	EyeIcon,
 	FileIcon,
 	KeyIcon,
-	PaperPlaneIcon,
 	UserCheckIcon,
 	UserIcon,
 	WalletIcon,

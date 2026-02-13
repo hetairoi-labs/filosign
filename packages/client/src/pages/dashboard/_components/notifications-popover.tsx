@@ -369,9 +369,7 @@ function ReceivedFileNotification({
 	}
 
 	// Recipients have kemCiphertext/encryptedEncryptionKey only after acking; sender always has them
-	const isAcknowledged = !!(
-		file.kemCiphertext && file.encryptedEncryptionKey
-	);
+	const isAcknowledged = !!(file.kemCiphertext && file.encryptedEncryptionKey);
 	const hasSignatures = file.signatures && file.signatures.length > 0;
 
 	const handleSignDocument = () => {

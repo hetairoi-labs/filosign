@@ -1,1 +1,0 @@
-export { default, type ProfileType } from "./profile.route";

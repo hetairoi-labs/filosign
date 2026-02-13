@@ -7,14 +7,12 @@ import {
 import { withPageErrorBoundary } from "@/src/lib/components/errors/PageErrorBoundary";
 import DashboardProtector from "../lib/components/custom/DashboardProtector";
 import { NotFound } from "../lib/components/custom/NotFound";
-import { useAnalytics } from "../lib/hooks/use-analytics";
 import AboutPage from "./about";
 import BlogPage from "./blog";
 import BlogPostPage from "./blog/post";
 import ChangelogPage from "./changelog";
 import ConnectionsPage from "./dashboard/connections";
 import DocumentAllPage from "./dashboard/document/all";
-import DocumentFolderPage from "./dashboard/document/folder/$folderId";
 import SignDocumentPage from "./dashboard/document/sign";
 import AddSignaturePage from "./dashboard/envelope/create/add-sign";
 import CreateEnvelopePage from "./dashboard/envelope/create/create";
@@ -33,10 +31,7 @@ import PricingPage from "./pricing";
 import TestPage from "./test";
 
 const rootRoute = createRootRoute({
-	component: () => {
-		useAnalytics();
-		return <Outlet />;
-	},
+	component: () => <Outlet />,
 });
 
 const indexRoute = createRoute({
@@ -150,18 +145,6 @@ const dashboardDocumentAllRoute = createRoute({
 		return (
 			<DashboardProtector>
 				{withPageErrorBoundary(DocumentAllPage)({})}
-			</DashboardProtector>
-		);
-	},
-});
-
-const dashboardDocumentFolderRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/dashboard/document/folder/$folderId",
-	component: function DocumentFolder() {
-		return (
-			<DashboardProtector>
-				{withPageErrorBoundary(DocumentFolderPage)({})}
 			</DashboardProtector>
 		);
 	},
@@ -302,7 +285,6 @@ const routeTree = rootRoute.addChildren([
 	permissionsRoute,
 	connectionsRoute,
 	dashboardDocumentAllRoute,
-	dashboardDocumentFolderRoute,
 	signDocumentRoute,
 	createEnvelopeRoute,
 	addSignatureRoute,

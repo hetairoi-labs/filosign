@@ -1,20 +1,12 @@
 import {
-	ArrowRightIcon,
-	CheckIcon,
-	ClockIcon,
-	FileTextIcon,
 	GlobeIcon,
 	HardDrivesIcon,
 	InfinityIcon,
 	LightningIcon,
-	PenNibIcon,
-	ShareNetworkIcon,
-	ShieldCheckIcon,
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import type { ReactNode } from "react";
 import { Image } from "@/src/lib/components/custom/Image";
-import { Button } from "@/src/lib/components/ui/button";
 
 interface BentoCardProps {
 	imageSrc: string;

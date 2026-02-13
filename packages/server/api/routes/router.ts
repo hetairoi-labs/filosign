@@ -6,6 +6,13 @@ import files from "./files";
 import sharing from "./sharing";
 import tx from "./tx";
 import users from "./users";
+import waitlist from "./waitlist";
+
+type Runtime = {
+	uptime: number;
+	serverAddressSynapse: string;
+	chain: Chain;
+};
 
 export const apiRouter = new Hono()
 	.get("/runtime", (ctx) => {
@@ -20,10 +27,5 @@ export const apiRouter = new Hono()
 	.route("/files", files)
 	.route("/sharing", sharing)
 	.route("/users", users)
-	.route("/tx", tx);
-
-type Runtime = {
-	uptime: number;
-	serverAddressSynapse: string;
-	chain: Chain;
-};
+	.route("/tx", tx)
+	.route("/waitlist", waitlist);
