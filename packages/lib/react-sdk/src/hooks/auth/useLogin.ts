@@ -1,3 +1,4 @@
+import { eip712signature } from "@filosign/contracts";
 import { toHex, walletKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { idb } from "../../../utils/idb";
@@ -33,22 +34,40 @@ export function useLogin() {
 					dl: wasm.dilithium,
 				});
 
-				const tx = await contracts.FSKeyRegistry.write.registerKeygenData([
-					keygenData.saltPin,
-					keygenData.saltSeed,
-					keygenData.saltChallenge,
-					keygenData.commitmentKem,
-					keygenData.commitmentSig,
-				]);
-
-				const success = await api.rpc.tx(tx, {
-					encryptionPublicKey: toHex(keygenData.kemKeypair.publicKey),
-					signaturePublicKey: toHex(keygenData.sigKeypair.publicKey),
+				const signature = await eip712signature(contracts, "FSKeyRegistry", {
+					types: {
+						RegisterKeygenData: [
+							{ name: "salt_pin", type: "bytes16" },
+							{ name: "salt_seed", type: "bytes16" },
+							{ name: "salt_challenge", type: "bytes16" },
+							{ name: "commitment_kyber_pk", type: "bytes20" },
+							{ name: "commitment_dilithium_pk", type: "bytes20" },
+						],
+					},
+					primaryType: "RegisterKeygenData",
+					message: {
+						salt_pin: keygenData.saltPin,
+						salt_seed: keygenData.saltSeed,
+						salt_challenge: keygenData.saltChallenge,
+						commitment_kyber_pk: keygenData.commitmentKem,
+						commitment_dilithium_pk: keygenData.commitmentSig,
+					},
 				});
 
-				if (!success) {
-					throw new Error("Failed to register keygen data");
-				}
+				const requestPayload = {
+					signature,
+					saltPin: keygenData.saltPin,
+					saltSeed: keygenData.saltSeed,
+					saltChallenge: keygenData.saltChallenge,
+					commitmentKem: keygenData.commitmentKem,
+					commitmentSig: keygenData.commitmentSig,
+					encryptionPublicKey: toHex(keygenData.kemKeypair.publicKey),
+					signaturePublicKey: toHex(keygenData.sigKeypair.publicKey),
+					walletAddress: wallet.account.address,
+				};
+
+				await api.rpc.postSafe({}, "/users/profile", requestPayload);
+				console.log("keygen data registered");
 
 				await keyStore.secret.put("key-seed", new Uint8Array(keygenData.seed));
 			} else {

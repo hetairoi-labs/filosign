@@ -43,7 +43,10 @@ export function computeCidIdentifier(pieceCid: string) {
 
 export async function eip712signature(
 	contracts: FilosignContracts,
-	contractName: keyof Pick<FilosignContracts, "FSFileRegistry">,
+	contractName: keyof Pick<
+		FilosignContracts,
+		"FSFileRegistry" | "FSKeyRegistry"
+	>,
 	args: Omit<SignTypedDataParameters, "domain" | "privateKey">,
 ) {
 	// const domain = {

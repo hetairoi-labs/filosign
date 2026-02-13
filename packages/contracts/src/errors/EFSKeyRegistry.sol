@@ -6,3 +6,5 @@ error InvalidSaltSeed();
 error InvalidCommitmentKyberPk();
 error InvalidCommitmentDilithiumPk();
 error DataAlreadyRegistered();
+error InvalidRegistrantSignature();
+error InvalidServer();

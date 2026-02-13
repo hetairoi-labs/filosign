@@ -40,7 +40,9 @@ export function useSendFile() {
 			const timestamp = Math.floor(Date.now() / 1000);
 
 			if (!contracts || !wallet || !user) {
-				throw new Error("Not connected: contracts, wallet, and profile required");
+				throw new Error(
+					"Not connected: contracts, wallet, and profile required",
+				);
 			}
 
 			const data = encodeFileData({

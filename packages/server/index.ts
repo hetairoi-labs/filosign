@@ -10,6 +10,8 @@ BigInt.prototype.toJSON = function () {
 	return this.toString();
 };
 
+console.log(env.FRONTEND_URL);
+
 export const app = new Hono()
 	.use(logger())
 	.use(

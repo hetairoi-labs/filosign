@@ -14,7 +14,9 @@ interface IFSKeyRegistry {
 
     function keygenData(address key) external view returns (KeygenData memory);
     function publicKeys(address key) external view returns (bytes32);
+    function manager() external view returns (address);
     event KeygenDataRegistered();
     function isRegistered(address user_) external view returns (bool);
-    function registerKeygenData(bytes16 salt_pin_, bytes16 salt_seed_, bytes16 salt_challenge_, bytes20 commitment_kyber_pk_, bytes20 commitment_dilithium_pk_) external;
+    function registerKeygenData(bytes16 salt_pin_, bytes16 salt_seed_, bytes16 salt_challenge_, bytes20 commitment_kyber_pk_, bytes20 commitment_dilithium_pk_, bytes calldata signature_, address walletAddress_) external;
+    function validateKeygenDataRegistrationSignature(bytes16 salt_pin_, bytes16 salt_seed_, bytes16 salt_challenge_, bytes20 commitment_kyber_pk_, bytes20 commitment_dilithium_pk_, bytes calldata signature_, address walletAddress_) external view returns (bool);
 }

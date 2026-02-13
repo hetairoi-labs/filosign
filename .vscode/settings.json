@@ -9,7 +9,7 @@
 		"editor.defaultFormatter": "vscode.json-language-features"
 	},
 	"[solidity]": {
-		"editor.defaultFormatter": "JuanBlanco.solidity"
+		"editor.defaultFormatter": "NomicFoundation.hardhat-solidity"
 	},
 	"[typescriptreact]": {
 		"editor.defaultFormatter": "biomejs.biome"

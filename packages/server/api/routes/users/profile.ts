@@ -1,11 +1,17 @@
+import { zEvmAddress, zHexString } from "@filosign/shared/zod";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { isAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
+import { fsContracts } from "@/lib/evm";
+import { processTransaction } from "@/lib/indexer/process";
 import { bucket } from "@/lib/s3/client";
 import { respond } from "@/lib/utils/respond";
+import { tryCatch } from "@/lib/utils/tryCatch";
+
+const { FSKeyRegistry } = fsContracts;
 
 const { users } = db.schema;
 export default new Hono()
@@ -44,6 +50,90 @@ export default new Hono()
 			"User data retrieved",
 			200,
 		);
+	})
+
+	.post("/", async (ctx) => {
+		const rawBody = await ctx.req.json();
+		const parsedBody = z
+			.object({
+				saltPin: zHexString(),
+				saltSeed: zHexString(),
+				saltChallenge: zHexString(),
+				commitmentKem: zHexString(),
+				commitmentSig: zHexString(),
+				signature: zHexString(),
+
+				encryptionPublicKey: zHexString(),
+				signaturePublicKey: zHexString(),
+				walletAddress: zEvmAddress(),
+			})
+			.safeParse(rawBody);
+
+		if (parsedBody.error) {
+			console.log(parsedBody.error);
+			return respond.err(ctx, parsedBody.error.message, 400);
+		}
+
+		const {
+			saltPin,
+			saltSeed,
+			saltChallenge,
+			commitmentKem,
+			commitmentSig,
+			signature,
+			encryptionPublicKey,
+			signaturePublicKey,
+			walletAddress,
+		} = parsedBody.data;
+
+		const valid = await tryCatch(
+			FSKeyRegistry.read.validateKeygenDataRegistrationSignature([
+				saltPin,
+				saltSeed,
+				saltChallenge,
+				commitmentKem,
+				commitmentSig,
+				signature,
+				walletAddress,
+			]),
+		);
+		if (valid.error) {
+			console.log(valid.error);
+			return respond.err(ctx, `Error validating signature ${valid.error}`, 500);
+		}
+		if (!valid.data) {
+			console.log("invalid signature");
+			return respond.err(ctx, "Invalid signature", 400);
+		}
+
+		const txHash = await tryCatch(
+			FSKeyRegistry.write.registerKeygenData([
+				saltPin,
+				saltSeed,
+				saltChallenge,
+				commitmentKem,
+				commitmentSig,
+				signature,
+				walletAddress,
+			]),
+		);
+		if (txHash.error) {
+			return respond.err(
+				ctx,
+				`Error registering keygen data ${txHash.error}`,
+				500,
+			);
+		}
+		if (!txHash.data) {
+			return respond.err(ctx, "Failed to register keygen data", 500);
+		}
+
+		await processTransaction(txHash.data, {
+			encryptionPublicKey,
+			signaturePublicKey,
+		});
+
+		return respond.ok(ctx, {}, "Keygen data registered successfully", 200);
 	})
 
 	.put("/", authenticated, async (ctx) => {
