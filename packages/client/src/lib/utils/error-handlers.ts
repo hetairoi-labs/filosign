@@ -35,7 +35,7 @@ export function isZodError(err: unknown): err is ZodError {
 	);
 }
 
-export function handleError(error: unknown) {
+export function handleError(error: unknown, timeoutfn?: () => void) {
 	if (isZodError(error)) {
 		console.error(error.issues.map((issue) => issue.message).join(", "));
 		toast.error(`${error.issues.map((issue) => issue.message).join(", ")}`);
@@ -45,6 +45,12 @@ export function handleError(error: unknown) {
 	if (error instanceof Error) {
 		console.error(error.message);
 		toast.error(error.message);
+		return;
+	}
+
+	if (typeof error === "string" && error.toLowerCase().includes("timeout")) {
+		toast.error("Request timed out. Please check back in a few minutes.");
+		timeoutfn?.();
 		return;
 	}
 

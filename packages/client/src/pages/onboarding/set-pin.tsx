@@ -1,4 +1,4 @@
-import { useIsRegistered, useLogin } from "@filosign/react/hooks";
+import { useIsRegistered, useLogin, useLogout } from "@filosign/react/hooks";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
@@ -14,6 +14,7 @@ import {
 	CardTitle,
 } from "@/src/lib/components/ui/card";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
+import { handleError } from "@/src/lib/utils";
 import OnboardingProtector from "./_components/OnboardingProtector";
 import OtpInput from "./_components/OtpInput";
 
@@ -26,6 +27,7 @@ export default function OnboardingSetPinPage() {
 		useStorePersist();
 
 	const login = useLogin();
+	const logout = useLogout();
 	const isRegistered = useIsRegistered();
 
 	const handleRegistration = async () => {
@@ -44,8 +46,9 @@ export default function OnboardingSetPinPage() {
 
 			window.location.href = "/onboarding/welcome";
 		} catch (error) {
-			console.error("Registration failed:", error);
-			toast.error("Registration failed. Please try again or contact support.");
+			handleError(error, async () => {
+				await logout.mutateAsync();
+			});
 		}
 	};
 
