@@ -1,9 +1,0 @@
----
-alwaysApply: true
----
-
-- write clean, minimal, concise, and modular code using DRY principles.
-- use icons from @phosphor-icons/react.
-- follow design system defined in globals.css
-- use reusable components when needed (shadcn) defined in src/lib/components/ui
-- create page-level reusable components in the specific page dir in src/pages

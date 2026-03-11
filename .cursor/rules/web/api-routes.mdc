@@ -1,0 +1,42 @@
+---
+description: Best practices for creating or updating a new API endpoint; backend → client. Use when adding or updating routes, handlers, or hooks.
+alwaysApply: false
+---
+# New API Route: Backend → Client
+
+## Flow
+
+1. **Handler** `handlers/{domain}.ts` → 2. **Route** `routes/{domain}.route.ts` → 3. **Router** add to router.ts → 4. **Hook** `hooks/api/use-{domain}-api.ts`.
+
+Client path mirrors router: `/users` → `client.users`, `/sessions/meetings` → `client.sessions.meetings`.
+
+---
+
+## Backend: Handler
+
+- Schemas (Zod), types (`z.input`), handlers. Parse at boundaries: `schema.parse()` at handler/route entry. Don't trust raw input.
+- Wrap all DB ops in `safeQuery(...)`. Never raw `await db.select()`.
+- Selects/updates: `buildWhereActive([{ table, filters }])` for soft-deleted tables.
+- Deletes: `softCascade(db, table, id, children)`. Children: `{ table, foreignKeyField, children? }`.
+- Partial updates: `buildUpdateData(input)` + `updatedAt: isoNow()`.
+- Timestamps: `isoNow()` for updatedAt, deletedAt.
+- Optional params: `requireAtLeastOne({ a, b })` or `requireOnlyOne({ a, b })`.
+- Transactions: `db.transaction(async (tx) => { await safeQuery(tx.insert()...) })`. Pass tx, not db.
+- Returns data, throws ApiError. See handlers/users.ts.
+
+---
+
+## Backend: Route
+
+- Route: thin. Handler: logic. `requireAuth`, `validator(target, schema)`, call handler, `respond.ok(c, status, message, data)`.
+- Auth: `c.var.user.user_id` in route; pass as arg to handler.
+- Public routes: omit `.use(requireAuth)`. Streaming: `streamText(c, async (s) => { for await... s.write(chunk) })`. Webhooks: verify → parse → `void safeAsync(...)` → respond 200. See users.route.ts, ai.route.ts, recall.route.ts.
+
+---
+
+## Frontend: Hook
+
+- One file per domain: `use-{domain}-api.ts`. Infer types: `InferRequestType<typeof client.path>`. POST: `["json"]`, GET: `["query"]`.
+- Auth routes: usePrivyToken(), guard `if (!token)`, pass `Authorization: Bearer ${token}`.
+- Export Response types: `Awaited<ReturnType<typeof useX>>["data"]`.
+- Import hooks directly from `use-{domain}-api.ts` (no barrel; noBarrelFile).

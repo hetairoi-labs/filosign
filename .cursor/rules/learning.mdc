@@ -1,0 +1,14 @@
+---
+description: agent's log of corrections and pitfalls; append to this file when user corrects your response.
+alwaysApply: false
+---
+# Learning Log
+
+<!-- Append when user corrects. Format: - [YYYY-MM-DD] Mistake: X. Fix: Y. -->
+
+- [2025-02-25] Mistake: Used deprecated phosphor icon imports (`Bell`, `Moon`, etc.). Fix: Always use the `Icon` suffix (`BellIcon`, `MoonIcon`, etc.) - non-suffixed names are `@deprecated`.
+- [2025-02-25] Mistake: Used `px` in arbitrary Tailwind values (`w-[290px]`, `size-[52px]`). Fix: Use `rem`, Tailwind scale values (`w-60`, `size-12`), or viewport units (`dvh`, `dvw`) instead.
+- [2025-02-25] Mistake: Used `fixed` positioning for sidebar with `ml-[290px]` offset on main. Fix: Use flexbox layout with `sticky top-0` on sidebar and `flex-1` on main for flexible spacing.
+- [2025-02-25] Mistake: Used explicit color values (`text-white`, `bg-neutral-500`, `ring-[oklch(...)]`) instead of design tokens. Fix: Use semantic token classes (`text-foreground`, `bg-secondary`, `ring-card`).
+- [2025-02-25] Mistake: Created a separate `--brand` CSS variable when `--primary` could serve the same purpose. Fix: Reuse existing token (`--primary`) for the accent color instead of introducing new custom vars.
+- [2025-02-25] Mistake: Used hex values in `globals.css`. Fix: Convert all color values to `oklch()` format for consistency and perceptual uniformity.

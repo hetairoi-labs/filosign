@@ -1,0 +1,16 @@
+---
+alwaysApply: true
+---
+
+# Code Patterns for Full Stack Web Development
+
+- Prefer reusable utils over inline logic. Extract when used twice.
+- Before implementing any new tool or library, always search the web for latest documentation and github for best practices and implementation examples. 
+- Result pattern: use safe/safeAsync for [data, null] | [null, Error]. Don't swallow errors. Don't use try/catch.
+- In backend (API), Always throw `ApiError` over `Error`. Thrown errors are handled globally by `ErrorHandler`.
+- Frontend catches errors globally as well using the `setupErrorListener` function. No need to handle errors locally.
+- Middlewares: createMiddleware, c.set() for downstream. Providers: Context + useX, throw if used outside.
+- Reuse existing: safeQuery, buildWhereActive, cn, zEvmAddress, etc. Check lib/ before adding.
+- Singleton for shared state (ErrorHandler). Factory for per-request (privy, logger).
+- Types from source: Always try to infer types from source schemas (z.input) and existing types. Use omit or extend to extract relevant parts. Never duplicate if possible.
+- One concerned domain per file: utils, hooks, providers separate. Try not to mix if it doesn't make sense.

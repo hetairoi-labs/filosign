@@ -1,9 +1,7 @@
 ---
-description: Use Bun instead of Node.js, npm, pnpm.
-globs: "*.ts, *.tsx, *.html, *.css, *.js, *.jsx, package.json"
+description: use bun instead of node.js, npm, pnpm, or vite.
 alwaysApply: false
 ---
-
 Default to using Bun instead of Node.js.
 
 - Use `bun <file>` instead of `node <file>` or `ts-node <file>`

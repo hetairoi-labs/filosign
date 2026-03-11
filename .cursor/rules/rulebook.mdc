@@ -1,0 +1,21 @@
+---
+description: rulebook for writing new rules; always read before creating or updating any .cursor/rules/ 
+alwaysApply: false
+---
+# Rulebook
+
+Rules = `.mdc` in `.cursor/rules/`. Frontmatter: `description`, `globs` (or `alwaysApply: true`).
+
+**Test:** Would the AI get this wrong without it? No → skip. Yes → add only the non-obvious part.
+
+**Document:** Naming, order of ops, constraints, workflows ("When X: do A"). Not: syntax, tutorials, reference.
+
+**Format:** 5–10 bullets max. Point to code, don't paste. No spoonfeeding.
+
+**Add when:** Same mistake twice, or convention invisible in code. Not for one-off patterns.
+
+**Avoid:** Long examples, repeating code, rules per domain, >15 lines.
+
+**Names:** `preamble.mdc` (always), `use-X.mdc` (tools), `{domain}.mdc` (domain).
+
+**Cursor best practices:** Under 500 lines. Reference files with @filename. No style guides (use linter), no common-command docs, no edge-case instructions. Add rules only after repeated mistakes.
