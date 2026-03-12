@@ -6,6 +6,7 @@ import {
 	toHex,
 } from "@filosign/crypto-utils";
 import { useMutation } from "@tanstack/react-query";
+import type { IDKitResult } from "@worldcoin/idkit";
 import z from "zod";
 import { useFilosignContext } from "../../context/FilosignProvider";
 import { useCryptoSeed } from "../auth";
@@ -15,12 +16,17 @@ export function useSignFile() {
 	const { action: cryptoAction } = useCryptoSeed();
 
 	return useMutation({
-		mutationFn: async (args: { pieceCid: string }) => {
+		mutationFn: async (args: {
+			pieceCid: string;
+			worldIdProof: IDKitResult;
+		}) => {
 			let success = false;
 
-			const { pieceCid } = args;
+			const { pieceCid, worldIdProof } = args;
 			const timestamp = Math.floor(Date.now() / 1000);
 			const textEncoder = new TextEncoder();
+
+			console.log("worldIdProof", worldIdProof);
 
 			if (!contracts || !wallet || !wasm.dilithium) {
 				throw new Error("not connected");
