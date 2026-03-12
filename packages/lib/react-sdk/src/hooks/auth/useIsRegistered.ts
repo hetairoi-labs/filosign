@@ -9,7 +9,7 @@ export function useIsRegistered() {
 		queryKey: ["fsQ-is-registered", wallet?.account.address],
 		queryFn: async () => {
 			if (!contracts || !wallet) {
-				throw new Error("unreachable");
+				throw new Error("No contracts or wallet");
 			}
 
 			try {
@@ -23,6 +23,6 @@ export function useIsRegistered() {
 			}
 		},
 		staleTime: 5 * MINUTE,
-		enabled: !!contracts,
+		enabled: !!contracts && !!wallet?.account.address,
 	});
 }

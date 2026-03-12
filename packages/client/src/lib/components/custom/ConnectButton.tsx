@@ -1,12 +1,15 @@
 import { useIsRegistered } from "@filosign/react/hooks";
+import { SignOutIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/src/lib/components/ui/button";
 
 export default function ConnectButton() {
-	const { ready, authenticated, login: loginPrivy } = usePrivy();
+	const { ready, authenticated, login: loginPrivy, logout } = usePrivy();
 	const isRegistered = useIsRegistered();
+
+	console.log("isRegistered", isRegistered.data);
 
 	// Determine button state for smooth transitions
 	const getButtonState = () => {
@@ -15,6 +18,9 @@ export default function ConnectButton() {
 		if (!isRegistered.data) return "get-started";
 		return "dashboard";
 	};
+
+	const buttonState = getButtonState();
+	const isLoading = buttonState === "loading";
 
 	return (
 		<motion.div
@@ -29,18 +35,21 @@ export default function ConnectButton() {
 				delay: 0.78,
 			}}
 		>
-			{/* Sign In button - only show when not authenticated */}
-			{!authenticated && (
+			{/* Sign In button - show when not authenticated or loading */}
+			{(!authenticated || isLoading) && buttonState !== "dashboard" ? (
 				<Button
 					variant="secondary"
 					onClick={
-						getButtonState() === "signin" ? () => loginPrivy() : undefined
+						buttonState === "signin" && !isLoading
+							? () => loginPrivy()
+							: undefined
 					}
+					disabled={isLoading}
 					className="min-w-28"
 				>
 					<AnimatePresence mode="wait">
 						<motion.span
-							key={getButtonState()}
+							key={buttonState}
 							initial={{ opacity: 0, y: 10 }}
 							animate={{ opacity: 1, y: 0 }}
 							exit={{ opacity: 0, y: -10 }}
@@ -51,22 +60,19 @@ export default function ConnectButton() {
 							}}
 							layout
 						>
-							Sign In
+							Sign in
 						</motion.span>
 					</AnimatePresence>
 				</Button>
-			)}
+			) : null}
 
 			{/* Get started / Dashboard buttons */}
-			{getButtonState() === "get-started" ||
-			getButtonState() === "dashboard" ? (
+			{buttonState === "get-started" || buttonState === "dashboard" ? (
 				<Button variant="secondary" asChild className="min-w-28 mr-2">
-					<Link
-						to={getButtonState() === "dashboard" ? "/dashboard" : "/onboarding"}
-					>
+					<Link to={buttonState === "dashboard" ? "/dashboard" : "/onboarding"}>
 						<AnimatePresence mode="wait">
 							<motion.span
-								key={getButtonState()}
+								key={buttonState}
 								initial={{ opacity: 0, y: 10 }}
 								animate={{ opacity: 1, y: 0 }}
 								exit={{ opacity: 0, y: -10 }}
@@ -77,12 +83,24 @@ export default function ConnectButton() {
 								}}
 								layout
 							>
-								{getButtonState() === "dashboard" ? "Dashboard" : "Get started"}
+								{buttonState === "dashboard" ? "Dashboard" : "Get started"}
 							</motion.span>
 						</AnimatePresence>
 					</Link>
 				</Button>
 			) : null}
+
+			{/* Logout button - show when authenticated */}
+			{authenticated && (
+				<Button
+					variant="secondary"
+					size="icon"
+					onClick={() => logout()}
+					title="Logout"
+				>
+					<SignOutIcon className="h-5 w-5" />
+				</Button>
+			)}
 		</motion.div>
 	);
 }
