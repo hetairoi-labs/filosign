@@ -22,6 +22,7 @@ import { useOtherAddress, useOtherReload } from "./App";
 import Button from "./Button";
 import { dummyBytes } from "./dumy";
 import { useEffectOnce } from "./hooks/useEffectOnce";
+import SignWithIDKit from "./world/IDKitTest";
 
 type TestName =
 	| "login"
@@ -397,6 +398,7 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 	const ackFile = useAckFile();
 	const signFile = useSignFile();
 	const { reload: otherReload } = useOtherReload();
+	const selfProfile = useUserProfile();
 
 	useEffectOnce(() => {
 		if (signFile.data) {
@@ -409,6 +411,13 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 	if (!file) return <p>Loading file info...</p>;
 	const canView =
 		file.kemCiphertext !== null && file.encryptedEncryptionKey !== null;
+
+	const currentUserAddress = selfProfile.data?.walletAddress as
+		| `0x${string}`
+		| undefined;
+
+	console.log("currentUserAddress", currentUserAddress);
+
 	return (
 		<div className="bg-gray-100 p-2 rounded max-w-4xl">
 			<p>File CID: {file.pieceCid.toString()}</p>
@@ -438,15 +447,12 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 					</p>
 				)}
 
-				{canView && file.signatures.length === 0 && (
-					<Button
-						mutation={signFile}
-						mutationArgs={{
-							pieceCid: file.pieceCid,
-						}}
-					>
-						Sign File
-					</Button>
+				{canView && file.signatures.length === 0 && currentUserAddress && (
+					<SignWithIDKit
+						signerAddress={currentUserAddress}
+						pieceCid={file.pieceCid}
+						file={file}
+					/>
 				)}
 			</div>
 		</div>

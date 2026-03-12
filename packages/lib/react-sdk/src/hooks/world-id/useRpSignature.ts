@@ -11,8 +11,8 @@ export function useRpSignature() {
 				{
 					rp_id: z.string(),
 					nonce: z.string(),
-					created_at: z.string(),
-					expires_at: z.string(),
+					created_at: z.number(),
+					expires_at: z.number(),
 					signature: z.string(),
 				},
 				"/world-id/rp-context",
