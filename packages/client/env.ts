@@ -1,26 +1,46 @@
-const envKeys = [
-	"PORT",
-	"BUN_PUBLIC_RUNTIME_CHAIN_ID",
-	"PRIVY_APP_SECRET",
-	"BUN_PUBLIC_PRIVY_APP_ID",
-	"BUN_PUBLIC_PLATFORM_URL",
-] as const;
+import z from "zod";
 
-type ENV = Record<(typeof envKeys)[number], string>;
+const clientEnvSchema = z.object({
+	BUN_PUBLIC_RUNTIME_CHAIN_ID: z.string(),
+	BUN_PUBLIC_PRIVY_APP_ID: z.string(),
+	BUN_PUBLIC_PLATFORM_URL: z.string(),
+	BUN_PUBLIC_WORLD_APP_ID: z.string(),
+});
 
-// biome-ignore lint/suspicious/noExplicitAny: <>
-let env: ENV = {} as any;
+const envSchema = z.object({
+	...clientEnvSchema.shape,
+	NODE_ENV: z
+		.enum(["development", "production", "test"])
+		.default("development"),
+	PRIVY_APP_SECRET: z.string(),
+	PORT: z.coerce.number().int().positive("PORT must be a positive integer"),
+});
 
-export function ensureEnv() {
-	for (const key of envKeys) {
-		if (!Bun.env[key]) {
-			throw new Error(`Environment variable ${key} is not set`);
+type EnvSchema = z.infer<typeof envSchema>;
+
+// declare env for process.env intellisense
+declare module "bun" {
+	interface Env extends EnvSchema {}
+}
+
+// validate env
+let _env: EnvSchema | null = null;
+const getEnv = (): EnvSchema => {
+	if (!_env) {
+		try {
+			const parsedEnv = envSchema.parse(Bun.env);
+			_env = parsedEnv;
+		} catch (error) {
+			if (error instanceof z.ZodError) {
+				const errorMessages = error.issues
+					.map((err) => `${err.path.join(".")}: ${err.message}`)
+					.join("\n");
+				throw new Error(`Environment validation failed:\n${errorMessages}`);
+			}
+			throw error;
 		}
 	}
+	return _env;
+};
 
-	env = Object.fromEntries(envKeys.map((key) => [key, Bun.env[key]])) as ENV;
-}
-const isProd = Bun.env.NODE_ENV === "production" || Bun.env.NODE_ENV === "prod";
-ensureEnv();
-
-export { env, isProd };
+export const env = getEnv();

@@ -39,7 +39,12 @@ export default function CreateNewSignaturePage({
 		if (onboardingForm?.lastName && !lastName) {
 			setLastName(onboardingForm.lastName);
 		}
-	}, [onboardingForm?.firstName, onboardingForm?.lastName]);
+	}, [
+		onboardingForm?.firstName,
+		onboardingForm?.lastName,
+		firstName,
+		lastName,
+	]);
 
 	// Auto-generate initials from first and last names
 	useEffect(() => {

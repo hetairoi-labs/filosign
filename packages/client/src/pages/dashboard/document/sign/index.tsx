@@ -1,6 +1,5 @@
 import {
 	useFileInfo,
-	useSignFile,
 	useViewFile,
 	type ViewFileResult,
 } from "@filosign/react/hooks";
@@ -11,11 +10,11 @@ import {
 	MagnifyingGlassMinusIcon,
 	MagnifyingGlassPlusIcon,
 	PrinterIcon,
-	SignatureIcon,
 } from "@phosphor-icons/react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import SignWithIDKit from "@/src/lib/components/custom/SignWithIDKit";
 import { Button } from "@/src/lib/components/ui/button";
 import { Loader } from "@/src/lib/components/ui/loader";
 
@@ -31,7 +30,6 @@ export default function SignDocumentPage() {
 	} = useFileInfo({ pieceCid });
 
 	const viewFile = useViewFile();
-	const signFile = useSignFile();
 	const [zoom, setZoom] = useState(100);
 	const [viewError, setViewError] = useState<string | null>(null);
 	const [fileData, setFileData] = useState<ViewFileResult | null>(null);
@@ -76,21 +74,6 @@ export default function SignDocumentPage() {
 			handleViewFile();
 		}
 	}, [file, fileData, viewFile.isPending, handleViewFile]);
-
-	const handleSignFile = async () => {
-		if (!file) return;
-
-		try {
-			await signFile.mutateAsync({
-				pieceCid: file.pieceCid,
-			});
-			toast.success("Document signed successfully!");
-			navigate({ to: "/dashboard" });
-		} catch (error) {
-			console.error("Failed to sign file:", error);
-			toast.error("Failed to sign document");
-		}
-	};
 
 	const handleZoomIn = useCallback(() => {
 		setZoom((prev) => Math.min(prev + 25, 200));
@@ -405,25 +388,8 @@ export default function SignDocumentPage() {
 							>
 								<DownloadIcon className="size-4" />
 							</Button>
-							<Button
-								onClick={handleSignFile}
-								disabled={signFile.isPending}
-								size="sm"
-								variant="primary"
-								className="gap-1.5 h-8 px-3 text-xs"
-							>
-								{signFile.isPending ? (
-									<>
-										<div className="animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full"></div>
-										Signing...
-									</>
-								) : (
-									<>
-										<SignatureIcon className="size-3.5" />
-										Sign Document
-									</>
-								)}
-							</Button>
+
+							<SignWithIDKit pieceCid={pieceCid} file={file} />
 						</div>
 					</div>
 				</div>
@@ -502,25 +468,7 @@ export default function SignDocumentPage() {
 						<div className="w-px h-6 bg-border mx-2" />
 
 						{/* Sign Button - Primary Action */}
-						<Button
-							onClick={handleSignFile}
-							disabled={signFile.isPending}
-							size="sm"
-							variant="primary"
-							className="gap-2"
-						>
-							{signFile.isPending ? (
-								<>
-									<div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>
-									Signing...
-								</>
-							) : (
-								<>
-									<SignatureIcon className="size-4" />
-									Sign Document
-								</>
-							)}
-						</Button>
+						<SignWithIDKit pieceCid={pieceCid} file={file} />
 					</div>
 				</div>
 			</div>

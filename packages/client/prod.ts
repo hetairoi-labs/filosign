@@ -6,7 +6,8 @@ import { getMimeType } from "./utils";
 
 const server = serve({
 	development: false,
-	port: parseInt(env.PORT, 10),
+	port: env.PORT,
+	idleTimeout: 60,
 
 	routes: {
 		"/api": new Response(

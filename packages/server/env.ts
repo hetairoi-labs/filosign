@@ -12,6 +12,8 @@ const envKeys = [
 	"FRONTEND_URL",
 	"RUNTIME_CHAIN_ID",
 	"SUPER_PASS",
+	"WORLD_ID_RP_ID",
+	"WORLD_ID_SIGNING_KEY",
 ] as const;
 
 type ENV = Record<(typeof envKeys)[number], string>;

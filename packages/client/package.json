@@ -5,9 +5,9 @@
 	"main": "prod.ts",
 	"module": "prod.ts",
 	"scripts": {
-		"dev": "bun --hot dev.ts",
-		"start": "NODE_ENV=production bun --env-file=.env.prod prod.ts",
-		"build": "bun run build.ts",
+		"dev": "bun --hot server.ts",
+		"start": "NODE_ENV=production bun --env-file=.env.prod run prod.ts",
+		"build": "bun run --env-file=.env.prod lib/build/index.ts",
 		"check": "bunx biome check --write",
 		"analyze": "bun install --analyze src/**/*.tsx",
 		"sdk:i": "rm -rf node_modules/@filosign/sdk; rm -rf ../../node_modules/@filosign/sdk; bun install"
@@ -42,6 +42,7 @@
 		"@tanstack/react-query": "^5.90.2",
 		"@tanstack/react-router": "^1.120.16",
 		"@tanstack/react-router-devtools": "^1.120.16",
+		"@worldcoin/idkit": "4.0.9",
 		"browser-image-compression": "2.0.2",
 		"buffer": "^6.0.3",
 		"bun-plugin-tailwind": "0.0.15",
