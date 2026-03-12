@@ -448,11 +448,7 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 				)}
 
 				{canView && file.signatures.length === 0 && currentUserAddress && (
-					<SignWithIDKit
-						signerAddress={currentUserAddress}
-						pieceCid={file.pieceCid}
-						file={file}
-					/>
+					<SignWithIDKit signerAddress={currentUserAddress} file={file} />
 				)}
 			</div>
 		</div>

@@ -11,15 +11,14 @@ import {
 } from "@worldcoin/idkit";
 import { useState } from "react";
 
-const WORLD_APP_ID = "app_staging_f6a9e10ca945a0b51d2cac6ad15fc72e";
+const WORLD_ID_APP_ID = "app_69f4036892019e6f616e47818ddebd8b";
+const ACTION = "sign-doc";
 
 export default function SignWithIDKit({
 	signerAddress,
-	pieceCid,
 	file,
 }: {
 	signerAddress: `0x${string}`;
-	pieceCid: string;
 	file: FileInfo;
 }) {
 	const [open, setOpen] = useState(false);
@@ -28,6 +27,7 @@ export default function SignWithIDKit({
 	const getRpContext = useRpSignature();
 
 	console.log("rpContext", rpContext);
+	console.log("signerAddress", signerAddress);
 
 	const handleSignFile = async (proof: IDKitResult) => {
 		if (!file) return;
@@ -47,7 +47,8 @@ export default function SignWithIDKit({
 			<button
 				type="button"
 				onClick={async () => {
-					const context = await getRpContext.mutateAsync({ action: pieceCid });
+					console.log("action", ACTION);
+					const context = await getRpContext.mutateAsync({ action: ACTION });
 					setRpContext(context);
 					setOpen(true);
 				}}
@@ -61,30 +62,14 @@ export default function SignWithIDKit({
 				<IDKitRequestWidget
 					open={open}
 					onOpenChange={setOpen}
-					app_id={WORLD_APP_ID}
-					action={pieceCid}
+					app_id={WORLD_ID_APP_ID}
+					action={ACTION}
+					action_description="Sign document"
 					rp_context={rpContext}
 					allow_legacy_proofs={true}
-					preset={orbLegacy({ signal: signerAddress })}
-					environment="production"
-					handleVerify={async (result) => {
-						const response = await fetch("/api/verify-proof", {
-							method: "POST",
-							headers: { "content-type": "application/json" },
-							body: JSON.stringify({
-								rp_id: rpContext.rp_id,
-								idkitResponse: result,
-							}),
-						});
-
-						if (!response.ok) {
-							throw new Error("Backend verification failed");
-						}
-					}}
+					preset={orbLegacy({ signal: `${signerAddress}:${file.pieceCid}` })}
+					handleVerify={async () => {}}
 					onSuccess={(proof) => handleSignFile(proof)}
-					onError={(errorCode) => {
-						console.error("IDKit error", errorCode);
-					}}
 				/>
 			)}
 		</>
