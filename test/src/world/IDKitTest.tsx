@@ -10,6 +10,7 @@ import {
 	type RpContext,
 } from "@worldcoin/idkit";
 import { useState } from "react";
+import Button from "../Button";
 
 const WORLD_ID_APP_ID = "app_69f4036892019e6f616e47818ddebd8b";
 const ACTION = "sign-doc";
@@ -42,21 +43,22 @@ export default function SignWithIDKit({
 		}
 	};
 
+	const rpMutation = {
+		mutate: async () => {
+			console.log("action", ACTION);
+			const context = await getRpContext.mutateAsync({ action: ACTION });
+			setRpContext(context);
+			setOpen(true);
+		},
+		isPending: getRpContext.isPending,
+		isError: getRpContext.isError,
+		isSuccess: getRpContext.isSuccess,
+		error: getRpContext.error,
+	};
+
 	return (
 		<>
-			<button
-				type="button"
-				onClick={async () => {
-					console.log("action", ACTION);
-					const context = await getRpContext.mutateAsync({ action: ACTION });
-					setRpContext(context);
-					setOpen(true);
-				}}
-				disabled={getRpContext.isPending}
-				className="bg-black text-white px-4 py-2 rounded-md mt-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-			>
-				{getRpContext.isPending ? "Loading..." : "Sign Document"}
-			</button>
+			<Button mutation={rpMutation}>Sign Document</Button>
 
 			{rpContext && (
 				<IDKitRequestWidget

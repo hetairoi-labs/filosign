@@ -109,19 +109,19 @@ function App() {
 
 	if (!dilithium) {
 		return (
-			<div className="flex items-center justify-center bg-cyan-100">
+			<div className="flex items-center justify-center bg-background">
 				<div className="text-center">
 					<p className="text-xl font-semibold">
 						Initializing Dilithium WASM...
 					</p>
-					<p className="text-sm text-gray-600 mt-2">Please wait...</p>
+					<p className="text-sm text-muted-foreground mt-2">Please wait...</p>
 				</div>
 			</div>
 		);
 	}
 
 	return (
-		<div className="flex divide-x-2 divide-black bg-cyan-50 min-h-screen">
+		<div className="flex divide-x-2 divide-border bg-background min-h-screen">
 			<main>
 				<QueryClientProvider client={queryClient1}>
 					<FilosignProvider

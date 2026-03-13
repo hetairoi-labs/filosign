@@ -1,0 +1,64 @@
+@import "tailwindcss";
+
+/* Design tokens matching the main client design system */
+:root {
+	--background: hsl(0, 0%, 100%);
+	--foreground: hsl(210, 6%, 13%);
+	--card: hsl(240, 11%, 96%);
+	--card-foreground: hsl(210, 6%, 13%);
+	--border: hsl(240, 11%, 85%);
+	--input: hsl(0, 0%, 100%);
+	--primary: #202223;
+	--primary-foreground: hsl(60, 100%, 99%);
+	--secondary: hsl(90, 84%, 84%);
+	--secondary-foreground: hsl(210, 6%, 13%);
+	--muted: hsl(240, 11%, 76%);
+	--muted-foreground: hsl(0, 1%, 44%);
+	--accent: hsla(90, 67%, 83%);
+	--accent-foreground: hsl(210, 6%, 13%);
+	--destructive: hsl(0, 84%, 58%);
+	--destructive-foreground: hsl(0, 0%, 100%);
+	--success: hsl(142, 76%, 36%);
+	--success-foreground: hsl(0, 0%, 100%);
+	--warning: hsl(38, 92%, 50%);
+	--warning-foreground: hsl(0, 0%, 100%);
+	--ring: hsl(90, 50%, 38%);
+	--radius: 0.65rem;
+}
+
+@theme {
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-success: var(--success);
+	--color-success-foreground: var(--success-foreground);
+	--color-warning: var(--warning);
+	--color-warning-foreground: var(--warning-foreground);
+	--color-ring: var(--ring);
+	--radius-sm: calc(var(--radius) - 4px);
+	--radius-md: calc(var(--radius) - 2px);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) + 4px);
+}
+
+@layer base {
+	* {
+		@apply border-border;
+	}
+	body {
+		@apply bg-background text-foreground;
+	}
+}

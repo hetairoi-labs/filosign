@@ -26,7 +26,6 @@ import { useSet } from "./hooks/useSet";
 import { useTimeout } from "./hooks/useTimeout";
 import {
 	type FileValidationError,
-	isValidEthereumAddress,
 	parseEthereumAddress,
 	parseFileStatus,
 	parseString,
@@ -89,9 +88,7 @@ export default function TestPage() {
 					</div>
 				)}
 
-				<section className="p-4">
-					<Button mutation={logout}>Logout</Button>
-				</section>
+				<Button mutation={logout}>Logout</Button>
 			</div>
 		)
 	);
@@ -147,14 +144,14 @@ function TestLogin(props: { notify: NotifierFn }) {
 			)}
 
 			{login.isPending && (
-				<p className="text-gray-600" aria-live="polite">
+				<p className="text-muted-foreground" aria-live="polite">
 					Logging in...
 				</p>
 			)}
 
 			{login.isError && (
 				<p
-					className="text-red-700 bg-red-50 p-2 rounded wrap-break-word"
+					className="text-destructive bg-destructive/10 p-2 rounded wrap-break-word"
 					role="alert"
 					aria-live="assertive"
 				>
@@ -164,7 +161,7 @@ function TestLogin(props: { notify: NotifierFn }) {
 
 			{login.isSuccess && (
 				<p
-					className="text-green-700 bg-green-50 p-2 rounded"
+					className="text-success bg-success/10 p-2 rounded"
 					aria-live="polite"
 				>
 					Logged in successfully!
@@ -172,9 +169,9 @@ function TestLogin(props: { notify: NotifierFn }) {
 			)}
 
 			<dl className="grid grid-cols-2 gap-2 text-sm">
-				<dt className="text-gray-600">Is Registered:</dt>
+				<dt className="text-muted-foreground">Is Registered:</dt>
 				<dd>{isRegistered.data ? "Yes" : "No"}</dd>
-				<dt className="text-gray-600">Is Logged In:</dt>
+				<dt className="text-muted-foreground">Is Logged In:</dt>
 				<dd>{isLoggedIn.data ? "Yes" : "No"}</dd>
 			</dl>
 		</section>
@@ -234,7 +231,7 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 
 			{canReceiveFrom.data === true && (
 				<p
-					className="text-green-700 bg-green-50 p-2 rounded"
+					className="text-success bg-success/10 p-2 rounded"
 					aria-live="polite"
 				>
 					Can already receive from sender.
@@ -242,14 +239,14 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 			)}
 
 			{approveSender.isPending && (
-				<p className="text-gray-600" aria-live="polite">
+				<p className="text-muted-foreground" aria-live="polite">
 					Approving sender...
 				</p>
 			)}
 
 			{approveSender.isError && (
 				<p
-					className="text-red-700 bg-red-50 p-2 rounded wrap-break-word"
+					className="text-destructive bg-destructive/10 p-2 rounded wrap-break-word"
 					role="alert"
 					aria-live="assertive"
 				>
@@ -260,7 +257,7 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 
 			{approveSender.isSuccess && (
 				<p
-					className="text-green-700 bg-green-50 p-2 rounded"
+					className="text-success bg-success/10 p-2 rounded"
 					aria-live="polite"
 				>
 					Sender approved successfully!
@@ -295,14 +292,14 @@ function TestCheckCanSendTo(props: { notify: NotifierFn }) {
 			</h2>
 
 			{canSendTo.isPending && (
-				<p className="text-gray-600" aria-live="polite">
+				<p className="text-muted-foreground" aria-live="polite">
 					Checking if can receive from sender...
 				</p>
 			)}
 
 			{canSendTo.data === true && (
 				<p
-					className="text-green-700 bg-green-50 p-2 rounded"
+					className="text-success bg-success/10 p-2 rounded"
 					aria-live="polite"
 				>
 					Can receive from sender.
@@ -310,7 +307,10 @@ function TestCheckCanSendTo(props: { notify: NotifierFn }) {
 			)}
 
 			{canSendTo.data === false && (
-				<p className="text-red-700 bg-red-50 p-2 rounded" aria-live="polite">
+				<p
+					className="text-destructive bg-destructive/10 p-2 rounded"
+					aria-live="polite"
+				>
 					Cannot receive from sender.
 				</p>
 			)}
@@ -344,14 +344,14 @@ function TestThisUserInfo(props: { notify: NotifierFn }) {
 			</h2>
 
 			{selfProfile.isPending && (
-				<p className="text-gray-600" aria-live="polite">
+				<p className="text-muted-foreground" aria-live="polite">
 					Loading user profile...
 				</p>
 			)}
 
 			{selfProfile.isError && (
 				<p
-					className="text-red-700 bg-red-50 p-2 rounded wrap-break-word"
+					className="text-destructive bg-destructive/10 p-2 rounded wrap-break-word"
 					role="alert"
 					aria-live="assertive"
 				>
@@ -361,7 +361,7 @@ function TestThisUserInfo(props: { notify: NotifierFn }) {
 			)}
 
 			{selfProfile.data && (
-				<pre className="bg-gray-100 p-3 rounded border border-gray-200 overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
+				<pre className="bg-card p-3 rounded border overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
 					{JSON.stringify(selfProfile.data, null, 2)}
 				</pre>
 			)}
@@ -396,14 +396,14 @@ function TestOtherUserInfo(props: { notify: NotifierFn }) {
 			</h2>
 
 			{otherProfile.isPending && (
-				<p className="text-gray-600" aria-live="polite">
+				<p className="text-muted-foreground" aria-live="polite">
 					Loading other user profile...
 				</p>
 			)}
 
 			{otherProfile.isError && (
 				<p
-					className="text-red-700 bg-red-50 p-2 rounded wrap-break-word"
+					className="text-destructive bg-destructive/10 p-2 rounded wrap-break-word"
 					role="alert"
 					aria-live="assertive"
 				>
@@ -413,7 +413,7 @@ function TestOtherUserInfo(props: { notify: NotifierFn }) {
 			)}
 
 			{otherProfile.data && (
-				<pre className="bg-gray-100 p-3 rounded border border-gray-200 overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
+				<pre className="bg-card p-3 rounded border overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
 					{JSON.stringify(otherProfile.data, null, 2)}
 				</pre>
 			)}
@@ -491,14 +491,13 @@ function TestFileSend(props: { notify: NotifierFn }) {
 		reader.readAsArrayBuffer(file);
 	};
 
-	// Safe parsing of profile data with fallbacks
 	const encryptionPublicKey = useMemo(() => {
 		if (!otherProfile?.encryptionPublicKey) return null;
 		const key =
 			typeof otherProfile.encryptionPublicKey === "string"
 				? otherProfile.encryptionPublicKey
 				: null;
-		return isValidEthereumAddress(key) ? key : null;
+		return key && /^0x[0-9a-fA-F]+$/.test(key) ? (key as `0x${string}`) : null;
 	}, [otherProfile?.encryptionPublicKey]);
 
 	if (!otherProfile) {
@@ -510,7 +509,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 				<h2 id="file-send-heading" className="text-lg font-semibold">
 					File Send Test
 				</h2>
-				<p className="text-gray-600" aria-live="polite">
+				<p className="text-muted-foreground" aria-live="polite">
 					Loading other person profile, please wait...
 				</p>
 			</section>
@@ -545,13 +544,13 @@ function TestFileSend(props: { notify: NotifierFn }) {
 					onChange={handleFileSelect}
 					aria-invalid={fileError ? "true" : "false"}
 					aria-describedby={fileError ? `${inputId}-error` : `${inputId}-help`}
-					className="block w-full text-sm text-gray-700
+					className="block w-full text-sm text-foreground
 						file:mr-4 file:py-2 file:px-4
 						file:rounded-full file:border-0
 						file:text-sm file:font-semibold
-						file:bg-blue-50 file:text-blue-700
-						hover:file:bg-blue-100
-						focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+						file:bg-accent file:text-primary
+						hover:file:bg-accent/80
+						focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
 				/>
 				<span id={`${inputId}-help`} className="sr-only">
 					Accepts PDF files up to 10MB
@@ -560,7 +559,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 				{fileError && (
 					<p
 						id={`${inputId}-error`}
-						className="mt-2 text-sm text-red-700 bg-red-50 p-2 rounded"
+						className="mt-2 text-sm text-destructive bg-destructive/10 p-2 rounded"
 						role="alert"
 						aria-live="assertive"
 					>
@@ -570,7 +569,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 
 				{fileReadError && (
 					<p
-						className="mt-2 text-sm text-red-700 bg-red-50 p-2 rounded"
+						className="mt-2 text-sm text-destructive bg-destructive/10 p-2 rounded"
 						role="alert"
 						aria-live="assertive"
 					>
@@ -579,7 +578,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 				)}
 
 				{selectedFile && !fileError && !fileReadError && (
-					<p className="mt-2 text-sm text-gray-700" aria-live="polite">
+					<p className="mt-2 text-sm text-foreground" aria-live="polite">
 						Selected:{" "}
 						<span className="font-medium break-all">{displayFileName}</span> (
 						{(selectedFile.size / 1024).toFixed(2)} KB)
@@ -635,14 +634,14 @@ function ShowReceivedFiles() {
 			</h2>
 
 			{receivedFiles.isPending && (
-				<p className="text-gray-600" aria-live="polite">
+				<p className="text-muted-foreground" aria-live="polite">
 					Loading received files...
 				</p>
 			)}
 
 			{receivedFiles.isError && (
 				<p
-					className="text-red-700 bg-red-50 p-2 rounded wrap-break-word"
+					className="text-destructive bg-destructive/10 p-2 rounded wrap-break-word"
 					role="alert"
 					aria-live="assertive"
 				>
@@ -654,7 +653,7 @@ function ShowReceivedFiles() {
 			)}
 
 			{receivedFiles.data && receivedFiles.data.length === 0 && (
-				<p className="text-gray-500 italic">No received files.</p>
+				<p className="text-muted-foreground italic">No received files.</p>
 			)}
 
 			{fileList && <ul className="space-y-2">{fileList}</ul>}
@@ -713,24 +712,24 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 	// Handle loading state
 	if (!file) {
 		return (
-			<div className="bg-gray-100 p-3 rounded border border-gray-200">
-				<p className="text-gray-600">Loading file info...</p>
+			<div className="bg-card p-3 rounded border">
+				<p className="text-muted-foreground">Loading file info...</p>
 			</div>
 		);
 	}
 
 	return (
-		<article className="bg-gray-100 p-3 rounded border border-gray-200">
+		<article className="bg-card p-3 rounded border">
 			<dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm mb-3">
-				<dt className="text-gray-600">File CID:</dt>
+				<dt className="text-muted-foreground">File CID:</dt>
 				<dd className="break-all font-mono text-xs" title={displayCid}>
 					{truncatedCid}
 				</dd>
 
-				<dt className="text-gray-600">Sender:</dt>
+				<dt className="text-muted-foreground">Sender:</dt>
 				<dd className="break-all font-mono text-xs">{file.sender}</dd>
 
-				<dt className="text-gray-600">Status:</dt>
+				<dt className="text-muted-foreground">Status:</dt>
 				<dd>{file.status}</dd>
 			</dl>
 
@@ -756,8 +755,8 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 
 			<div className="mt-3 space-y-2">
 				{viewFile.isSuccess && decodedContent && (
-					<div className="bg-white p-3 rounded border border-gray-200">
-						<h4 className="text-sm font-medium text-gray-600 mb-2">
+					<div className="bg-background p-3 rounded border">
+						<h4 className="text-sm font-medium text-muted-foreground mb-2">
 							File Content:
 						</h4>
 						<pre className="text-xs break-all whitespace-pre-wrap overflow-auto max-h-48">
@@ -801,14 +800,14 @@ function ShowSentFiles() {
 			</h2>
 
 			{sentFiles.isPending && (
-				<p className="text-gray-600" aria-live="polite">
+				<p className="text-muted-foreground" aria-live="polite">
 					Loading sent files...
 				</p>
 			)}
 
 			{sentFiles.isError && (
 				<p
-					className="text-red-700 bg-red-50 p-2 rounded wrap-break-word"
+					className="text-destructive bg-destructive/10 p-2 rounded wrap-break-word"
 					role="alert"
 					aria-live="assertive"
 				>
@@ -820,7 +819,7 @@ function ShowSentFiles() {
 			)}
 
 			{sentFiles.data && sentFiles.data.length === 0 && (
-				<p className="text-gray-500 italic">No sent files.</p>
+				<p className="text-muted-foreground italic">No sent files.</p>
 			)}
 
 			{fileList && <ul className="space-y-2">{fileList}</ul>}
@@ -856,27 +855,27 @@ function SentFileItem(props: { pieceCid: string }) {
 	// Handle loading state
 	if (!file) {
 		return (
-			<div className="bg-gray-100 p-3 rounded border border-gray-200">
-				<p className="text-gray-600">Loading file info...</p>
+			<div className="bg-card p-3 rounded border">
+				<p className="text-muted-foreground">Loading file info...</p>
 			</div>
 		);
 	}
 
 	return (
-		<article className="bg-gray-100 p-3 rounded border border-gray-200">
+		<article className="bg-card p-3 rounded border">
 			<dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm mb-3">
-				<dt className="text-gray-600">File CID:</dt>
+				<dt className="text-muted-foreground">File CID:</dt>
 				<dd className="break-all font-mono text-xs" title={displayCid}>
 					{truncatedCid}
 				</dd>
 
-				<dt className="text-gray-600">Sender:</dt>
+				<dt className="text-muted-foreground">Sender:</dt>
 				<dd className="break-all font-mono text-xs">{file.sender}</dd>
 
-				<dt className="text-gray-600">Status:</dt>
+				<dt className="text-muted-foreground">Status:</dt>
 				<dd>{file.status}</dd>
 
-				<dt className="text-gray-600">Signatures:</dt>
+				<dt className="text-muted-foreground">Signatures:</dt>
 				<dd>{file.signatures.length}</dd>
 			</dl>
 
@@ -893,14 +892,14 @@ function SentFileItem(props: { pieceCid: string }) {
 					View File
 				</Button>
 			) : (
-				<p className="text-sm text-gray-500 italic">
+				<p className="text-sm text-muted-foreground italic">
 					Cannot view file (missing required data)
 				</p>
 			)}
 
 			{viewFile.isSuccess && decodedContent && (
-				<div className="mt-3 bg-white p-3 rounded border border-gray-200">
-					<h4 className="text-sm font-medium text-gray-600 mb-2">
+				<div className="mt-3 bg-background p-3 rounded border">
+					<h4 className="text-sm font-medium text-muted-foreground mb-2">
 						File Content:
 					</h4>
 					<pre className="text-xs break-all whitespace-pre-wrap overflow-auto max-h-48">

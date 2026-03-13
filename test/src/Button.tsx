@@ -35,16 +35,16 @@ const Button = <TArgs = void>({
 	};
 
 	const baseClasses =
-		"px-4 py-2 cursor-pointer rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2";
+		"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
 
 	const getButtonClasses = () => {
 		const stateClasses = isPending
-			? "bg-gray-400 text-gray-700 cursor-not-allowed cursor-progress"
+			? "bg-muted text-muted-foreground cursor-not-allowed"
 			: isError
-				? "bg-red-500 text-white hover:bg-red-600 focus:ring-red-500"
+				? "bg-destructive text-destructive-foreground shadow-xs hover:bg-destructive/90 focus-visible:ring-destructive/20"
 				: isSuccess
-					? "bg-green-500 text-white hover:bg-green-600 focus:ring-green-500"
-					: "bg-blue-500 text-white hover:bg-blue-600 focus:ring-blue-500";
+					? "bg-success text-success-foreground shadow-xs hover:bg-success/90"
+					: "bg-primary text-primary-foreground shadow-xs hover:bg-primary/90";
 
 		return twMerge(baseClasses, stateClasses, className);
 	};
@@ -74,7 +74,9 @@ const Button = <TArgs = void>({
 				{getButtonText()}
 			</button>
 			{isError && error && (
-				<p className="text-red-500 text-sm mt-1">Error: {getErrorMessage()}</p>
+				<p className="text-destructive text-sm mt-1">
+					Error: {getErrorMessage()}
+				</p>
 			)}
 		</div>
 	);
