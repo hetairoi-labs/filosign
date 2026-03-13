@@ -27,25 +27,16 @@ export default function SignWithIDKit({
 	const [rpContext, setRpContext] = useState<RpContext | null>(null);
 	const getRpContext = useRpSignature();
 
-	console.log("rpContext", rpContext);
-	console.log("signerAddress", signerAddress);
-
 	const handleSignFile = async (proof: IDKitResult) => {
 		if (!file) return;
-
-		try {
-			await signFile.mutateAsync({
-				pieceCid: file.pieceCid,
-				worldIdProof: proof,
-			});
-		} catch (error) {
-			console.error("Failed to sign file:", error);
-		}
+		await signFile.mutateAsync({
+			pieceCid: file.pieceCid,
+			worldIdProof: proof,
+		});
 	};
 
 	const rpMutation = {
 		mutate: async () => {
-			console.log("action", ACTION);
 			const context = await getRpContext.mutateAsync({ action: ACTION });
 			setRpContext(context);
 			setOpen(true);

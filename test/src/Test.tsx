@@ -134,7 +134,7 @@ function TestLogin(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in contain-layout"
 			aria-labelledby="login-heading"
 		>
 			<SectionHeading id="login-heading" title="Login Test" />
@@ -221,7 +221,7 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in contain-layout"
 			aria-labelledby="approve-sender-heading"
 		>
 			<SectionHeading id="approve-sender-heading" title="Approve Sender Test" />
@@ -285,7 +285,7 @@ function TestCheckCanSendTo(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in contain-layout"
 			aria-labelledby="check-send-heading"
 		>
 			<SectionHeading
@@ -335,7 +335,7 @@ function TestThisUserInfo(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in contain-layout"
 			aria-labelledby="this-user-heading"
 		>
 			<SectionHeading
@@ -386,7 +386,7 @@ function TestOtherUserInfo(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in contain-layout"
 			aria-labelledby="other-user-heading"
 		>
 			<SectionHeading
@@ -504,7 +504,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 	if (!otherProfile) {
 		return (
 			<section
-				className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
+				className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in contain-layout"
 				aria-labelledby="file-send-heading"
 			>
 				<SectionHeading
@@ -527,7 +527,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-3 sm:space-y-4 max-w-4xl"
+			className="p-3 sm:p-4 space-y-3 sm:space-y-4 max-w-4xl animate-fade-in contain-layout"
 			aria-labelledby="file-send-heading"
 		>
 			<SectionHeading
@@ -629,7 +629,7 @@ function ShowReceivedFiles() {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in contain-layout"
 			aria-labelledby="received-files-heading"
 		>
 			<SectionHeading
@@ -799,7 +799,7 @@ function ShowSentFiles() {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in contain-layout"
 			aria-labelledby="sent-files-heading"
 		>
 			<SectionHeading

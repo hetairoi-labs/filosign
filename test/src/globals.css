@@ -124,8 +124,51 @@
 	}
 }
 
+/* Success checkmark animation */
+@keyframes success-circle {
+	from {
+		stroke-dashoffset: 1;
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+@keyframes success-check {
+	from {
+		stroke-dashoffset: 1;
+	}
+	to {
+		stroke-dashoffset: 0;
+	}
+}
+
+/* Subtle float animation for empty states */
+@keyframes float-subtle {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-4px);
+	}
+}
+
+/* Card lift effect */
+@keyframes card-lift {
+	from {
+		transform: translateY(0);
+		box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+	}
+	to {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+	}
+}
+
 @utility animate-fade-in {
 	animation: fade-in-up 0.25s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+	will-change: transform, opacity;
 }
 
 @utility animate-pulse-subtle {
@@ -134,6 +177,12 @@
 
 @utility animate-spin {
 	animation: spin 1s linear infinite;
+	will-change: transform;
+}
+
+/* Performance: CSS containment for independent regions */
+@utility contain-layout {
+	contain: layout style;
 }
 
 /* Reduced motion support */
