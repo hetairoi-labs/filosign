@@ -26,12 +26,19 @@ import { useEffectOnce } from "./hooks/useEffectOnce";
 import { useSet } from "./hooks/useSet";
 import { useTimeout } from "./hooks/useTimeout";
 import {
+	DEFAULT_SIGNATURE_POSITION,
 	type FileValidationError,
+	MAX_CID_DISPLAY_LENGTH,
+	MAX_CONTENT_DISPLAY_LENGTH,
+	MAX_FILE_NAME_DISPLAY,
 	parseEthereumAddress,
 	parseFileStatus,
 	parseString,
 	RELOAD_DELAY_MS,
 	TEST_PIN,
+	TRUNCATED_CID_LENGTH,
+	TRUNCATED_CONTENT_LENGTH,
+	TRUNCATED_FILE_NAME_LENGTH,
 	validateFile,
 } from "./lib/validation";
 import SignWithIDKit from "./world/IDKitTest";
@@ -90,9 +97,9 @@ export default function TestPage() {
 					</div>
 				)}
 
-				<div className="flex mb-4 ml-4">
+				<section className="p-3 sm:p-4 max-w-4xl">
 					<Button mutation={logout}>Logout</Button>
-				</div>
+				</section>
 			</div>
 		)
 	);
@@ -501,8 +508,8 @@ function TestFileSend(props: { notify: NotifierFn }) {
 	}
 
 	const displayFileName = selectedFile
-		? selectedFile.name.length > 50
-			? `${selectedFile.name.slice(0, 47)}...`
+		? selectedFile.name.length > MAX_FILE_NAME_DISPLAY
+			? `${selectedFile.name.slice(0, TRUNCATED_FILE_NAME_LENGTH)}...`
 			: selectedFile.name
 		: "Default Test File";
 
@@ -580,7 +587,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 								{
 									address: otherAddress,
 									encryptionPublicKey,
-									signaturePosition: [10, 20, 30, 40],
+									signaturePosition: DEFAULT_SIGNATURE_POSITION,
 								},
 							]
 						: [],
@@ -678,7 +685,9 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 	const status = parseFileStatus(file?.status);
 	const displayCid = file?.pieceCid.toString() ?? "";
 	const truncatedCid =
-		displayCid.length > 60 ? `${displayCid.slice(0, 57)}...` : displayCid;
+		displayCid.length > MAX_CID_DISPLAY_LENGTH
+			? `${displayCid.slice(0, TRUNCATED_CID_LENGTH)}...`
+			: displayCid;
 
 	const currentUserAddress = useMemo(() => {
 		const address = selfProfile.data?.walletAddress;
@@ -744,8 +753,8 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 							File Content:
 						</h4>
 						<pre className="text-xs break-all whitespace-pre-wrap overflow-auto max-h-48">
-							{decodedContent.length > 2000
-								? `${decodedContent.slice(0, 1997)}...`
+							{decodedContent.length > MAX_CONTENT_DISPLAY_LENGTH
+								? `${decodedContent.slice(0, TRUNCATED_CONTENT_LENGTH)}...`
 								: decodedContent}
 						</pre>
 					</div>
@@ -823,7 +832,9 @@ const SentFileItem = memo(function SentFileItem(props: { pieceCid: string }) {
 	const status = parseFileStatus(file?.status);
 	const displayCid = file?.pieceCid.toString() ?? "";
 	const truncatedCid =
-		displayCid.length > 60 ? `${displayCid.slice(0, 57)}...` : displayCid;
+		displayCid.length > MAX_CID_DISPLAY_LENGTH
+			? `${displayCid.slice(0, TRUNCATED_CID_LENGTH)}...`
+			: displayCid;
 	const canView = Boolean(kemCiphertext && encryptedEncryptionKey && status);
 
 	const decodedContent = useMemo(() => {
@@ -885,8 +896,8 @@ const SentFileItem = memo(function SentFileItem(props: { pieceCid: string }) {
 						File Content:
 					</h4>
 					<pre className="text-xs break-all whitespace-pre-wrap overflow-auto max-h-48">
-						{decodedContent.length > 2000
-							? `${decodedContent.slice(0, 1997)}...`
+						{decodedContent.length > MAX_CONTENT_DISPLAY_LENGTH
+							? `${decodedContent.slice(0, TRUNCATED_CONTENT_LENGTH)}...`
 							: decodedContent}
 					</pre>
 				</div>

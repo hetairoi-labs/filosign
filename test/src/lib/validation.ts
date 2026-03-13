@@ -5,6 +5,17 @@ export const MAX_FILE_SIZE_MB = 10;
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
 export const ALLOWED_FILE_TYPES = ["application/pdf"] as const;
 
+// Display truncation constants
+export const MAX_FILE_NAME_DISPLAY = 50;
+export const TRUNCATED_FILE_NAME_LENGTH = 47; // MAX_FILE_NAME_DISPLAY - 3 for "..."
+export const MAX_CID_DISPLAY_LENGTH = 60;
+export const TRUNCATED_CID_LENGTH = 57; // MAX_CID_DISPLAY_LENGTH - 3 for "..."
+export const MAX_CONTENT_DISPLAY_LENGTH = 2000;
+export const TRUNCATED_CONTENT_LENGTH = 1997; // MAX_CONTENT_DISPLAY_LENGTH - 3 for "..."
+export const DEFAULT_SIGNATURE_POSITION: [number, number, number, number] = [
+	10, 20, 30, 40,
+];
+
 // File validation
 export interface FileValidationError {
 	type: "size" | "type" | "empty";
