@@ -41,6 +41,7 @@ import {
 	TRUNCATED_FILE_NAME_LENGTH,
 	validateFile,
 } from "./lib/validation";
+import { LinkWalletWithIDKit } from "./world/IDKitLinkTest";
 import { IDKitTest } from "./world/IDKitTest";
 
 type TestName =
@@ -365,9 +366,14 @@ function TestThisUserInfo(props: { notify: NotifierFn }) {
 			)}
 
 			{selfProfile.data && (
-				<pre className="bg-card p-3 rounded border overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
-					{JSON.stringify(selfProfile.data, null, 2)}
-				</pre>
+				<>
+					<pre className="bg-card p-3 rounded border overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
+						{JSON.stringify(selfProfile.data, null, 2)}
+					</pre>
+					<LinkWalletWithIDKit
+						userAddress={selfProfile.data.walletAddress as `0x${string}`}
+					/>
+				</>
 			)}
 		</section>
 	);
@@ -416,9 +422,12 @@ function TestOtherUserInfo(props: { notify: NotifierFn }) {
 			)}
 
 			{otherProfile.data && (
-				<pre className="bg-card p-3 rounded border overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
-					{JSON.stringify(otherProfile.data, null, 2)}
-				</pre>
+				<>
+					<pre className="bg-card p-3 rounded border overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
+						{JSON.stringify(otherProfile.data, null, 2)}
+					</pre>
+					<LinkWalletWithIDKit userAddress={otherAddress} />
+				</>
 			)}
 		</section>
 	);

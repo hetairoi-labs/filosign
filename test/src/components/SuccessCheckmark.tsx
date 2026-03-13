@@ -40,7 +40,8 @@ export const SuccessCheckmark = memo(function SuccessCheckmark({
 						{
 							strokeDasharray: 1,
 							strokeDashoffset: 1,
-							animation: "success-circle 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards",
+							animation:
+								"success-circle 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards",
 						} as React.CSSProperties
 					}
 				/>
