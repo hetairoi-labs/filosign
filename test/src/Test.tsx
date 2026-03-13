@@ -97,7 +97,7 @@ export default function TestPage() {
 					</div>
 				)}
 
-				<section className="p-3 sm:p-4 max-w-4xl">
+				<section className="p-3 sm:p-4 max-w-4xl animate-fade-in">
 					<Button mutation={logout}>Logout</Button>
 				</section>
 			</div>
@@ -134,7 +134,7 @@ function TestLogin(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
 			aria-labelledby="login-heading"
 		>
 			<SectionHeading id="login-heading" title="Login Test" />
@@ -146,7 +146,10 @@ function TestLogin(props: { notify: NotifierFn }) {
 			)}
 
 			{login.isPending && (
-				<p className="text-muted-foreground" aria-live="polite">
+				<p
+					className="text-muted-foreground animate-pulse-subtle"
+					aria-live="polite"
+				>
 					Logging in...
 				</p>
 			)}
@@ -157,7 +160,8 @@ function TestLogin(props: { notify: NotifierFn }) {
 					role="alert"
 					aria-live="assertive"
 				>
-					<strong>Login error:</strong> {getErrorMessage(login.error)}
+					<strong>Could not log in:</strong> {getErrorMessage(login.error)}
+					Please check your connection and try again.
 				</p>
 			)}
 
@@ -166,7 +170,7 @@ function TestLogin(props: { notify: NotifierFn }) {
 					className="text-success bg-success/10 p-2 rounded"
 					aria-live="polite"
 				>
-					Logged in successfully!
+					Login complete. Starting user verification...
 				</p>
 			)}
 
@@ -217,26 +221,25 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
 			aria-labelledby="approve-sender-heading"
 		>
-			<SectionHeading
-				id="approve-sender-heading"
-				title="Approve Sender Test"
-				className="bg-accent"
-			/>
+			<SectionHeading id="approve-sender-heading" title="Approve Sender Test" />
 
 			{canReceiveFrom.data === true && (
 				<p
 					className="text-success bg-success/10 p-2 rounded"
 					aria-live="polite"
 				>
-					Can already receive from sender.
+					This sender is already approved.
 				</p>
 			)}
 
 			{approveSender.isPending && (
-				<p className="text-muted-foreground" aria-live="polite">
+				<p
+					className="text-muted-foreground animate-pulse-subtle"
+					aria-live="polite"
+				>
 					Approving sender...
 				</p>
 			)}
@@ -247,8 +250,9 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 					role="alert"
 					aria-live="assertive"
 				>
-					<strong>Approve sender error:</strong>{" "}
+					<strong>Could not approve sender:</strong>{" "}
 					{getErrorMessage(approveSender.error)}
+					Please try again in a moment.
 				</p>
 			)}
 
@@ -257,7 +261,7 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 					className="text-success bg-success/10 p-2 rounded"
 					aria-live="polite"
 				>
-					Sender approved successfully!
+					Sender approved. You can now receive files from this address.
 				</p>
 			)}
 		</section>
@@ -281,17 +285,19 @@ function TestCheckCanSendTo(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
 			aria-labelledby="check-send-heading"
 		>
 			<SectionHeading
 				id="check-send-heading"
 				title="Check Send Permission Test"
-				className="bg-primary-medium"
 			/>
 
 			{canSendTo.isPending && (
-				<p className="text-muted-foreground" aria-live="polite">
+				<p
+					className="text-muted-foreground animate-pulse-subtle"
+					aria-live="polite"
+				>
 					Checking if can receive from sender...
 				</p>
 			)}
@@ -301,7 +307,7 @@ function TestCheckCanSendTo(props: { notify: NotifierFn }) {
 					className="text-success bg-success/10 p-2 rounded"
 					aria-live="polite"
 				>
-					Can receive from sender.
+					Ready to send files. Permission check passed.
 				</p>
 			)}
 
@@ -329,17 +335,20 @@ function TestThisUserInfo(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
 			aria-labelledby="this-user-heading"
 		>
 			<SectionHeading
 				id="this-user-heading"
 				title="This User Info"
-				className="bg-chart-3"
+				className="bg-primary"
 			/>
 
 			{selfProfile.isPending && (
-				<p className="text-muted-foreground" aria-live="polite">
+				<p
+					className="text-muted-foreground animate-pulse-subtle"
+					aria-live="polite"
+				>
 					Loading user profile...
 				</p>
 			)}
@@ -377,17 +386,20 @@ function TestOtherUserInfo(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
 			aria-labelledby="other-user-heading"
 		>
 			<SectionHeading
 				id="other-user-heading"
 				title="Other User Info"
-				className="bg-chart-4"
+				className="bg-primary"
 			/>
 
 			{otherProfile.isPending && (
-				<p className="text-muted-foreground" aria-live="polite">
+				<p
+					className="text-muted-foreground animate-pulse-subtle"
+					aria-live="polite"
+				>
 					Loading other user profile...
 				</p>
 			)}
@@ -492,13 +504,13 @@ function TestFileSend(props: { notify: NotifierFn }) {
 	if (!otherProfile) {
 		return (
 			<section
-				className="p-3 sm:p-4 space-y-2 max-w-4xl"
+				className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
 				aria-labelledby="file-send-heading"
 			>
 				<SectionHeading
 					id="file-send-heading"
 					title="File Send Test"
-					className="bg-chart-1"
+					className="bg-accent"
 				/>
 				<p className="text-muted-foreground" aria-live="polite">
 					Loading other person profile, please wait...
@@ -521,7 +533,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 			<SectionHeading
 				id="file-send-heading"
 				title="File Send Test"
-				className="bg-chart-1"
+				className="bg-accent"
 			/>
 
 			<div>
@@ -617,17 +629,20 @@ function ShowReceivedFiles() {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
 			aria-labelledby="received-files-heading"
 		>
 			<SectionHeading
 				id="received-files-heading"
 				title="Received Files"
-				className="bg-chart-2"
+				className="bg-accent"
 			/>
 
 			{receivedFiles.isPending && (
-				<p className="text-muted-foreground" aria-live="polite">
+				<p
+					className="text-muted-foreground animate-pulse-subtle"
+					aria-live="polite"
+				>
 					Loading received files...
 				</p>
 			)}
@@ -784,17 +799,20 @@ function ShowSentFiles() {
 
 	return (
 		<section
-			className="p-3 sm:p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl animate-fade-in"
 			aria-labelledby="sent-files-heading"
 		>
 			<SectionHeading
 				id="sent-files-heading"
 				title="Sent Files"
-				className="bg-chart-5"
+				className="bg-accent"
 			/>
 
 			{sentFiles.isPending && (
-				<p className="text-muted-foreground" aria-live="polite">
+				<p
+					className="text-muted-foreground animate-pulse-subtle"
+					aria-live="polite"
+				>
 					Loading sent files...
 				</p>
 			)}

@@ -6,7 +6,7 @@ interface SectionHeadingProps {
 
 export function SectionHeading({
 	title,
-	className = "bg-primary",
+	className = "bg-secondary",
 	id,
 }: SectionHeadingProps) {
 	return (

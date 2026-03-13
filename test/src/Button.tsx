@@ -22,7 +22,7 @@ const Button = <TArgs = void>({
 	children,
 	className = "",
 }: ButtonProps<TArgs>) => {
-	const { mutate, isPending, isError, isSuccess, error } = mutation;
+	const { mutate, isPending, isError, isSuccess } = mutation;
 
 	const handleClick = () => {
 		if (!isPending) {
@@ -35,7 +35,7 @@ const Button = <TArgs = void>({
 	};
 
 	const baseClasses =
-		"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
+		"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-semibold transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 hover:scale-[1.02] active:scale-[0.98]";
 
 	const getButtonClasses = () => {
 		const stateClasses = isPending
@@ -56,29 +56,15 @@ const Button = <TArgs = void>({
 		return children;
 	};
 
-	const getErrorMessage = () => {
-		if (error instanceof Error) {
-			return error.message;
-		}
-		return String(error);
-	};
-
 	return (
-		<div className="inline-block">
-			<button
-				type="button"
-				onClick={handleClick}
-				disabled={isPending}
-				className={getButtonClasses()}
-			>
-				{getButtonText()}
-			</button>
-			{isError && error && (
-				<p className="text-destructive text-sm mt-1">
-					Error: {getErrorMessage()}
-				</p>
-			)}
-		</div>
+		<button
+			type="button"
+			onClick={handleClick}
+			disabled={isPending}
+			className={getButtonClasses()}
+		>
+			{getButtonText()}
+		</button>
 	);
 };
 

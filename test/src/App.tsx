@@ -109,12 +109,10 @@ function App() {
 
 	if (!dilithium) {
 		return (
-			<div className="flex items-center justify-center bg-background">
-				<div className="text-center">
-					<p className="text-xl font-semibold">
-						Initializing Dilithium WASM...
-					</p>
-					<p className="text-sm text-muted-foreground mt-2">Please wait...</p>
+			<div className="flex items-center justify-center bg-background min-h-screen">
+				<div className="flex flex-col items-center gap-4">
+					<div className="size-8 border-2 border-muted-foreground/20 border-t-primary rounded-full animate-spin" />
+					<p className="text-sm text-muted-foreground">Initializing...</p>
 				</div>
 			</div>
 		);
