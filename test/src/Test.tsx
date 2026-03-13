@@ -20,6 +20,7 @@ import {
 import { memo, useId, useMemo, useState } from "react";
 import { useOtherAddress, useOtherReload } from "./App";
 import Button from "./Button";
+import { SectionHeading } from "./components/SectionHeading";
 import { dummyBytes } from "./dumy";
 import { useEffectOnce } from "./hooks/useEffectOnce";
 import { useSet } from "./hooks/useSet";
@@ -45,7 +46,6 @@ type TestName =
 	| "file-sign";
 type NotifierFn = (name: TestName) => void;
 
-// Utility function to safely extract error messages
 const getErrorMessage = (error: Error | null): string => {
 	if (!error) return "Unknown error";
 	if (error.message) return error.message;
@@ -57,37 +57,32 @@ export default function TestPage() {
 	const logout = useLogout();
 	const isLoggedIn = useIsLoggedIn();
 
-	// Use Set for O(1) lookups instead of O(N) array operations
 	const { add: markDone, has: isDone } = useSet<TestName>();
-
-	const notifyDone = (name: TestName) => {
-		markDone(name);
-	};
 
 	return (
 		ready && (
 			<div className="flex flex-col gap-4">
-				<TestLogin notify={notifyDone} />
+				<TestLogin notify={markDone} />
 
 				{isLoggedIn.data === true && (
 					<div className="space-y-4">
-						{isDone("login") && <TestThisUserInfo notify={notifyDone} />}
+						{isDone("login") && <TestThisUserInfo notify={markDone} />}
 
 						{isDone("check-this-user-info") && (
-							<TestApproveSender notify={notifyDone} />
+							<TestApproveSender notify={markDone} />
 						)}
 
 						{isDone("approve-sender") && (
-							<TestOtherUserInfo notify={notifyDone} />
+							<TestOtherUserInfo notify={markDone} />
 						)}
 
 						{isDone("check-other-user-info") && (
-							<TestCheckCanSendTo notify={notifyDone} />
+							<TestCheckCanSendTo notify={markDone} />
 						)}
 
 						{isDone("check-send") && (
 							<div className="space-y-4">
-								<TestFileSend notify={notifyDone} />
+								<TestFileSend notify={markDone} />
 								<ShowReceivedFiles />
 								<ShowSentFiles />
 							</div>
@@ -95,7 +90,9 @@ export default function TestPage() {
 					</div>
 				)}
 
-				<Button mutation={logout}>Logout</Button>
+				<div className="flex mb-4 ml-4">
+					<Button mutation={logout}>Logout</Button>
+				</div>
 			</div>
 		)
 	);
@@ -130,16 +127,10 @@ function TestLogin(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl"
 			aria-labelledby="login-heading"
 		>
-			<h2
-				id="login-heading"
-				className="text-lg font-semibold text-primary flex items-center gap-2"
-			>
-				<span className="size-2 rounded-full bg-secondary" aria-hidden="true" />
-				Login Test
-			</h2>
+			<SectionHeading id="login-heading" title="Login Test" />
 
 			{isLoggedIn.data === false && (
 				<Button mutation={login} mutationArgs={{ pin: TEST_PIN }}>
@@ -173,14 +164,10 @@ function TestLogin(props: { notify: NotifierFn }) {
 			)}
 
 			<dl className="grid grid-cols-2 gap-2 text-sm">
-				<dt className="text-muted-foreground font-medium">Is Registered:</dt>
-				<dd className={isRegistered.data ? "text-success font-medium" : ""}>
-					{isRegistered.data ? "Yes" : "No"}
-				</dd>
-				<dt className="text-muted-foreground font-medium">Is Logged In:</dt>
-				<dd className={isLoggedIn.data ? "text-success font-medium" : ""}>
-					{isLoggedIn.data ? "Yes" : "No"}
-				</dd>
+				<dt className="text-muted-foreground">Is Registered:</dt>
+				<dd>{isRegistered.data ? "Yes" : "No"}</dd>
+				<dt className="text-muted-foreground">Is Logged In:</dt>
+				<dd>{isLoggedIn.data ? "Yes" : "No"}</dd>
 			</dl>
 		</section>
 	);
@@ -206,7 +193,6 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 			}, RELOAD_DELAY_MS);
 		}
 
-		// Cleanup function for effect
 		return () => {
 			clearSafeTimeout();
 		};
@@ -224,16 +210,14 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl"
 			aria-labelledby="approve-sender-heading"
 		>
-			<h2
+			<SectionHeading
 				id="approve-sender-heading"
-				className="text-lg font-semibold text-primary flex items-center gap-2"
-			>
-				<span className="size-2 rounded-full bg-accent" aria-hidden="true" />
-				Approve Sender Test
-			</h2>
+				title="Approve Sender Test"
+				className="bg-accent"
+			/>
 
 			{canReceiveFrom.data === true && (
 				<p
@@ -290,19 +274,14 @@ function TestCheckCanSendTo(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl"
 			aria-labelledby="check-send-heading"
 		>
-			<h2
+			<SectionHeading
 				id="check-send-heading"
-				className="text-lg font-semibold text-primary flex items-center gap-2"
-			>
-				<span
-					className="size-2 rounded-full bg-primary-medium"
-					aria-hidden="true"
-				/>
-				Check Send Permission Test
-			</h2>
+				title="Check Send Permission Test"
+				className="bg-primary-medium"
+			/>
 
 			{canSendTo.isPending && (
 				<p className="text-muted-foreground" aria-live="polite">
@@ -343,16 +322,14 @@ function TestThisUserInfo(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl"
 			aria-labelledby="this-user-heading"
 		>
-			<h2
+			<SectionHeading
 				id="this-user-heading"
-				className="text-lg font-semibold text-primary flex items-center gap-2"
-			>
-				<span className="size-2 rounded-full bg-chart-3" aria-hidden="true" />
-				This User Info
-			</h2>
+				title="This User Info"
+				className="bg-chart-3"
+			/>
 
 			{selfProfile.isPending && (
 				<p className="text-muted-foreground" aria-live="polite">
@@ -393,16 +370,14 @@ function TestOtherUserInfo(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl"
 			aria-labelledby="other-user-heading"
 		>
-			<h2
+			<SectionHeading
 				id="other-user-heading"
-				className="text-lg font-semibold text-primary flex items-center gap-2"
-			>
-				<span className="size-2 rounded-full bg-chart-4" aria-hidden="true" />
-				Other User Info
-			</h2>
+				title="Other User Info"
+				className="bg-chart-4"
+			/>
 
 			{otherProfile.isPending && (
 				<p className="text-muted-foreground" aria-live="polite">
@@ -461,13 +436,11 @@ function TestFileSend(props: { notify: NotifierFn }) {
 	const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
 		const file = event.target.files?.[0];
 
-		// Reset errors
 		setFileError(null);
 		setFileReadError(null);
 
 		if (!file) return;
 
-		// Validate file before processing
 		const validationError = validateFile(file);
 		if (validationError) {
 			setFileError(validationError);
@@ -512,16 +485,14 @@ function TestFileSend(props: { notify: NotifierFn }) {
 	if (!otherProfile) {
 		return (
 			<section
-				className="p-4 space-y-2 max-w-4xl"
+				className="p-3 sm:p-4 space-y-2 max-w-4xl"
 				aria-labelledby="file-send-heading"
 			>
-				<h2
+				<SectionHeading
 					id="file-send-heading"
-					className="text-lg font-semibold text-primary flex items-center gap-2"
-				>
-					<span className="size-2 rounded-full bg-chart-1" aria-hidden="true" />
-					File Send Test
-				</h2>
+					title="File Send Test"
+					className="bg-chart-1"
+				/>
 				<p className="text-muted-foreground" aria-live="polite">
 					Loading other person profile, please wait...
 				</p>
@@ -529,7 +500,6 @@ function TestFileSend(props: { notify: NotifierFn }) {
 		);
 	}
 
-	// Truncate long filenames for display
 	const displayFileName = selectedFile
 		? selectedFile.name.length > 50
 			? `${selectedFile.name.slice(0, 47)}...`
@@ -538,16 +508,14 @@ function TestFileSend(props: { notify: NotifierFn }) {
 
 	return (
 		<section
-			className="p-4 space-y-4 max-w-4xl"
+			className="p-3 sm:p-4 space-y-3 sm:space-y-4 max-w-4xl"
 			aria-labelledby="file-send-heading"
 		>
-			<h2
+			<SectionHeading
 				id="file-send-heading"
-				className="text-lg font-semibold text-primary flex items-center gap-2"
-			>
-				<span className="size-2 rounded-full bg-chart-1" aria-hidden="true" />
-				File Send Test
-			</h2>
+				title="File Send Test"
+				className="bg-chart-1"
+			/>
 
 			<div>
 				<label htmlFor={inputId} className="block text-sm font-medium mb-2">
@@ -631,7 +599,6 @@ function TestFileSend(props: { notify: NotifierFn }) {
 function ShowReceivedFiles() {
 	const receivedFiles = useReceivedFiles();
 
-	// Memoize list to prevent unnecessary re-renders
 	const fileList = useMemo(() => {
 		if (!receivedFiles.data?.length) return null;
 		return receivedFiles.data.map((file) => (
@@ -643,16 +610,14 @@ function ShowReceivedFiles() {
 
 	return (
 		<section
-			className="p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl"
 			aria-labelledby="received-files-heading"
 		>
-			<h2
+			<SectionHeading
 				id="received-files-heading"
-				className="text-lg font-semibold text-primary flex items-center gap-2"
-			>
-				<span className="size-2 rounded-full bg-chart-2" aria-hidden="true" />
-				Received Files
-			</h2>
+				title="Received Files"
+				className="bg-chart-2"
+			/>
 
 			{receivedFiles.isPending && (
 				<p className="text-muted-foreground" aria-live="polite">
@@ -707,7 +672,6 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 		};
 	}, [signFile.data]);
 
-	// Compute all values that depend on file data (must be after all hooks)
 	const canView = Boolean(file?.kemCiphertext && file?.encryptedEncryptionKey);
 	const kemCiphertext = parseString(file?.kemCiphertext);
 	const encryptedEncryptionKey = parseString(file?.encryptedEncryptionKey);
@@ -716,13 +680,11 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 	const truncatedCid =
 		displayCid.length > 60 ? `${displayCid.slice(0, 57)}...` : displayCid;
 
-	// Safe address extraction
 	const currentUserAddress = useMemo(() => {
 		const address = selfProfile.data?.walletAddress;
 		return parseEthereumAddress(address);
 	}, [selfProfile.data?.walletAddress]);
 
-	// Decode file content safely
 	const decodedContent = useMemo(() => {
 		if (!viewFile.data?.fileBytes) return null;
 		try {
@@ -732,45 +694,27 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 		}
 	}, [viewFile.data?.fileBytes, decoder]);
 
-	// Handle loading state
 	if (!file) {
 		return (
-			<div className="bg-card p-3 rounded border border-l-4 border-l-chart-2">
+			<div className="bg-card p-3 rounded border">
 				<p className="text-muted-foreground">Loading file info...</p>
 			</div>
 		);
 	}
 
 	return (
-		<article className="bg-card p-3 rounded border border-l-4 border-l-chart-2">
-			<dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm mb-3">
-				<dt className="text-primary-medium font-medium">File CID:</dt>
-				<dd
-					className="break-all font-mono text-xs text-foreground"
-					title={displayCid}
-				>
+		<article className="bg-card p-3 rounded border">
+			<dl className="grid grid-cols-[auto,1fr] gap-x-2 sm:gap-x-4 gap-y-1 text-sm mb-3">
+				<dt className="text-muted-foreground">File CID:</dt>
+				<dd className="break-all font-mono text-xs" title={displayCid}>
 					{truncatedCid}
 				</dd>
 
-				<dt className="text-primary-medium font-medium">Sender:</dt>
-				<dd className="break-all font-mono text-xs text-foreground">
-					{file.sender}
-				</dd>
+				<dt className="text-muted-foreground">Sender:</dt>
+				<dd className="break-all font-mono text-xs">{file.sender}</dd>
 
-				<dt className="text-primary-medium font-medium">Status:</dt>
-				<dd className="inline-flex items-center text-foreground">
-					<span
-						className={`inline-block size-1.5 rounded-full mr-1.5 ${
-							file.status === "s3"
-								? "bg-chart-3"
-								: file.status === "foc"
-									? "bg-chart-1"
-									: "bg-muted-foreground"
-						}`}
-						aria-hidden="true"
-					/>
-					{file.status}
-				</dd>
+				<dt className="text-muted-foreground">Status:</dt>
+				<dd>{file.status}</dd>
 			</dl>
 
 			<div className="flex flex-wrap gap-2 items-start">
@@ -820,7 +764,6 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 function ShowSentFiles() {
 	const sentFiles = useSentFiles();
 
-	// Memoize list to prevent unnecessary re-renders
 	const fileList = useMemo(() => {
 		if (!sentFiles.data?.length) return null;
 		return sentFiles.data.map((file) => (
@@ -832,16 +775,14 @@ function ShowSentFiles() {
 
 	return (
 		<section
-			className="p-4 space-y-2 max-w-4xl"
+			className="p-3 sm:p-4 space-y-2 max-w-4xl"
 			aria-labelledby="sent-files-heading"
 		>
-			<h2
+			<SectionHeading
 				id="sent-files-heading"
-				className="text-lg font-semibold text-primary flex items-center gap-2"
-			>
-				<span className="size-2 rounded-full bg-chart-5" aria-hidden="true" />
-				Sent Files
-			</h2>
+				title="Sent Files"
+				className="bg-chart-5"
+			/>
 
 			{sentFiles.isPending && (
 				<p className="text-muted-foreground" aria-live="polite">
@@ -877,7 +818,6 @@ const SentFileItem = memo(function SentFileItem(props: { pieceCid: string }) {
 	const viewFile = useViewFile();
 	const decoder = useMemo(() => new TextDecoder(), []);
 
-	// Compute values that depend on file data (must be after all hooks)
 	const kemCiphertext = parseString(file?.kemCiphertext);
 	const encryptedEncryptionKey = parseString(file?.encryptedEncryptionKey);
 	const status = parseFileStatus(file?.status);
@@ -886,7 +826,6 @@ const SentFileItem = memo(function SentFileItem(props: { pieceCid: string }) {
 		displayCid.length > 60 ? `${displayCid.slice(0, 57)}...` : displayCid;
 	const canView = Boolean(kemCiphertext && encryptedEncryptionKey && status);
 
-	// Decode file content safely
 	const decodedContent = useMemo(() => {
 		if (!viewFile.data?.fileBytes) return null;
 		try {
@@ -896,56 +835,30 @@ const SentFileItem = memo(function SentFileItem(props: { pieceCid: string }) {
 		}
 	}, [viewFile.data?.fileBytes, decoder]);
 
-	// Handle loading state
 	if (!file) {
 		return (
-			<div className="bg-card p-3 rounded border border-l-4 border-l-chart-5">
+			<div className="bg-card p-3 rounded border">
 				<p className="text-muted-foreground">Loading file info...</p>
 			</div>
 		);
 	}
 
 	return (
-		<article className="bg-card p-3 rounded border border-l-4 border-l-chart-5">
-			<dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm mb-3">
-				<dt className="text-secondary-medium font-medium">File CID:</dt>
-				<dd
-					className="break-all font-mono text-xs text-foreground"
-					title={displayCid}
-				>
+		<article className="bg-card p-3 rounded border">
+			<dl className="grid grid-cols-[auto,1fr] gap-x-2 sm:gap-x-4 gap-y-1 text-sm mb-3">
+				<dt className="text-muted-foreground">File CID:</dt>
+				<dd className="break-all font-mono text-xs" title={displayCid}>
 					{truncatedCid}
 				</dd>
 
-				<dt className="text-secondary-medium font-medium">Sender:</dt>
-				<dd className="break-all font-mono text-xs text-foreground">
-					{file.sender}
-				</dd>
+				<dt className="text-muted-foreground">Sender:</dt>
+				<dd className="break-all font-mono text-xs">{file.sender}</dd>
 
-				<dt className="text-secondary-medium font-medium">Status:</dt>
-				<dd className="inline-flex items-center text-foreground">
-					<span
-						className={`inline-block size-1.5 rounded-full mr-1.5 ${
-							file.status === "s3"
-								? "bg-chart-3"
-								: file.status === "foc"
-									? "bg-chart-1"
-									: "bg-muted-foreground"
-						}`}
-						aria-hidden="true"
-					/>
-					{file.status}
-				</dd>
+				<dt className="text-muted-foreground">Status:</dt>
+				<dd>{file.status}</dd>
 
-				<dt className="text-secondary-medium font-medium">Signatures:</dt>
-				<dd className="inline-flex items-center gap-1.5 text-foreground">
-					<span
-						className={`inline-block size-1.5 rounded-full ${
-							file.signatures.length > 0 ? "bg-success" : "bg-muted-foreground"
-						}`}
-						aria-hidden="true"
-					/>
-					{file.signatures.length}
-				</dd>
+				<dt className="text-muted-foreground">Signatures:</dt>
+				<dd>{file.signatures.length}</dd>
 			</dl>
 
 			{canView && kemCiphertext && encryptedEncryptionKey && status ? (
