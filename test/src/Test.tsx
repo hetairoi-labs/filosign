@@ -41,7 +41,7 @@ import {
 	TRUNCATED_FILE_NAME_LENGTH,
 	validateFile,
 } from "./lib/validation";
-import SignWithIDKit from "./world/IDKitTest";
+import { IDKitTest } from "./world/IDKitTest";
 
 type TestName =
 	| "login"
@@ -777,7 +777,7 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 
 				{canView && file.signatures.length === 0 && currentUserAddress && (
 					<div className="mt-2">
-						<SignWithIDKit signerAddress={currentUserAddress} file={file} />
+						<IDKitTest signerAddress={currentUserAddress} file={file} />
 					</div>
 				)}
 			</div>

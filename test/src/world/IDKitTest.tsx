@@ -15,7 +15,7 @@ import Button from "../Button";
 const WORLD_ID_APP_ID = "app_69f4036892019e6f616e47818ddebd8b";
 const ACTION = "sign-doc";
 
-export default function SignWithIDKit({
+export function IDKitTest({
 	signerAddress,
 	file,
 }: {
