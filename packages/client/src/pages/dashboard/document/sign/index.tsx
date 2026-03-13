@@ -14,7 +14,7 @@ import {
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import SignWithIDKit from "@/src/lib/components/custom/SignWithIDKit";
+import { SignWithIDKit } from "@/src/lib/components/custom/SignWithIDKit";
 import { Button } from "@/src/lib/components/ui/button";
 import { Loader } from "@/src/lib/components/ui/loader";
 
@@ -389,7 +389,7 @@ export default function SignDocumentPage() {
 								<DownloadIcon className="size-4" />
 							</Button>
 
-							<SignWithIDKit pieceCid={pieceCid} file={file} />
+							<SignWithIDKit file={file} />
 						</div>
 					</div>
 				</div>
@@ -468,7 +468,7 @@ export default function SignDocumentPage() {
 						<div className="w-px h-6 bg-border mx-2" />
 
 						{/* Sign Button - Primary Action */}
-						<SignWithIDKit pieceCid={pieceCid} file={file} />
+						<SignWithIDKit file={file} />
 					</div>
 				</div>
 			</div>
