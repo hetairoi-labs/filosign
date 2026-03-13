@@ -231,8 +231,14 @@ export default function Crop({
 
 				{filteredAspectRatios.length > 1 && (
 					<div className="flex flex-col gap-2 py-4">
-						<label className="text-sm font-medium">Aspect Ratio</label>
+						<label
+							htmlFor="aspect-ratio-toggle"
+							className="text-sm font-medium"
+						>
+							Aspect Ratio
+						</label>
 						<ToggleGroup
+							id="aspect-ratio-toggle"
 							type="single"
 							value={aspectRatio}
 							onValueChange={(value) => {

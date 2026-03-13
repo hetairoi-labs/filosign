@@ -6,9 +6,6 @@ import { Button } from "../ui/button";
 export default function ThemeSwitch() {
 	const { theme, setTheme } = useTheme();
 
-	// no theme switch for now
-	return null;
-
 	return (
 		<motion.div
 			initial={{ opacity: 0, scale: 0 }}

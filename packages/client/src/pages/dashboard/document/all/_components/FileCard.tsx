@@ -21,7 +21,7 @@ interface RealFile {
 	};
 	type?: "sent" | "received";
 	createdAt?: Date;
-	[key: string]: any;
+	[key: string]: unknown;
 }
 
 interface FileCardProps {

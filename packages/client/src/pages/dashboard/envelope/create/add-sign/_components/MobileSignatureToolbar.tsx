@@ -86,6 +86,7 @@ export default function MobileSignatureToolbar({
 								className="flex-1"
 							>
 								<button
+									type="button"
 									className={cn(
 										"w-full aspect-square p-2 transition-all duration-200 active:scale-95 active:bg-secondary/50 rounded-main touch-manipulation",
 										"hover:scale-105 hover:bg-secondary/30 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:ring-offset-2",

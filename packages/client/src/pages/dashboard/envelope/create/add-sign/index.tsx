@@ -371,6 +371,13 @@ export default function AddSignaturePage() {
 											: "border-border hover:border-muted-foreground/50",
 									)}
 									onClick={() => handleDocumentSelect(doc.id)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" || e.key === " ") {
+											handleDocumentSelect(doc.id);
+										}
+									}}
+									role="button"
+									tabIndex={0}
 								>
 									{/* Document preview */}
 									{doc.url ? (

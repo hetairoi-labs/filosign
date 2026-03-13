@@ -5,10 +5,11 @@
 	"main": "prod.ts",
 	"module": "prod.ts",
 	"scripts": {
-		"dev": "bun --hot server.ts",
+		"dev": "clear && bun --hot server.ts",
 		"start": "NODE_ENV=production bun --env-file=.env.prod run prod.ts",
-		"build": "bun run --env-file=.env.prod lib/build/index.ts",
+		"build": "clear && bun check && bun run --env-file=.env.prod lib/build/index.ts",
 		"check": "bunx biome check --write",
+		"tsc": "tsc --noEmit",
 		"analyze": "bun install --analyze src/**/*.tsx",
 		"sdk:i": "rm -rf node_modules/@filosign/sdk; rm -rf ../../node_modules/@filosign/sdk; bun install"
 	},

@@ -129,7 +129,7 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		if (hasRequiredKeys) {
 			handleViewFile();
 		}
-	}, [fileInfo, fileData, viewFile.isPending, handleViewFile, isSender]);
+	}, [fileInfo, fileData, viewFile.isPending, handleViewFile]);
 
 	const handleZoomIn = useCallback(() => {
 		setZoom((prev) => Math.min(prev + 25, 200));

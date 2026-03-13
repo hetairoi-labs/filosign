@@ -6,7 +6,7 @@ export interface FileOrFolder {
 	id: string;
 	fileType?: "document" | "image" | "archive" | "other";
 	lastModified?: string;
-	icon?: React.ComponentType<any>;
+	icon?: React.ComponentType<unknown>;
 }
 
 export const initialFilesAndFolders: FileOrFolder[] = [

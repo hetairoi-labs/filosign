@@ -6,15 +6,15 @@ interface IProps {
 	setImage: (file: File) => void;
 }
 
-export default function (props: IProps) {
+export default function ({ setImage }: IProps) {
 	const [file, setFile] = useState<File>();
 	const [preview, setPreview] = useState<string | null>(null);
 	const [showCropDialog, setShowCropDialog] = useState(false);
 	const [tempFile, setTempFile] = useState<File | null>(null);
 
 	useEffect(() => {
-		file && props.setImage(file);
-	}, [file]);
+		file && setImage(file);
+	}, [file, setImage]);
 
 	const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const selectedFile = e.target.files?.[0];

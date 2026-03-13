@@ -9,7 +9,7 @@ export const safe = <T>(fn: () => T): Result<T> => {
 };
 
 export const safeAsync = async <T>(
-	fn: (() => Promise<T>) | Promise<T>
+	fn: (() => Promise<T>) | Promise<T>,
 ): Promise<Result<T>> => {
 	try {
 		const promise = typeof fn === "function" ? fn() : fn;
