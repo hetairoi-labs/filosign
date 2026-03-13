@@ -17,7 +17,7 @@ import {
 	useUserProfileByQuery,
 	useViewFile,
 } from "@filosign/react/hooks";
-import { useId, useMemo, useState } from "react";
+import { memo, useId, useMemo, useState } from "react";
 import { useOtherAddress, useOtherReload } from "./App";
 import Button from "./Button";
 import { dummyBytes } from "./dumy";
@@ -44,6 +44,13 @@ type TestName =
 	| "file-send"
 	| "file-sign";
 type NotifierFn = (name: TestName) => void;
+
+// Utility function to safely extract error messages
+const getErrorMessage = (error: Error | null): string => {
+	if (!error) return "Unknown error";
+	if (error.message) return error.message;
+	return String(error);
+};
 
 export default function TestPage() {
 	const { ready } = useFilosignContext();
@@ -121,19 +128,16 @@ function TestLogin(props: { notify: NotifierFn }) {
 		}
 	}, [isLoggedIn.data]);
 
-	// Get readable error message
-	const getErrorMessage = (error: Error | null): string => {
-		if (!error) return "Unknown error";
-		if (error.message) return error.message;
-		return String(error);
-	};
-
 	return (
 		<section
 			className="p-4 space-y-2 max-w-4xl"
 			aria-labelledby="login-heading"
 		>
-			<h2 id="login-heading" className="text-lg font-semibold">
+			<h2
+				id="login-heading"
+				className="text-lg font-semibold text-primary flex items-center gap-2"
+			>
+				<span className="size-2 rounded-full bg-secondary" aria-hidden="true" />
 				Login Test
 			</h2>
 
@@ -169,10 +173,14 @@ function TestLogin(props: { notify: NotifierFn }) {
 			)}
 
 			<dl className="grid grid-cols-2 gap-2 text-sm">
-				<dt className="text-muted-foreground">Is Registered:</dt>
-				<dd>{isRegistered.data ? "Yes" : "No"}</dd>
-				<dt className="text-muted-foreground">Is Logged In:</dt>
-				<dd>{isLoggedIn.data ? "Yes" : "No"}</dd>
+				<dt className="text-muted-foreground font-medium">Is Registered:</dt>
+				<dd className={isRegistered.data ? "text-success font-medium" : ""}>
+					{isRegistered.data ? "Yes" : "No"}
+				</dd>
+				<dt className="text-muted-foreground font-medium">Is Logged In:</dt>
+				<dd className={isLoggedIn.data ? "text-success font-medium" : ""}>
+					{isLoggedIn.data ? "Yes" : "No"}
+				</dd>
 			</dl>
 		</section>
 	);
@@ -214,18 +222,16 @@ function TestApproveSender(props: { notify: NotifierFn }) {
 		notify("approve-sender");
 	}, [approveSender.isSuccess]);
 
-	const getErrorMessage = (error: Error | null): string => {
-		if (!error) return "Unknown error";
-		if (error.message) return error.message;
-		return String(error);
-	};
-
 	return (
 		<section
 			className="p-4 space-y-2 max-w-4xl"
 			aria-labelledby="approve-sender-heading"
 		>
-			<h2 id="approve-sender-heading" className="text-lg font-semibold">
+			<h2
+				id="approve-sender-heading"
+				className="text-lg font-semibold text-primary flex items-center gap-2"
+			>
+				<span className="size-2 rounded-full bg-accent" aria-hidden="true" />
 				Approve Sender Test
 			</h2>
 
@@ -287,7 +293,14 @@ function TestCheckCanSendTo(props: { notify: NotifierFn }) {
 			className="p-4 space-y-2 max-w-4xl"
 			aria-labelledby="check-send-heading"
 		>
-			<h2 id="check-send-heading" className="text-lg font-semibold">
+			<h2
+				id="check-send-heading"
+				className="text-lg font-semibold text-primary flex items-center gap-2"
+			>
+				<span
+					className="size-2 rounded-full bg-primary-medium"
+					aria-hidden="true"
+				/>
 				Check Send Permission Test
 			</h2>
 
@@ -328,18 +341,16 @@ function TestThisUserInfo(props: { notify: NotifierFn }) {
 		}
 	}, [selfProfile.data]);
 
-	const getErrorMessage = (error: Error | null): string => {
-		if (!error) return "Unknown error";
-		if (error.message) return error.message;
-		return String(error);
-	};
-
 	return (
 		<section
 			className="p-4 space-y-2 max-w-4xl"
 			aria-labelledby="this-user-heading"
 		>
-			<h2 id="this-user-heading" className="text-lg font-semibold">
+			<h2
+				id="this-user-heading"
+				className="text-lg font-semibold text-primary flex items-center gap-2"
+			>
+				<span className="size-2 rounded-full bg-chart-3" aria-hidden="true" />
 				This User Info
 			</h2>
 
@@ -380,18 +391,16 @@ function TestOtherUserInfo(props: { notify: NotifierFn }) {
 		}
 	}, [otherProfile.data]);
 
-	const getErrorMessage = (error: Error | null): string => {
-		if (!error) return "Unknown error";
-		if (error.message) return error.message;
-		return String(error);
-	};
-
 	return (
 		<section
 			className="p-4 space-y-2 max-w-4xl"
 			aria-labelledby="other-user-heading"
 		>
-			<h2 id="other-user-heading" className="text-lg font-semibold">
+			<h2
+				id="other-user-heading"
+				className="text-lg font-semibold text-primary flex items-center gap-2"
+			>
+				<span className="size-2 rounded-full bg-chart-4" aria-hidden="true" />
 				Other User Info
 			</h2>
 
@@ -506,7 +515,11 @@ function TestFileSend(props: { notify: NotifierFn }) {
 				className="p-4 space-y-2 max-w-4xl"
 				aria-labelledby="file-send-heading"
 			>
-				<h2 id="file-send-heading" className="text-lg font-semibold">
+				<h2
+					id="file-send-heading"
+					className="text-lg font-semibold text-primary flex items-center gap-2"
+				>
+					<span className="size-2 rounded-full bg-chart-1" aria-hidden="true" />
 					File Send Test
 				</h2>
 				<p className="text-muted-foreground" aria-live="polite">
@@ -528,7 +541,11 @@ function TestFileSend(props: { notify: NotifierFn }) {
 			className="p-4 space-y-4 max-w-4xl"
 			aria-labelledby="file-send-heading"
 		>
-			<h2 id="file-send-heading" className="text-lg font-semibold">
+			<h2
+				id="file-send-heading"
+				className="text-lg font-semibold text-primary flex items-center gap-2"
+			>
+				<span className="size-2 rounded-full bg-chart-1" aria-hidden="true" />
 				File Send Test
 			</h2>
 
@@ -629,7 +646,11 @@ function ShowReceivedFiles() {
 			className="p-4 space-y-2 max-w-4xl"
 			aria-labelledby="received-files-heading"
 		>
-			<h2 id="received-files-heading" className="text-lg font-semibold">
+			<h2
+				id="received-files-heading"
+				className="text-lg font-semibold text-primary flex items-center gap-2"
+			>
+				<span className="size-2 rounded-full bg-chart-2" aria-hidden="true" />
 				Received Files
 			</h2>
 
@@ -661,7 +682,9 @@ function ShowReceivedFiles() {
 	);
 }
 
-function ReceivedFileItem(props: { pieceCid: string }) {
+const ReceivedFileItem = memo(function ReceivedFileItem(props: {
+	pieceCid: string;
+}) {
 	const { pieceCid } = props;
 	const { data: file } = useFileInfo({ pieceCid });
 	const viewFile = useViewFile();
@@ -712,25 +735,42 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 	// Handle loading state
 	if (!file) {
 		return (
-			<div className="bg-card p-3 rounded border">
+			<div className="bg-card p-3 rounded border border-l-4 border-l-chart-2">
 				<p className="text-muted-foreground">Loading file info...</p>
 			</div>
 		);
 	}
 
 	return (
-		<article className="bg-card p-3 rounded border">
+		<article className="bg-card p-3 rounded border border-l-4 border-l-chart-2">
 			<dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm mb-3">
-				<dt className="text-muted-foreground">File CID:</dt>
-				<dd className="break-all font-mono text-xs" title={displayCid}>
+				<dt className="text-primary-medium font-medium">File CID:</dt>
+				<dd
+					className="break-all font-mono text-xs text-foreground"
+					title={displayCid}
+				>
 					{truncatedCid}
 				</dd>
 
-				<dt className="text-muted-foreground">Sender:</dt>
-				<dd className="break-all font-mono text-xs">{file.sender}</dd>
+				<dt className="text-primary-medium font-medium">Sender:</dt>
+				<dd className="break-all font-mono text-xs text-foreground">
+					{file.sender}
+				</dd>
 
-				<dt className="text-muted-foreground">Status:</dt>
-				<dd>{file.status}</dd>
+				<dt className="text-primary-medium font-medium">Status:</dt>
+				<dd className="inline-flex items-center text-foreground">
+					<span
+						className={`inline-block size-1.5 rounded-full mr-1.5 ${
+							file.status === "s3"
+								? "bg-chart-3"
+								: file.status === "foc"
+									? "bg-chart-1"
+									: "bg-muted-foreground"
+						}`}
+						aria-hidden="true"
+					/>
+					{file.status}
+				</dd>
 			</dl>
 
 			<div className="flex flex-wrap gap-2 items-start">
@@ -775,7 +815,7 @@ function ReceivedFileItem(props: { pieceCid: string }) {
 			</div>
 		</article>
 	);
-}
+});
 
 function ShowSentFiles() {
 	const sentFiles = useSentFiles();
@@ -795,7 +835,11 @@ function ShowSentFiles() {
 			className="p-4 space-y-2 max-w-4xl"
 			aria-labelledby="sent-files-heading"
 		>
-			<h2 id="sent-files-heading" className="text-lg font-semibold">
+			<h2
+				id="sent-files-heading"
+				className="text-lg font-semibold text-primary flex items-center gap-2"
+			>
+				<span className="size-2 rounded-full bg-chart-5" aria-hidden="true" />
 				Sent Files
 			</h2>
 
@@ -827,7 +871,7 @@ function ShowSentFiles() {
 	);
 }
 
-function SentFileItem(props: { pieceCid: string }) {
+const SentFileItem = memo(function SentFileItem(props: { pieceCid: string }) {
 	const { pieceCid } = props;
 	const { data: file } = useFileInfo({ pieceCid });
 	const viewFile = useViewFile();
@@ -855,28 +899,53 @@ function SentFileItem(props: { pieceCid: string }) {
 	// Handle loading state
 	if (!file) {
 		return (
-			<div className="bg-card p-3 rounded border">
+			<div className="bg-card p-3 rounded border border-l-4 border-l-chart-5">
 				<p className="text-muted-foreground">Loading file info...</p>
 			</div>
 		);
 	}
 
 	return (
-		<article className="bg-card p-3 rounded border">
+		<article className="bg-card p-3 rounded border border-l-4 border-l-chart-5">
 			<dl className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 text-sm mb-3">
-				<dt className="text-muted-foreground">File CID:</dt>
-				<dd className="break-all font-mono text-xs" title={displayCid}>
+				<dt className="text-secondary-medium font-medium">File CID:</dt>
+				<dd
+					className="break-all font-mono text-xs text-foreground"
+					title={displayCid}
+				>
 					{truncatedCid}
 				</dd>
 
-				<dt className="text-muted-foreground">Sender:</dt>
-				<dd className="break-all font-mono text-xs">{file.sender}</dd>
+				<dt className="text-secondary-medium font-medium">Sender:</dt>
+				<dd className="break-all font-mono text-xs text-foreground">
+					{file.sender}
+				</dd>
 
-				<dt className="text-muted-foreground">Status:</dt>
-				<dd>{file.status}</dd>
+				<dt className="text-secondary-medium font-medium">Status:</dt>
+				<dd className="inline-flex items-center text-foreground">
+					<span
+						className={`inline-block size-1.5 rounded-full mr-1.5 ${
+							file.status === "s3"
+								? "bg-chart-3"
+								: file.status === "foc"
+									? "bg-chart-1"
+									: "bg-muted-foreground"
+						}`}
+						aria-hidden="true"
+					/>
+					{file.status}
+				</dd>
 
-				<dt className="text-muted-foreground">Signatures:</dt>
-				<dd>{file.signatures.length}</dd>
+				<dt className="text-secondary-medium font-medium">Signatures:</dt>
+				<dd className="inline-flex items-center gap-1.5 text-foreground">
+					<span
+						className={`inline-block size-1.5 rounded-full ${
+							file.signatures.length > 0 ? "bg-success" : "bg-muted-foreground"
+						}`}
+						aria-hidden="true"
+					/>
+					{file.signatures.length}
+				</dd>
 			</dl>
 
 			{canView && kemCiphertext && encryptedEncryptionKey && status ? (
@@ -911,4 +980,4 @@ function SentFileItem(props: { pieceCid: string }) {
 			)}
 		</article>
 	);
-}
+});

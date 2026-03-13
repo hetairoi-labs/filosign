@@ -24,6 +24,21 @@
 	--warning-foreground: hsl(0, 0%, 100%);
 	--ring: hsl(90, 50%, 38%);
 	--radius: 0.65rem;
+
+	/* Extended brand colors */
+	--primary-light: hsl(90, 67%, 83%);
+	--primary-medium: hsl(90, 50%, 38%);
+	--primary-dark: hsl(75, 67%, 13%);
+	--secondary-light: hsl(38, 100%, 83%);
+	--secondary-medium: hsl(33, 67%, 62%);
+	--secondary-dark: hsl(28, 58%, 37%);
+
+	/* Chart colors */
+	--chart-1: hsl(38, 92%, 50%);
+	--chart-2: hsl(160, 84%, 37%);
+	--chart-3: hsl(217, 91%, 60%);
+	--chart-4: hsl(262, 83%, 58%);
+	--chart-5: hsl(0, 84%, 58%);
 }
 
 @theme {
@@ -52,6 +67,21 @@
 	--radius-md: calc(var(--radius) - 2px);
 	--radius-lg: var(--radius);
 	--radius-xl: calc(var(--radius) + 4px);
+
+	/* Extended brand colors */
+	--color-primary-light: var(--primary-light);
+	--color-primary-medium: var(--primary-medium);
+	--color-primary-dark: var(--primary-dark);
+	--color-secondary-light: var(--secondary-light);
+	--color-secondary-medium: var(--secondary-medium);
+	--color-secondary-dark: var(--secondary-dark);
+
+	/* Chart colors */
+	--color-chart-1: var(--chart-1);
+	--color-chart-2: var(--chart-2);
+	--color-chart-3: var(--chart-3);
+	--color-chart-4: var(--chart-4);
+	--color-chart-5: var(--chart-5);
 }
 
 @layer base {
