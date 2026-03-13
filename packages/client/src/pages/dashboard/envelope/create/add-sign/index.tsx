@@ -1,6 +1,6 @@
 import { useProfilesByAddresses, useSendFile } from "@filosign/react/hooks";
 import { useNavigate } from "@tanstack/react-router";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Address } from "viem";
 
@@ -74,6 +74,8 @@ export default function AddSignaturePage() {
 	const [pendingFieldType, setPendingFieldType] = useState<
 		SignatureField["type"] | null
 	>(null);
+	const [isSending, setIsSending] = useState(false);
+	const isSendingRef = useRef(false);
 
 	// Convert createForm documents to Document format
 	const documents: Document[] = createForm?.documents?.length
@@ -156,6 +158,12 @@ export default function AddSignaturePage() {
 	};
 
 	const handleSend = async () => {
+		// Double-submit protection
+		if (isSendingRef.current || isSending) {
+			toast.info("Already sending documents...");
+			return;
+		}
+
 		if (!createForm || !createForm.documents.length) {
 			toast.error("No documents to send");
 			return;
@@ -179,6 +187,10 @@ export default function AddSignaturePage() {
 			toast.error("Loading recipient information...");
 			return;
 		}
+
+		// Set sending state to prevent double-submit
+		isSendingRef.current = true;
+		setIsSending(true);
 
 		try {
 			toast.loading("Sending documents...", { id: "send-progress" });

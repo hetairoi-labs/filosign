@@ -1,6 +1,6 @@
-import { MinusIcon, RectangleIcon } from "@phosphor-icons/react/dist/ssr";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Cropper from "react-easy-crop";
+import { toast } from "sonner";
 import { Button } from "../ui/button";
 import {
 	Dialog,
@@ -70,9 +70,18 @@ export default function Crop({
 		width: number;
 		height: number;
 	} | null>(null);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
 	// Memoize the image URL to prevent recreating it on every render
 	const imageUrl = useMemo(() => URL.createObjectURL(image), [image]);
+
+	// Cleanup the object URL when component unmounts or image changes
+	useEffect(() => {
+		return () => {
+			URL.revokeObjectURL(imageUrl);
+		};
+	}, [imageUrl]);
 
 	// Filter allowed aspect ratios
 	const filteredAspectRatios = useMemo(() => {
@@ -96,10 +105,13 @@ export default function Crop({
 	const createImage = useCallback(
 		(url: string): Promise<HTMLImageElement> =>
 			new Promise((resolve, reject) => {
-				const image = new Image();
-				image.addEventListener("load", () => resolve(image));
-				image.addEventListener("error", (error) => reject(error));
-				image.src = url;
+				const img = new Image();
+				img.crossOrigin = "anonymous";
+				img.addEventListener("load", () => resolve(img));
+				img.addEventListener("error", () => {
+					reject(new Error("Failed to load image"));
+				});
+				img.src = url;
 			}),
 		[],
 	);
@@ -109,12 +121,12 @@ export default function Crop({
 			imageSrc: string,
 			pixelCrop: { x: number; y: number; width: number; height: number },
 		) => {
-			const image = await createImage(imageSrc);
+			const img = await createImage(imageSrc);
 			const canvas = document.createElement("canvas");
 			const ctx = canvas.getContext("2d");
 
 			if (!ctx) {
-				throw new Error("No 2d context");
+				throw new Error("No 2d context available");
 			}
 
 			// Calculate dimensions while maintaining aspect ratio
@@ -137,7 +149,7 @@ export default function Crop({
 			ctx.imageSmoothingEnabled = true;
 
 			ctx.drawImage(
-				image,
+				img,
 				pixelCrop.x,
 				pixelCrop.y,
 				pixelCrop.width,
@@ -148,20 +160,33 @@ export default function Crop({
 				height,
 			);
 
-			return new Promise<File>((resolve) => {
+			return new Promise<File>((resolve, reject) => {
 				let quality = 0.8;
+				const maxAttempts = 10;
+				let attempts = 0;
+
 				const compressImage = () => {
+					attempts++;
 					canvas.toBlob(
 						(blob) => {
-							if (!blob) return;
+							if (!blob) {
+								reject(new Error("Failed to create image blob"));
+								return;
+							}
 
-							// If file is still too large, reduce quality and try again
-							if (blob.size > MAX_FILE_SIZE && quality > 0.1) {
+							// If file is still too large and we haven't tried too many times, reduce quality
+							if (
+								blob.size > MAX_FILE_SIZE &&
+								quality > 0.1 &&
+								attempts < maxAttempts
+							) {
 								quality -= 0.1;
 								compressImage();
 							} else {
-								const file = new File([blob], image.name, {
+								const fileName = image.name.replace(/\.[^/.]+$/, "") + ".jpg";
+								const file = new File([blob], fileName, {
 									type: "image/jpeg",
+									lastModified: Date.now(),
 								});
 								resolve(file);
 							}
@@ -174,18 +199,29 @@ export default function Crop({
 				compressImage();
 			});
 		},
-		[createImage],
+		[createImage, image.name],
 	);
 
 	const handleCrop = useCallback(async () => {
-		if (!croppedAreaPixels) return;
+		if (!croppedAreaPixels) {
+			toast.error("Please select an area to crop");
+			return;
+		}
+
+		setIsLoading(true);
+		setError(null);
 
 		try {
 			const croppedImage = await getCroppedImg(imageUrl, croppedAreaPixels);
 			onCrop(croppedImage, aspectRatio);
 			onClose();
-		} catch (e) {
-			console.error(e);
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : "Failed to crop image";
+			setError(errorMessage);
+			toast.error(errorMessage);
+		} finally {
+			setIsLoading(false);
 		}
 	}, [
 		croppedAreaPixels,
@@ -196,18 +232,26 @@ export default function Crop({
 		getCroppedImg,
 	]);
 
-	// Cleanup the object URL when component unmounts or image changes
-	useCallback(() => {
-		return () => {
-			URL.revokeObjectURL(imageUrl);
-		};
-	}, [imageUrl]);
+	const handleImageLoad = () => {
+		setIsLoading(false);
+		setError(null);
+	};
+
+	const handleImageError = () => {
+		setIsLoading(false);
+		setError("Failed to load image. Please try a different file.");
+		toast.error("Failed to load image");
+	};
+
+	const handleZoomChange = (value: number) => {
+		setZoom(Math.max(1, Math.min(3, value)));
+	};
 
 	// Get current aspect ratio value
 	const currentAspectRatioValue =
 		aspectRatio === "custom"
 			? undefined // Pass undefined to disable aspect ratio constraint
-			: aspectRatioOptions[aspectRatio].value;
+			: aspectRatioOptions[aspectRatio]?.value;
 
 	return (
 		<Dialog open={isOpen} onOpenChange={onClose}>
@@ -215,79 +259,108 @@ export default function Crop({
 				<DialogHeader className="pt-6">
 					<DialogTitle>Crop Image</DialogTitle>
 				</DialogHeader>
-				<div className="relative h-[500px] w-full bg-black">
-					<Cropper
-						image={imageUrl}
-						crop={crop}
-						zoom={zoom}
-						aspect={currentAspectRatioValue}
-						onCropChange={setCrop}
-						onZoomChange={setZoom}
-						onCropComplete={onCropComplete}
-						objectFit="contain"
-						showGrid={true}
-					/>
-				</div>
 
-				{filteredAspectRatios.length > 1 && (
-					<div className="flex flex-col gap-2 py-4">
-						<label
-							htmlFor="aspect-ratio-toggle"
-							className="text-sm font-medium"
-						>
-							Aspect Ratio
-						</label>
-						<ToggleGroup
-							id="aspect-ratio-toggle"
-							type="single"
-							value={aspectRatio}
-							onValueChange={(value) => {
-								if (value) setAspectRatio(value as AspectRatio);
-							}}
-							className="justify-start flex-wrap"
-						>
-							{filteredAspectRatios.map((ratio) => (
-								<ToggleGroupItem
-									key={ratio}
-									value={ratio}
-									aria-label={aspectRatioOptions[ratio].label}
+				{error ? (
+					<div className="py-8 text-center">
+						<p className="text-destructive mb-4">{error}</p>
+						<Button variant="outline" onClick={onClose}>
+							Close
+						</Button>
+					</div>
+				) : (
+					<>
+						<div className="relative h-[500px] w-full bg-black">
+							{isLoading && (
+								<div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+									<div className="text-white text-sm">Loading image...</div>
+								</div>
+							)}
+							<img
+								src={imageUrl}
+								alt=""
+								className="hidden"
+								onLoad={handleImageLoad}
+								onError={handleImageError}
+							/>
+							<Cropper
+								image={imageUrl}
+								crop={crop}
+								zoom={zoom}
+								aspect={currentAspectRatioValue}
+								onCropChange={setCrop}
+								onZoomChange={handleZoomChange}
+								onCropComplete={onCropComplete}
+								objectFit="contain"
+								showGrid={true}
+							/>
+						</div>
+
+						{filteredAspectRatios.length > 1 && (
+							<div className="flex flex-col gap-2 py-4">
+								<label
+									htmlFor="aspect-ratio-toggle"
+									className="text-sm font-medium"
 								>
-									<span className="hidden sm:inline">
-										{aspectRatioOptions[ratio].label}
-									</span>
-								</ToggleGroupItem>
-							))}
-						</ToggleGroup>
-					</div>
+									Aspect Ratio
+								</label>
+								<ToggleGroup
+									id="aspect-ratio-toggle"
+									type="single"
+									value={aspectRatio}
+									onValueChange={(value) => {
+										if (value) setAspectRatio(value as AspectRatio);
+									}}
+									className="justify-start flex-wrap"
+								>
+									{filteredAspectRatios.map((ratio) => (
+										<ToggleGroupItem
+											key={ratio}
+											value={ratio}
+											aria-label={aspectRatioOptions[ratio]?.label}
+										>
+											<span className="hidden sm:inline">
+												{aspectRatioOptions[ratio]?.label}
+											</span>
+										</ToggleGroupItem>
+									))}
+								</ToggleGroup>
+							</div>
+						)}
+
+						<div className="flex flex-col gap-2 py-2">
+							<label htmlFor="zoom-input" className="text-sm font-medium">
+								Zoom
+							</label>
+							<div className="flex items-center gap-2">
+								<span className="text-xs text-muted-foreground">-</span>
+								<input
+									id="zoom-input"
+									type="range"
+									value={zoom}
+									min={1}
+									max={3}
+									step={0.1}
+									aria-label="Zoom level"
+									onChange={(e) => handleZoomChange(Number(e.target.value))}
+									className="w-full"
+								/>
+								<span className="text-xs text-muted-foreground">+</span>
+							</div>
+						</div>
+
+						<DialogFooter className="px-6 pb-2">
+							<Button variant="outline" onClick={onClose} disabled={isLoading}>
+								Cancel
+							</Button>
+							<Button
+								onClick={handleCrop}
+								disabled={isLoading || !croppedAreaPixels}
+							>
+								{isLoading ? "Processing..." : "Crop & Save"}
+							</Button>
+						</DialogFooter>
+					</>
 				)}
-
-				<div className="flex flex-col gap-2 py-2">
-					<label htmlFor="zoom-input" className="text-sm font-medium">
-						Zoom
-					</label>
-					<div className="flex items-center gap-2">
-						<MinusIcon />
-						<input
-							id="zoom-input"
-							type="range"
-							value={zoom}
-							min={1}
-							max={3}
-							step={0.1}
-							aria-labelledby="Zoom"
-							onChange={(e) => setZoom(Number(e.target.value))}
-							className="w-full"
-						/>
-						<RectangleIcon />
-					</div>
-				</div>
-
-				<DialogFooter className="px-6 pb-2">
-					<Button variant="outline" onClick={onClose}>
-						Cancel
-					</Button>
-					<Button onClick={handleCrop}>Crop & Save</Button>
-				</DialogFooter>
 			</DialogContent>
 		</Dialog>
 	);

@@ -116,11 +116,14 @@ export default function FileCard({
 				</div>
 
 				{/* File info */}
-				<div className="space-y-1">
-					<p className="text-sm font-medium truncate" title={fileName}>
+				<div className="space-y-1 min-w-0">
+					<p
+						className="text-sm font-medium truncate break-all"
+						title={fileName}
+					>
 						{fileName}
 					</p>
-					<p className="text-xs text-muted-foreground">
+					<p className="text-xs text-muted-foreground truncate">
 						{formatFileSize(fileSize)}
 					</p>
 					<p className="text-xs text-muted-foreground">
@@ -160,9 +163,11 @@ export default function FileCard({
 							<FileIconComponent className={cn("size-6", iconColor)} />
 						</div>
 					)}
-					<div>
-						<p className="text-sm font-medium">{fileName}</p>
-						<p className="text-xs text-muted-foreground">
+					<div className="min-w-0 flex-1">
+						<p className="text-sm font-medium truncate" title={fileName}>
+							{fileName}
+						</p>
+						<p className="text-xs text-muted-foreground truncate">
 							{formatFileSize(fileSize)} •{" "}
 							{file.createdAt ? formatDate(file.createdAt) : "Unknown date"}
 						</p>

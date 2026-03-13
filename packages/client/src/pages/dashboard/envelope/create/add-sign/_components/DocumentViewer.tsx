@@ -294,15 +294,22 @@ export default function DocumentViewer({
 											PDF preview not supported in this browser.
 										</div>
 									</object>
-									<div
-										className={cn(
-											"absolute inset-0 w-full h-full pointer-events-auto",
-											isPlacingField
-												? "cursor-crosshair bg-blue-500/5 z-20"
-												: "cursor-default bg-transparent",
-										)}
-										onClick={handleDocumentClick}
-									/>
+									{isPlacingField ? (
+										<div
+											className="absolute inset-0 w-full h-full pointer-events-auto cursor-crosshair bg-blue-500/5 z-20"
+											onClick={handleDocumentClick}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													handleDocumentClick(e as unknown as React.MouseEvent);
+												}
+											}}
+											role="button"
+											tabIndex={0}
+											aria-label={`Click to place ${pendingFieldType} field. Use Enter or Space to place at center.`}
+										/>
+									) : (
+										<div className="absolute inset-0 w-full h-full pointer-events-auto cursor-default bg-transparent" />
+									)}
 									{isPlacingField && (
 										<div className="absolute inset-0 border-2 border-dashed border-secondary/50 bg-secondary/20 pointer-events-none">
 											<div className="absolute top-2 left-2 text-xs text-primary bg-secondary px-2 py-1 rounded">
@@ -317,18 +324,23 @@ export default function DocumentViewer({
 										src={document.url}
 										alt={document.name}
 										className="absolute inset-0 w-full h-full object-contain bg-white z-10"
-										draggable={false}
-										onClick={handleDocumentClick}
 									/>
-									<div
-										className={cn(
-											"absolute inset-0 w-full h-full pointer-events-auto",
-											isPlacingField
-												? "cursor-crosshair bg-blue-500/5 z-20"
-												: "cursor-default bg-transparent",
-										)}
-										onClick={handleDocumentClick}
-									/>
+									{isPlacingField ? (
+										<div
+											className="absolute inset-0 w-full h-full pointer-events-auto cursor-crosshair bg-blue-500/5 z-20"
+											onClick={handleDocumentClick}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" || e.key === " ") {
+													handleDocumentClick(e as unknown as React.MouseEvent);
+												}
+											}}
+											role="button"
+											tabIndex={0}
+											aria-label={`Click to place ${pendingFieldType} field. Use Enter or Space to place at center.`}
+										/>
+									) : (
+										<div className="absolute inset-0 w-full h-full pointer-events-auto cursor-default bg-transparent" />
+									)}
 									{isPlacingField && (
 										<div className="absolute inset-0 border-2 border-dashed border-secondary/50 bg-secondary/20 pointer-events-none z-20">
 											<div className="absolute top-2 left-2 text-xs text-primary bg-secondary px-2 py-1 rounded ">
@@ -375,6 +387,17 @@ export default function DocumentViewer({
 									}}
 									onClick={(e) => handleFieldClick(field.id, e)}
 									onMouseDown={(e) => handleFieldMouseDown(field.id, e)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" || e.key === " ") {
+											handleFieldClick(
+												field.id,
+												e as unknown as React.MouseEvent,
+											);
+										}
+									}}
+									role="button"
+									tabIndex={0}
+									aria-label={`${getFieldLabel(field.type)} field, press Enter to select`}
 								>
 									<div
 										className={cn(
