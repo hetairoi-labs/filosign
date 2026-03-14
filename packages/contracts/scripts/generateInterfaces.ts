@@ -599,7 +599,7 @@ function main() {
 	const pattern = path.join(SRC_DIR, "**/*.sol");
 	const files = glob.sync(pattern, {
 		nodir: true,
-		ignore: [path.join(OUT_DIR, "**/*")],
+		ignore: [path.join(OUT_DIR, "**/*"), path.join(SRC_DIR, "mocks/**/*")],
 	});
 
 	if (files.length === 0) {

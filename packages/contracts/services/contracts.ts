@@ -57,6 +57,10 @@ export function getContracts<T extends Wallet>(options: {
 			client: getKeyedClient(client),
 			...contractDefinitions.FSKeyRegistry,
 		}),
+		FSWorldVerifier: getContract({
+			client: getKeyedClient(client),
+			...contractDefinitions.FSWorldVerifier,
+		}),
 		$client: client,
 	};
 }
