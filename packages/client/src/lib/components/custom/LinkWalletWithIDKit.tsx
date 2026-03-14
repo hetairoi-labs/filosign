@@ -10,7 +10,7 @@ import { useRef, useState } from "react";
 import { Button } from "../ui/button";
 
 const WORLD_ID_APP_ID = process.env.BUN_PUBLIC_WORLD_APP_ID;
-const LINK_ACTION = "link-wallet";
+const LINK_ACTION = "sign-flow";
 
 export function LinkWalletWithIDKit() {
 	const [open, setOpen] = useState(false);

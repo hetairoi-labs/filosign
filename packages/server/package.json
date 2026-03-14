@@ -4,7 +4,8 @@
 		"db:push": "bunx --bun drizzle-kit push",
 		"check": "bunx --bun biome check --write",
 		"dev": "bun --hot index.ts",
-		"start": "bun --env-file=.env.prod run index.ts"
+		"start": "bun --env-file=.env.prod run index.ts",
+		"push": "bunx --bun drizzle-kit push"
 	},
 	"dependencies": {
 		"@filosign/contracts": "workspace:*",

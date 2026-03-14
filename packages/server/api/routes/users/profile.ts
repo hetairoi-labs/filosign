@@ -11,6 +11,7 @@ import { processTransaction } from "@/lib/indexer/process";
 import { bucket } from "@/lib/s3/client";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
+import { getWorldIdLinkErrorMessage } from "@/lib/utils/world-errors";
 
 const { FSKeyRegistry, FSWorldVerifier } = fsContracts;
 
@@ -89,31 +90,33 @@ export default new Hono()
 			worldIdProof,
 		} = parsedBody.data;
 
-		// link wallet to world id
 		if (worldIdProof.protocol_version === "3.0") {
-			console.log("LINKING WORLD ID..");
-			const response = worldIdProof.responses[0];
-
-			const unpackedProof = decodeAbiParameters(
-				[{ type: "uint256[8]" }],
-				response.proof as `0x${string}`,
-			)[0];
-
-			const linkTx = await tryCatch(
-				FSWorldVerifier.write.linkWallet([
-					walletAddress,
-					BigInt(response.merkle_root),
-					BigInt(response.nullifier),
-					unpackedProof,
-				]),
-			);
-
-			if (linkTx.error) {
-				console.error("World ID linking failed:", linkTx.error);
-				return respond.err(ctx, "World ID linking failed", 500);
+			const alreadyLinked = await FSWorldVerifier.read.addressToNullifier([
+				walletAddress,
+			]);
+			if (alreadyLinked === 0n) {
+				const response = worldIdProof.responses[0];
+				const unpackedProof = decodeAbiParameters(
+					[{ type: "uint256[8]" }],
+					response.proof as `0x${string}`,
+				)[0];
+				const linkTx = await tryCatch(
+					FSWorldVerifier.write.linkWallet([
+						walletAddress,
+						BigInt(response.merkle_root),
+						BigInt(response.nullifier),
+						unpackedProof,
+					]),
+				);
+				if (linkTx.error) {
+					console.error("World ID linking failed:", linkTx.error);
+					return respond.err(
+						ctx,
+						getWorldIdLinkErrorMessage(linkTx.error),
+						500,
+					);
+				}
 			}
-
-			console.log("WORLD ID LINKED SUCCESSFULLY..");
 		}
 
 		const valid = await tryCatch(
@@ -131,6 +134,14 @@ export default new Hono()
 		if (valid.error || !valid.data) {
 			console.log(valid.error || "Invalid signature");
 			return respond.err(ctx, `Error validating signature ${valid.error}`, 500);
+		}
+
+		const { FSManager } = fsContracts;
+		const alreadyRegistered = await FSManager.read.isRegistered([
+			walletAddress,
+		]);
+		if (alreadyRegistered) {
+			return respond.ok(ctx, {}, "Keygen data registered successfully", 200);
 		}
 
 		const txHash = await tryCatch(
@@ -151,13 +162,6 @@ export default new Hono()
 				500,
 			);
 		}
-
-		console.log("KEY REGISTRY UPDATED..");
-
-		console.log({
-			encryptionPublicKey,
-			signaturePublicKey,
-		});
 
 		await processTransaction(txHash.data, {
 			encryptionPublicKey,

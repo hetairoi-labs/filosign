@@ -59,6 +59,29 @@ export function IDKitLinkTest({
 		error: getRpContext.error,
 	};
 
+	// const verifyProof = async (result: IDKitResult) => {
+	// 	console.log("[LINK] verifyProof rpContext?.rp_id:", rpContext?.rp_id);
+	// 	console.log("[LINK] verifyProof result:", result);
+
+	// 	const response = await fetch(
+	// 		`https://developer.world.org/api/v4/verify/${rpContext?.rp_id}`,
+	// 		{
+	// 			method: "POST",
+	// 			headers: { "content-type": "application/json" },
+	// 			body: JSON.stringify(result),
+	// 		},
+	// 	);
+
+	// 	console.log("[LINK] verifyProof response:", await response.json());
+
+	// 	if (response.ok) {
+	// 		return response.json();
+	// 	} else {
+	// 		const { code, detail } = await response.json();
+	// 		throw new Error(`Error Code ${code}: ${detail}`);
+	// 	}
+	// };
+
 	return (
 		<div className="space-y-2">
 			<Button mutation={rpMutation}>
@@ -99,14 +122,13 @@ export function IDKitLinkTest({
 					}}
 					app_id={WORLD_ID_APP_ID as `app_${string}`}
 					action={LINK_ACTION}
-					action_description="Link your wallet for secure document signing"
 					rp_context={rpContext}
-					allow_legacy_proofs={true}
 					environment="staging"
+					allow_legacy_proofs={true}
 					preset={orbLegacy({
 						signal: userAddress.toLowerCase(),
 					})}
-					handleVerify={async () => {}}
+					handleVerify={() => {}}
 					onSuccess={(proof) => {
 						console.log("[LINK] proof:", proof);
 						void handleSuccess(proof);

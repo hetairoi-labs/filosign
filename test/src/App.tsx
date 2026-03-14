@@ -3,20 +3,40 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { hardhat } from "viem/chains";
+import { hardhat, worldchain, worldchainSepolia } from "viem/chains";
 import Test from "./Test.js";
 
+const raw = import.meta.env.VITE_CHAIN;
+if (!raw || typeof raw !== "string") {
+	throw new Error(
+		"VITE_CHAIN is required. Set it to local, testnet, or mainnet (e.g. VITE_CHAIN=testnet bun run dev)",
+	);
+}
+const chainKey = raw as "local" | "testnet" | "mainnet";
+if (chainKey !== "local" && chainKey !== "testnet" && chainKey !== "mainnet") {
+	throw new Error(
+		`Invalid VITE_CHAIN="${raw}". Must be one of: local, testnet, mainnet`,
+	);
+}
+const chain =
+	chainKey === "testnet"
+		? worldchainSepolia
+		: chainKey === "mainnet"
+			? worldchain
+			: hardhat;
+const transport = http();
+
 export const wallet1 = createWalletClient({
-	chain: hardhat,
-	transport: http(),
+	chain,
+	transport,
 	account: privateKeyToAccount(
 		"0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
 	),
 });
 
 export const wallet2 = createWalletClient({
-	chain: hardhat,
-	transport: http(),
+	chain,
+	transport,
 	account: privateKeyToAccount(
 		"0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
 	),

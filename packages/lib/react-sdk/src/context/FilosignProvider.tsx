@@ -73,8 +73,6 @@ export function FilosignProvider(props: FilosignConfig) {
 		enabled: !!api,
 	});
 
-	console.log("runtime.data", runtime.data);
-
 	const flag = useRef(false);
 
 	useEffect(() => {
