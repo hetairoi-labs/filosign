@@ -20,21 +20,48 @@ const config: HardhatUserConfig = {
 		hardhat: {
 			allowUnlimitedContractSize: true,
 		},
+		localhost: {
+			url: "http://127.0.0.1:8545",
+			chainId: 31337,
+		},
 		filecoinCalibration: {
 			accounts: [Bun.env.FC_PVT_KEY],
 			chainId: 314159,
 			url: "https://api.calibration.node.glif.io/rpc/v1",
 		},
-		localhost: {
-			url: "http://127.0.0.1:8545",
-			chainId: 31337,
+		worldChainSepolia: {
+			accounts: [Bun.env.FC_PVT_KEY],
+			chainId: 4801,
+			url: "https://worldchain-sepolia.g.alchemy.com/public",
+		},
+		worldChainMainnet: {
+			accounts: [Bun.env.FC_PVT_KEY],
+			chainId: 480,
+			url: "https://worldchain-mainnet.g.alchemy.com/public",
 		},
 	},
 	etherscan: {
 		apiKey: {
-			filecoinCalibration: "empyt",
+			worldChainSepolia: process.env.BLOCKSCOUT_API_KEY ?? "no-api-key",
+			worldChainMainnet: process.env.BLOCKSCOUT_API_KEY ?? "no-api-key",
 		},
 		customChains: [
+			{
+				network: "worldChainSepolia",
+				chainId: 4801,
+				urls: {
+					apiURL: "https://worldchain-sepolia.explorer.alchemy.com/api",
+					browserURL: "https://sepolia.worldscan.org",
+				},
+			},
+			{
+				network: "worldChainMainnet",
+				chainId: 480,
+				urls: {
+					apiURL: "https://worldchain-mainnet.explorer.alchemy.com/api",
+					browserURL: "https://worldscan.org",
+				},
+			},
 			{
 				network: "filecoinCalibration",
 				chainId: 314159,
