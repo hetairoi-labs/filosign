@@ -1,13 +1,13 @@
 # Contributing to Filosign
 
-Thank you for your interest in contributing to Filosign! We're building the future of trustless digital signatures on the decentralized web. This guide will help you get started with development, contribution guidelines, and project structure.
+Thank you for your interest in contributing to Filosign. This guide covers development setup, contribution workflow, and project structure.
 
 ## 🚀 Development Setup
 
 ### Prerequisites
-- **Bun** >= 1.0.0 (JavaScript runtime & package manager)
-- **Web3 Wallet** (MetaMask, Coinbase Wallet, etc.)
-- **Filecoin Calibration Testnet** access (for testing)
+- **Bun** >= 1.0.0 (JavaScript runtime and package manager)
+- **Web3 wallet** (e.g. MetaMask, Coinbase Wallet) for signing and testnet
+- **Filecoin Calibration testnet** for contract and integration testing (use a testnet faucet if you need test FIL)
 
 ### Quick Start
 ```bash
@@ -18,14 +18,14 @@ cd client
 # Install dependencies
 bun install
 
-# Start local development environment (includes blockchain, server, and hot reload)
+# Start full local stack (blockchain, API server, client with hot reload)
 ./scripts/serloc.sh
-
-# In another terminal - run integration tests
-cd test && bun run dev
 ```
 
+To run the integration test app in a separate terminal: `cd test && bun run dev`
+
 ### Individual Services
+Run these only when you need a single service instead of the full stack:
 ```bash
 # API server
 bun run server:start
@@ -67,7 +67,7 @@ filosign/
 │   │   ├── src/             # Smart contract source
 │   │   └── test/            # Contract unit tests
 │   ├── lib/
-│   │   ├── crypto-utils/    # WebAssembly PQ cryptography
+│   │   ├── crypto-utils/    # WebAssembly post-quantum cryptography
 │   │   ├── react-sdk/       # TypeScript client library
 │   │   └── shared/          # Common utilities
 │   └── test/                # Integration test suite
@@ -84,12 +84,12 @@ filosign/
 ## 🛠️ Development Guidelines
 
 ### Code Style
-- **Components**: Use shadcn/ui patterns with proper TypeScript
-- **Icons**: Import from `@phosphor-icons/react`
-- **Styling**: Follow design system defined in `globals.css`
-- **State**: Prefer Zustand over Context for global state
-- **Forms**: Use React Hook Form with Zod schemas
-- **Linting**: Biome for code quality and formatting
+- **Components**: Follow shadcn/ui patterns; use TypeScript
+- **Icons**: Use `@phosphor-icons/react` (e.g. `BellIcon`, `MoonIcon`)
+- **Styling**: Use the design tokens and variables in `globals.css`
+- **State**: Use Zustand for app-wide state; avoid React Context for global state
+- **Forms**: React Hook Form with Zod for validation
+- **Linting**: Biome for formatting and linting; run `bun check` before pushing
 
 ### Tech Stack
 ```typescript
@@ -111,31 +111,30 @@ Filecoin FVM contracts
 Viem + WAGMI
 
 // Cryptography
-WebAssembly + Crystals (PQ crypto)
-Kyber/ML-KEM-1024 + Dilithium
+WebAssembly post-quantum (Kyber/ML-KEM-1024 + Dilithium)
 ```
 
 ### Filecoin Integration
-- **Synapse SDK**: Core interactions with the Filecoin network
-- **Filecoin Warm Storage**: Decentralized storage for documents
-- **FilCDN**: Blazing fast retrieval of documents
-- **Filecoin Pay**: Subscription management using USDFC
-- **FVM Contracts**: On-chain document registry
+- **Synapse SDK**: Filecoin network calls (storage, retrieval)
+- **Filecoin Warm Storage**: Decentralized document storage
+- **FilCDN**: Document retrieval
+- **Filecoin Pay**: Subscriptions (USDFC)
+- **FVM contracts**: On-chain document registry (Filecoin Virtual Machine)
 
 ## 🤝 Contributing Workflow
 
 ### 1. Choose an Issue
-- Check [GitHub Issues](https://github.com/filosign-dapp/client/issues) for open tasks
-- Look for issues labeled `good first issue` or `help wanted`
-- Comment on the issue to indicate you're working on it
+- Browse [GitHub Issues](https://github.com/filosign-dapp/client/issues) for open work
+- Prefer issues labeled `good first issue` or `help wanted`
+- Comment on the issue to claim it and avoid duplicate work
 
 ### 2. Development Process
 ```bash
 # Create a feature branch
 git checkout -b feature/amazing-feature
 
-# Make your changes following the guidelines above
-# Test thoroughly - run both unit tests and integration tests
+# Make your changes (see Development Guidelines and Testing sections)
+# Run tests: see "Testing" below for integration, contract, and API test commands
 
 # Commit with clear, descriptive messages
 git commit -m "feat: add amazing feature
@@ -150,30 +149,29 @@ git push origin feature/amazing-feature
 
 ### 3. Pull Request
 - Open a PR with a clear title and description
-- Reference the issue number (e.g., "Closes #123")
-- Ensure CI checks pass
-- Request review from maintainers
+- Reference the issue (e.g. "Closes #123")
+- Wait for CI to pass; fix any failures
+- Assign or tag a maintainer for review
 
 ### 4. Code Review
-- Address review feedback promptly
-- Make requested changes and push updates
-- Once approved, your PR will be merged
+- Respond to review comments and push updates
+- A maintainer will merge your PR after approval
 
 ## 🧪 Testing
 
 ### Integration Test Suite (`test/`)
-A comprehensive testing application that simulates real user interactions:
+Simulates real user interactions:
 
 ```bash
 # Start the integration test suite
 cd test && bun run dev
 ```
 
-**Features:**
-- **Dual-User Simulation**: Side-by-side interface showing two users
-- **End-to-End Testing**: Complete user journeys from registration to signing
-- **Real-Time Sync**: Live state synchronization between test users
-- **Hook Testing**: Validates all 31 React SDK hooks
+**What it does:**
+- **Dual-user view**: Two users side by side
+- **End-to-end flows**: Registration through signing
+- **Live sync**: State stays in sync between the two users
+- **SDK hooks**: Exercises the React SDK hooks used by the app
 
 ### Contract Testing
 ```bash
@@ -213,7 +211,7 @@ cd packages/server && bun run test
 ## 📚 Resources
 
 ### Documentation
-- **[🔐 Cryptography Guide](docs/cryptography.md)**: PQ crypto implementation details
+- **[🔐 Cryptography Guide](docs/cryptography.md)**: Post-quantum crypto implementation
 - **[🏗️ Architecture Overview](docs/architecture.md)**: System design and data flow
 - **[⚙️ SDK Reference](docs/sdk.md)**: React hooks and API documentation
 - **[🧪 Testing Guide](docs/testing.md)**: Integration test suite usage
@@ -230,17 +228,13 @@ cd packages/server && bun run test
 
 ## 🙏 Code of Conduct
 
-We are committed to providing a welcoming and inclusive environment for all contributors. Please:
+We aim to keep the project welcoming and inclusive. Please:
 
 - Be respectful and inclusive in all interactions
-- Focus on constructive feedback and collaboration
-- Help newcomers learn and contribute effectively
-- Report any unacceptable behavior to the maintainers
+- Give constructive feedback and collaborate in good faith
+- Help newcomers get started
+- Report unacceptable behavior to maintainers (e.g. via the [issue tracker](https://github.com/filosign-dapp/client/issues) or [Discord](https://discord.gg/filosign))
 
 ## 📄 License
 
 By contributing to Filosign, you agree that your contributions will be licensed under the **AGPL-3.0-or-later** license.
-
----
-
-*Thank you for contributing to the future of trustless digital agreements! 🚀*

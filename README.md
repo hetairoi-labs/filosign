@@ -1,113 +1,76 @@
 # Filosign
 
-Trustless digital signatures for the decentralized web. Filosign replaces fragile platform trust with permanent mathematical proof, ensuring your agreements are secure, verifiable, and immutable on the Filecoin network.
+Trustless digital signatures on the decentralized web. Replace trust-in-a-provider with math: agreements stay secure, verifiable, and permanent on Filecoin.
 
 [![Website](https://img.shields.io/badge/Website-app.filosign.xyz-blue)](https://app.filosign.xyz)
 [![GitHub](https://img.shields.io/badge/GitHub-filosign--dapp-black)](https://github.com/filosign-dapp)
 
+**[Try the app](https://app.filosign.xyz)** · [Documentation](https://docs.filosign.xyz) · [Contributing](CONTRIBUTING.md)
+
 ## Overview
 
-Traditional e-signature platforms require you to trust a centralized provider. Filosign eliminates this risk by anchoring every signature to the blockchain, providing mathematical certainty that your documents cannot be altered, lost, or invalidated.
+Standard e-signature tools depend on a central company to hold and verify your documents. Filosign anchors every signature to the blockchain so anyone can verify authenticity without trusting a third party. Documents can't be altered, lost, or disputed after the fact.
 
-**Key capabilities:**
+**What you get:**
 
-- Post-quantum cryptography resistant to quantum computing attacks
-- Blockchain-anchored signatures as permanent, verifiable transactions
-- End-to-end encryption from document creation to delivery
-- Decentralized storage on Filecoin's network
-- USDFC subscription payments with no intermediary fees
+- **Post-quantum crypto** — Signatures stay valid even after quantum computers exist
+- **On-chain proof** — Every signature is a permanent, independently verifiable transaction
+- **Encryption by default** — Documents are encrypted on your device before they leave
+- **Decentralized storage** — Files live on Filecoin, not in a single vendor's datacenter
+- **Direct payments** — USDFC subscriptions without intermediary fees
 
 ## Getting Started
 
-1. **Connect Wallet** — Link your Web3 wallet (MetaMask, Coinbase, etc.)
-2. **Create Account** — Set up dual-factor authentication with PIN + wallet
-3. **Upload & Share** — Upload documents and invite signers
-4. **Sign** — Use drawing, typing, or upload signature methods
-5. **Verify** — All signatures are immutably recorded on-chain
+1. **Connect wallet** — MetaMask, Coinbase Wallet, or any Web3 wallet
+2. **Create account** — Two-factor auth with PIN + wallet
+3. **Upload & share** — Add documents and invite signers
+4. **Sign** — Draw, type, or upload your signature
+5. **Verify** — Signatures are recorded on-chain; anyone can check them
 
 ## Use Cases
 
-- **Legal** — Contract signing with cryptographic proof
-- **Business** — High-value agreements requiring permanent verification
-- **Real Estate** — Property documents with immutable signatures
-- **Financial Services** — Regulatory compliance with blockchain audit trails
-
-## Features
-
-### Security
-
-- Dual-factor authentication (PIN + wallet signature)
-- Quantum-resistant cryptography (Kyber + Dilithium)
-- Zero-trust architecture — server never sees private keys
-- Immutable on-chain records
-
-### Document Management
-
-- Universal format support (PDF, DOC, images)
-- Multi-signer workflows (sequential or parallel)
-- Real-time status updates
-- Complete audit trail
-
-### Web3 Integration
-
-- Any Web3 wallet
-- Filecoin decentralized storage
-- USDFC token payments
-- Ethereum and Filecoin network support
+- **Legal** — Contracts with cryptographic proof of who signed and when
+- **Business** — High-value agreements that need permanent, auditable records
+- **Real estate** — Property documents with tamper-evident signatures
+- **Financial** — Compliance and audit trails backed by the blockchain
 
 ## How It Works
 
-### 1. Connect & Authenticate
+**1. Connect & authenticate**  
+Link your Web3 wallet and set a PIN. Keys are created on your device; the server never sees or stores them.
 
-Link your Web3 wallet and set up dual-factor security with a PIN. Cryptographic keys are generated client-side — private information is never stored server-side.
+**2. Upload & encrypt**  
+Documents are encrypted on your device with post-quantum algorithms before upload. Each file gets its own key.
 
-### 2. Upload & Encrypt
+**3. Share**  
+Invite signers via the app. Recipients only see documents they're explicitly granted access to.
 
-Documents are encrypted on your device before upload using quantum-resistant algorithms. Each file receives a unique encryption key.
+**4. Sign & verify**  
+Sign with draw, type, or upload. Each signature is verified and anchored to the blockchain.
 
-### 3. Share Securely
+**5. Audit**  
+Every action is recorded on-chain. Anyone can check authenticity, timestamp, and integrity of a signed document.
 
-Invite signers through the permission system. Recipients can only access files they've been explicitly granted permission to view.
+## Security
 
-### 4. Sign & Verify
-
-Signatures are created using familiar methods (draw, type, or upload), cryptographically verified, and permanently anchored to the blockchain.
-
-### 5. Audit & Prove
-
-All actions are immutably recorded on-chain. Anyone can independently verify the authenticity, timestamp, and integrity of any signed document.
-
-## Security Model
-
-**Zero-Trust Design**
-- Private keys never leave your device
-- Documents encrypted before transmission
-- Server acts only as coordinator
-
-**Quantum-Resistant**
-- Post-quantum cryptographic algorithms (Kyber, Dilithium)
-- Secure against future quantum computers
-
-**Blockchain Verification**
-- Every signature, timestamp, and document hash permanently recorded on Filecoin
-- Mathematical proof of authenticity
+- **Keys stay on your device** — Private keys never leave it; the server only coordinates
+- **Post-quantum algorithms** — Kyber and Dilithium so signatures remain secure against future quantum attacks
+- **On-chain record** — Signature, timestamp, and document hash are permanently stored on Filecoin
 
 ## Development
-
-### Setup
 
 ```bash
 git clone https://github.com/filosign-dapp/client.git
 cd client && bun install
 
-# Start local development
+# Full local stack (blockchain, API, client with hot reload)
 ./scripts/serloc.sh
 
-# Run integration tests
+# Integration tests (separate terminal)
 cd test && bun run dev
 ```
 
-### SDK Integration
+### SDK
 
 ```typescript
 import { FilosignProvider, useFilosignClient } from '@filosign/react';
@@ -121,31 +84,22 @@ function MyApp() {
 }
 ```
 
-See the [documentation](https://docs.filosign.xyz) for complete integration guides.
+Full integration guides: [docs.filosign.xyz](https://docs.filosign.xyz)
 
 ## Contributing
 
-Contributions welcome from developers, designers, and cryptography experts.
-
-```bash
-git checkout -b feature/your-feature
-# Make changes and test
-# Submit a pull request
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+Contributions from developers, designers, and anyone interested in crypto or UX are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup and workflow.
 
 ## Links
 
 - [Website](https://app.filosign.xyz)
-- [Demo Video](https://www.loom.com/share/8e142c8bb06f43edb0a18162222f96f8)
+- [Demo](https://www.loom.com/share/8e142c8bb06f43edb0a18162222f96f8)
 - [Documentation](https://docs.filosign.xyz)
 - [Issues](https://github.com/filosign-dapp/client/issues)
 
 ## Contact
 
-- Email: hello@filosign.xyz
-- Twitter: [@filosign](https://twitter.com/filosign)
+hello@filosign.xyz · [@filosign](https://twitter.com/filosign)
 
 ## License
 
