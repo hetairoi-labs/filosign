@@ -157,14 +157,14 @@ export default new Hono()
 			await tx.insert(fileParticipants).values([
 				{
 					filePieceCid: pieceCid,
-					wallet: sender,
+					wallet: getAddress(sender),
 					role: "sender",
 					kemCiphertext: senderKemCiphertext,
 					encryptedEncryptionKey: senderEncryptedEncryptionKey,
 				},
 				...participants.map((p) => ({
 					filePieceCid: pieceCid,
-					wallet: p.address,
+					wallet: getAddress(p.address),
 					role: p.isSigner ? ("signer" as const) : ("viewer" as const),
 					kemCiphertext: p.kemCiphertext,
 					encryptedEncryptionKey: p.encryptedEncryptionKey,
@@ -275,7 +275,10 @@ export default new Hono()
 		if (!fileRecord) {
 			return respond.err(ctx, "File not found", 404);
 		}
-		const participantUser = participants.find((p) => p.wallet === userWallet);
+		const userWalletNorm = getAddress(userWallet);
+		const participantUser = participants.find(
+			(p) => getAddress(p.wallet) === userWalletNorm,
+		);
 		if (!participantUser) {
 			return respond.err(ctx, "You dont need to access this fle :D", 403);
 		}
@@ -305,10 +308,11 @@ export default new Hono()
 			.where(
 				and(
 					eq(fileAcknowledgements.filePieceCid, pieceCid),
-					eq(fileAcknowledgements.wallet, userWallet),
+					eq(fileAcknowledgements.wallet, userWalletNorm),
 				),
 			);
-		const canRead = !!acked || fileRecord.sender === userWallet;
+		const canRead =
+			!!acked || getAddress(fileRecord.sender) === userWalletNorm;
 
 		const response = {
 			pieceCid: fileRecord.pieceCid,
@@ -392,7 +396,7 @@ export default new Hono()
 		if (valid) {
 			await db.insert(fileAcknowledgements).values({
 				filePieceCid: fileRecord.pieceCid,
-				wallet: participantRecord.wallet,
+				wallet: getAddress(participantRecord.wallet),
 				ack: signature,
 				createdAt: new Date(timestamp * 1000),
 			});

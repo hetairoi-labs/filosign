@@ -1,7 +1,8 @@
+import { zIDKitResult } from "@filosign/shared/world";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { isAddress } from "viem";
+import { decodeAbiParameters, isAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
@@ -11,7 +12,7 @@ import { bucket } from "@/lib/s3/client";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
 
-const { FSKeyRegistry } = fsContracts;
+const { FSKeyRegistry, FSWorldVerifier } = fsContracts;
 
 const { users } = db.schema;
 export default new Hono()
@@ -66,6 +67,7 @@ export default new Hono()
 				encryptionPublicKey: zHexString(),
 				signaturePublicKey: zHexString(),
 				walletAddress: zEvmAddress(),
+				worldIdProof: zIDKitResult,
 			})
 			.safeParse(rawBody);
 
@@ -84,7 +86,35 @@ export default new Hono()
 			encryptionPublicKey,
 			signaturePublicKey,
 			walletAddress,
+			worldIdProof,
 		} = parsedBody.data;
+
+		// link wallet to world id
+		if (worldIdProof.protocol_version === "3.0") {
+			console.log("LINKING WORLD ID..");
+			const response = worldIdProof.responses[0];
+
+			const unpackedProof = decodeAbiParameters(
+				[{ type: "uint256[8]" }],
+				response.proof as `0x${string}`,
+			)[0];
+
+			const linkTx = await tryCatch(
+				FSWorldVerifier.write.linkWallet([
+					walletAddress,
+					BigInt(response.merkle_root),
+					BigInt(response.nullifier),
+					unpackedProof,
+				]),
+			);
+
+			if (linkTx.error) {
+				console.error("World ID linking failed:", linkTx.error);
+				return respond.err(ctx, "World ID linking failed", 500);
+			}
+
+			console.log("WORLD ID LINKED SUCCESSFULLY..");
+		}
 
 		const valid = await tryCatch(
 			FSKeyRegistry.read.validateKeygenDataRegistrationSignature([
@@ -97,13 +127,10 @@ export default new Hono()
 				walletAddress,
 			]),
 		);
-		if (valid.error) {
-			console.log(valid.error);
+
+		if (valid.error || !valid.data) {
+			console.log(valid.error || "Invalid signature");
 			return respond.err(ctx, `Error validating signature ${valid.error}`, 500);
-		}
-		if (!valid.data) {
-			console.log("invalid signature");
-			return respond.err(ctx, "Invalid signature", 400);
 		}
 
 		const txHash = await tryCatch(
@@ -117,16 +144,20 @@ export default new Hono()
 				walletAddress,
 			]),
 		);
-		if (txHash.error) {
+		if (txHash.error || !txHash.data) {
 			return respond.err(
 				ctx,
-				`Error registering keygen data ${txHash.error}`,
+				`Error registering keygen data: ${txHash.error || "Unknown error"}`,
 				500,
 			);
 		}
-		if (!txHash.data) {
-			return respond.err(ctx, "Failed to register keygen data", 500);
-		}
+
+		console.log("KEY REGISTRY UPDATED..");
+
+		console.log({
+			encryptionPublicKey,
+			signaturePublicKey,
+		});
 
 		await processTransaction(txHash.data, {
 			encryptionPublicKey,

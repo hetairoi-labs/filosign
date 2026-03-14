@@ -8,10 +8,6 @@ export function generateRpContext(action: string): RpContext {
 	if (!signingKey) throw new Error("WORLD_ID_SIGNING_KEY is not set");
 	if (!rpId) throw new Error("WORLD_ID_RP_ID is not set");
 
-	console.log("signingKey", signingKey);
-	console.log("rpId", rpId);
-	console.log("action", action);
-
 	const { nonce, createdAt, expiresAt, sig } = signRequest(action, signingKey);
 	return {
 		rp_id: rpId,
