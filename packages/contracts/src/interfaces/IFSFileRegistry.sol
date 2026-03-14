@@ -33,7 +33,6 @@ interface IFSFileRegistry {
     function computeSignersCommitment(address[] calldata signers_) external pure returns (bytes20);
     function fileRegistrations(bytes32 cidId) external view returns (FileRegistrationView memory);
     function registerFile(string calldata pieceCid_, address sender_, address[] calldata signers_, uint256 timestamp_, bytes calldata signature_) external;
-    function registerFileSignature(string calldata pieceCid_, address sender_, address signer_, bytes20 dl3SignatureCommitment_, uint256 timestamp_, bytes calldata signature_) external;
     function registerFileSignatureWorldId(string calldata pieceCid_, address sender_, address signer_, bytes20 dl3SignatureCommitment_, uint256 root_, uint256 nullifierHash_, uint256[8] calldata proof_, uint256 timestamp_, bytes calldata signature_) external;
     function isSigner(bytes32 cidId, address who) external view returns (bool);
     function hasSigned(bytes32 cidId, address who) external view returns (bool);

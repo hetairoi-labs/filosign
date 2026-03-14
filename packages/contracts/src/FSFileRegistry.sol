@@ -155,36 +155,38 @@ contract FSFileRegistry is EIP712 {
         emit FileRegistered(cidId, sender_, uint48(timestamp_));
     }
 
-    function registerFileSignature(
-        string calldata pieceCid_,
-        address sender_,
-        address signer_,
-        bytes20 dl3SignatureCommitment_,
-        uint256 timestamp_,
-        bytes calldata signature_
-    ) external onlyServer {
-        require(
-            validateFileSigningSignature(
-                pieceCid_,
-                sender_,
-                signer_,
-                dl3SignatureCommitment_,
-                timestamp_,
-                signature_
-            ),
-            InvalidSignature()
-        );
+    // LEGACY: signing flow without world id
+    // function registerFileSignature(
+    //     string calldata pieceCid_,
+    //     address sender_,
+    //     address signer_,
+    //     bytes20 dl3SignatureCommitment_,
+    //     uint256 timestamp_,
+    //     bytes calldata signature_
+    // ) external onlyServer {
+    //     require(
+    //         validateFileSigningSignature(
+    //             pieceCid_,
+    //             sender_,
+    //             signer_,
+    //             dl3SignatureCommitment_,
+    //             timestamp_,
+    //             signature_
+    //         ),
+    //         InvalidSignature()
+    //     );
 
-        bytes32 cidId = cidIdentifier(pieceCid_);
-        FileRegistration storage file = _fileRegistrations[cidId];
-        if (file.timestamp == 0) revert FileNotRegistered();
-        if (file.signatures[signer_].length != 0) revert AlreadySigned();
-        file.signatures[signer_] = signature_;
+    //     bytes32 cidId = cidIdentifier(pieceCid_);
+    //     FileRegistration storage file = _fileRegistrations[cidId];
+    //     if (file.timestamp == 0) revert FileNotRegistered();
+    //     if (file.signatures[signer_].length != 0) revert AlreadySigned();
+    //     file.signatures[signer_] = signature_;
 
-        nonce[signer_]++;
-        emit FileSigned(cidId, sender_, signer_, uint48(timestamp_));
-    }
+    //     nonce[signer_]++;
+    //     emit FileSigned(cidId, sender_, signer_, uint48(timestamp_));
+    // }
 
+    // NEW: signing flow with world id verification
     function registerFileSignatureWorldId(
         string calldata pieceCid_,
         address sender_,

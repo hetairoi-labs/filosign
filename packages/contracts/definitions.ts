@@ -717,44 +717,6 @@ export const definitions = {
             },
             {
               "internalType": "uint256",
-              "name": "timestamp_",
-              "type": "uint256"
-            },
-            {
-              "internalType": "bytes",
-              "name": "signature_",
-              "type": "bytes"
-            }
-          ],
-          "name": "registerFileSignature",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "string",
-              "name": "pieceCid_",
-              "type": "string"
-            },
-            {
-              "internalType": "address",
-              "name": "sender_",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "signer_",
-              "type": "address"
-            },
-            {
-              "internalType": "bytes20",
-              "name": "dl3SignatureCommitment_",
-              "type": "bytes20"
-            },
-            {
-              "internalType": "uint256",
               "name": "root_",
               "type": "uint256"
             },
