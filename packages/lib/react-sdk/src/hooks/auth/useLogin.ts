@@ -1,6 +1,7 @@
 import { eip712signature } from "@filosign/contracts";
 import { toHex, walletKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { IDKitResult } from "@worldcoin/idkit";
 import { idb } from "../../../utils/idb";
 import { useFilosignContext } from "../../context/FilosignProvider";
 import { useIsLoggedIn } from "./useIsLoggedIn";
@@ -14,10 +15,10 @@ export function useLogin() {
 	const { data: isLoggedIn } = useIsLoggedIn();
 
 	return useMutation({
-		mutationFn: async (params: { pin: string }) => {
+		mutationFn: async (params: { pin: string; worldIdProof?: IDKitResult }) => {
 			if (isLoggedIn) return true;
 
-			const { pin } = params;
+			const { pin, worldIdProof } = params;
 
 			if (!contracts || !wallet || !wasm.dilithium) {
 				throw new Error("unreachable");
@@ -29,6 +30,12 @@ export function useLogin() {
 			});
 
 			if (!isRegistered) {
+				console.log("registering..");
+
+				if (!worldIdProof) {
+					throw new Error("World ID proof is required");
+				}
+
 				const keygenData = await walletKeyGen(wallet, {
 					pin,
 					dl: wasm.dilithium,
@@ -64,6 +71,7 @@ export function useLogin() {
 					encryptionPublicKey: toHex(keygenData.kemKeypair.publicKey),
 					signaturePublicKey: toHex(keygenData.sigKeypair.publicKey),
 					walletAddress: wallet.account.address,
+					worldIdProof,
 				};
 
 				await api.rpc.postSafe({}, "/users/profile", requestPayload);
@@ -71,6 +79,8 @@ export function useLogin() {
 
 				await keyStore.secret.put("key-seed", new Uint8Array(keygenData.seed));
 			} else {
+				console.log("logging in..");
+
 				const [saltPin, saltSeed, saltChallenge, commitmentKem, commitmentSig] =
 					await contracts.FSKeyRegistry.read.keygenData([
 						wallet.account.address,
