@@ -29,12 +29,12 @@ const config: HardhatUserConfig = {
 			chainId: 314159,
 			url: "https://api.calibration.node.glif.io/rpc/v1",
 		},
-		worldChainSepolia: {
+		worldchainSepolia: {
 			accounts: [Bun.env.FC_PVT_KEY],
 			chainId: 4801,
 			url: "https://worldchain-sepolia.g.alchemy.com/public",
 		},
-		worldChainMainnet: {
+		worldchain: {
 			accounts: [Bun.env.FC_PVT_KEY],
 			chainId: 480,
 			url: "https://worldchain-mainnet.g.alchemy.com/public",
@@ -42,12 +42,12 @@ const config: HardhatUserConfig = {
 	},
 	etherscan: {
 		apiKey: {
-			worldChainSepolia: process.env.BLOCKSCOUT_API_KEY ?? "no-api-key",
-			worldChainMainnet: process.env.BLOCKSCOUT_API_KEY ?? "no-api-key",
+			worldchainSepolia: process.env.BLOCKSCOUT_API_KEY ?? "no-api-key",
+			worldchain: process.env.BLOCKSCOUT_API_KEY ?? "no-api-key",
 		},
 		customChains: [
 			{
-				network: "worldChainSepolia",
+				network: "worldchainSepolia",
 				chainId: 4801,
 				urls: {
 					apiURL: "https://worldchain-sepolia.explorer.alchemy.com/api",
@@ -55,7 +55,7 @@ const config: HardhatUserConfig = {
 				},
 			},
 			{
-				network: "worldChainMainnet",
+				network: "worldchain",
 				chainId: 480,
 				urls: {
 					apiURL: "https://worldchain-mainnet.explorer.alchemy.com/api",

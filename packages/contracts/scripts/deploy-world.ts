@@ -108,38 +108,17 @@ async function main() {
 		},
 	} as const;
 
-	let existingDefinitions: Record<string, typeof definitions> = {};
-
-	const definitionsFile = Bun.file("definitions.ts");
-	try {
-		const existingContent = await definitionsFile.text();
-
-		if (
-			existingContent.startsWith(DEFINITIONS_FILE_PREFIX) &&
-			existingContent.endsWith(DEFINITIONS_FILE_SUFFIX)
-		) {
-			const definitionsJson = existingContent.slice(
-				DEFINITIONS_FILE_PREFIX.length,
-				existingContent.length - DEFINITIONS_FILE_SUFFIX.length,
-			);
-			existingDefinitions = JSON.parse(definitionsJson);
-		}
-	} catch (error) {
-		console.error("Error reading definitions.ts:", error);
-		existingDefinitions = {};
-	}
-
-	existingDefinitions[toHex(chainId)] = definitions;
-
-	await definitionsFile.write(
+	const envName = chainName(chainId);
+	const singleChainDefinitions = { [toHex(chainId)]: definitions };
+	const definitionsPath = `definitions/${envName}.ts`;
+	await Bun.write(
+		definitionsPath,
 		DEFINITIONS_FILE_PREFIX +
-			JSON.stringify(existingDefinitions, null, 2) +
+			JSON.stringify(singleChainDefinitions, null, 2) +
 			DEFINITIONS_FILE_SUFFIX,
 	);
+	console.log(`Definitions written to ${definitionsPath}`);
 
-	console.log("Definitions written to definitions.ts");
-
-	const envName = chainName(chainId);
 	console.log({
 		chain: envName,
 		chainId,

@@ -10,7 +10,7 @@ import {
 	toHex,
 	type WalletClient,
 } from "viem";
-import { definitions } from "../definitions";
+import { definitions } from "../definitions/index";
 
 function getKeyedClient<T extends Client | WalletClient>(client: T) {
 	return {
