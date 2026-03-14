@@ -1,4 +1,8 @@
-import { type FilosignContracts, getContracts } from "@filosign/contracts";
+import {
+	type ChainKey,
+	type FilosignContracts,
+	getContracts,
+} from "@filosign/contracts";
 import { useQuery } from "@tanstack/react-query";
 import {
 	createContext,
@@ -69,6 +73,8 @@ export function FilosignProvider(props: FilosignConfig) {
 		enabled: !!api,
 	});
 
+	console.log("runtime.data", runtime.data);
+
 	const flag = useRef(false);
 
 	useEffect(() => {
@@ -76,7 +82,7 @@ export function FilosignProvider(props: FilosignConfig) {
 			flag.current = true;
 			const fsContracts = getContracts({
 				client: wallet,
-				chainId: runtime.data.chain.id,
+				chainKey: runtime.data.chainKey,
 			});
 			setContracts(fsContracts);
 		}
@@ -123,5 +129,6 @@ export function useFilosignContext() {
 type Runtime = {
 	uptime: number;
 	chain: Chain;
+	chainKey: ChainKey;
 	serverAddressSynapse: string;
 };
