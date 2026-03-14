@@ -1,16 +1,17 @@
 import {
 	type Account,
-	type Chain,
 	type Client,
 	createPublicClient,
 	getContract,
 	http,
 	type PublicClient,
 	type Transport,
-	toHex,
+	type Chain as ViemChain,
 	type WalletClient,
 } from "viem";
-import { definitions } from "../definitions/index";
+import { type ChainKey, getDefinitionsEntry } from "../definitions/index";
+
+export type { ChainKey } from "../definitions/index";
 
 function getKeyedClient<T extends Client | WalletClient>(client: T) {
 	return {
@@ -19,16 +20,16 @@ function getKeyedClient<T extends Client | WalletClient>(client: T) {
 		}),
 		wallet: client,
 	} as {
-		public: PublicClient<Transport, Chain>;
-		wallet: WalletClient<Transport, Chain, Account>;
+		public: PublicClient<Transport, ViemChain>;
+		wallet: WalletClient<Transport, ViemChain, Account>;
 	};
 }
 
 export function getContracts<T extends Wallet>(options: {
 	client: T;
-	chainId: number;
+	chainKey: ChainKey;
 }) {
-	const { client, chainId } = options;
+	const { client, chainKey } = options;
 
 	if (!client.transport || !client.chain || !client.account) {
 		console.log(
@@ -36,13 +37,7 @@ export function getContracts<T extends Wallet>(options: {
 		);
 	}
 
-	const key = toHex(chainId);
-	if (!Object.keys(definitions).includes(key)) {
-		console.error(`No contract definitions found for chainId ${chainId}`);
-		throw new Error(`Unsupported chainId: ${chainId}`);
-	}
-
-	const contractDefinitions = definitions[key as keyof typeof definitions];
+	const contractDefinitions = getDefinitionsEntry(chainKey);
 
 	return {
 		FSManager: getContract({
@@ -67,4 +62,4 @@ export function getContracts<T extends Wallet>(options: {
 
 export type FilosignContracts = ReturnType<typeof getContracts>;
 
-type Wallet = WalletClient<Transport, Chain, Account>;
+type Wallet = WalletClient<Transport, ViemChain, Account>;
