@@ -12,7 +12,7 @@ const config: HardhatUserConfig = {
 			viaIR: true,
 		},
 	},
-	sourcify: { enabled: true },
+	sourcify: { enabled: false },
 	paths: {
 		sources: "./src",
 	},
@@ -32,19 +32,19 @@ const config: HardhatUserConfig = {
 		worldchainSepolia: {
 			accounts: [Bun.env.FC_PVT_KEY],
 			chainId: 4801,
-			url: "https://worldchain-sepolia.g.alchemy.com/public",
+			url: `https://worldchain-sepolia.g.alchemy.com/v2/${Bun.env.ALCHEMY_API_KEY}`,
 		},
 		worldchain: {
 			accounts: [Bun.env.FC_PVT_KEY],
 			chainId: 480,
-			url: "https://worldchain-mainnet.g.alchemy.com/public",
+			url: `https://worldchain-mainnet.g.alchemy.com/v2/${Bun.env.ALCHEMY_API_KEY}`,
 		},
 	},
 	etherscan: {
-		apiKey: {
-			worldchainSepolia: process.env.BLOCKSCOUT_API_KEY ?? "no-api-key",
-			worldchain: process.env.BLOCKSCOUT_API_KEY ?? "no-api-key",
-		},
+		apiKey:
+			process.env.BLOCKSCOUT_API_KEY ??
+			process.env.ETHERSCAN_API_KEY ??
+			"no-api-key",
 		customChains: [
 			{
 				network: "worldchainSepolia",

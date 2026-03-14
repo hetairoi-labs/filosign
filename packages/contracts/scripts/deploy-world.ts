@@ -1,6 +1,7 @@
 import { $ } from "bun";
 import hre from "hardhat";
 import { getAddress, toHex } from "viem";
+import type { ChainKey } from "../definitions/index.js";
 
 const DEFINITIONS_FILE_PREFIX = "export const definitions = ";
 const DEFINITIONS_FILE_SUFFIX = " as const;";
@@ -22,7 +23,7 @@ const WORLD_ID_ROUTER: Record<number, `0x${string}`> = {
 
 const ACTION = "sign-flow";
 
-function chainName(chainId: number): "local" | "testnet" | "mainnet" {
+function chainName(chainId: number): ChainKey {
 	if (chainId === CHAIN_ID.local) return "local";
 	if (chainId === CHAIN_ID.testnet) return "testnet";
 	if (chainId === CHAIN_ID.mainnet) return "mainnet";

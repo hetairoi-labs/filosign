@@ -18,7 +18,9 @@
 		"pretest": "bun compile",
 		"tests": "bun compile; bunx --bun hardhat test",
 		"gen:interfaces": "bun run scripts/generateInterfaces.ts",
-		"migrate": "bun compile; bunx --bun hardhat run scripts/deploy-world.ts"
+		"migrate": "bun compile; bunx --bun hardhat run scripts/deploy-world.ts",
+		"migrate:testnet": "bun compile; bunx --bun hardhat run scripts/deploy-world.ts --network worldchainSepolia",
+		"migrate:mainnet": "bun compile; bunx --bun hardhat run scripts/deploy-world.ts --network worldchain"
 	},
 	"devDependencies": {
 		"@filosign/crypto-utils": "workspace:*",
