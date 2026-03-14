@@ -18,7 +18,11 @@ import {
 	useViewFile,
 } from "@filosign/react/hooks";
 import { memo, useId, useMemo, useState } from "react";
-import { useOtherAddress, useOtherReload } from "./App";
+import {
+	useCurrentWalletAddress,
+	useOtherAddress,
+	useOtherReload,
+} from "./App";
 import Button from "./Button";
 import { SectionHeading } from "./components/SectionHeading";
 import { dummyBytes } from "./dumy";
@@ -31,7 +35,6 @@ import {
 	MAX_CID_DISPLAY_LENGTH,
 	MAX_CONTENT_DISPLAY_LENGTH,
 	MAX_FILE_NAME_DISPLAY,
-	parseEthereumAddress,
 	parseFileStatus,
 	parseString,
 	RELOAD_DELAY_MS,
@@ -41,8 +44,8 @@ import {
 	TRUNCATED_FILE_NAME_LENGTH,
 	validateFile,
 } from "./lib/validation";
-import { LinkWalletWithIDKit } from "./world/IDKitLinkTest";
-import { IDKitTest } from "./world/IDKitTest";
+import { IDKitLinkTest } from "./world/IDKitLinkTest";
+import { IDKitSignTest } from "./world/IDKitSignTest";
 
 type TestName =
 	| "login"
@@ -112,12 +115,8 @@ function TestLogin(props: { notify: NotifierFn }) {
 	const login = useLogin();
 	const isRegistered = useIsRegistered();
 	const isLoggedIn = useIsLoggedIn();
+	const userAddress = useCurrentWalletAddress();
 
-	useEffectOnce(() => {
-		if (isRegistered.data === false) {
-			login.mutate({ pin: TEST_PIN });
-		}
-	}, [isRegistered.data]);
 	useEffectOnce(() => {
 		if (isLoggedIn.data === false) {
 			login.mutate({ pin: TEST_PIN });
@@ -140,11 +139,7 @@ function TestLogin(props: { notify: NotifierFn }) {
 		>
 			<SectionHeading id="login-heading" title="Login Test" />
 
-			{isLoggedIn.data === false && (
-				<Button mutation={login} mutationArgs={{ pin: TEST_PIN }}>
-					Login
-				</Button>
-			)}
+			<IDKitLinkTest userAddress={userAddress} pin={TEST_PIN} />
 
 			{login.isPending && (
 				<p
@@ -366,14 +361,9 @@ function TestThisUserInfo(props: { notify: NotifierFn }) {
 			)}
 
 			{selfProfile.data && (
-				<>
-					<pre className="bg-card p-3 rounded border overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
-						{JSON.stringify(selfProfile.data, null, 2)}
-					</pre>
-					<LinkWalletWithIDKit
-						userAddress={selfProfile.data.walletAddress as `0x${string}`}
-					/>
-				</>
+				<pre className="bg-card p-3 rounded border overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
+					{JSON.stringify(selfProfile.data, null, 2)}
+				</pre>
 			)}
 		</section>
 	);
@@ -422,12 +412,9 @@ function TestOtherUserInfo(props: { notify: NotifierFn }) {
 			)}
 
 			{otherProfile.data && (
-				<>
-					<pre className="bg-card p-3 rounded border overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
-						{JSON.stringify(otherProfile.data, null, 2)}
-					</pre>
-					<LinkWalletWithIDKit userAddress={otherAddress} />
-				</>
+				<pre className="bg-card p-3 rounded border overflow-auto max-h-96 text-xs break-all whitespace-pre-wrap">
+					{JSON.stringify(otherProfile.data, null, 2)}
+				</pre>
 			)}
 		</section>
 	);
@@ -689,7 +676,6 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 	const signFile = useSignFile();
 	const { setSafeTimeout, clearSafeTimeout } = useTimeout();
 	const { reload: otherReload } = useOtherReload();
-	const selfProfile = useUserProfile();
 
 	useEffectOnce(() => {
 		if (signFile.data) {
@@ -713,10 +699,7 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 			? `${displayCid.slice(0, TRUNCATED_CID_LENGTH)}...`
 			: displayCid;
 
-	const currentUserAddress = useMemo(() => {
-		const address = selfProfile.data?.walletAddress;
-		return parseEthereumAddress(address);
-	}, [selfProfile.data?.walletAddress]);
+	const currentUserAddress = useCurrentWalletAddress();
 
 	const decodedContent = useMemo(() => {
 		if (!viewFile.data?.fileBytes) return null;
@@ -786,8 +769,27 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 
 				{canView && file.signatures.length === 0 && currentUserAddress && (
 					<div className="mt-2">
-						<IDKitTest signerAddress={currentUserAddress} file={file} />
+						<IDKitSignTest signerAddress={currentUserAddress} file={file} />
 					</div>
+				)}
+				{file.signatures.length > 0 && (
+					<span className="inline-flex items-center rounded-full bg-success/10 px-2.5 py-1 text-xs font-medium text-success">
+						<svg
+							className="mr-1.5 size-3.5"
+							fill="none"
+							viewBox="0 0 24 24"
+							stroke="currentColor"
+							strokeWidth={2}
+						>
+							<title>Signed</title>
+							<path
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M5 13l4 4L19 7"
+							/>
+						</svg>
+						Signed
+					</span>
 				)}
 			</div>
 		</article>

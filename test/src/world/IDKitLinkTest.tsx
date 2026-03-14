@@ -1,37 +1,46 @@
-import { useRpSignature } from "@filosign/react/hooks";
+import { useLogin, useRpSignature } from "@filosign/react/hooks";
 import {
-	deviceLegacy,
 	IDKitRequestWidget,
 	type IDKitResult,
+	orbLegacy,
 	type RpContext,
 } from "@worldcoin/idkit";
 import { useRef, useState } from "react";
 import Button from "../Button";
 
 const WORLD_ID_APP_ID = "app_69f4036892019e6f616e47818ddebd8b";
-const LINK_ACTION = "link-wallet";
+const LINK_ACTION = "sign-flow";
 
-export function LinkWalletWithIDKit({ userAddress }: { userAddress: string }) {
+export function IDKitLinkTest({
+	userAddress,
+	pin,
+}: {
+	userAddress: string;
+	pin: string;
+}) {
 	const [open, setOpen] = useState(false);
 	const [rpContext, setRpContext] = useState<RpContext | null>(null);
 	const getRpContext = useRpSignature();
-	const linkingRef = useRef(false);
+	const submittedRef = useRef(false);
+	const login = useLogin();
 
 	const canLink = Boolean(userAddress);
 
 	const handleSuccess = async (proof: IDKitResult) => {
-		if (!canLink || linkingRef.current) return;
-		linkingRef.current = true;
+		if (!canLink || submittedRef.current) return;
+		submittedRef.current = true;
 
 		try {
-			console.log("World ID proof received for linking:", proof);
+			await login.mutateAsync({ pin, worldIdProof: proof });
 			setOpen(false);
-		} finally {
-			linkingRef.current = false;
+		} catch {
+			submittedRef.current = false;
 		}
 	};
 
 	const handleRetry = () => {
+		submittedRef.current = false;
+		login.reset();
 		getRpContext.reset();
 		setRpContext(null);
 		setOpen(false);
@@ -44,30 +53,33 @@ export function LinkWalletWithIDKit({ userAddress }: { userAddress: string }) {
 			setRpContext(context);
 			setOpen(true);
 		},
-		isPending: getRpContext.isPending,
+		isPending: getRpContext.isPending || login.isPending,
 		isError: getRpContext.isError,
-		isSuccess: getRpContext.isSuccess,
+		isSuccess: getRpContext.isSuccess && !login.isError,
 		error: getRpContext.error,
 	};
 
 	return (
 		<div className="space-y-2">
 			<Button mutation={rpMutation}>
-				{rpMutation.isPending
-					? "Preparing..."
-					: "Verify Identity & Link Wallet"}
+				{rpMutation.isPending ? "Preparing..." : "Sign in"}
 			</Button>
 
-			{rpMutation.isError && (
+			{(rpMutation.isError || login.isError) && (
 				<div
 					role="alert"
 					className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
 				>
-					<p className="font-medium">Failed to prepare linking</p>
+					<p className="font-medium">
+						{rpMutation.isError ? "Failed to prepare linking" : "Login failed"}
+					</p>
 					<p className="mt-1 text-muted-foreground wrap-break-word">
-						{rpMutation.error instanceof Error
-							? rpMutation.error.message
-							: "Something went wrong. Please try again."}
+						{(() => {
+							const err = rpMutation.isError ? rpMutation.error : login.error;
+							return err instanceof Error
+								? err.message
+								: "Something went wrong. Please try again.";
+						})()}
 					</p>
 					<button
 						type="button"
@@ -83,18 +95,22 @@ export function LinkWalletWithIDKit({ userAddress }: { userAddress: string }) {
 				<IDKitRequestWidget
 					open={open}
 					onOpenChange={(next) => {
-						if (!linkingRef.current) setOpen(next);
+						if (!login.isPending) setOpen(next);
 					}}
 					app_id={WORLD_ID_APP_ID as `app_${string}`}
 					action={LINK_ACTION}
 					action_description="Link your wallet for secure document signing"
 					rp_context={rpContext}
 					allow_legacy_proofs={true}
-					preset={deviceLegacy({
+					environment="staging"
+					preset={orbLegacy({
 						signal: userAddress.toLowerCase(),
 					})}
 					handleVerify={async () => {}}
-					onSuccess={(proof) => void handleSuccess(proof)}
+					onSuccess={(proof) => {
+						console.log("[LINK] proof:", proof);
+						void handleSuccess(proof);
+					}}
 				/>
 			)}
 		</div>

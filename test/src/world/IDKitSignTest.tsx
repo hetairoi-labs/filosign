@@ -5,18 +5,18 @@ import {
 } from "@filosign/react/hooks";
 import { useQueryClient } from "@tanstack/react-query";
 import {
-	deviceLegacy,
 	IDKitRequestWidget,
 	type IDKitResult,
+	orbLegacy,
 	type RpContext,
 } from "@worldcoin/idkit";
 import { useRef, useState } from "react";
 import Button from "../Button";
 
 const WORLD_ID_APP_ID = "app_69f4036892019e6f616e47818ddebd8b";
-const ACTION = "sign-doc";
+const ACTION = "sign-flow";
 
-export function IDKitTest({
+export function IDKitSignTest({
 	signerAddress,
 	file,
 }: {
@@ -29,6 +29,8 @@ export function IDKitTest({
 	const getRpContext = useRpSignature();
 	const signingRef = useRef(false);
 	const queryClient = useQueryClient();
+
+	console.log("signer:", signerAddress);
 
 	const canSign =
 		file?.pieceCid &&
@@ -113,13 +115,17 @@ export function IDKitTest({
 					app_id={WORLD_ID_APP_ID}
 					action={ACTION}
 					action_description="Sign document"
+					environment="staging"
 					rp_context={rpContext}
 					allow_legacy_proofs={true}
-					preset={deviceLegacy({
+					preset={orbLegacy({
 						signal: `${signerAddress}:${file.pieceCid}`,
 					})}
 					handleVerify={async () => {}}
-					onSuccess={(proof) => void handleSignFile(proof)}
+					onSuccess={(proof) => {
+						console.log("[SIGN] proof:", proof);
+						void handleSignFile(proof);
+					}}
 				/>
 			)}
 		</div>

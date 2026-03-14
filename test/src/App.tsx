@@ -6,7 +6,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { hardhat } from "viem/chains";
 import Test from "./Test.js";
 
-const wallet1 = createWalletClient({
+export const wallet1 = createWalletClient({
 	chain: hardhat,
 	transport: http(),
 	account: privateKeyToAccount(
@@ -14,7 +14,7 @@ const wallet1 = createWalletClient({
 	),
 });
 
-const wallet2 = createWalletClient({
+export const wallet2 = createWalletClient({
 	chain: hardhat,
 	transport: http(),
 	account: privateKeyToAccount(
@@ -24,6 +24,12 @@ const wallet2 = createWalletClient({
 
 const queryClient1 = new QueryClient();
 const queryClient2 = new QueryClient();
+
+export function useCurrentWalletAddress() {
+	const { wallet } = useFilosignContext();
+	if (!wallet) throw new Error("No wallet in context");
+	return wallet.account.address;
+}
 
 export function useOtherAddress() {
 	const { wallet } = useFilosignContext();
