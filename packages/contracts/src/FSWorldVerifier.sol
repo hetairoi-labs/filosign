@@ -11,9 +11,6 @@ contract FSWorldVerifier {
     mapping(address => uint256) public addressToNullifier;
     mapping(uint256 => bool) public usedNullifiers;
 
-    error AddressAlreadyLinked();
-    error NullifierAlreadyLinked();
-
     constructor(
         IWorldID _worldId,
         string memory _appId,
@@ -30,8 +27,8 @@ contract FSWorldVerifier {
         uint256 nullifierHash,
         uint256[8] calldata proof
     ) external {
-        if (addressToNullifier[wallet] != 0) revert AddressAlreadyLinked();
-        if (usedNullifiers[nullifierHash]) revert NullifierAlreadyLinked();
+        require(addressToNullifier[wallet] == 0, "Address already linked");
+        require(!usedNullifiers[nullifierHash], "Nullifier already linked");
 
         uint256 signalHash = hashToField(abi.encodePacked(wallet));
 
