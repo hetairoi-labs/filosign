@@ -18,7 +18,7 @@
 		"pretest": "bun compile",
 		"tests": "bun compile; bunx --bun hardhat test",
 		"gen:interfaces": "bun run scripts/generateInterfaces.ts",
-		"migrate": "bun compile; bunx --bun hardhat run scripts/deploy-new.ts"
+		"migrate": "bun compile; bunx --bun hardhat run scripts/deploy-world.ts"
 	},
 	"devDependencies": {
 		"@filosign/crypto-utils": "workspace:*",
