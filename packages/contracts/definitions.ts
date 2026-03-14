@@ -206,6 +206,19 @@ export const definitions = {
           "type": "function"
         },
         {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_worldVerifier",
+              "type": "address"
+            }
+          ],
+          "name": "setWorldVerifier",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
           "inputs": [],
           "name": "version",
           "outputs": [
@@ -213,6 +226,19 @@ export const definitions = {
               "internalType": "uint8",
               "name": "",
               "type": "uint8"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "worldVerifier",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
             }
           ],
           "stateMutability": "view",
@@ -558,6 +584,29 @@ export const definitions = {
         {
           "inputs": [
             {
+              "internalType": "contract IWorldID",
+              "name": "_worldId",
+              "type": "address"
+            },
+            {
+              "internalType": "string",
+              "name": "_appId",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "_signActionId",
+              "type": "string"
+            }
+          ],
+          "name": "initializeWorldId",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
               "internalType": "bytes32",
               "name": "cidId",
               "type": "bytes32"
@@ -696,6 +745,72 @@ export const definitions = {
             },
             {
               "internalType": "address",
+              "name": "signer_",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes20",
+              "name": "dl3SignatureCommitment_",
+              "type": "bytes20"
+            },
+            {
+              "internalType": "uint256",
+              "name": "root_",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "nullifierHash_",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256[8]",
+              "name": "proof_",
+              "type": "uint256[8]"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp_",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "signature_",
+              "type": "bytes"
+            }
+          ],
+          "name": "registerFileSignatureWorldId",
+          "outputs": [],
+          "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "signDocExternalNullifier",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "string",
+              "name": "pieceCid_",
+              "type": "string"
+            },
+            {
+              "internalType": "address",
+              "name": "sender_",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
               "name": "viewer_",
               "type": "address"
             },
@@ -799,6 +914,19 @@ export const definitions = {
               "internalType": "bool",
               "name": "",
               "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
+          "name": "worldId",
+          "outputs": [
+            {
+              "internalType": "contract IWorldID",
+              "name": "",
+              "type": "address"
             }
           ],
           "stateMutability": "view",

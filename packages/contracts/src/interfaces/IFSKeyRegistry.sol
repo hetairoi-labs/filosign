@@ -3,6 +3,8 @@ pragma solidity ^0.8.26;
 
 // Auto-generated from src/FSKeyRegistry.sol — DO NOT EDIT (regenerate with the script only)
 
+import "./IFSManager.sol";
+
 interface IFSKeyRegistry {
     struct KeygenData {
         bytes16 salt_pin;

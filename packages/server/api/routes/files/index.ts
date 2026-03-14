@@ -4,10 +4,11 @@ import {
 	signatures,
 	toBytes,
 } from "@filosign/crypto-utils/node";
+import { zIDKitResult } from "@filosign/shared/world";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
 import { and, eq, ne } from "drizzle-orm";
 import { Hono } from "hono";
-import { getAddress } from "viem";
+import { decodeAbiParameters, getAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
@@ -413,12 +414,14 @@ export default new Hono()
 				signature: zHexString(),
 				timestamp: z.number("timestamp must be a number"),
 				dl3Signature: zHexString(),
+				worldIdProof: zIDKitResult,
 			})
 			.safeParse(rawBody);
 		if (parsedBody.error) {
 			return respond.err(ctx, parsedBody.error.message, 400);
 		}
-		const { signature, timestamp, dl3Signature } = parsedBody.data;
+		const { signature, timestamp, dl3Signature, worldIdProof } =
+			parsedBody.data;
 
 		const [fileRecord] = await db
 			.select({
@@ -470,23 +473,44 @@ export default new Hono()
 			return respond.err(ctx, "Invalid DL3 signature", 400);
 		}
 
-		const valid = await FSFileRegistry.read.validateFileSigningSignature([
-			pieceCid,
-			fileRecord.sender,
-			participantRecord.wallet,
-			dl3SignatureCommitment,
-			BigInt(timestamp),
-			signature,
-		]);
-
-		if (!valid) {
-			return respond.err(ctx, "Invalid signature", 400);
+		if (worldIdProof.protocol_version !== "3.0") {
+			return respond.err(ctx, "Need World ID v3 proof to work", 400);
 		}
-		const txHash = await FSFileRegistry.write.registerFileSignature([
+
+		const worldIdResponse = worldIdProof.responses[0];
+		if (!worldIdResponse) {
+			return respond.err(ctx, "Missing World ID response", 400);
+		}
+
+		const unpackedProof = decodeAbiParameters(
+			[{ type: "uint256[8]" }],
+			worldIdResponse.proof,
+		)[0];
+
+		try {
+			await FSFileRegistry.simulate.registerFileSignatureWorldId([
+				pieceCid,
+				fileRecord.sender,
+				participantRecord.wallet,
+				dl3SignatureCommitment,
+				BigInt(worldIdResponse.merkle_root),
+				BigInt(worldIdResponse.nullifier),
+				unpackedProof,
+				BigInt(timestamp),
+				signature,
+			]);
+		} catch (_err) {
+			return respond.err(ctx, "Invalid World ID proof", 400);
+		}
+
+		const txHash = await FSFileRegistry.write.registerFileSignatureWorldId([
 			pieceCid,
 			fileRecord.sender,
 			participantRecord.wallet,
 			dl3SignatureCommitment,
+			BigInt(worldIdResponse.merkle_root),
+			BigInt(worldIdResponse.nullifier),
+			unpackedProof,
 			BigInt(timestamp),
 			signature,
 		]);

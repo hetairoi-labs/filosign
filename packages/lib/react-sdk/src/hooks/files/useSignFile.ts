@@ -106,6 +106,7 @@ export function useSignFile() {
 						signature,
 						timestamp: timestamp,
 						dl3Signature: toHex(dl3Signature),
+						worldIdProof,
 					},
 				);
 

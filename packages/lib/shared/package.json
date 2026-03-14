@@ -7,6 +7,9 @@
 		},
 		"./zod": {
 			"default": "./helpers/zod.ts"
+		},
+		"./world": {
+			"default": "./helpers/world.ts"
 		}
 	},
 	"scripts": {},

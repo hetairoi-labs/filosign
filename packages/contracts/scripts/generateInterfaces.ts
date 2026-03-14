@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { ASTNode } from "@solidity-parser/parser";
 import parser from "@solidity-parser/parser";
+import type { ASTNode } from "@solidity-parser/parser/dist/src/ast-types";
 import { glob } from "glob";
 
 interface PragmaDirective {
@@ -15,7 +15,9 @@ interface TypeName {
 	name?: string;
 	namePath?: string | { name: string } | string[];
 	baseTypeName?: TypeName;
-	length?: string;
+	length?:
+		| string
+		| { type?: string; number?: string; value?: string; name?: string };
 	keyType?: TypeName;
 	valueType?: TypeName;
 }
@@ -96,10 +98,14 @@ const SRC_DIR = path.resolve(process.cwd(), "./src");
 const OUT_DIR = path.join(SRC_DIR, "interfaces");
 const SPDX_HEADER = "// SPDX-License-Identifier: MIT"; // change latr
 
+/** Manual interfaces in src/interfaces/ preserved during generation (not auto-generated from contracts) */
+const PRESERVED_INTERFACES = new Set(["IWorldID.sol"]);
+
 function prepareOutDir() {
 	if (fs.existsSync(OUT_DIR)) {
 		const files = fs.readdirSync(OUT_DIR);
 		for (const file of files) {
+			if (PRESERVED_INTERFACES.has(file)) continue;
 			const filePath = path.join(OUT_DIR, file);
 			if (fs.statSync(filePath).isFile()) {
 				fs.unlinkSync(filePath);
@@ -127,6 +133,61 @@ function extractPragmaAndVersion(fileText: string) {
 	}
 }
 
+function isInterfaceType(name: string): boolean {
+	return (
+		name.startsWith("I") &&
+		name !== "int" &&
+		name !== "int8" &&
+		name !== "int16" &&
+		name !== "int24" &&
+		name !== "int32" &&
+		name !== "int64" &&
+		name !== "int128" &&
+		name !== "int256"
+	);
+}
+
+function extractUserDefinedTypes(
+	node: TypeName,
+	out: Set<string>,
+	interfaceTypesOnly: boolean,
+): void {
+	if (!node) return;
+	switch (node.type) {
+		case "UserDefinedTypeName": {
+			const name =
+				typeof node.namePath === "string"
+					? node.namePath
+					: node.namePath && (node.namePath as { name: string }).name
+						? (node.namePath as { name: string }).name
+						: Array.isArray(node.namePath)
+							? (node.namePath as { name?: string }[])
+									.map((p) => p.name ?? "")
+									.join(".")
+							: (node.name ?? "");
+			if (
+				name &&
+				name[0] === name[0].toUpperCase() &&
+				(!interfaceTypesOnly || isInterfaceType(name))
+			)
+				out.add(name);
+			break;
+		}
+		case "ArrayTypeName":
+			if (node.baseTypeName)
+				extractUserDefinedTypes(node.baseTypeName, out, interfaceTypesOnly);
+			break;
+		case "Mapping":
+			if (node.keyType)
+				extractUserDefinedTypes(node.keyType, out, interfaceTypesOnly);
+			if (node.valueType)
+				extractUserDefinedTypes(node.valueType, out, interfaceTypesOnly);
+			break;
+		default:
+			break;
+	}
+}
+
 function typeNameToString(node: TypeName): string {
 	if (!node) return "";
 	switch (node.type) {
@@ -145,10 +206,25 @@ function typeNameToString(node: TypeName): string {
 					.join(".");
 			}
 			return node.name ?? "UnknownType";
-		case "ArrayTypeName":
-			return `${node.baseTypeName ? typeNameToString(node.baseTypeName) : "UnknownType"}${
-				node.length ? `[${node.length}]` : "[]"
-			}`;
+		case "ArrayTypeName": {
+			const baseType = node.baseTypeName
+				? typeNameToString(node.baseTypeName)
+				: "UnknownType";
+			let lengthStr = "[]";
+			if (node.length) {
+				const len = node.length;
+				if (typeof len === "string") {
+					lengthStr = `[${len}]`;
+				} else if (len && typeof len === "object") {
+					const val =
+						(len as { number?: string }).number ??
+						(len as { value?: string }).value ??
+						(len as { name?: string }).name;
+					if (typeof val === "string") lengthStr = `[${val}]`;
+				}
+			}
+			return `${baseType}${lengthStr}`;
+		}
 		case "Mapping":
 			return `mapping(${node.keyType ? typeNameToString(node.keyType) : "UnknownType"} => ${
 				node.valueType ? typeNameToString(node.valueType) : "UnknownType"
@@ -335,6 +411,34 @@ function extractImmutableVariables(
 	return immutableVars;
 }
 
+function collectReferencedInterfaceTypes(
+	contractNode: ContractDefinition,
+): Set<string> {
+	const types = new Set<string>();
+	if (!contractNode.subNodes) return types;
+	for (const sub of contractNode.subNodes) {
+		if (sub.type === "FunctionDefinition") {
+			const fn = sub as FunctionDefinition;
+			for (const p of fn.parameters ?? [])
+				extractUserDefinedTypes(p.typeName, types, true);
+			for (const p of fn.returnParameters ?? [])
+				extractUserDefinedTypes(p.typeName, types, true);
+		} else if (sub.type === "VariableDeclaration") {
+			extractUserDefinedTypes(
+				(sub as VariableDeclaration).typeName,
+				types,
+				true,
+			);
+		} else if (sub.type === "StateVariableDeclaration") {
+			const stateVar = sub as StateVariableDeclaration;
+			for (const v of stateVar.variables ?? []) {
+				extractUserDefinedTypes(v.typeName, types, true);
+			}
+		}
+	}
+	return types;
+}
+
 function generateInterfaceForContract(
 	contractNode: ContractDefinition,
 	pragma: string | null,
@@ -346,6 +450,7 @@ function generateInterfaceForContract(
 	const outFilename = path.join(OUT_DIR, `I${name}.sol`);
 
 	const immutableVars = extractImmutableVariables(sourceText);
+	const referencedTypes = collectReferencedInterfaceTypes(contractNode);
 
 	const lines: string[] = [];
 	lines.push(SPDX_HEADER);
@@ -357,6 +462,13 @@ function generateInterfaceForContract(
 		`// Auto-generated from ${rel} — DO NOT EDIT (regenerate with the script only)`,
 	);
 	lines.push("");
+
+	for (const t of referencedTypes) {
+		if (t === ifaceName) continue;
+		lines.push(`import "./${t}.sol";`);
+	}
+	if (referencedTypes.size > 0) lines.push("");
+
 	lines.push(`interface ${ifaceName} {`);
 
 	if (contractNode.subNodes && Array.isArray(contractNode.subNodes)) {
