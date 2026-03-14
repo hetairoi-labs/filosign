@@ -94,10 +94,7 @@ async function main() {
 		},
 	} as const;
 
-	let existingDefinitions: Record<
-		string,
-		typeof definitions & { FSWorldVerifier?: unknown }
-	> = {};
+	let existingDefinitions: Record<string, typeof definitions> = {};
 
 	const definitionsFile = Bun.file("definitions.ts");
 	try {

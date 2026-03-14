@@ -1,12 +1,7 @@
 import { PrivyProvider as PrivyProviderBase } from "@privy-io/react-auth";
-import { filecoinCalibration, hardhat } from "viem/chains";
+import { defaultChain, privyChains } from "@/src/constants";
 
 export function PrivyProvider({ children }: { children: React.ReactNode }) {
-	const runtimeChain =
-		process.env.BUN_PUBLIC_RUNTIME_CHAIN_ID === "314159"
-			? filecoinCalibration
-			: hardhat;
-
 	if (!process.env.BUN_PUBLIC_PRIVY_APP_ID) {
 		throw new Error("BUN_PUBLIC_PRIVY_APP_ID is not set");
 	}
@@ -15,8 +10,8 @@ export function PrivyProvider({ children }: { children: React.ReactNode }) {
 		<PrivyProviderBase
 			appId={process.env.BUN_PUBLIC_PRIVY_APP_ID}
 			config={{
-				defaultChain: runtimeChain,
-				supportedChains: [runtimeChain],
+				defaultChain,
+				supportedChains: privyChains,
 				loginMethods: ["wallet", "google", "twitter", "github", "discord"],
 				appearance: {
 					theme: "light",

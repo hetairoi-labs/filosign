@@ -2,8 +2,9 @@ import {
 	createConfig,
 	WagmiProvider as WagmiProviderBase,
 } from "@privy-io/wagmi";
-import { filecoinCalibration, hardhat } from "viem/chains";
+import type { HttpTransport } from "viem";
 import { http } from "wagmi";
+import { wagmiChains } from "@/src/constants";
 
 declare module "wagmi" {
 	interface Register {
@@ -11,19 +12,17 @@ declare module "wagmi" {
 	}
 }
 
-export function WagmiProvider({ children }: { children: React.ReactNode }) {
-	const runtimeChain =
-		process.env.BUN_PUBLIC_RUNTIME_CHAIN_ID === "314159"
-			? filecoinCalibration
-			: hardhat;
-
-	const config = createConfig({
-		chains: [runtimeChain],
-		transports: {
-			31337: http(),
-			314159: http(),
+export const config = createConfig({
+	chains: wagmiChains,
+	transports: wagmiChains.reduce(
+		(acc, chain) => {
+			acc[chain.id] = http();
+			return acc;
 		},
-	});
+		{} as Record<number, HttpTransport>,
+	),
+});
 
+export function WagmiProvider({ children }: { children: React.ReactNode }) {
 	return <WagmiProviderBase config={config}>{children}</WagmiProviderBase>;
 }
