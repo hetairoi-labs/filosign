@@ -1,7 +1,13 @@
 import { isHex } from "viem";
 import { privateKeyToAddress } from "viem/accounts";
-import * as chains from "viem/chains";
+import { hardhat, worldchain, worldchainSepolia } from "viem/chains";
 import env from "./env";
+
+const CHAIN_MAP = {
+	local: hardhat,
+	testnet: worldchainSepolia,
+	mainnet: worldchain,
+} as const;
 
 const INDEXER = {
 	CONFIRMATIONS: 0n,
@@ -14,12 +20,10 @@ const INDEXER = {
 	MAX_NODE_LOOKBACK_PERIOD_MS: 16 * 60 * 60 * 1000,
 };
 
-const runtimeChain = Object.values(chains).find(
-	(chain) => chain.id === Number(env.RUNTIME_CHAIN_ID),
-);
-
+const chainKey = env.CHAIN as keyof typeof CHAIN_MAP;
+const runtimeChain = CHAIN_MAP[chainKey];
 if (!runtimeChain) {
-	throw new Error(`Chain with id ${env.RUNTIME_CHAIN_ID} not found`);
+	throw new Error(`Invalid CHAIN: ${env.CHAIN}`);
 }
 
 if (!isHex(env.EVM_PRIVATE_KEY_SYNAPSE)) {

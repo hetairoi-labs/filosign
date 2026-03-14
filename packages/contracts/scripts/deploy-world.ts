@@ -5,14 +5,29 @@ import { getAddress, toHex } from "viem";
 const DEFINITIONS_FILE_PREFIX = "export const definitions = ";
 const DEFINITIONS_FILE_SUFFIX = " as const;";
 
-/** World ID Router addresses per chain */
+const CHAIN_ID = {
+	local: 31337,
+	testnet: 4801,
+	mainnet: 480,
+} as const;
+
 const WORLD_ID_ROUTER: Record<number, `0x${string}`> = {
-	31337: "0x0000000000000000000000000000000000000000" as `0x${string}`, // hardhat: use mock
-	4801: "0x57f928158C3EE7CDad1e4D8642503c4D0201f611" as `0x${string}`, // World Chain Sepolia
-	480: "0x17B354dD2595411ff79041f930e491A4Df39A278" as `0x${string}`, // World Chain Mainnet
+	[CHAIN_ID.local]:
+		"0x0000000000000000000000000000000000000000" as `0x${string}`,
+	[CHAIN_ID.testnet]:
+		"0x57f928158C3EE7CDad1e4D8642503c4D0201f611" as `0x${string}`,
+	[CHAIN_ID.mainnet]:
+		"0x17B354dD2595411ff79041f930e491A4Df39A278" as `0x${string}`,
 };
 
 const ACTION = "sign-flow";
+
+function chainName(chainId: number): "local" | "testnet" | "mainnet" {
+	if (chainId === CHAIN_ID.local) return "local";
+	if (chainId === CHAIN_ID.testnet) return "testnet";
+	if (chainId === CHAIN_ID.mainnet) return "mainnet";
+	throw new Error(`Unsupported chainId ${chainId}`);
+}
 
 async function main() {
 	const chainId = hre.network.config.chainId;
@@ -39,9 +54,8 @@ async function main() {
 		address: deployer.account.address,
 	});
 
-	// Resolve World ID address: use mock on hardhat, real router on World Chain
 	let worldIdAddress: `0x${string}`;
-	if (chainId === 31337) {
+	if (chainId === CHAIN_ID.local) {
 		const mockWorldId = await hre.viem.deployContract("MockWorldID");
 		worldIdAddress = mockWorldId.address;
 		console.log("Deployed MockWorldID at", worldIdAddress);
@@ -125,7 +139,9 @@ async function main() {
 
 	console.log("Definitions written to definitions.ts");
 
+	const envName = chainName(chainId);
 	console.log({
+		chain: envName,
 		chainId,
 		appId,
 		action: ACTION,
@@ -133,10 +149,7 @@ async function main() {
 	});
 
 	const networkName = hre.network.name;
-	if (
-		networkName === "worldChainSepolia" ||
-		networkName === "worldChainMainnet"
-	) {
+	if (networkName === "worldchainSepolia" || networkName === "worldchain") {
 		try {
 			await $`bunx --bun hardhat verify --network ${networkName} ${manager.address} --force`;
 			await sleep(1000);

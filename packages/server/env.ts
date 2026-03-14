@@ -10,7 +10,7 @@ const envKeys = [
 	"PG_URI",
 	"DB_NAME",
 	"FRONTEND_URL",
-	"RUNTIME_CHAIN_ID",
+	"CHAIN",
 	"SUPER_PASS",
 	"WORLD_ID_RP_ID",
 	"WORLD_ID_SIGNING_KEY",

@@ -29,7 +29,7 @@ pkill -f "bun run index.ts" 2>/dev/null || true
 lsof -ti:30011 | xargs kill -9 2>/dev/null || true
 sleep 1
 
-RUNTIME_CHAIN_ID="31337" DB_NAME="test" bun run index.ts &
+CHAIN="local" DB_NAME="test" bun run index.ts &
 SERVER_PID=$!
 
 echo "Server started with PID $SERVER_PID"
@@ -42,7 +42,7 @@ while true; do
         pkill -f "bun run index.ts"
         lsof -ti:30011 | xargs kill -9 2>/dev/null || true
         sleep 1
-        RUNTIME_CHAIN_ID="31337" DB_NAME="test" bun run index.ts &
+        CHAIN="local" DB_NAME="test" bun run index.ts &
         SERVER_PID=$!
         echo "Server restarted with PID $SERVER_PID"
     elif [[ $key == "R" ]]; then
