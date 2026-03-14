@@ -1,3 +1,4 @@
+import type { ChainKey } from "@filosign/contracts";
 import { Hono } from "hono";
 import type { Chain } from "viem";
 import config from "../../config";
@@ -13,6 +14,7 @@ type Runtime = {
 	uptime: number;
 	serverAddressSynapse: string;
 	chain: Chain;
+	chainKey: ChainKey;
 };
 
 export const apiRouter = new Hono()
@@ -21,6 +23,7 @@ export const apiRouter = new Hono()
 			uptime: process.uptime(),
 			serverAddressSynapse: config.serverAddressSynapse,
 			chain: config.runtimeChain,
+			chainKey: config.chainKey,
 		};
 		return ctx.json(runtime);
 	})

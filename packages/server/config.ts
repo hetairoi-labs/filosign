@@ -1,3 +1,4 @@
+import type { ChainKey } from "@filosign/contracts";
 import { isHex } from "viem";
 import { privateKeyToAddress } from "viem/accounts";
 import { hardhat, worldchain, worldchainSepolia } from "viem/chains";
@@ -20,7 +21,7 @@ const INDEXER = {
 	MAX_NODE_LOOKBACK_PERIOD_MS: 16 * 60 * 60 * 1000,
 };
 
-const chainKey = env.CHAIN as keyof typeof CHAIN_MAP;
+const chainKey = env.CHAIN as ChainKey;
 const runtimeChain = CHAIN_MAP[chainKey];
 if (!runtimeChain) {
 	throw new Error(`Invalid CHAIN: ${env.CHAIN}`);
@@ -33,8 +34,13 @@ if (!isHex(env.EVM_PRIVATE_KEY_SYNAPSE)) {
 }
 
 const serverAddressSynapse = privateKeyToAddress(env.EVM_PRIVATE_KEY_SYNAPSE);
+console.log("runtime chain:", {
+	id: runtimeChain.id,
+	runtimeChain: runtimeChain.name,
+});
 
 const config = {
+	chainKey,
 	runtimeChain,
 	serverAddressSynapse,
 	INDEXER,

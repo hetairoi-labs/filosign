@@ -311,8 +311,7 @@ export default new Hono()
 					eq(fileAcknowledgements.wallet, userWalletNorm),
 				),
 			);
-		const canRead =
-			!!acked || getAddress(fileRecord.sender) === userWalletNorm;
+		const canRead = !!acked || getAddress(fileRecord.sender) === userWalletNorm;
 
 		const response = {
 			pieceCid: fileRecord.pieceCid,
