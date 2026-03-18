@@ -4,7 +4,6 @@ const clientEnvSchema = z.object({
 	BUN_PUBLIC_CHAIN: z.enum(["local", "testnet", "mainnet"]),
 	BUN_PUBLIC_PRIVY_APP_ID: z.string(),
 	BUN_PUBLIC_PLATFORM_URL: z.string(),
-	BUN_PUBLIC_WORLD_APP_ID: z.string(),
 });
 
 const envSchema = z.object({
