@@ -75,6 +75,11 @@ export function FilosignProvider(props: FilosignConfig) {
 
 	const flag = useRef(false);
 
+	console.log({
+		chainKey: runtime.data?.chainKey,
+		contractAddress: contracts?.FSKeyRegistry.address,
+	})
+
 	useEffect(() => {
 		if (!flag.current && wallet && runtime.data) {
 			flag.current = true;
