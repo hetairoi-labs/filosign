@@ -23,7 +23,8 @@
 		"prepare": "husky",
 		"purge": "./scripts/purge.sh",
 		"serloc": "./scripts/serloc.sh",
-		"deploy": "./scripts/deploy.sh"
+		"deploy": "./scripts/deploy.sh",
+		"db:push": "bun run --cwd packages/server db:push"
 	},
 	"engines": {
 		"bun": ">=1.0.0"
