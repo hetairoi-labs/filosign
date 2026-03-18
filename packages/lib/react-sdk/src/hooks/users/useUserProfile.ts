@@ -23,6 +23,7 @@ export function useUserProfile() {
 					avatarUrl: z.string().nullable(),
 					subscriptionStatus: z.string().nullable(),
 					subscriptionId: z.string().nullable(),
+					subscriptionExpiry: z.string().nullable(),
 					lastActiveAt: z.string().nullable(),
 				},
 				`/users/profile`,

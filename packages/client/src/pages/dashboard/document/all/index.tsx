@@ -270,9 +270,11 @@ export default function DocumentAllPage() {
 								>
 									<span className="flex items-center justify-center gap-2">
 										<h1>Hi {userProfile?.firstName}!</h1>
-										<Badge className="uppercase">
-											{userProfile?.subscriptionStatus}
-										</Badge>
+										{userProfile?.subscriptionStatus && (
+											<Badge className="uppercase">
+												{userProfile?.subscriptionStatus}
+											</Badge>
+										)}
 									</span>
 									<p className="max-w-sm px-4 text-muted-foreground text-lg">
 										Seems a little empty here. Try creating a new document.

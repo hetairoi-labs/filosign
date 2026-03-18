@@ -9,12 +9,6 @@ export const users = t.pgTable("users", {
 
 	/**non core here */
 	lastActiveAt: t.timestamp({ withTimezone: true }),
-	subscriptionId: t.text(),
-	subscriptionStatus: t
-		.text({ enum: ["free", "pro"] })
-		.notNull()
-		.default("free"),
-	subscriptionExpiresAt: t.timestamp({ withTimezone: true }),
 	email: t.text(),
 	mobile: t.text(),
 	username: t.text().unique(),
@@ -22,6 +16,14 @@ export const users = t.pgTable("users", {
 	lastName: t.text(),
 	avatarKey: t.text(),
 	invitedBy: tEvmAddress(),
+
+	/**subscription */
+	subscriptionId: t.text(),
+	subscriptionStatus: t
+		.text({ enum: ["basic", "premium"] })
+		.notNull()
+		.default("basic"),
+	subscriptionExpiry: t.timestamp({ withTimezone: true }),
 
 	...timestamps,
 });

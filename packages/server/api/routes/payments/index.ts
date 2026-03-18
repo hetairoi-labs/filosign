@@ -23,7 +23,7 @@ export default new Hono()
 			return respond.err(ctx, "User not found", 404);
 		}
 
-		if (user.subscriptionStatus === "pro") {
+		if (user.subscriptionStatus === "premium") {
 			return respond.err(ctx, "User already has a subscription", 400);
 		}
 
@@ -71,9 +71,9 @@ export default new Hono()
 					db
 						.update(users)
 						.set({
-							subscriptionStatus: "pro",
+							subscriptionStatus: "premium",
 							subscriptionId: sub.id,
-							subscriptionExpiresAt: sub.endsAt,
+							subscriptionExpiry: sub.endsAt,
 						})
 						.where(eq(users.walletAddress, addr))
 						.returning({ walletAddress: users.walletAddress }),
@@ -96,7 +96,7 @@ export default new Hono()
 				const result = await tryCatch(
 					db
 						.update(users)
-						.set({ subscriptionStatus: "free", subscriptionId: null })
+						.set({ subscriptionStatus: "basic", subscriptionId: null })
 						.where(eq(users.subscriptionId, sub.id))
 						.returning({ walletAddress: users.walletAddress }),
 				);
@@ -108,7 +108,7 @@ export default new Hono()
 				const result = await tryCatch(
 					db
 						.update(users)
-						.set({ subscriptionExpiresAt: sub.endsAt })
+						.set({ subscriptionExpiry: sub.endsAt })
 						.where(eq(users.subscriptionId, sub.id))
 						.returning({ walletAddress: users.walletAddress }),
 				);
