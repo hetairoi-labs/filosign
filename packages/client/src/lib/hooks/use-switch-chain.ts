@@ -3,7 +3,7 @@ import { defaultChain } from "@/src/constants";
 
 export function useSwitchNetwork() {
 	const chainId = useChainId();
-	const { switchChain, isPending } = useSwitchChain();
+	const { mutate: switchChain, isPending } = useSwitchChain();
 	const isWrongChain = chainId !== defaultChain.id;
 
 	const switchToDefaultChain = () => {
