@@ -48,7 +48,6 @@ interface AccountPreferencesSectionProps {
 }
 
 export function AccountPreferencesSection({
-	form,
 	sectionState,
 }: AccountPreferencesSectionProps) {
 	return (
