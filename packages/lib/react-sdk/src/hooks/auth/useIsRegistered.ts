@@ -13,6 +13,7 @@ export function useIsRegistered() {
 			}
 
 			try {
+				console.log("FSKeyRegistry address", contracts.FSKeyRegistry.address);
 				const isRegistered = await contracts.FSKeyRegistry.read.isRegistered([
 					wallet.account.address,
 				]);
