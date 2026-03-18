@@ -1,4 +1,3 @@
-import { zHexString } from "@filosign/shared/zod";
 import { useQuery } from "@tanstack/react-query";
 import z from "zod";
 import { DAY } from "../../constants";
@@ -13,8 +12,8 @@ export function useUserProfile() {
 			if (!api) throw new Error("Noreachable");
 			const user = await api.rpc.getSafe(
 				{
-					walletAddress: zHexString(),
-					encryptionPublicKey: zHexString(),
+					walletAddress: z.string(),
+					encryptionPublicKey: z.string(),
 					keygenData: z.any().nullable(),
 					createdAt: z.string(),
 					email: z.string().nullable(),
@@ -22,6 +21,9 @@ export function useUserProfile() {
 					firstName: z.string().nullable(),
 					lastName: z.string().nullable(),
 					avatarUrl: z.string().nullable(),
+					subscriptionStatus: z.string().nullable(),
+					subscriptionId: z.string().nullable(),
+					lastActiveAt: z.string().nullable(),
 				},
 				`/users/profile`,
 			);

@@ -30,7 +30,7 @@ export default function HeroSection() {
 						damping: 25,
 						delay: 1.3,
 					}}
-					className="self-start group"
+					className="self-start group flex items-center gap-2"
 				>
 					<Badge variant="primary">
 						<CircleIcon

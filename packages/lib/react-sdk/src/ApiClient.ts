@@ -3,12 +3,18 @@ import { type ZodRawShape, type ZodType, z } from "zod";
 
 export default class ApiClient {
 	private _client: ExtendedAxios;
-	private _authHeader: { Authorization: `Bearer ${string}` };
+	private _authHeader: {
+		Authorization: `Bearer ${string}`;
+		"ngrok-skip-browser-warning": string;
+	};
 	private _baseUrl: string;
 
 	constructor(baseUrl: string) {
 		this._baseUrl = baseUrl;
-		this._authHeader = { Authorization: "Bearer null" };
+		this._authHeader = {
+			Authorization: "Bearer null",
+			"ngrok-skip-browser-warning": "69420",
+		};
 		this._client = this.createClient();
 	}
 
@@ -18,6 +24,8 @@ export default class ApiClient {
 			timeout: 30_000,
 			headers: {
 				Authorization: this._authHeader.Authorization,
+				"ngrok-skip-browser-warning":
+					this._authHeader["ngrok-skip-browser-warning"],
 			},
 		});
 		return new ExtendedAxios(instance);
@@ -39,9 +47,15 @@ export default class ApiClient {
 
 	setJwt(authToken: string | null) {
 		if (authToken === null || authToken === undefined) {
-			this._authHeader = { Authorization: "Bearer null" };
+			this._authHeader = {
+				Authorization: "Bearer null",
+				"ngrok-skip-browser-warning": "69420",
+			};
 		} else {
-			this._authHeader = { Authorization: `Bearer ${authToken}` };
+			this._authHeader = {
+				Authorization: `Bearer ${authToken}`,
+				"ngrok-skip-browser-warning": "69420",
+			};
 		}
 		this._client = this.createClient();
 	}

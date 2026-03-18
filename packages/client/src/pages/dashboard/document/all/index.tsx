@@ -1,6 +1,9 @@
-import { useReceivedFiles, useSentFiles } from "@filosign/react/hooks";
 import {
-	FileTextIcon,
+	useReceivedFiles,
+	useSentFiles,
+	useUserProfile,
+} from "@filosign/react/hooks";
+import {
 	FunnelIcon,
 	GridFourIcon,
 	ListIcon,
@@ -11,6 +14,7 @@ import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { FileViewer } from "@/src/lib/components/custom/FileViewer";
+import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
 import { Input } from "@/src/lib/components/ui/input";
 import { Loader } from "@/src/lib/components/ui/loader";
@@ -34,6 +38,7 @@ export default function DocumentAllPage() {
 		type?: "sent" | "received";
 	} | null>(null);
 	const [isFilterOpen, setIsFilterOpen] = useState(false);
+	const { data: userProfile } = useUserProfile();
 
 	// File queries
 	const sentFiles = useSentFiles();
@@ -263,25 +268,15 @@ export default function DocumentAllPage() {
 									transition={{ duration: 0.2, delay: 0.4 }}
 									className="space-y-4 text-center"
 								>
-									<div className="size-40 mx-auto mb-6">
-										<FileTextIcon
-											className="size-full text-muted-foreground/50"
-											weight="light"
-										/>
-									</div>
-									<h2 className="font-semibold text-foreground">
-										No documents
-									</h2>
-									<p className="max-w-md px-4 text-muted-foreground">
-										You have not yet created or received any documents. Get
-										started by creating a new document.
+									<span className="flex items-center justify-center gap-2">
+										<h1>Hi {userProfile?.firstName}!</h1>
+										<Badge className="uppercase">
+											{userProfile?.subscriptionStatus}
+										</Badge>
+									</span>
+									<p className="max-w-sm px-4 text-muted-foreground text-lg">
+										Seems a little empty here. Try creating a new document.
 									</p>
-									<Link to="/dashboard/envelope/create">
-										<Button variant="primary" className="gap-2">
-											<PlusIcon className="size-4" weight="bold" />
-											Create New Document
-										</Button>
-									</Link>
 								</motion.div>
 							</div>
 						) : (

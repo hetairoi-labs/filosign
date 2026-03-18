@@ -1,5 +1,5 @@
 export const definitions = {
-  "0x12c1": {
+  "0x14a34": {
     "FSManager": {
       "address": "0xfE0e1B98dE8DA0500107082dcd4AF2d4a6b16ae5",
       "abi": [
@@ -206,19 +206,6 @@ export const definitions = {
           "type": "function"
         },
         {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "_worldVerifier",
-              "type": "address"
-            }
-          ],
-          "name": "setWorldVerifier",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
           "inputs": [],
           "name": "version",
           "outputs": [
@@ -226,19 +213,6 @@ export const definitions = {
               "internalType": "uint8",
               "name": "",
               "type": "uint8"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "worldVerifier",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
             }
           ],
           "stateMutability": "view",
@@ -584,29 +558,6 @@ export const definitions = {
         {
           "inputs": [
             {
-              "internalType": "contract IWorldID",
-              "name": "_worldId",
-              "type": "address"
-            },
-            {
-              "internalType": "string",
-              "name": "_appId",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "_signActionId",
-              "type": "string"
-            }
-          ],
-          "name": "initializeWorldId",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
               "internalType": "bytes32",
               "name": "cidId",
               "type": "bytes32"
@@ -717,21 +668,6 @@ export const definitions = {
             },
             {
               "internalType": "uint256",
-              "name": "root_",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "nullifierHash_",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256[8]",
-              "name": "proof_",
-              "type": "uint256[8]"
-            },
-            {
-              "internalType": "uint256",
               "name": "timestamp_",
               "type": "uint256"
             },
@@ -741,22 +677,9 @@ export const definitions = {
               "type": "bytes"
             }
           ],
-          "name": "registerFileSignatureWorldId",
+          "name": "registerFileSignature",
           "outputs": [],
           "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "signDocExternalNullifier",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
           "type": "function"
         },
         {
@@ -876,19 +799,6 @@ export const definitions = {
               "internalType": "bool",
               "name": "",
               "type": "bool"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "worldId",
-          "outputs": [
-            {
-              "internalType": "contract IWorldID",
-              "name": "",
-              "type": "address"
             }
           ],
           "stateMutability": "view",
@@ -1221,143 +1131,6 @@ export const definitions = {
               "internalType": "bool",
               "name": "",
               "type": "bool"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        }
-      ]
-    },
-    "FSWorldVerifier": {
-      "address": "0xB261DBc8BD02101397B665CB3B28F04075e9b338",
-      "abi": [
-        {
-          "inputs": [
-            {
-              "internalType": "contract IWorldID",
-              "name": "_worldId",
-              "type": "address"
-            },
-            {
-              "internalType": "string",
-              "name": "_appId",
-              "type": "string"
-            },
-            {
-              "internalType": "string",
-              "name": "_actionId",
-              "type": "string"
-            }
-          ],
-          "stateMutability": "nonpayable",
-          "type": "constructor"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "name": "addressToNullifier",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "externalNullifier",
-          "outputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "wallet",
-              "type": "address"
-            },
-            {
-              "internalType": "uint256",
-              "name": "root",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256",
-              "name": "nullifierHash",
-              "type": "uint256"
-            },
-            {
-              "internalType": "uint256[8]",
-              "name": "proof",
-              "type": "uint256[8]"
-            }
-          ],
-          "name": "linkWallet",
-          "outputs": [],
-          "stateMutability": "nonpayable",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "name": "nullifierToAddress",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "uint256",
-              "name": "",
-              "type": "uint256"
-            }
-          ],
-          "name": "usedNullifiers",
-          "outputs": [
-            {
-              "internalType": "bool",
-              "name": "",
-              "type": "bool"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
-          "name": "worldId",
-          "outputs": [
-            {
-              "internalType": "contract IWorldID",
-              "name": "",
-              "type": "address"
             }
           ],
           "stateMutability": "view",

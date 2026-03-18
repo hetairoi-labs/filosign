@@ -1,34 +1,52 @@
-const envKeys = [
-	"TG_ANALYTICS_BOT_GROUP_ID",
-	"TG_ANALYTICS_BOT_TOKEN",
-	"S3_SECRET_ACCESS_KEY",
-	"S3_ACCESS_KEY_ID",
-	"S3_BUCKET",
-	"S3_ENDPOINT",
-	"EVM_PRIVATE_KEY_SYNAPSE",
-	"EVM_PRIVATE_KEY_SERVER",
-	"PG_URI",
-	"DB_NAME",
-	"FRONTEND_URL",
-	"CHAIN",
-	"SUPER_PASS",
-	"WORLD_ID_RP_ID",
-	"WORLD_ID_SIGNING_KEY",
-] as const;
+import z from "zod";
 
-type ENV = Record<(typeof envKeys)[number], string>;
+const envSchema = z.object({
+	TG_ANALYTICS_BOT_GROUP_ID: z.string(),
+	TG_ANALYTICS_BOT_TOKEN: z.string(),
+	S3_SECRET_ACCESS_KEY: z.string(),
+	S3_ACCESS_KEY_ID: z.string(),
+	S3_BUCKET: z.string(),
+	S3_ENDPOINT: z.string(),
+	EVM_PRIVATE_KEY_SYNAPSE: z.string(),
+	EVM_PRIVATE_KEY_SERVER: z.string(),
+	PG_URI: z.string(),
+	DB_NAME: z.string(),
+	FRONTEND_URL: z.string(),
+	CHAIN: z.enum(["local", "testnet", "mainnet"]),
+	SUPER_PASS: z.string(),
+	WORLD_ID_RP_ID: z.string(),
+	WORLD_ID_SIGNING_KEY: z.string(),
 
-let env: ENV = {} as ENV;
+	POLAR_ACCESS_TOKEN: z.string(),
+	POLAR_MODE: z.enum(["sandbox", "production"]),
+	POLAR_SUCCESS_URL: z.url(),
+	POLAR_WEBHOOK_SECRET: z.string(),
+	POLAR_PRODUCT_ID: z.string(),
+});
 
-export function ensureEnv() {
-	for (const key of envKeys) {
-		if (!Bun.env[key]) {
-			throw new Error(`Environment variable ${key} is not set`);
+type EnvSchema = z.infer<typeof envSchema>;
+
+declare module "bun" {
+	interface Env extends EnvSchema {}
+}
+
+let _env: EnvSchema | null = null;
+const getEnv = (): EnvSchema => {
+	if (!_env) {
+		try {
+			const parsedEnv = envSchema.parse(Bun.env);
+			_env = parsedEnv;
+		} catch (error) {
+			if (error instanceof z.ZodError) {
+				const errorMessages = error.issues
+					.map((err) => `${err.path.join(".")}: ${err.message}`)
+					.join("\n");
+				throw new Error(`Environment validation failed:\n${errorMessages}`);
+			}
+			throw error;
 		}
 	}
+	return _env;
+};
 
-	env = Object.fromEntries(envKeys.map((key) => [key, Bun.env[key]])) as ENV;
-}
-ensureEnv();
-
-export default env;
+export default getEnv();

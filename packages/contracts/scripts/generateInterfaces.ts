@@ -99,7 +99,7 @@ const OUT_DIR = path.join(SRC_DIR, "interfaces");
 const SPDX_HEADER = "// SPDX-License-Identifier: MIT"; // change latr
 
 /** Manual interfaces in src/interfaces/ preserved during generation (not auto-generated from contracts) */
-const PRESERVED_INTERFACES = new Set(["IWorldID.sol"]);
+const PRESERVED_INTERFACES = new Set([""]);
 
 function prepareOutDir() {
 	if (fs.existsSync(OUT_DIR)) {

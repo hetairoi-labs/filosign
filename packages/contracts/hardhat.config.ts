@@ -24,50 +24,38 @@ const config: HardhatUserConfig = {
 			url: "http://127.0.0.1:8545",
 			chainId: 31337,
 		},
-		filecoinCalibration: {
+		base: {
+			url: "https://mainnet.base.org",
 			accounts: [Bun.env.FC_PVT_KEY],
-			chainId: 314159,
-			url: "https://api.calibration.node.glif.io/rpc/v1",
+			chainId: 8453,
 		},
-		worldchainSepolia: {
+		baseSepolia: {
+			url: "https://sepolia.base.org",
 			accounts: [Bun.env.FC_PVT_KEY],
-			chainId: 4801,
-			url: `https://worldchain-sepolia.g.alchemy.com/v2/${Bun.env.ALCHEMY_API_KEY}`,
-		},
-		worldchain: {
-			accounts: [Bun.env.FC_PVT_KEY],
-			chainId: 480,
-			url: `https://worldchain-mainnet.g.alchemy.com/v2/${Bun.env.ALCHEMY_API_KEY}`,
+			chainId: 84532,
 		},
 	},
 	etherscan: {
 		apiKey:
 			process.env.BLOCKSCOUT_API_KEY ??
 			process.env.ETHERSCAN_API_KEY ??
+			process.env.BASESCAN_API_KEY ??
 			"no-api-key",
 		customChains: [
 			{
-				network: "worldchainSepolia",
-				chainId: 4801,
+				network: "base",
+				chainId: 8453,
 				urls: {
-					apiURL: "https://worldchain-sepolia.explorer.alchemy.com/api",
-					browserURL: "https://sepolia.worldscan.org",
+					apiURL: "https://api.basescan.org/api",
+					browserURL: "https://basescan.org",
 				},
 			},
 			{
-				network: "worldchain",
-				chainId: 480,
+				network: "baseSepolia",
+				chainId: 84532,
 				urls: {
-					apiURL: "https://worldchain-mainnet.explorer.alchemy.com/api",
-					browserURL: "https://worldscan.org",
-				},
-			},
-			{
-				network: "filecoinCalibration",
-				chainId: 314159,
-				urls: {
-					apiURL: "https://filecoin-testnet.blockscout.com/api",
-					browserURL: "https://filecoin-testnet.blockscout.com",
+					apiURL: "https://api-sepolia.basescan.org/api",
+					browserURL: "https://sepolia.basescan.org",
 				},
 			},
 		],

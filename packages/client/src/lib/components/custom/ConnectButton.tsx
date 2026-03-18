@@ -9,8 +9,6 @@ export default function ConnectButton() {
 	const { ready, authenticated, login: loginPrivy, logout } = usePrivy();
 	const isRegistered = useIsRegistered();
 
-	console.log("isRegistered", isRegistered.data);
-
 	// Determine button state for smooth transitions
 	const getButtonState = () => {
 		if (!ready) return "loading";

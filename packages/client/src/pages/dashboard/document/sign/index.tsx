@@ -1,5 +1,6 @@
 import {
 	useFileInfo,
+	useSignFile,
 	useViewFile,
 	type ViewFileResult,
 } from "@filosign/react/hooks";
@@ -10,11 +11,11 @@ import {
 	MagnifyingGlassMinusIcon,
 	MagnifyingGlassPlusIcon,
 	PrinterIcon,
+	SpinnerIcon,
 } from "@phosphor-icons/react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { SignWithIDKit } from "@/src/lib/components/custom/SignWithIDKit";
 import { Button } from "@/src/lib/components/ui/button";
 import { Loader } from "@/src/lib/components/ui/loader";
 
@@ -35,6 +36,7 @@ export default function SignDocumentPage() {
 	const [fileData, setFileData] = useState<ViewFileResult | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const documentRef = useRef<HTMLDivElement>(null);
+	const signFile = useSignFile();
 
 	// Memoize the handleViewFile function
 	const handleViewFile = useCallback(async () => {
@@ -389,7 +391,22 @@ export default function SignDocumentPage() {
 								<DownloadIcon className="size-4" />
 							</Button>
 
-							<SignWithIDKit file={file} />
+							<Button
+								onClick={() => {
+									signFile.mutate({
+										pieceCid: file.pieceCid,
+									});
+								}}
+								disabled={signFile.isPending}
+							>
+								{signFile.isPending ? (
+									<p>
+										<SpinnerIcon className="size-4 mr-2 animate-spin" /> Signing
+									</p>
+								) : (
+									"Sign Document"
+								)}
+							</Button>
 						</div>
 					</div>
 				</div>
@@ -468,7 +485,20 @@ export default function SignDocumentPage() {
 						<div className="w-px h-6 bg-border mx-2" />
 
 						{/* Sign Button - Primary Action */}
-						<SignWithIDKit file={file} />
+						<Button
+							onClick={() => {
+								signFile.mutate({
+									pieceCid: file.pieceCid,
+								});
+							}}
+							disabled={signFile.isPending}
+						>
+							{signFile.isPending ? (
+								<SpinnerIcon className="size-4 mr-2 animate-spin" />
+							) : (
+								"Sign Document"
+							)}
+						</Button>
 					</div>
 				</div>
 			</div>

@@ -17,7 +17,11 @@ export const app = new Hono()
 	.use(
 		cors({
 			origin: env.FRONTEND_URL,
-			allowHeaders: ["Content-Type", "Authorization"],
+			allowHeaders: [
+				"Content-Type",
+				"Authorization",
+				"ngrok-skip-browser-warning",
+			],
 			allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 			credentials: true,
 		}),

@@ -4,6 +4,7 @@ import type { Chain } from "viem";
 import config from "../../config";
 import auth from "./auth";
 import files from "./files";
+import payments from "./payments";
 import sharing from "./sharing";
 import tx from "./tx";
 import users from "./users";
@@ -33,4 +34,5 @@ export const apiRouter = new Hono()
 	.route("/users", users)
 	.route("/tx", tx)
 	.route("/waitlist", waitlist)
-	.route("/world-id", worldId);
+	.route("/world-id", worldId)
+	.route("/payments", payments);

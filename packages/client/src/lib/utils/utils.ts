@@ -1,6 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { toast } from "sonner";
 import { twMerge } from "tailwind-merge";
+import { formatUnits } from "viem";
 
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
@@ -19,4 +20,9 @@ export function truncateAddress(address: string | undefined) {
 export function copyToClipboard(text: string) {
 	navigator.clipboard.writeText(text);
 	toast.success("Copied to clipboard");
+}
+
+export function formatBalance(balance: bigint | undefined, decimals: number) {
+	if (!balance) return "0";
+	return formatUnits(balance, decimals);
 }

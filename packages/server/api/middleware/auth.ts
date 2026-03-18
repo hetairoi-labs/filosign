@@ -42,9 +42,13 @@ export const authenticated = createMiddleware<{
 
 	ctx.set("userWallet", payload.sub);
 	await next();
+
 	//TODO see if this can be done without awaiting
-	await db
-		.update(users)
+	db.update(users)
 		.set({ lastActiveAt: new Date() })
-		.where(eq(users.walletAddress, payload.sub));
+		.where(eq(users.walletAddress, payload.sub))
+		.execute()
+		.catch((error) => {
+			console.error("Error updating user last active at:", { error });
+		});
 });

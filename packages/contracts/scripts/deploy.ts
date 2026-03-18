@@ -8,20 +8,9 @@ const DEFINITIONS_FILE_SUFFIX = " as const;";
 
 const CHAIN_ID = {
 	local: 31337,
-	testnet: 4801,
-	mainnet: 480,
+	testnet: 84532,
+	mainnet: 8453,
 } as const;
-
-const WORLD_ID_ROUTER: Record<number, `0x${string}`> = {
-	[CHAIN_ID.local]:
-		"0x0000000000000000000000000000000000000000" as `0x${string}`,
-	[CHAIN_ID.testnet]:
-		"0x57f928158C3EE7CDad1e4D8642503c4D0201f611" as `0x${string}`,
-	[CHAIN_ID.mainnet]:
-		"0x17B354dD2595411ff79041f930e491A4Df39A278" as `0x${string}`,
-};
-
-const ACTION = "sign-flow";
 
 function chainName(chainId: number): ChainKey {
 	if (chainId === CHAIN_ID.local) return "local";
@@ -39,12 +28,6 @@ async function main() {
 		process.exit(1);
 	}
 
-	const appId = process.env.WORLD_APP_ID;
-	if (!appId) {
-		console.error("Error: WORLD_APP_ID not set");
-		process.exit(1);
-	}
-
 	const [deployer] = await hre.viem.getWalletClients();
 	if (!deployer) {
 		console.error("No deployer wallet found");
@@ -55,38 +38,17 @@ async function main() {
 		address: deployer.account.address,
 	});
 
-	let worldIdAddress: `0x${string}`;
-	if (chainId === CHAIN_ID.local) {
-		const mockWorldId = await hre.viem.deployContract("MockWorldID");
-		worldIdAddress = mockWorldId.address;
-		console.log("Deployed MockWorldID at", worldIdAddress);
-	} else {
-		worldIdAddress = WORLD_ID_ROUTER[chainId];
-		if (!worldIdAddress) {
-			console.error(`No World ID Router for chainId ${chainId}`);
-			process.exit(1);
-		}
-		console.log("Using World ID Router at", worldIdAddress);
-	}
-
 	const manager = await hre.viem.deployContract("FSManager");
+	await sleep(3000);
 	const fileRegistry = await hre.viem.getContractAt(
 		"FSFileRegistry",
 		await manager.read.fileRegistry(),
 	);
+	await sleep(3000);
 	const keyRegistry = await hre.viem.getContractAt(
 		"FSKeyRegistry",
 		await manager.read.keyRegistry(),
 	);
-
-	const worldVerifier = await hre.viem.deployContract("FSWorldVerifier", [
-		worldIdAddress,
-		appId,
-		ACTION,
-	]);
-
-	await manager.write.setWorldVerifier([worldVerifier.address]);
-	await fileRegistry.write.initializeWorldId([worldIdAddress, appId, ACTION]);
 
 	console.log("Contracts deployed");
 
@@ -102,10 +64,6 @@ async function main() {
 		FSKeyRegistry: {
 			address: getAddress(keyRegistry.address),
 			abi: keyRegistry.abi,
-		},
-		FSWorldVerifier: {
-			address: getAddress(worldVerifier.address),
-			abi: worldVerifier.abi,
 		},
 	} as const;
 
@@ -123,21 +81,16 @@ async function main() {
 	console.log({
 		chain: envName,
 		chainId,
-		appId,
-		action: ACTION,
-		worldIdAddress,
 	});
 
 	const networkName = hre.network.name;
-	if (networkName === "worldchainSepolia" || networkName === "worldchain") {
+	if (networkName === "baseSepolia" || networkName === "base") {
 		try {
 			await $`bunx --bun hardhat verify --network ${networkName} ${manager.address} --force`;
 			await sleep(1000);
 			await $`bunx --bun hardhat verify --network ${networkName} ${fileRegistry.address} --force`;
 			await sleep(1000);
 			await $`bunx --bun hardhat verify --network ${networkName} ${keyRegistry.address} --force`;
-			await sleep(1000);
-			await $`bunx --bun hardhat verify --network ${networkName} ${worldVerifier.address} "${worldIdAddress}" "${appId}" "${ACTION}" --force`;
 		} catch (_) {}
 		console.log(`Contracts verified on ${networkName} block explorer`);
 	}

@@ -15,10 +15,10 @@ export function useLogin() {
 	const { data: isLoggedIn } = useIsLoggedIn();
 
 	return useMutation({
-		mutationFn: async (params: { pin: string; worldIdProof?: IDKitResult }) => {
+		mutationFn: async (params: { pin: string }) => {
 			if (isLoggedIn) return true;
 
-			const { pin, worldIdProof } = params;
+			const { pin } = params;
 
 			if (!contracts || !wallet || !wasm.dilithium) {
 				throw new Error("unreachable");
@@ -31,10 +31,6 @@ export function useLogin() {
 
 			if (!isRegistered) {
 				console.log("registering..");
-
-				if (!worldIdProof) {
-					throw new Error("World ID proof is required");
-				}
 
 				const keygenData = await walletKeyGen(wallet, {
 					pin,
@@ -71,7 +67,6 @@ export function useLogin() {
 					encryptionPublicKey: toHex(keygenData.kemKeypair.publicKey),
 					signaturePublicKey: toHex(keygenData.sigKeypair.publicKey),
 					walletAddress: wallet.account.address,
-					worldIdProof,
 				};
 
 				await api.rpc.postSafe({}, "/users/profile", requestPayload);

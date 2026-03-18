@@ -1,5 +1,8 @@
-import { useIsLoggedIn, useUpdateUserProfile } from "@filosign/react/hooks";
-import { CaretRightIcon } from "@phosphor-icons/react";
+import {
+	useCreateCheckout,
+	useIsLoggedIn,
+	useUpdateUserProfile,
+} from "@filosign/react/hooks";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -19,14 +22,13 @@ export default function OnboardingWelcomeCompletePage() {
 	const { onboardingForm, setOnboardingForm } = useStorePersist();
 	const isLoggedIn = useIsLoggedIn();
 	const updateUserProfile = useUpdateUserProfile();
+	const createCheckout = useCreateCheckout();
 
 	useEffect(() => {
 		if (onboardingForm?.firstName || onboardingForm?.lastName) {
 			setUserName(`${onboardingForm.firstName} ${onboardingForm.lastName}`);
 		}
 	}, [onboardingForm]);
-
-	console.log(isLoggedIn.data);
 
 	async function handleSubmit() {
 		if (!isLoggedIn.data) {
@@ -48,7 +50,8 @@ export default function OnboardingWelcomeCompletePage() {
 			});
 		}
 
-		window.location.href = "/dashboard";
+		const data = await createCheckout.mutateAsync();
+		window.location.href = data.checkoutUrl;
 	}
 
 	return (
@@ -76,11 +79,7 @@ export default function OnboardingWelcomeCompletePage() {
 								}
 							}}
 						>
-							Go to Dashboard
-							<CaretRightIcon
-								className="transition-transform duration-200 size-4 group-hover:translate-x-1"
-								weight="bold"
-							/>
+							Start Free Trial
 						</Button>
 					</CardContent>
 				</Card>
