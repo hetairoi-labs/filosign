@@ -1,9 +1,12 @@
-#!/bin/bash
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-ROOT_DIR="$(cd "$DIR/.." && pwd)"
-cd "$ROOT_DIR"
+#!/usr/bin/env bash
 
-find . -name "node_modules" -type d -prune -exec rm -rf '{}' +
-find . -name ".bun" -type d -prune -exec rm -rf '{}' +
-find . -name "dist" -type d -prune -exec rm -rf '{}' +
-rm -f bun.lock
+set -euo pipefail
+
+echo "-> Deleting node_modules directories..."
+find . -path "./packages/contracts" -prune -o -type d -name "node_modules" -exec rm -rf {} +
+
+echo "-> Deleting bun.lock files..."
+find . -path "./packages/contracts" -prune -o -type f -name "bun.lock" -exec rm -f {} +
+
+bun install
+echo "🔥 Freshly baked."

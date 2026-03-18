@@ -41,7 +41,9 @@ export function FilosignProvider({ children }: { children: React.ReactNode }) {
 		}
 
 		init();
-		return () => { mounted = false; };
+		return () => {
+			mounted = false;
+		};
 	}, []);
 
 	return (
