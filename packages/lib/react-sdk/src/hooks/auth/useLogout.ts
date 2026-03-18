@@ -18,11 +18,7 @@ export function useLogout() {
 				store: "fs-keystore",
 			});
 			keyStore.del("key-seed");
-			queryClient.invalidateQueries({
-				queryKey: ["fsQ-is-logged-in", wallet?.account.address],
-			});
-			queryClient.invalidateQueries();
-			queryClient.refetchQueries();
+			queryClient.clear();
 		},
 	});
 }

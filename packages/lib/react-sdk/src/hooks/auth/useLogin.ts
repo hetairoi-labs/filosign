@@ -1,7 +1,6 @@
 import { eip712signature } from "@filosign/contracts";
 import { toHex, walletKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import type { IDKitResult } from "@worldcoin/idkit";
 import { idb } from "../../../utils/idb";
 import { useFilosignContext } from "../../context/FilosignProvider";
 import { useIsLoggedIn } from "./useIsLoggedIn";

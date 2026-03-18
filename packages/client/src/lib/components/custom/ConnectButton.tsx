@@ -4,14 +4,17 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/src/lib/components/ui/button";
+import { useSwitchNetwork } from "../../hooks/use-switch-chain";
 
 export default function ConnectButton() {
 	const { ready, authenticated, login: loginPrivy, logout } = usePrivy();
 	const isRegistered = useIsRegistered();
+	const { isWrongChain, switchToDefaultChain } = useSwitchNetwork();
 
 	// Determine button state for smooth transitions
 	const getButtonState = () => {
 		if (!ready) return "loading";
+		if (isWrongChain) return "switch-chain";
 		if (!authenticated || isRegistered.isPending) return "signin";
 		if (!isRegistered.data) return "get-started";
 		return "dashboard";
@@ -19,6 +22,8 @@ export default function ConnectButton() {
 
 	const buttonState = getButtonState();
 	const isLoading = buttonState === "loading";
+
+	console.log(buttonState);
 
 	return (
 		<motion.div
@@ -85,6 +90,29 @@ export default function ConnectButton() {
 							</motion.span>
 						</AnimatePresence>
 					</Link>
+				</Button>
+			) : null}
+
+			{buttonState !== "signin" && buttonState === "switch-chain" ? (
+				<Button variant="secondary" asChild className="min-w-28 mr-2">
+					<Button onClick={switchToDefaultChain}>
+						<AnimatePresence mode="wait">
+							<motion.span
+								key={buttonState}
+								initial={{ opacity: 0, y: 10 }}
+								animate={{ opacity: 1, y: 0 }}
+								exit={{ opacity: 0, y: -10 }}
+								transition={{
+									duration: 0.2,
+									ease: "easeInOut",
+									layout: { duration: 0.3 },
+								}}
+								layout
+							>
+								Switch chain
+							</motion.span>
+						</AnimatePresence>
+					</Button>
 				</Button>
 			) : null}
 

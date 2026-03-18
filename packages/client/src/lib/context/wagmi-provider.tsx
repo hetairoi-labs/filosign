@@ -1,3 +1,4 @@
+import type { ConnectedWallet } from "@privy-io/react-auth";
 import {
 	createConfig,
 	WagmiProvider as WagmiProviderBase,
@@ -23,6 +24,21 @@ export const config = createConfig({
 	),
 });
 
+function preferEmbeddedWallet({
+	wallets,
+}: {
+	wallets: ConnectedWallet[];
+}): ConnectedWallet | undefined {
+	return wallets.find((w) => w.walletClientType === "privy") ?? wallets[0];
+}
+
 export function WagmiProvider({ children }: { children: React.ReactNode }) {
-	return <WagmiProviderBase config={config}>{children}</WagmiProviderBase>;
+	return (
+		<WagmiProviderBase
+			config={config}
+			setActiveWalletForWagmi={preferEmbeddedWallet}
+		>
+			{children}
+		</WagmiProviderBase>
+	);
 }

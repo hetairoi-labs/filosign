@@ -6,7 +6,6 @@ import { Loader } from "../components/ui/loader";
 
 export function FilosignProvider({ children }: { children: React.ReactNode }) {
 	const { data: wallet } = useWalletClient();
-
 	const [dilithium, setDilithium] = useState<any>(null);
 
 	useEffect(() => {
@@ -16,9 +15,7 @@ export function FilosignProvider({ children }: { children: React.ReactNode }) {
 			try {
 				// Mock chrome for the dilithium library
 				(globalThis as any).chrome = {
-					runtime: {
-						getURL: () => "/static/dilithium.wasm",
-					},
+					runtime: { getURL: () => "/static/dilithium.wasm" },
 				};
 
 				const module = await import(
@@ -27,11 +24,7 @@ export function FilosignProvider({ children }: { children: React.ReactNode }) {
 				let dil: any = null;
 				if (typeof module === "function") {
 					dil = await (module as any)();
-				}
-				//  else if (module.default && typeof module.default === "function") {
-				//     dil = await module.default();
-				// }
-				else if (
+				} else if (
 					module.createDilithium &&
 					typeof module.createDilithium === "function"
 				) {
@@ -48,17 +41,13 @@ export function FilosignProvider({ children }: { children: React.ReactNode }) {
 		}
 
 		init();
-		return () => {
-			mounted = false;
-		};
+		return () => { mounted = false; };
 	}, []);
 
 	return (
 		<FilosignProviderBase
 			apiBaseUrl={process.env.BUN_PUBLIC_PLATFORM_URL || "localhost:30011"}
-			wasm={{
-				dilithium,
-			}}
+			wasm={{ dilithium }}
 			wallet={wallet}
 			loader={Loader}
 		>
