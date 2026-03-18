@@ -8,7 +8,7 @@ const server = serve({
 	development: isDev
 		? {
 				hmr: true,
-				console: false,
+				console: true,
 			}
 		: false,
 	port: env.PORT,
