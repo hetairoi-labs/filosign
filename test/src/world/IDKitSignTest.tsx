@@ -123,7 +123,6 @@ export function IDKitSignTest({
 					})}
 					handleVerify={async () => {}}
 					onSuccess={(proof) => {
-						console.log("[SIGN] proof:", proof);
 						void handleSignFile(proof);
 					}}
 				/>

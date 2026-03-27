@@ -7,8 +7,7 @@
  */
 
 const WORLD_ID_ERROR_MESSAGES: Record<string, string> = {
-	"0x7fcdd1f4":
-		"This World ID proof was already used. Please verify again with World ID to get a new proof.",
+	"0x7fcdd1f4": "Proof invalid.",
 };
 
 const FALLBACK_MESSAGE = "World ID linking failed";

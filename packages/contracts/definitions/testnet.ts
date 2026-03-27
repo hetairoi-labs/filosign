@@ -1,7 +1,7 @@
 export const definitions = {
   "0x12c1": {
     "FSManager": {
-      "address": "0xfE0e1B98dE8DA0500107082dcd4AF2d4a6b16ae5",
+      "address": "0x61bC52ee28f019486285215ab9E0A752248aB914",
       "abi": [
         {
           "inputs": [],
@@ -247,7 +247,7 @@ export const definitions = {
       ]
     },
     "FSFileRegistry": {
-      "address": "0x6D6Bba57F293745C0F148bb6921C90071d0E521A",
+      "address": "0x9f735A92A12Da8A0d1144B7fEE0FF90336267FEB",
       "abi": [
         {
           "inputs": [],
@@ -361,6 +361,22 @@ export const definitions = {
             }
           ],
           "name": "StringTooLong",
+          "type": "error"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "length",
+              "type": "uint256"
+            }
+          ],
+          "name": "StringsInsufficientHexLength",
           "type": "error"
         },
         {
@@ -897,7 +913,7 @@ export const definitions = {
       ]
     },
     "FSKeyRegistry": {
-      "address": "0x57E7e8Bd9761f2299568556FEBF5CdFD31872bA6",
+      "address": "0x540d9901932f2AaC961413c01F4Cff0B745B69E6",
       "abi": [
         {
           "inputs": [],
@@ -1229,7 +1245,7 @@ export const definitions = {
       ]
     },
     "FSWorldVerifier": {
-      "address": "0xB261DBc8BD02101397B665CB3B28F04075e9b338",
+      "address": "0x729425b47e29cFC3Ce259851C79B703C8213a9D9",
       "abi": [
         {
           "inputs": [
@@ -1251,6 +1267,22 @@ export const definitions = {
           ],
           "stateMutability": "nonpayable",
           "type": "constructor"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "value",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "length",
+              "type": "uint256"
+            }
+          ],
+          "name": "StringsInsufficientHexLength",
+          "type": "error"
         },
         {
           "inputs": [

@@ -8,8 +8,8 @@ import {
 import { useRef, useState } from "react";
 import Button from "../Button";
 
-const WORLD_ID_APP_ID = "app_69f4036892019e6f616e47818ddebd8b";
-const LINK_ACTION = "sign-flow";
+const WORLD_ID_APP_ID = "app_1c0c93a223f94979be0b34049c5de67b";
+const LINK_ACTION = "filosign";
 
 export function IDKitLinkTest({
 	userAddress,
@@ -130,7 +130,6 @@ export function IDKitLinkTest({
 					})}
 					handleVerify={() => {}}
 					onSuccess={(proof) => {
-						console.log("[LINK] proof:", proof);
 						void handleSuccess(proof);
 					}}
 				/>

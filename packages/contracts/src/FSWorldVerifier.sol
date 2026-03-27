@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.26;
 
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "./interfaces/IWorldID.sol";
 
 contract FSWorldVerifier {
@@ -30,11 +31,13 @@ contract FSWorldVerifier {
         require(addressToNullifier[wallet] == 0, "Address already linked");
         require(!usedNullifiers[nullifierHash], "Nullifier already linked");
 
-        uint256 signalHash = hashToField(abi.encodePacked(wallet));
+        // IDKit signal is sent as a lowercase address string (e.g. 0xabc...),
+        string memory walletSignal = Strings.toHexString(uint160(wallet), 20);
+        uint256 signalHash = hashToField(abi.encodePacked(walletSignal));
 
         worldId.verifyProof(
             root,
-            1, // 1 denotes Orb validation
+            1,
             signalHash,
             nullifierHash,
             externalNullifier,

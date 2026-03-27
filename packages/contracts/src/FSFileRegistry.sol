@@ -3,6 +3,7 @@ pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "./errors/EFSFileRegistry.sol";
 import "./interfaces/IFSManager.sol";
@@ -221,9 +222,14 @@ contract FSFileRegistry is EIP712 {
             .nullifierToAddress(nullifierHash_);
         require(linkedWallet == signer_, "Not the designated recipient");
 
-        uint256 signalHash = uint256(
-            keccak256(abi.encodePacked(signer_, ":", pieceCid_))
-        ) >> 8;
+        // IDKit signal is sent as `${lowercaseAddress}:${pieceCid}`.
+        // Match that exact textual payload for on-chain verification.
+        string memory signerSignal = string.concat(
+            Strings.toHexString(uint160(signer_), 20),
+            ":",
+            pieceCid_
+        );
+        uint256 signalHash = uint256(keccak256(abi.encodePacked(signerSignal))) >> 8;
 
         worldId.verifyProof(
             root_,

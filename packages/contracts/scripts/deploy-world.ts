@@ -21,7 +21,7 @@ const WORLD_ID_ROUTER: Record<number, `0x${string}`> = {
 		"0x17B354dD2595411ff79041f930e491A4Df39A278" as `0x${string}`,
 };
 
-const ACTION = "sign-flow";
+const ACTION = "filosign";
 
 function chainName(chainId: number): ChainKey {
 	if (chainId === CHAIN_ID.local) return "local";

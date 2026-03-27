@@ -109,7 +109,6 @@ export function useSignFile() {
 						worldIdProof,
 					},
 				);
-
 				success = signResponse.success;
 			});
 
