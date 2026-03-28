@@ -4,3 +4,5 @@ pragma solidity ^0.8.26;
 error SenderAlreadyApproved();
 error CannotApproveSelf();
 error SenderNotApproved();
+error NotAllSigned();
+error IncentiveAlreadyClaimed();
