@@ -320,7 +320,7 @@ function returnsToString(paramList: Parameter[] | undefined): string {
 			return name ? `${t}${locationStr} ${name}` : `${t}${locationStr}`;
 		})
 		.join(", ");
-	return s.includes(",") ? `(${s})` : s;
+	return s;
 }
 
 function functionToSignature(node: FunctionDefinition): string {
