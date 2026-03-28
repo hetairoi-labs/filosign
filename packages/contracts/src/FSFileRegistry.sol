@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "./errors/EFSFileRegistry.sol";
+import "./errors/EFSCommon.sol";
 import "./interfaces/IFSManager.sol";
 import "./interfaces/IFSWorldVerifier.sol";
 import "./interfaces/IWorldID.sol";
@@ -24,14 +25,20 @@ contract FSFileRegistry is EIP712 {
         address sender;
         mapping(address => bool) signers;
         uint8 signersCount;
+        uint8 signaturesCount;
         mapping(address => bytes) signatures;
         uint256 timestamp;
+        // per-signer incentives set by the sender before all signers have signed
+        mapping(address signer => address) incentiveToken;
+        mapping(address signer => uint256) incentiveAmount;
+        mapping(address signer => bool) incentiveClaimed;
     }
 
     struct FileRegistrationView {
         bytes32 cidIdentifier;
         address sender;
         uint8 signersCount;
+        uint8 signaturesCount;
         uint256 timestamp;
     }
 
@@ -54,6 +61,11 @@ contract FSFileRegistry is EIP712 {
 
     modifier onlyServer() {
         if (msg.sender != manager.server()) revert OnlyServer();
+        _;
+    }
+
+    modifier onlyManager() {
+        if (msg.sender != address(manager)) revert OnlyManager();
         _;
     }
 
@@ -113,6 +125,7 @@ contract FSFileRegistry is EIP712 {
                 cidIdentifier: file.cidIdentifier,
                 sender: file.sender,
                 signersCount: file.signersCount,
+                signaturesCount: file.signaturesCount,
                 timestamp: file.timestamp
             });
     }
@@ -229,7 +242,9 @@ contract FSFileRegistry is EIP712 {
             ":",
             pieceCid_
         );
-        uint256 signalHash = uint256(keccak256(abi.encodePacked(signerSignal))) >> 8;
+        uint256 signalHash = uint256(
+            keccak256(abi.encodePacked(signerSignal))
+        ) >> 8;
 
         worldId.verifyProof(
             root_,
@@ -241,6 +256,7 @@ contract FSFileRegistry is EIP712 {
         );
 
         file.signatures[signer_] = signature_;
+        file.signaturesCount++;
 
         nonce[signer_]++;
         emit FileSigned(cidId, sender_, signer_, uint48(block.timestamp));
@@ -359,5 +375,56 @@ contract FSFileRegistry is EIP712 {
         string calldata pieceCid_
     ) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(pieceCid_));
+    }
+
+    // -------------------------------------------------------------------------
+    // Incentive management — called by FSManager only
+    // -------------------------------------------------------------------------
+
+    /// @notice Record a per-signer token incentive for a file. Tokens are held
+    ///         in the escrow; this only stores the accounting entry.
+    function setSignerIncentive(
+        bytes32 cidId,
+        address signer,
+        address token,
+        uint256 amount
+    ) external onlyManager {
+        FileRegistration storage file = _fileRegistrations[cidId];
+        if (file.timestamp == 0) revert FileNotRegistered();
+        if (file.signaturesCount == file.signersCount)
+            revert FileAlreadyFullySigned();
+        if (!file.signers[signer]) revert InvalidSigner();
+        if (file.incentiveToken[signer] != address(0))
+            revert IncentiveAlreadyAttached();
+        file.incentiveToken[signer] = token;
+        file.incentiveAmount[signer] = amount;
+    }
+
+    /// @notice Read the incentive assigned to a signer for a file.
+    function getSignerIncentive(
+        bytes32 cidId,
+        address signer
+    ) external view returns (address token, uint256 amount, bool claimed) {
+        FileRegistration storage file = _fileRegistrations[cidId];
+        return (
+            file.incentiveToken[signer],
+            file.incentiveAmount[signer],
+            file.incentiveClaimed[signer]
+        );
+    }
+
+    /// @notice Mark a signer's incentive as claimed. Called by FSManager after releasing
+    ///         the tokens from escrow.
+    function markIncentiveClaimed(
+        bytes32 cidId,
+        address signer
+    ) external onlyManager {
+        _fileRegistrations[cidId].incentiveClaimed[signer] = true;
+    }
+
+    /// @notice Returns true once every signer has submitted a valid signature.
+    function allSigned(bytes32 cidId) external view returns (bool) {
+        FileRegistration storage file = _fileRegistrations[cidId];
+        return file.timestamp != 0 && file.signaturesCount == file.signersCount;
     }
 }
