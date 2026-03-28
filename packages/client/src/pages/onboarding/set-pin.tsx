@@ -1,4 +1,4 @@
-import { useIsRegistered, useLogin, useLogout } from "@filosign/react/hooks";
+import { useIsRegistered, useLogout } from "@filosign/react/hooks";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
@@ -17,20 +17,21 @@ import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { handleError } from "@/src/lib/utils";
 import OnboardingProtector from "./_components/OnboardingProtector";
 import OtpInput from "./_components/OtpInput";
+import { WorldIDKitLink } from "./_components/WorldIDKitLink";
 
 export default function OnboardingSetPinPage() {
 	const [pin, setPin] = useState("");
 	const [confirmPin, setConfirmPin] = useState("");
 	const [step, setStep] = useState<"enter" | "confirm">("enter");
+	const [readyToRegister, setReadyToRegister] = useState(false);
 	const navigate = useNavigate();
 	const { onboardingForm, setOnboardingForm: _setOnboardingForm } =
 		useStorePersist();
 
-	const login = useLogin();
 	const logout = useLogout();
 	const isRegistered = useIsRegistered();
 
-	const handleRegistration = async () => {
+	const handleRegistrationComplete = async () => {
 		if (!onboardingForm) return;
 
 		try {
@@ -39,10 +40,6 @@ export default function OnboardingSetPinPage() {
 				navigate({ to: "/dashboard" });
 				return;
 			}
-
-			await login.mutateAsync({
-				pin: pin,
-			});
 
 			window.location.href = "/onboarding/welcome";
 		} catch (error) {
@@ -57,11 +54,13 @@ export default function OnboardingSetPinPage() {
 			if (step === "enter") {
 				setStep("confirm");
 				setConfirmPin("");
+				setReadyToRegister(false);
 			} else if (step === "confirm") {
 				if (pin === confirmPin) {
-					handleRegistration();
+					setReadyToRegister(true);
 				} else {
 					setConfirmPin("");
+					setReadyToRegister(false);
 				}
 			}
 		}
@@ -71,6 +70,7 @@ export default function OnboardingSetPinPage() {
 		if (step === "confirm") {
 			setStep("enter");
 			setConfirmPin("");
+			setReadyToRegister(false);
 		} else {
 			navigate({ to: "/onboarding" });
 		}
@@ -115,7 +115,17 @@ export default function OnboardingSetPinPage() {
 								<div className="flex flex-col gap-2">
 									<OtpInput
 										value={currentPin}
-										onChange={step === "enter" ? setPin : setConfirmPin}
+										onChange={
+											step === "enter"
+												? (value) => {
+														setPin(value);
+														setReadyToRegister(false);
+													}
+												: (value) => {
+														setConfirmPin(value);
+														setReadyToRegister(false);
+													}
+										}
 										length={6}
 										autoFocus={true}
 										onSubmit={handlePinSubmit}
@@ -137,23 +147,32 @@ export default function OnboardingSetPinPage() {
 										Back
 									</Button>
 
-									<Button
-										onClick={handlePinSubmit}
-										onKeyDown={(e) => {
-											if (e.key === "Enter" && isComplete) {
-												handlePinSubmit();
-											}
-										}}
-										disabled={!isComplete}
-										className="flex-1 group"
-										variant="primary"
-									>
-										{step === "enter" ? "Continue" : "Confirm"}
-										<CaretRightIcon
-											className="transition-transform duration-200 size-4 group-hover:translate-x-1"
-											weight="bold"
-										/>
-									</Button>
+									{step === "confirm" && readyToRegister && !isPinMismatch ? (
+										<div className="flex-1">
+											<WorldIDKitLink
+												pin={pin}
+												onSuccess={handleRegistrationComplete}
+											/>
+										</div>
+									) : (
+										<Button
+											onClick={handlePinSubmit}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" && isComplete) {
+													handlePinSubmit();
+												}
+											}}
+											disabled={!isComplete}
+											className="flex-1 group"
+											variant="primary"
+										>
+											{step === "enter" ? "Continue" : "Confirm"}
+											<CaretRightIcon
+												className="transition-transform duration-200 size-4 group-hover:translate-x-1"
+												weight="bold"
+											/>
+										</Button>
+									)}
 								</div>
 							</CardContent>
 						</Card>

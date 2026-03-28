@@ -1,40 +1,50 @@
-import { useRpSignature } from "@filosign/react/hooks";
+import { useLogin, useRpSignature } from "@filosign/react/hooks";
 import { usePrivy } from "@privy-io/react-auth";
 import {
-	deviceLegacy,
 	IDKitRequestWidget,
 	type IDKitResult,
+	orbLegacy,
 	type RpContext,
 } from "@worldcoin/idkit";
 import { useRef, useState } from "react";
-import { Button } from "../ui/button";
+import { Button } from "@/src/lib/components/ui/button";
 
 const WORLD_ID_APP_ID = process.env.BUN_PUBLIC_WORLD_APP_ID;
-const LINK_ACTION = "sign-flow";
+const LINK_ACTION = process.env.BUN_PUBLIC_WORLD_ACTION;
 
-export function LinkWalletWithIDKit() {
+export function WorldIDKitLink({
+	pin,
+	onSuccess,
+}: {
+	pin: string;
+	onSuccess: () => void;
+}) {
 	const [open, setOpen] = useState(false);
 	const [rpContext, setRpContext] = useState<RpContext | null>(null);
 	const getRpContext = useRpSignature();
-	const linkingRef = useRef(false);
+	const submittedRef = useRef(false);
+	const login = useLogin();
 	const { user } = usePrivy();
 	const userAddress = user?.wallet?.address;
 
 	const canLink = Boolean(userAddress);
 
 	const handleSuccess = async (proof: IDKitResult) => {
-		if (!canLink || linkingRef.current) return;
-		linkingRef.current = true;
+		if (!canLink || submittedRef.current) return;
+		submittedRef.current = true;
 
 		try {
-			console.log("World ID proof received for linking:", proof);
+			await login.mutateAsync({ pin, worldIdProof: proof });
 			setOpen(false);
-		} finally {
-			linkingRef.current = false;
+			onSuccess();
+		} catch {
+			submittedRef.current = false;
 		}
 	};
 
 	const handleRetry = () => {
+		submittedRef.current = false;
+		login.reset();
 		getRpContext.reset();
 		setRpContext(null);
 		setOpen(false);
@@ -47,33 +57,38 @@ export function LinkWalletWithIDKit() {
 			setRpContext(context);
 			setOpen(true);
 		},
-		isPending: getRpContext.isPending,
+		isPending: getRpContext.isPending || login.isPending,
 		isError: getRpContext.isError,
-		isSuccess: getRpContext.isSuccess,
+		isSuccess: getRpContext.isSuccess && !login.isError,
 		error: getRpContext.error,
 	};
 
 	return (
 		<div className="space-y-2">
 			<Button
-				onClick={rpMutation.mutate}
-				disabled={rpMutation.isPending || !canLink}
+				onClick={() => void rpMutation.mutate()}
+				disabled={rpMutation.isPending}
 			>
-				{rpMutation.isPending
-					? "Preparing..."
-					: "Verify Identity & Link Wallet"}
+				{rpMutation.isPending ? "Preparing..." : "Verify Human"}
 			</Button>
 
-			{rpMutation.isError && (
+			{(rpMutation.isError || login.isError) && (
 				<div
 					role="alert"
 					className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
 				>
-					<p className="font-medium">Failed to prepare linking</p>
+					<p className="font-medium">
+						{rpMutation.isError
+							? "Failed to prepare verification"
+							: "Verification failed"}
+					</p>
 					<p className="mt-1 text-muted-foreground wrap-break-word">
-						{rpMutation.error instanceof Error
-							? rpMutation.error.message
-							: "Something went wrong. Please try again."}
+						{(() => {
+							const err = rpMutation.isError ? rpMutation.error : login.error;
+							return err instanceof Error
+								? err.message
+								: "Something went wrong. Please try again.";
+						})()}
 					</p>
 					<button
 						type="button"
@@ -89,18 +104,20 @@ export function LinkWalletWithIDKit() {
 				<IDKitRequestWidget
 					open={open}
 					onOpenChange={(next) => {
-						if (!linkingRef.current) setOpen(next);
+						if (!login.isPending) setOpen(next);
 					}}
 					app_id={WORLD_ID_APP_ID as `app_${string}`}
 					action={LINK_ACTION}
-					action_description="Link your wallet for secure document signing"
 					rp_context={rpContext}
+					environment="staging"
 					allow_legacy_proofs={true}
-					preset={deviceLegacy({
+					preset={orbLegacy({
 						signal: userAddress.toLowerCase(),
 					})}
-					handleVerify={async () => {}}
-					onSuccess={(proof) => void handleSuccess(proof)}
+					handleVerify={() => {}}
+					onSuccess={(proof) => {
+						void handleSuccess(proof);
+					}}
 				/>
 			)}
 		</div>

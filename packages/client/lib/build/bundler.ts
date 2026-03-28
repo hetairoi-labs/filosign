@@ -1,8 +1,11 @@
-import { cp, rm } from "node:fs/promises";
+import { cp, mkdir, rm } from "node:fs/promises";
+import path from "node:path";
 import tailwindPlugin from "bun-plugin-tailwind";
 import { safeAsync } from "../utils/safe";
 import { dilithiumPlugin } from "./dilithium";
 import { fixHtml } from "./fix-html";
+import { getIdkitWasmSourcePath } from "./idkit-core-vendor";
+import idkitWasmPlugin from "./idkit-wasm-plugin";
 
 const outdir = `${process.cwd()}/dist`;
 const entrypoints = [`${process.cwd()}/src/index.html`];
@@ -22,7 +25,7 @@ export async function bundle() {
 		define: {
 			"process.env.NODE_ENV": JSON.stringify("production"),
 		},
-		plugins: [tailwindPlugin, dilithiumPlugin],
+		plugins: [tailwindPlugin, dilithiumPlugin, idkitWasmPlugin],
 		splitting: true,
 		naming: {
 			chunk: "chunks/[name]-[hash].[ext]",
@@ -37,6 +40,15 @@ export async function bundle() {
 
 	const publicDir = `${process.cwd()}/public`;
 	await safeAsync(cp(publicDir, `${outdir}/static`, { recursive: true }));
+
+	const idkitWasmOut = path.join(
+		outdir,
+		"vendor/worldcoin-idkit-core/idkit_wasm_bg.wasm",
+	);
+	await safeAsync(rm(idkitWasmOut, { force: true }));
+	await safeAsync(mkdir(path.dirname(idkitWasmOut), { recursive: true }));
+	await safeAsync(cp(getIdkitWasmSourcePath(), idkitWasmOut));
+
 	await fixHtml(result.outputs, outdir);
 
 	return { result, duration: performance.now() - start };
