@@ -10,8 +10,9 @@ const wasmUrlPattern =
 
 /**
  * `@worldcoin/idkit-core` loads WASM via `new URL("idkit_wasm_bg.wasm", import.meta.url)`.
- * After bundling, `import.meta.url` points at a chunk URL; the relative WASM path must be
- * rewritten to a stable origin path so fetch uses http(s), not file://.
+ * After bundling, use an absolute `/vendor/...` path. The base must not be `import.meta.url`
+ * in dev: Bun can set it to `file:///...`, and `new URL("/vendor/...", file:///...)` becomes
+ * `file:///vendor/...` (invalid in the browser). Prefer `location.origin` when present.
  */
 const idkitWasmPlugin: BunPlugin = {
 	name: "idkit-wasm-url",
@@ -30,7 +31,7 @@ const idkitWasmPlugin: BunPlugin = {
 			}
 			text = text.replace(
 				wasmUrlPattern,
-				`new URL("${IDKIT_WASM_PUBLIC_PATH}", import.meta.url)`,
+				`new URL("${IDKIT_WASM_PUBLIC_PATH}", globalThis.location?.origin ?? import.meta.url)`,
 			);
 			return {
 				contents: text,
