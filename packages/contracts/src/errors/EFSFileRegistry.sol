@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 pragma solidity ^0.8.26;
 
+import "./EFSCommon.sol";
+
 error OnlyServer();
 error SignatureExpired();
 error SenderNotRegistered();
@@ -15,3 +17,5 @@ error InvalidSigner();
 error InvalidSender();
 error AlreadySigned();
 error InvalidSignature();
+error IncentiveAlreadyAttached();
+error FileAlreadyFullySigned();
