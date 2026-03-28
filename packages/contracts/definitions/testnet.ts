@@ -244,6 +244,67 @@ export const definitions = {
 					stateMutability: "view",
 					type: "function",
 				},
+				{
+					inputs: [],
+					name: "NotAllSigned",
+					type: "error",
+				},
+				{
+					inputs: [],
+					name: "IncentiveAlreadyClaimed",
+					type: "error",
+				},
+				{
+					inputs: [],
+					name: "escrow",
+					outputs: [
+						{
+							internalType: "address",
+							name: "",
+							type: "address",
+						},
+					],
+					stateMutability: "view",
+					type: "function",
+				},
+				{
+					inputs: [
+						{ internalType: "string", name: "pieceCid_", type: "string" },
+						{ internalType: "address", name: "signer_", type: "address" },
+						{ internalType: "address", name: "token_", type: "address" },
+						{ internalType: "uint256", name: "amount_", type: "uint256" },
+					],
+					name: "attachIncentive",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
+					inputs: [
+						{ internalType: "string", name: "pieceCid_", type: "string" },
+						{ internalType: "address", name: "signer_", type: "address" },
+						{ internalType: "address", name: "token_", type: "address" },
+						{ internalType: "uint256", name: "amount_", type: "uint256" },
+						{ internalType: "uint256", name: "deadline_", type: "uint256" },
+						{ internalType: "uint8", name: "v_", type: "uint8" },
+						{ internalType: "bytes32", name: "r_", type: "bytes32" },
+						{ internalType: "bytes32", name: "s_", type: "bytes32" },
+					],
+					name: "attachIncentiveWithPermit",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
+				{
+					inputs: [
+						{ internalType: "string", name: "pieceCid_", type: "string" },
+						{ internalType: "address[]", name: "signers_", type: "address[]" },
+					],
+					name: "releaseIncentives",
+					outputs: [],
+					stateMutability: "nonpayable",
+					type: "function",
+				},
 			],
 		},
 		FSFileRegistry: {
