@@ -8,8 +8,8 @@ import {
 import { useRef, useState } from "react";
 import Button from "../Button";
 
-const WORLD_ID_APP_ID = "app_1c0c93a223f94979be0b34049c5de67b";
-const LINK_ACTION = "filosign";
+const WORLD_APP_ID = import.meta.env.VITE_WORLD_APP_ID;
+const LINK_ACTION = import.meta.env.VITE_WORLD_ACTION;
 
 export function IDKitLinkTest({
 	userAddress,
@@ -114,13 +114,13 @@ export function IDKitLinkTest({
 				</div>
 			)}
 
-			{rpContext && WORLD_ID_APP_ID && userAddress && (
+			{rpContext && WORLD_APP_ID && userAddress && (
 				<IDKitRequestWidget
 					open={open}
 					onOpenChange={(next) => {
 						if (!login.isPending) setOpen(next);
 					}}
-					app_id={WORLD_ID_APP_ID as `app_${string}`}
+					app_id={WORLD_APP_ID as `app_${string}`}
 					action={LINK_ACTION}
 					rp_context={rpContext}
 					environment="staging"

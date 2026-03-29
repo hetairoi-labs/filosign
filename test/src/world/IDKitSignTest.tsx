@@ -13,8 +13,8 @@ import {
 import { useRef, useState } from "react";
 import Button from "../Button";
 
-const WORLD_ID_APP_ID = "app_69f4036892019e6f616e47818ddebd8b";
-const ACTION = "sign-flow";
+const WORLD_APP_ID = import.meta.env.VITE_WORLD_APP_ID;
+const LINK_ACTION = import.meta.env.VITE_WORLD_ACTION;
 
 export function IDKitSignTest({
 	signerAddress,
@@ -69,7 +69,7 @@ export function IDKitSignTest({
 	const rpMutation = {
 		mutate: async () => {
 			if (!canSign) return;
-			const context = await getRpContext.mutateAsync({ action: ACTION });
+			const context = await getRpContext.mutateAsync({ action: LINK_ACTION });
 			setRpContext(context);
 			setOpen(true);
 		},
@@ -112,8 +112,8 @@ export function IDKitSignTest({
 					onOpenChange={(next) => {
 						if (!signFile.isPending) setOpen(next);
 					}}
-					app_id={WORLD_ID_APP_ID}
-					action={ACTION}
+					app_id={WORLD_APP_ID}
+					action={LINK_ACTION}
 					action_description="Sign document"
 					environment="staging"
 					rp_context={rpContext}
