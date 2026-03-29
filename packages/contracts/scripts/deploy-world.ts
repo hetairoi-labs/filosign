@@ -21,7 +21,7 @@ const WORLD_ID_ROUTER: Record<number, `0x${string}`> = {
 		"0x17B354dD2595411ff79041f930e491A4Df39A278" as `0x${string}`,
 };
 
-const ACTION = "filosign";
+const ACTION = process.env.WORLD_ACTION;
 
 function chainName(chainId: number): ChainKey {
 	if (chainId === CHAIN_ID.local) return "local";
@@ -32,6 +32,12 @@ function chainName(chainId: number): ChainKey {
 
 async function main() {
 	const chainId = hre.network.config.chainId;
+
+	if (!ACTION) {
+		console.error("Error: WORLD_ACTION not set");
+		process.exit(1);
+	}
+
 	if (!chainId) {
 		console.error(
 			"No chainId found in network config, how will we deploy to this network?",
