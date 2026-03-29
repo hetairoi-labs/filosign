@@ -1,4 +1,8 @@
-import { useAttachIncentiveToFile, useProfilesByAddresses, useSendFile } from "@filosign/react/hooks";
+import {
+	useAttachIncentiveToFile,
+	useProfilesByAddresses,
+	useSendFile,
+} from "@filosign/react/hooks";
 import { useNavigate } from "@tanstack/react-router";
 import React, { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -231,10 +235,13 @@ export default function AddSignaturePage() {
 						if (recipient.incentive?.token && recipient.incentive?.amount) {
 							const tokenAddress = recipient.incentive.token.toLowerCase();
 							const tokenData = WORLD_CHAIN_SEPOLIA_TOKENS.find(
-								(t) => t.address.toLowerCase() === tokenAddress
+								(t) => t.address.toLowerCase() === tokenAddress,
 							);
 							const decimals = tokenData?.decimals ?? 18;
-							const amountInWei = parseUnits(recipient.incentive.amount, decimals);
+							const amountInWei = parseUnits(
+								recipient.incentive.amount,
+								decimals,
+							);
 
 							await attachIncentive.mutateAsync({
 								pieceCid: result.pieceCid,

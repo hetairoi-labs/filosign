@@ -193,7 +193,10 @@ export function useSendFile() {
 
 			queryClient.refetchQueries({ queryKey: ["sent-files"] });
 
-			return { success: registerResponse.success, pieceCid: pieceCid.toString() };
+			return {
+				success: registerResponse.success,
+				pieceCid: pieceCid.toString(),
+			};
 		},
 	});
 }

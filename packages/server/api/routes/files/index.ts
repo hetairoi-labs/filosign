@@ -175,7 +175,7 @@ export default new Hono()
 			return insertResult;
 		});
 
-        //@ts-expect-error
+		//@ts-expect-error
 		ds.upload(new Uint8Array(bytes), { pieceCid, metadata: {} })
 			.then(async (uploadResult) => {
 				await file.delete();
@@ -512,7 +512,7 @@ export default new Hono()
 				],
 				{
 					// viem simulates via the public client; `account` sets `msg.sender` for `onlyServer`.
-                    //@ts-expect-error
+					//@ts-expect-error
 					account: evmClient.account,
 				},
 			);
@@ -541,6 +541,36 @@ export default new Hono()
 			createdAt: new Date(timestamp * 1000),
 		});
 
+		try {
+			const cidId = await FSFileRegistry.read.cidIdentifier([pieceCid]);
+			const fullySigned = await FSFileRegistry.read.allSigned([cidId]);
+
+			if (fullySigned) {
+				const allParticipants = await db
+					.select({ wallet: fileParticipants.wallet })
+					.from(fileParticipants)
+					.where(
+						and(
+							eq(fileParticipants.filePieceCid, pieceCid),
+							eq(fileParticipants.role, "signer"),
+						),
+					);
+
+				const allSigners = allParticipants
+					.map((p) => getAddress(p.wallet))
+					.sort();
+
+				const { FSManager } = fsContracts;
+				await FSManager.simulate.releaseIncentives([pieceCid, allSigners], {
+					//@ts-expect-error
+					account: evmClient.account,
+				});
+				await FSManager.write.releaseIncentives([pieceCid, allSigners]);
+			}
+		} catch (err) {
+			console.error("Failed to check or release incentives:", err);
+		}
+
 		return respond.ok(ctx, {}, "File signed successfully", 200);
 	})
 
@@ -552,12 +582,16 @@ export default new Hono()
 		const baseSchema = z.object({
 			signer: zEvmAddress(),
 			token: zEvmAddress(),
-			amount: z.string().regex(/^[0-9]+$/, "amount must be a non-negative integer string"),
+			amount: z
+				.string()
+				.regex(/^[0-9]+$/, "amount must be a non-negative integer string"),
 			usePermit: z.boolean(),
 		});
 		const permitSchema = baseSchema.extend({
 			usePermit: z.literal(true),
-			deadline: z.string().regex(/^[0-9]+$/, "deadline must be a non-negative integer string"),
+			deadline: z
+				.string()
+				.regex(/^[0-9]+$/, "deadline must be a non-negative integer string"),
 			v: z.number().int().min(0).max(255),
 			r: zHexString(),
 			s: zHexString(),
@@ -565,7 +599,9 @@ export default new Hono()
 		const allowanceSchema = baseSchema.extend({
 			usePermit: z.literal(false),
 		});
-		const parsedBody = z.union([permitSchema, allowanceSchema]).safeParse(rawBody);
+		const parsedBody = z
+			.union([permitSchema, allowanceSchema])
+			.safeParse(rawBody);
 		if (parsedBody.error) {
 			return respond.err(ctx, parsedBody.error.message, 400);
 		}
@@ -581,7 +617,11 @@ export default new Hono()
 			return respond.err(ctx, "File not found", 404);
 		}
 		if (getAddress(fileRecord.sender) !== getAddress(userWallet)) {
-			return respond.err(ctx, "Only the file sender can attach incentives", 403);
+			return respond.err(
+				ctx,
+				"Only the file sender can attach incentives",
+				403,
+			);
 		}
 
 		const { signer, token, amount } = parsedBody.data;
@@ -607,7 +647,11 @@ export default new Hono()
 		);
 
 		if (attachResult.error) {
-			return respond.err(ctx, `Failed to attach incentive: ${attachResult.error}`, 500);
+			return respond.err(
+				ctx,
+				`Failed to attach incentive: ${attachResult.error}`,
+				500,
+			);
 		}
 
 		return respond.ok(ctx, {}, "Incentive attached successfully", 201);

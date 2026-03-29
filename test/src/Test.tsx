@@ -978,7 +978,10 @@ function TestAttachIncentive(props: {
 			className="bg-background border rounded p-3 space-y-2 text-sm"
 			aria-labelledby={`${formId}-heading`}
 		>
-			<p id={`${formId}-heading`} className="font-mono text-xs text-muted-foreground break-all">
+			<p
+				id={`${formId}-heading`}
+				className="font-mono text-xs text-muted-foreground break-all"
+			>
 				Signer: {signer}
 			</p>
 
@@ -1011,7 +1014,10 @@ function TestAttachIncentive(props: {
 			</div>
 
 			{attachIncentive.isError && (
-				<p className="text-destructive bg-destructive/10 p-1 rounded text-xs wrap-break-word" role="alert">
+				<p
+					className="text-destructive bg-destructive/10 p-1 rounded text-xs wrap-break-word"
+					role="alert"
+				>
 					{getErrorMessage(attachIncentive.error)}
 				</p>
 			)}

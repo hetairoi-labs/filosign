@@ -3,7 +3,7 @@ import {
 	useRpSignature,
 	useSignFile,
 } from "@filosign/react/hooks";
-import { CaretRightIcon } from "@phosphor-icons/react";
+import { CaretRightIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
 	IDKitRequestWidget,
@@ -60,14 +60,6 @@ export function WorldIDKitSign({
 		}
 	};
 
-	const handleRetry = () => {
-		submittedRef.current = false;
-		signFile.reset();
-		getRpContext.reset();
-		setRpContext(null);
-		setOpen(false);
-	};
-
 	const rpMutation = {
 		mutate: async () => {
 			if (!canSign) return;
@@ -91,43 +83,21 @@ export function WorldIDKitSign({
 			>
 				{rpMutation.isPending ? (
 					"Preparing..."
-				) : (
+				) : rpMutation.isError || signFile.isError ? (
 					<div className="flex items-center gap-2 group">
 						<p>{actionLabel}</p>
 						<CaretRightIcon className="transition-transform duration-200 size-4 group-hover:translate-x-1" />
 					</div>
+				) : (
+					<div className="flex items-center text-destructive gap-2 group">
+						<p>Signing Failed</p>
+						<WarningCircleIcon
+							weight="bold"
+							className="transition-transform duration-200 size-5 group-hover:translate-x-1"
+						/>
+					</div>
 				)}
 			</Button>
-
-			{(rpMutation.isError || signFile.isError) && (
-				<div
-					role="alert"
-					className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
-				>
-					<p className="font-medium">
-						{rpMutation.isError
-							? "Failed to prepare verification"
-							: "Signing failed"}
-					</p>
-					<p className="mt-1 text-muted-foreground wrap-break-word">
-						{(() => {
-							const err = rpMutation.isError
-								? rpMutation.error
-								: signFile.error;
-							return err instanceof Error
-								? err.message
-								: "Something went wrong. Please try again.";
-						})()}
-					</p>
-					<button
-						type="button"
-						onClick={handleRetry}
-						className="mt-2 text-sm font-medium underline underline-offset-2 hover:no-underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
-					>
-						Try again
-					</button>
-				</div>
-			)}
 
 			{rpContext && WORLD_ID_APP_ID && canSign && (
 				<IDKitRequestWidget
