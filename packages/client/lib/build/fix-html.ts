@@ -10,10 +10,19 @@ export async function fixHtml(outputs: BuildOutput[], outdir: string) {
 	);
 	if (!entry) throw new Error("Entry point not found");
 
-	const rel = entry.path.includes("/dist/")
-		? `./${entry.path.split("/dist/")[1]}`
-		: `./${entry.path.replace(/^(\.\/)?dist\//, "")}`;
+	const root = entry.path.includes("/dist/")
+		? `/${entry.path.split("/dist/")[1]}`
+		: `/${entry.path.replace(/^(\.\/)?dist\//, "")}`;
+
 	const htmlPath = `${outdir}/index.html`;
 	const html = await Bun.file(htmlPath).text();
-	await Bun.write(htmlPath, html.replace(/src="[^"]*\.js"/, `src="${rel}"`));
+
+	// Fix script src and link href to be root-relative (e.g., ./chunks/ -> /chunks/)
+	const fixedHtml = html
+		.replaceAll('src="./', 'src="/')
+		.replaceAll('href="./', 'href="/')
+		// Ensure the main bundle entry is definitely root-relative
+		.replace(/src="[^"]*\.js"/, `src="${root}"`);
+
+	await Bun.write(htmlPath, fixedHtml);
 }
