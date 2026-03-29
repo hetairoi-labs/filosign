@@ -5,7 +5,8 @@
 		"check": "bunx --bun biome check --write",
 		"dev": "bun --hot index.ts",
 		"start": "bun run index.ts",
-		"push": "bunx --bun drizzle-kit push"
+		"push": "bunx --bun drizzle-kit push",
+		"compile": "bun build --compile --minify --sourcemap --bytecode ./index.ts --outfile out/server"
 	},
 	"dependencies": {
 		"@filosign/contracts": "workspace:*",
