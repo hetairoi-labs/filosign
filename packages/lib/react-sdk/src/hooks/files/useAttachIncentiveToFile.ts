@@ -40,8 +40,6 @@ const ERC20_VERSION_ABI = [
 	},
 ] as const;
 
-
-
 export type AttachIncentiveArgs = {
 	pieceCid: string;
 	signer: Address;

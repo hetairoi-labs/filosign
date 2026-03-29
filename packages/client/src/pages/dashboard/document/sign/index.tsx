@@ -1,4 +1,5 @@
 import {
+	useDocumentIncentive,
 	useFileInfo,
 	useViewFile,
 	type ViewFileResult,
@@ -13,13 +14,14 @@ import {
 	MagnifyingGlassMinusIcon,
 	MagnifyingGlassPlusIcon,
 	ScrollIcon,
-	StackIcon,
 } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { defaultChain } from "@/src/constants";
+import { formatUnits } from "viem";
+import { defaultChain, WORLD_CHAIN_SEPOLIA_TOKENS } from "@/src/constants";
+import { CopyButton } from "@/src/lib/components/custom/CopyButton";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
 import { Loader } from "@/src/lib/components/ui/loader";
@@ -43,6 +45,20 @@ export default function SignDocumentPage() {
 		isLoading: fileLoading,
 		error: fileError,
 	} = useFileInfo({ pieceCid });
+
+	const { data: incentive } = useDocumentIncentive({
+		pieceCid,
+		signerAddress,
+	});
+
+	const tokenInfo = useMemo(() => {
+		if (!incentive?.token) return null;
+		return (
+			WORLD_CHAIN_SEPOLIA_TOKENS.find(
+				(t) => t.address.toLowerCase() === incentive.token.toLowerCase(),
+			) || null
+		);
+	}, [incentive]);
 
 	const mySignature = useMemo(() => {
 		if (!signerAddress || !file?.signatures?.length) return undefined;
@@ -431,8 +447,9 @@ export default function SignDocumentPage() {
 							<ArrowLeftIcon className="size-4 mr-1.5" />
 							<span className="text-sm">Back</span>
 						</Button>
-						<h2 className="text-sm font-semibold truncate text-foreground max-w-[60%]">
-							{pieceCid.slice(0, 8)}...
+						<h2 className="text-sm flex items-center font-semibold truncate text-foreground max-w-[60%]">
+							<span className="truncate">{pieceCid}</span>
+							<CopyButton text={pieceCid} />
 						</h2>
 					</div>
 
@@ -466,6 +483,25 @@ export default function SignDocumentPage() {
 						</div>
 					)}
 
+					{incentive && incentive.amount > 0n && (
+						<div className="flex flex-wrap items-center justify-center gap-2 px-3 py-2 border-b border-border bg-accent/30">
+							<pre className="font-medium">
+								{formatUnits(incentive.amount, tokenInfo?.decimals ?? 18)}
+							</pre>
+							<pre className="font-medium">{tokenInfo?.symbol ?? "Tokens"}</pre>
+							<img
+								src={tokenInfo?.icon}
+								alt={tokenInfo?.symbol}
+								className="size-4"
+							/>
+							{incentive.claimed && (
+								<span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
+									(Distributed)
+								</span>
+							)}
+						</div>
+					)}
+
 					{/* Row 2: Action buttons */}
 					<div className="flex items-center justify-between px-3 py-2">
 						<div className="flex items-center gap-1">
@@ -490,36 +526,16 @@ export default function SignDocumentPage() {
 							</Button>
 						</div>
 
-						<div className="flex items-center gap-1">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleDownload}
-								disabled={!fileData}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
-								title="Download file"
-							>
-								<DownloadIcon className="size-4" />
-							</Button>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleDownloadCompliancePdf}
-								disabled={pdfExportBusy}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
-								title="Download compliance report (PDF)"
-							>
-								<ScrollIcon className="size-4" />
-							</Button>
+						<div className="flex items-center gap-2">
 							<Button
 								variant="ghost"
 								size="sm"
 								onClick={handleDownloadDocumentWithCompliancePdf}
 								disabled={!fileData || pdfExportBusy}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
-								title="Download document + compliance appendix (PDF)"
+								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+								title="Download document with proof"
 							>
-								<StackIcon className="size-4" />
+								<DownloadIcon className="size-5" />
 							</Button>
 
 							{showWorldIdSign && signerAddress && (
@@ -527,7 +543,7 @@ export default function SignDocumentPage() {
 									<WorldIDKitSign
 										signerAddress={signerAddress}
 										file={file}
-										actionLabel="Sign Document"
+										actionLabel="Sign"
 									/>
 								</div>
 							)}
@@ -548,12 +564,14 @@ export default function SignDocumentPage() {
 							Back
 						</Button>
 						<div className="flex gap-4">
-							<div className="flex flex-col gap-1">
-								<h2 className="text-base font-semibold truncate text-foreground">
-									Document - {pieceCid.slice(0, 8)}...
+							<div className="flex flex-col">
+								<h2 className="text-sm flex items-center gap-1 font-semibold truncate text-foreground">
+									<span className="truncate max-w-xs">{pieceCid}</span>
+									<CopyButton text={pieceCid} />
 								</h2>
-								<p className="text-xs text-muted-foreground">
+								<p className="text-xs text-muted-foreground flex items-center gap-1">
 									From {formatAddress(file.sender)}
+									<CopyButton text={formatAddress(file.sender)} />
 								</p>
 							</div>
 							{alreadySigned && (
@@ -581,6 +599,28 @@ export default function SignDocumentPage() {
 									) : (
 										<span className="text-xs text-muted-foreground">
 											On-chain proof recorded
+										</span>
+									)}
+								</div>
+							)}
+							{incentive && incentive.amount > 0n && (
+								<div className="flex flex-wrap items-center gap-2 mt-2">
+									<Badge variant="secondary">
+										<pre className="font-medium">
+											{formatUnits(incentive.amount, tokenInfo?.decimals ?? 18)}
+										</pre>
+										<pre className="font-medium">
+											{tokenInfo?.symbol ?? "Tokens"}
+										</pre>
+										<img
+											src={tokenInfo?.icon}
+											alt={tokenInfo?.symbol}
+											className="size-4"
+										/>
+									</Badge>
+									{incentive.claimed && (
+										<span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
+											(Distributed)
 										</span>
 									)}
 								</div>
@@ -673,7 +713,6 @@ export default function SignDocumentPage() {
 					</div>
 				</div>
 			</div>
-			;
 		</div>
 	);
 }

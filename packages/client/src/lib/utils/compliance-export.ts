@@ -47,7 +47,14 @@ function explorerTxUrl(explorerBase: string, txHash: string): string {
 export function buildCompliancePdfSummary(
 	options: CompliancePdfSummaryOptions,
 ): CompliancePdfSummary {
-	const { file, fileData, chainName, explorerBaseUrl, exportedAtIso, privyIdMap } = options;
+	const {
+		file,
+		fileData,
+		chainName,
+		explorerBaseUrl,
+		exportedAtIso,
+		privyIdMap,
+	} = options;
 
 	const regTxLink =
 		explorerBaseUrl && file.onchainTxHash
@@ -80,13 +87,17 @@ export function buildCompliancePdfSummary(
 	];
 	for (const a of file.signers) {
 		const privy = privyIdMap?.[a];
-		participantLines.push({ text: privy ? `  - ${a} (Privy: ${privy})` : `  - ${a}` });
+		participantLines.push({
+			text: privy ? `  - ${a} (Privy: ${privy})` : `  - ${a}`,
+		});
 	}
 	participantLines.push({ text: "" });
 	participantLines.push({ text: `Viewers (${file.viewers.length}):` });
 	for (const a of file.viewers) {
 		const privy = privyIdMap?.[a];
-		participantLines.push({ text: privy ? `  - ${a} (Privy: ${privy})` : `  - ${a}` });
+		participantLines.push({
+			text: privy ? `  - ${a} (Privy: ${privy})` : `  - ${a}`,
+		});
 	}
 
 	const sigLines: CompliancePdfLine[] = [];
