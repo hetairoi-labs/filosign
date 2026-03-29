@@ -5,23 +5,38 @@ import {
 } from "@filosign/react/hooks";
 import {
 	ArrowLeftIcon,
+	ArrowSquareOutIcon,
+	CheckCircleIcon,
 	DownloadIcon,
 	FileTextIcon,
 	MagnifyingGlassMinusIcon,
 	MagnifyingGlassPlusIcon,
 	PrinterIcon,
+	ScrollIcon,
+	StackIcon,
 } from "@phosphor-icons/react";
+import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-// import { SignWithIDKit } from "@/src/lib/components/custom/SignWithIDKit";
+import { defaultChain } from "@/src/constants";
+import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
 import { Loader } from "@/src/lib/components/ui/loader";
+import {
+	buildCompliancePdfOnly,
+	buildDocumentPlusCompliancePdf,
+	downloadPdfBytes,
+} from "@/src/lib/utils/compliance-pdf";
+import { WorldIDKitSign } from "./WorldIDKitSign";
 
 export default function SignDocumentPage() {
 	const navigate = useNavigate();
 	const search = useSearch({ from: "/dashboard/document/sign" });
 	const pieceCid = search.pieceCid;
+
+	const { user } = usePrivy();
+	const signerAddress = user?.wallet?.address as `0x${string}` | undefined;
 
 	const {
 		data: file,
@@ -29,10 +44,33 @@ export default function SignDocumentPage() {
 		error: fileError,
 	} = useFileInfo({ pieceCid });
 
+	const mySignature = useMemo(() => {
+		if (!signerAddress || !file?.signatures?.length) return undefined;
+		return file.signatures.find(
+			(s) => s.signer.toLowerCase() === signerAddress.toLowerCase(),
+		);
+	}, [file, signerAddress]);
+
+	const alreadySigned = Boolean(mySignature);
+
+	const signedTxExplorerUrl = useMemo(() => {
+		if (!mySignature?.onchainTxHash) return null;
+		const base = defaultChain.blockExplorers?.default?.url;
+		if (!base) return null;
+		return `${base}/tx/${mySignature.onchainTxHash}` as const;
+	}, [mySignature]);
+
+	const explorerLabel =
+		defaultChain.blockExplorers?.default?.name ?? "Block explorer";
+
+	const showWorldIdSign = Boolean(signerAddress && file && !alreadySigned);
+
 	const viewFile = useViewFile();
-	const [zoom, setZoom] = useState(100);
+
+	const [zoom, setZoom] = useState(50);
 	const [viewError, setViewError] = useState<string | null>(null);
 	const [fileData, setFileData] = useState<ViewFileResult | null>(null);
+	const [pdfExportBusy, setPdfExportBusy] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const documentRef = useRef<HTMLDivElement>(null);
 
@@ -101,6 +139,57 @@ export default function SignDocumentPage() {
 			toast.success("File downloaded!");
 		}
 	}, [fileData, pieceCid]);
+
+	const handleDownloadCompliancePdf = useCallback(async () => {
+		if (!file || !pieceCid) return;
+		setPdfExportBusy(true);
+		try {
+			const explorerBase = defaultChain.blockExplorers?.default?.url ?? null;
+			const bytes = await buildCompliancePdfOnly({
+				file,
+				fileData: fileData ?? null,
+				chainName: defaultChain.name,
+				explorerBaseUrl: explorerBase,
+				exportedAtIso: new Date().toISOString(),
+			});
+			const safe = pieceCid.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 48);
+			downloadPdfBytes(bytes, `filosign-file-record-${safe}`);
+			toast.success("Compliance PDF downloaded");
+		} catch (e) {
+			toast.error(
+				e instanceof Error ? e.message : "Could not create compliance PDF",
+			);
+		} finally {
+			setPdfExportBusy(false);
+		}
+	}, [file, fileData, pieceCid]);
+
+	const handleDownloadDocumentWithCompliancePdf = useCallback(async () => {
+		if (!file || !pieceCid || !fileData) {
+			toast.error("Load the document first to bundle with the compliance PDF.");
+			return;
+		}
+		setPdfExportBusy(true);
+		try {
+			const explorerBase = defaultChain.blockExplorers?.default?.url ?? null;
+			const bytes = await buildDocumentPlusCompliancePdf({
+				file,
+				fileData,
+				chainName: defaultChain.name,
+				explorerBaseUrl: explorerBase,
+				exportedAtIso: new Date().toISOString(),
+			});
+			const safe = pieceCid.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 48);
+			downloadPdfBytes(bytes, `filosign-document-with-record-${safe}`);
+			toast.success("PDF with document and compliance appendix downloaded");
+		} catch (e) {
+			toast.error(
+				e instanceof Error ? e.message : "Could not create bundled PDF",
+			);
+		} finally {
+			setPdfExportBusy(false);
+		}
+	}, [file, fileData, pieceCid]);
 
 	const handlePrint = useCallback(() => {
 		window.print();
@@ -334,11 +423,8 @@ export default function SignDocumentPage() {
 
 	return (
 		<div className="fixed inset-0 bg-background flex flex-col">
-			{/* Header with Controls */}
 			<div className="flex-shrink-0 sticky top-0 z-50 bg-background border-b border-border">
-				{/* Mobile Header - Two rows */}
 				<div className="md:hidden">
-					{/* Row 1: Back button and title */}
 					<div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
 						<Button
 							variant="ghost"
@@ -353,6 +439,36 @@ export default function SignDocumentPage() {
 							{pieceCid.slice(0, 8)}...
 						</h2>
 					</div>
+
+					{alreadySigned && (
+						<div className="flex flex-wrap items-center justify-center gap-2 px-3 py-2 border-b border-border bg-secondary/40">
+							<Badge
+								variant="secondary"
+								className="gap-1.5 border-border bg-secondary/90 text-secondary-foreground shadow-none"
+							>
+								<CheckCircleIcon
+									className="size-3.5 text-chart-2"
+									weight="fill"
+								/>
+								Signed
+							</Badge>
+							{signedTxExplorerUrl ? (
+								<a
+									href={signedTxExplorerUrl}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="inline-flex items-center gap-1 text-xs font-medium text-ring hover:text-ring/90 hover:underline"
+								>
+									View on {explorerLabel}
+									<ArrowSquareOutIcon className="size-3.5" />
+								</a>
+							) : (
+								<span className="text-xs text-muted-foreground">
+									On-chain proof recorded
+								</span>
+							)}
+						</div>
+					)}
 
 					{/* Row 2: Action buttons */}
 					<div className="flex items-center justify-between px-3 py-2">
@@ -385,17 +501,46 @@ export default function SignDocumentPage() {
 								onClick={handleDownload}
 								disabled={!fileData}
 								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
+								title="Download file"
 							>
 								<DownloadIcon className="size-4" />
 							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleDownloadCompliancePdf}
+								disabled={pdfExportBusy}
+								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
+								title="Download compliance report (PDF)"
+							>
+								<ScrollIcon className="size-4" />
+							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleDownloadDocumentWithCompliancePdf}
+								disabled={!fileData || pdfExportBusy}
+								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
+								title="Download document + compliance appendix (PDF)"
+							>
+								<StackIcon className="size-4" />
+							</Button>
 
-							{/* <SignWithIDKit file={file} /> */}
+							{showWorldIdSign && signerAddress && (
+								<div className="w-[9.5rem] shrink-0">
+									<WorldIDKitSign
+										signerAddress={signerAddress}
+										file={file}
+										actionLabel="Sign document"
+									/>
+								</div>
+							)}
 						</div>
 					</div>
 				</div>
 
 				{/* Desktop Header - Single row */}
-				<div className="hidden md:flex items-center justify-between px-6 py-3">
+				<div className="hidden md:flex items-center justify-between w-full px-6 py-3">
 					<div className="flex items-center gap-4">
 						<Button
 							variant="ghost"
@@ -406,13 +551,44 @@ export default function SignDocumentPage() {
 							<ArrowLeftIcon className="size-4 mr-2" />
 							Back
 						</Button>
-						<div>
-							<h2 className="text-base font-semibold truncate text-foreground">
-								Document - {pieceCid.slice(0, 8)}...
-							</h2>
-							<p className="text-xs text-muted-foreground">
-								From {formatAddress(file.sender)}
-							</p>
+						<div className="flex gap-4">
+							<div className="flex flex-col gap-1">
+								<h2 className="text-base font-semibold truncate text-foreground">
+									Document - {pieceCid.slice(0, 8)}...
+								</h2>
+								<p className="text-xs text-muted-foreground">
+									From {formatAddress(file.sender)}
+								</p>
+							</div>
+							{alreadySigned && (
+								<div className="flex flex-wrap items-center gap-2 mt-2">
+									<Badge
+										variant="secondary"
+										className="gap-1.5 border-border bg-secondary/90 text-secondary-foreground shadow-none"
+									>
+										<CheckCircleIcon
+											className="size-3.5 text-chart-2"
+											weight="fill"
+										/>
+										Signed
+									</Badge>
+									{signedTxExplorerUrl ? (
+										<a
+											href={signedTxExplorerUrl}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="inline-flex items-center gap-1 text-xs font-medium text-ring hover:text-ring/90 hover:underline"
+										>
+											View on {explorerLabel}
+											<ArrowSquareOutIcon className="size-3.5" />
+										</a>
+									) : (
+										<span className="text-xs text-muted-foreground">
+											On-chain proof recorded
+										</span>
+									)}
+								</div>
+							)}
 						</div>
 					</div>
 
@@ -459,16 +635,43 @@ export default function SignDocumentPage() {
 								onClick={handleDownload}
 								disabled={!fileData}
 								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-								title="Download"
+								title="Download file"
 							>
 								<DownloadIcon className="size-4" />
+							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleDownloadCompliancePdf}
+								disabled={pdfExportBusy}
+								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+								title="Download compliance report (PDF)"
+							>
+								<ScrollIcon className="size-4" />
+							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={handleDownloadDocumentWithCompliancePdf}
+								disabled={!fileData || pdfExportBusy}
+								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+								title="Download document + compliance appendix (PDF)"
+							>
+								<StackIcon className="size-4" />
 							</Button>
 						</div>
 
 						<div className="w-px h-6 bg-border mx-2" />
 
-						{/* Sign Button - Primary Action */}
-						{/* <SignWithIDKit file={file} /> */}
+						{showWorldIdSign && signerAddress && (
+							<div className="w-44 shrink-0">
+								<WorldIDKitSign
+									signerAddress={signerAddress}
+									file={file}
+									actionLabel="Sign document"
+								/>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>
