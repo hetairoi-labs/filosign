@@ -23,7 +23,6 @@ export default function OnboardingSetPinPage() {
 	const [pin, setPin] = useState("");
 	const [confirmPin, setConfirmPin] = useState("");
 	const [step, setStep] = useState<"enter" | "confirm">("enter");
-	const [readyToRegister, setReadyToRegister] = useState(false);
 	const navigate = useNavigate();
 	const { onboardingForm, setOnboardingForm: _setOnboardingForm } =
 		useStorePersist();
@@ -50,19 +49,9 @@ export default function OnboardingSetPinPage() {
 	};
 
 	const handlePinSubmit = () => {
-		if (pin.length === 6) {
-			if (step === "enter") {
-				setStep("confirm");
-				setConfirmPin("");
-				setReadyToRegister(false);
-			} else if (step === "confirm") {
-				if (pin === confirmPin) {
-					setReadyToRegister(true);
-				} else {
-					setConfirmPin("");
-					setReadyToRegister(false);
-				}
-			}
+		if (step === "enter" && pin.length === 6) {
+			setStep("confirm");
+			setConfirmPin("");
 		}
 	};
 
@@ -70,7 +59,6 @@ export default function OnboardingSetPinPage() {
 		if (step === "confirm") {
 			setStep("enter");
 			setConfirmPin("");
-			setReadyToRegister(false);
 		} else {
 			navigate({ to: "/onboarding" });
 		}
@@ -78,6 +66,7 @@ export default function OnboardingSetPinPage() {
 
 	const currentPin = step === "enter" ? pin : confirmPin;
 	const isComplete = currentPin.length === 6;
+	const pinsMatch = step === "confirm" && pin === confirmPin && isComplete;
 	const isPinMismatch =
 		step === "confirm" && confirmPin.length === 6 && pin !== confirmPin;
 
@@ -117,14 +106,8 @@ export default function OnboardingSetPinPage() {
 										value={currentPin}
 										onChange={
 											step === "enter"
-												? (value) => {
-														setPin(value);
-														setReadyToRegister(false);
-													}
-												: (value) => {
-														setConfirmPin(value);
-														setReadyToRegister(false);
-													}
+												? (value) => setPin(value)
+												: (value) => setConfirmPin(value)
 										}
 										length={6}
 										autoFocus={true}
@@ -133,8 +116,8 @@ export default function OnboardingSetPinPage() {
 								</div>
 
 								{isPinMismatch && (
-									<p className="text-destructive text-sm">
-										PINs don't match. Please try again.
+									<p className="text-destructive text-sm text-center">
+										PIN does not match.
 									</p>
 								)}
 
@@ -147,26 +130,20 @@ export default function OnboardingSetPinPage() {
 										Back
 									</Button>
 
-									{step === "confirm" && readyToRegister && !isPinMismatch ? (
-										<div className="flex-1">
-											<WorldIDKitLink
-												pin={pin}
-												onSuccess={handleRegistrationComplete}
-											/>
-										</div>
+									{pinsMatch ? (
+										<WorldIDKitLink
+											pin={pin}
+											onSuccess={handleRegistrationComplete}
+											className="flex-1"
+										/>
 									) : (
 										<Button
 											onClick={handlePinSubmit}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" && isComplete) {
-													handlePinSubmit();
-												}
-											}}
-											disabled={!isComplete}
+											disabled={!isComplete || step === "confirm"}
 											className="flex-1 group"
 											variant="primary"
 										>
-											{step === "enter" ? "Continue" : "Confirm"}
+											{step === "enter" ? "Continue" : "Verify ID"}
 											<CaretRightIcon
 												className="transition-transform duration-200 size-4 group-hover:translate-x-1"
 												weight="bold"
