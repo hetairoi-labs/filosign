@@ -22,10 +22,6 @@ export type EnvelopeForm = {
 // Single source of truth for allowed file types
 export const ALLOWED_FILE_TYPES = [
 	{ mime: "application/pdf", extensions: [".pdf"] },
-	{ mime: "image/jpeg", extensions: [".jpg", ".jpeg"] },
-	{ mime: "image/png", extensions: [".png"] },
-	{ mime: "image/gif", extensions: [".gif"] },
-	{ mime: "image/webp", extensions: [".webp"] },
 ] as const;
 
 export type AllowedFileMime = (typeof ALLOWED_FILE_TYPES)[number]["mime"];

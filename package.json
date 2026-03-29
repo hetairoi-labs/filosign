@@ -20,6 +20,7 @@
 		"server:dev": "bun run --cwd packages/server dev",
 		"server:start": "bun run --cwd packages/server start",
 		"client:test": "bun run --cwd test dev",
+		"db:push": "bun run --cwd packages/server db:push",
 		"test": "bun run --cwd packages/* test",
 		"lint": "bun run --cwd packages/* lint",
 		"check": "bunx biome check --write",

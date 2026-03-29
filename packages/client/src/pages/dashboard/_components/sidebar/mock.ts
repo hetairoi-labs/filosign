@@ -59,17 +59,6 @@ export const sidebarData = {
 			],
 		},
 		{
-			title: "Analytics",
-			url: "#",
-			icon: ChartBarIcon,
-			items: [
-				{
-					title: "Dashboard",
-					url: "/dashboard",
-				},
-			],
-		},
-		{
 			title: "Settings",
 			url: "#",
 			icon: GearIcon,

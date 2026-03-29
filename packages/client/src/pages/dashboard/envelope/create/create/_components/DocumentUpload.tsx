@@ -46,7 +46,7 @@ export default function DocumentsSection({
 	const [unsupportedFiles, setUnsupportedFiles] = useState<string[]>([]);
 	const [oversizedFiles, setOversizedFiles] = useState<string[]>([]);
 
-	const MAX_FILE_SIZE = 5 * 1024 * 1024;
+	const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
 	const handleFileSelect = useCallback(
 		(files: FileList | null) => {
@@ -284,7 +284,7 @@ export default function DocumentsSection({
 								{/* Oversized files error */}
 								{oversizedFiles.length > 0 && (
 									<p className="mt-2 text-sm text-destructive font-medium">
-										Files too large (max 5MB): {oversizedFiles.join(", ")}
+										Files too large (max 10MB): {oversizedFiles.join(", ")}
 									</p>
 								)}
 
