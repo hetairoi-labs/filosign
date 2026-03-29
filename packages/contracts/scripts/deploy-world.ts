@@ -84,6 +84,10 @@ async function main() {
 		"FSKeyRegistry",
 		await manager.read.keyRegistry(),
 	);
+	const escrow = await hre.viem.getContractAt(
+		"FSEscrow",
+		await manager.read.escrow(),
+	);
 
 	const worldVerifier = await hre.viem.deployContract("FSWorldVerifier", [
 		worldIdAddress,
@@ -112,6 +116,10 @@ async function main() {
 		FSWorldVerifier: {
 			address: getAddress(worldVerifier.address),
 			abi: worldVerifier.abi,
+		},
+		FSEscrow: {
+			address: getAddress(escrow.address),
+			abi: escrow.abi,
 		},
 	} as const;
 
@@ -144,6 +152,8 @@ async function main() {
 			await $`bunx --bun hardhat verify --network ${networkName} ${keyRegistry.address} --force`;
 			await sleep(1000);
 			await $`bunx --bun hardhat verify --network ${networkName} ${worldVerifier.address} "${worldIdAddress}" "${appId}" "${ACTION}" --force`;
+			await sleep(1000);
+			await $`bunx --bun hardhat verify --network ${networkName} ${escrow.address} --force`;
 		} catch (_) {}
 		console.log(`Contracts verified on ${networkName} block explorer`);
 	}
