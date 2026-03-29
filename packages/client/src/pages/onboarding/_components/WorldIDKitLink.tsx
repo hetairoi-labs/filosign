@@ -9,6 +9,7 @@ import {
 } from "@worldcoin/idkit";
 import { useRef, useState } from "react";
 import { Button } from "@/src/lib/components/ui/button";
+import { cn } from "@/src/lib/utils";
 
 const WORLD_ID_APP_ID = process.env.BUN_PUBLIC_WORLD_APP_ID;
 const LINK_ACTION = process.env.BUN_PUBLIC_WORLD_ACTION;
@@ -16,9 +17,11 @@ const LINK_ACTION = process.env.BUN_PUBLIC_WORLD_ACTION;
 export function WorldIDKitLink({
 	pin,
 	onSuccess,
+	className,
 }: {
 	pin: string;
 	onSuccess: () => void;
+	className?: string;
 }) {
 	const [open, setOpen] = useState(false);
 	const [rpContext, setRpContext] = useState<RpContext | null>(null);
@@ -65,20 +68,23 @@ export function WorldIDKitLink({
 	};
 
 	return (
-		<div className="space-y-2">
+		<div className={cn("space-y-2", className)}>
 			<Button
 				onClick={() => void rpMutation.mutate()}
 				disabled={rpMutation.isPending}
 				variant="primary"
-				className="w-full"
+				className="w-full group "
 			>
 				{rpMutation.isPending ? (
 					"Preparing..."
 				) : (
-					<div className="flex items-center gap-2 group">
-						<p>Verify Human</p>
-						<CaretRightIcon className="transition-transform duration-200 size-4 group-hover:translate-x-1" />
-					</div>
+					<span className="flex items-center px-5.5 gap-2 text-primary-foreground">
+						<span>Verify ID</span>
+						<CaretRightIcon
+							className="transition-transform duration-200 size-4 group-hover:translate-x-1"
+							weight="bold"
+						/>
+					</span>
 				)}
 			</Button>
 
