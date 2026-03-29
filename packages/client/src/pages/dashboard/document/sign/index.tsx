@@ -8,10 +8,10 @@ import {
 	ArrowSquareOutIcon,
 	CheckCircleIcon,
 	DownloadIcon,
+	FileArrowDownIcon,
 	FileTextIcon,
 	MagnifyingGlassMinusIcon,
 	MagnifyingGlassPlusIcon,
-	PrinterIcon,
 	ScrollIcon,
 	StackIcon,
 } from "@phosphor-icons/react";
@@ -67,7 +67,7 @@ export default function SignDocumentPage() {
 
 	const viewFile = useViewFile();
 
-	const [zoom, setZoom] = useState(50);
+	const [zoom, setZoom] = useState(100);
 	const [viewError, setViewError] = useState<string | null>(null);
 	const [fileData, setFileData] = useState<ViewFileResult | null>(null);
 	const [pdfExportBusy, setPdfExportBusy] = useState(false);
@@ -190,10 +190,6 @@ export default function SignDocumentPage() {
 			setPdfExportBusy(false);
 		}
 	}, [file, fileData, pieceCid]);
-
-	const handlePrint = useCallback(() => {
-		window.print();
-	}, []);
 
 	const formatAddress = (address: string) => {
 		return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -527,11 +523,11 @@ export default function SignDocumentPage() {
 							</Button>
 
 							{showWorldIdSign && signerAddress && (
-								<div className="w-[9.5rem] shrink-0">
+								<div className="shrink-0">
 									<WorldIDKitSign
 										signerAddress={signerAddress}
 										file={file}
-										actionLabel="Sign document"
+										actionLabel="Sign Document"
 									/>
 								</div>
 							)}
@@ -601,7 +597,7 @@ export default function SignDocumentPage() {
 								onClick={handleZoomOut}
 								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
 							>
-								<MagnifyingGlassMinusIcon className="size-4" />
+								<MagnifyingGlassMinusIcon className="size-5" />
 							</Button>
 							<span className="text-sm font-medium min-w-[3rem] text-center text-foreground">
 								{zoom}%
@@ -612,23 +608,14 @@ export default function SignDocumentPage() {
 								onClick={handleZoomIn}
 								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
 							>
-								<MagnifyingGlassPlusIcon className="size-4" />
+								<MagnifyingGlassPlusIcon className="size-5" />
 							</Button>
 						</div>
 
 						<div className="w-px h-6 bg-border mx-2" />
 
 						{/* Action tools */}
-						<div className="flex items-center gap-2">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handlePrint}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-								title="Print"
-							>
-								<PrinterIcon className="size-4" />
-							</Button>
+						<div className="flex items-center gap-3">
 							<Button
 								variant="ghost"
 								size="sm"
@@ -637,7 +624,7 @@ export default function SignDocumentPage() {
 								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
 								title="Download file"
 							>
-								<DownloadIcon className="size-4" />
+								<FileArrowDownIcon className="size-5" />
 							</Button>
 							<Button
 								variant="ghost"
@@ -645,9 +632,9 @@ export default function SignDocumentPage() {
 								onClick={handleDownloadCompliancePdf}
 								disabled={pdfExportBusy}
 								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-								title="Download compliance report (PDF)"
+								title="Download compliance report"
 							>
-								<ScrollIcon className="size-4" />
+								<ScrollIcon className="size-5" />
 							</Button>
 							<Button
 								variant="ghost"
@@ -655,47 +642,38 @@ export default function SignDocumentPage() {
 								onClick={handleDownloadDocumentWithCompliancePdf}
 								disabled={!fileData || pdfExportBusy}
 								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-								title="Download document + compliance appendix (PDF)"
+								title="Download document with proof"
 							>
-								<StackIcon className="size-4" />
+								<DownloadIcon className="size-5" />
 							</Button>
 						</div>
 
-						<div className="w-px h-6 bg-border mx-2" />
-
 						{showWorldIdSign && signerAddress && (
-							<div className="w-44 shrink-0">
-								<WorldIDKitSign
-									signerAddress={signerAddress}
-									file={file}
-									actionLabel="Sign document"
-								/>
-							</div>
+							<>
+								<div className="w-px h-6 bg-border mx-2" />
+								<div className="shrink-0">
+									<WorldIDKitSign
+										signerAddress={signerAddress}
+										file={file}
+										actionLabel="Sign Document"
+									/>
+								</div>
+							</>
 						)}
 					</div>
 				</div>
 			</div>
-
-			{/* Document Content - Full Screen */}
 			<div className="flex-1 overflow-hidden bg-muted/5">
 				<div ref={containerRef} className="w-full h-full overflow-auto">
 					<div
 						ref={documentRef}
 						className="relative w-full h-full bg-background"
 					>
-						{viewFile.isPending && (
-							<div className="absolute inset-0 flex items-center justify-center bg-background/80 z-20">
-								<Loader
-									text="Loading document..."
-									size="sm"
-									className="min-h-0"
-								/>
-							</div>
-						)}
 						{renderFileContent()}
 					</div>
 				</div>
 			</div>
+			;
 		</div>
 	);
 }

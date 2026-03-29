@@ -1,190 +1,225 @@
+import { useFileInfo, useViewFile } from "@filosign/react/hooks";
 import {
-	DotsThreeVerticalIcon,
-	FileIcon,
-	FileImageIcon,
-	FilePdfIcon,
-	FileTextIcon,
+  DotsThreeVerticalIcon,
+  FilePdfIcon,
+  SpinnerGapIcon,
 } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "motion/react";
 import { Image } from "@/src/lib/components/custom/Image";
 import { Button } from "@/src/lib/components/ui/button";
 import { cn } from "@/src/lib/utils/utils";
 
 interface RealFile {
-	pieceCid: string;
-	metadata?: {
-		fileName?: string;
-		fileSize?: number;
-		fileType?: string;
-		message?: string;
-		originalId?: string;
-	};
-	type?: "sent" | "received";
-	createdAt?: Date;
-	[key: string]: unknown;
+  pieceCid: string;
+  metadata?: {
+    fileName?: string;
+    fileSize?: number;
+    fileType?: string;
+    message?: string;
+    originalId?: string;
+    dataUrl?: string;
+  };
+  type?: "sent" | "received";
+  createdAt?: Date;
+  kemCiphertext?: string;
+  encryptedEncryptionKey?: string;
+  status?: string;
+  [key: string]: unknown;
 }
 
 interface FileCardProps {
-	file: RealFile;
-	onClick?: (file: RealFile) => void;
-	variant?: "list" | "grid";
+  file: RealFile;
+  onClick?: (file: RealFile) => void;
+  variant?: "list" | "grid";
 }
 
-const getFileIcon = (fileType: string) => {
-	if (fileType.includes("pdf")) return FilePdfIcon;
-	if (
-		fileType.includes("image") ||
-		fileType.includes("jpg") ||
-		fileType.includes("jpeg") ||
-		fileType.includes("png") ||
-		fileType.includes("gif")
-	)
-		return FileImageIcon;
-	if (fileType.includes("text") || fileType.includes("txt"))
-		return FileTextIcon;
-	return FileIcon;
-};
-
-const getFileTypeColor = (fileType: string) => {
-	if (fileType.includes("pdf")) return "text-red-500";
-	if (fileType.includes("image")) return "text-green-500";
-	if (fileType.includes("text")) return "text-gray-500";
-	return "text-primary";
-};
+// All files are treated as PDFs for now
+const FileIconComponent = FilePdfIcon;
+const iconColor = "text-red-500";
 
 export default function FileCard({
-	file,
-	onClick,
-	variant = "grid",
+  file,
+  onClick,
+  variant = "grid",
 }: FileCardProps) {
-	const fileName = file.metadata?.fileName || "Unknown File";
-	const fileSize = file.metadata?.fileSize || 0;
-	const fileType = file.metadata?.fileType || "application/octet-stream";
+  const { data: fileInfo } = useFileInfo({ pieceCid: file.pieceCid });
+  const kemCiphertext = file.kemCiphertext || fileInfo?.kemCiphertext;
+  const encryptedEncryptionKey =
+    file.encryptedEncryptionKey || fileInfo?.encryptedEncryptionKey;
+  const status = file.status || fileInfo?.status;
 
-	const FileIconComponent = getFileIcon(fileType);
-	const iconColor = getFileTypeColor(fileType);
+  const { mutateAsync: viewFileMutate } = useViewFile();
 
-	const formatFileSize = (bytes: number) => {
-		if (bytes === 0) return "0 Bytes";
-		const k = 1024;
-		const sizes = ["Bytes", "KB", "MB", "GB"];
-		const i = Math.floor(Math.log(bytes) / Math.log(k));
-		return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
-	};
+  const { data: actualMetadata, isLoading } = useQuery({
+    queryKey: ["fsQ-decrypted-file-metadata", file.pieceCid],
+    queryFn: async () => {
+      if (!kemCiphertext || !encryptedEncryptionKey || !status)
+        throw new Error("Missing keys");
 
-	const formatDate = (date: Date) => {
-		return date.toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-		});
-	};
+      const res = await viewFileMutate({
+        pieceCid: file.pieceCid,
+        kemCiphertext: kemCiphertext as string,
+        encryptedEncryptionKey: encryptedEncryptionKey as string,
+        status: status as "s3" | "foc",
+      });
 
-	const handleClick = () => {
-		onClick?.(file);
-	};
+      let dataUrl: string | undefined;
+      if (res.metadata.mimeType?.includes("image")) {
+        const blob = new Blob([res.fileBytes.buffer as ArrayBuffer], {
+          type: res.metadata.mimeType,
+        });
+        dataUrl = URL.createObjectURL(blob);
+      }
 
-	const isImage = fileType.includes("image");
-	const shouldShowPreview = isImage && file.metadata?.dataUrl;
+      return {
+        fileName: res.metadata.name,
+        fileType: res.metadata.mimeType || "application/octet-stream",
+        fileSize: res.fileBytes.byteLength,
+        dataUrl,
+      };
+    },
+    enabled: !!kemCiphertext && !!encryptedEncryptionKey && !!status,
+    staleTime: Infinity,
+    gcTime: 1000 * 60 * 60 * 24,
+  });
 
-	// Grid variant
-	if (variant === "grid") {
-		return (
-			<motion.div
-				className="group bg-background border rounded-lg p-3 hover:bg-accent/50 transition-colors cursor-pointer"
-				initial={{ opacity: 0, scale: 0.9 }}
-				animate={{ opacity: 1, scale: 1 }}
-				transition={{
-					type: "spring",
-					stiffness: 230,
-					damping: 25,
-					duration: 0.3,
-				}}
-				onClick={handleClick}
-			>
-				{/* Preview/Icon */}
-				<div className="aspect-square mb-3 bg-card rounded-lg flex items-center justify-center">
-					{shouldShowPreview ? (
-						<Image
-							src={file.metadata?.dataUrl}
-							alt={fileName}
-							className="w-full h-full object-cover object-top rounded-lg"
-						/>
-					) : (
-						<FileIconComponent className={cn("size-12", iconColor)} />
-					)}
-				</div>
+  const fileName =
+    actualMetadata?.fileName || file.metadata?.fileName || "Unknown File";
+  const fileSize = actualMetadata?.fileSize || file.metadata?.fileSize || 0;
+  const fileType =
+    actualMetadata?.fileType ||
+    file.metadata?.fileType ||
+    "application/octet-stream";
+  const previewDataUrl = actualMetadata?.dataUrl || file.metadata?.dataUrl;
 
-				{/* File info */}
-				<div className="space-y-1 min-w-0">
-					<p
-						className="text-sm font-medium truncate break-all"
-						title={fileName}
-					>
-						{fileName}
-					</p>
-					<p className="text-xs text-muted-foreground truncate">
-						{formatFileSize(fileSize)}
-					</p>
-					<p className="text-xs text-muted-foreground">
-						{file.createdAt ? formatDate(file.createdAt) : "Unknown date"}
-					</p>
-				</div>
-			</motion.div>
-		);
-	}
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
+  };
 
-	// List variant
-	return (
-		<motion.div
-			className="flex items-center justify-between p-3 bg-background border border-border rounded-lg hover:bg-muted/20 transition-colors cursor-pointer"
-			initial={{ opacity: 0, x: -20 }}
-			animate={{ opacity: 1, x: 0 }}
-			transition={{
-				type: "spring",
-				stiffness: 230,
-				damping: 25,
-				duration: 0.3,
-			}}
-			onClick={handleClick}
-		>
-			<div className="flex items-center justify-between w-full">
-				<div className="flex items-center gap-3">
-					{shouldShowPreview ? (
-						<Image
-							src={file.metadata?.dataUrl}
-							alt={fileName}
-							className="size-10 object-cover object-top rounded-lg"
-							width={200}
-							height={200}
-						/>
-					) : (
-						<div className="p-2 bg-muted/20 rounded-lg">
-							<FileIconComponent className={cn("size-6", iconColor)} />
-						</div>
-					)}
-					<div className="min-w-0 flex-1">
-						<p className="text-sm font-medium truncate" title={fileName}>
-							{fileName}
-						</p>
-						<p className="text-xs text-muted-foreground truncate">
-							{formatFileSize(fileSize)} •{" "}
-							{file.createdAt ? formatDate(file.createdAt) : "Unknown date"}
-						</p>
-					</div>
-				</div>
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
 
-				<Button
-					variant="ghost"
-					size="icon"
-					onClick={(e) => {
-						e.preventDefault();
-						e.stopPropagation();
-					}}
-				>
-					<DotsThreeVerticalIcon className="size-5" />
-				</Button>
-			</div>
-		</motion.div>
-	);
+  const handleClick = () => {
+    onClick?.(file);
+  };
+
+  const isImage = fileType.includes("image");
+  const shouldShowPreview = isImage && !!previewDataUrl;
+
+  // Grid variant
+  if (variant === "grid") {
+    return (
+      <motion.div
+        className="group bg-background border rounded-lg p-3 hover:bg-accent/50 transition-colors cursor-pointer"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{
+          type: "spring",
+          stiffness: 230,
+          damping: 25,
+          duration: 0.3,
+        }}
+        onClick={handleClick}
+      >
+        {/* Preview/Icon */}
+        <div className="aspect-square mb-3 bg-card rounded-lg flex items-center justify-center">
+          {isLoading ? (
+            <SpinnerGapIcon className="size-8 animate-spin text-muted-foreground/50" />
+          ) : shouldShowPreview ? (
+            <Image
+              src={previewDataUrl}
+              alt={fileName}
+              className="w-full h-full object-cover object-top rounded-lg"
+            />
+          ) : (
+            <FileIconComponent className={cn("size-12", iconColor)} />
+          )}
+        </div>
+
+        {/* File info */}
+        <div className="space-y-1 min-w-0">
+          <p
+            className="text-sm font-medium truncate break-all"
+            title={fileName}
+          >
+            {fileName}
+          </p>
+          <p className="text-xs text-muted-foreground truncate">
+            {formatFileSize(fileSize)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {file.createdAt ? formatDate(file.createdAt) : "Unknown date"}
+          </p>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // List variant
+  return (
+    <motion.div
+      className="flex items-center justify-between p-3 bg-background border border-border rounded-lg hover:bg-muted/20 transition-colors cursor-pointer"
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{
+        type: "spring",
+        stiffness: 230,
+        damping: 25,
+        duration: 0.3,
+      }}
+      onClick={handleClick}
+    >
+      <div className="flex items-center justify-between w-full">
+        <div className="flex items-center gap-3">
+          {isLoading ? (
+            <div className="p-2 bg-muted/20 rounded-lg flex items-center justify-center size-10">
+              <SpinnerGapIcon className="size-5 animate-spin text-muted-foreground/50" />
+            </div>
+          ) : shouldShowPreview ? (
+            <Image
+              src={previewDataUrl}
+              alt={fileName}
+              className="size-10 object-cover object-top rounded-lg"
+              width={200}
+              height={200}
+            />
+          ) : (
+            <div className="p-2 bg-muted/20 rounded-lg">
+              <FileIconComponent className={cn("size-6", iconColor)} />
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium truncate" title={fileName}>
+              {fileName}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {formatFileSize(fileSize)} •{" "}
+              {file.createdAt ? formatDate(file.createdAt) : "Unknown date"}
+            </p>
+          </div>
+        </div>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
+          <DotsThreeVerticalIcon className="size-5" />
+        </Button>
+      </div>
+    </motion.div>
+  );
 }

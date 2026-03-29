@@ -9,6 +9,7 @@ export const users = t.pgTable("users", {
 
 	/**non core here */
 	lastActiveAt: t.timestamp({ withTimezone: true }),
+	privyDid: t.text(), // add later
 	email: t.text(),
 	mobile: t.text(),
 	username: t.text().unique(),

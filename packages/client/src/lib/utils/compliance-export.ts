@@ -7,6 +7,8 @@ export type CompliancePdfSummaryOptions = {
 	chainName: string;
 	explorerBaseUrl: string | null;
 	exportedAtIso: string;
+	/** Optional mapping of wallet address → Privy User ID */
+	privyIdMap?: Record<string, string>;
 };
 
 /** One logical line in the PDF (optional clickable URI for the drawn text). */
@@ -45,7 +47,7 @@ function explorerTxUrl(explorerBase: string, txHash: string): string {
 export function buildCompliancePdfSummary(
 	options: CompliancePdfSummaryOptions,
 ): CompliancePdfSummary {
-	const { file, fileData, chainName, explorerBaseUrl, exportedAtIso } = options;
+	const { file, fileData, chainName, explorerBaseUrl, exportedAtIso, privyIdMap } = options;
 
 	const regTxLink =
 		explorerBaseUrl && file.onchainTxHash
@@ -77,11 +79,14 @@ export function buildCompliancePdfSummary(
 		{ text: `Signers (${file.signers.length}):` },
 	];
 	for (const a of file.signers) {
-		participantLines.push({ text: `  - ${a}` });
+		const privy = privyIdMap?.[a];
+		participantLines.push({ text: privy ? `  - ${a} (Privy: ${privy})` : `  - ${a}` });
 	}
+	participantLines.push({ text: "" });
 	participantLines.push({ text: `Viewers (${file.viewers.length}):` });
 	for (const a of file.viewers) {
-		participantLines.push({ text: `  - ${a}` });
+		const privy = privyIdMap?.[a];
+		participantLines.push({ text: privy ? `  - ${a} (Privy: ${privy})` : `  - ${a}` });
 	}
 
 	const sigLines: CompliancePdfLine[] = [];

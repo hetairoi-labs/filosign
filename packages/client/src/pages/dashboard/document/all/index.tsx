@@ -39,19 +39,10 @@ export default function DocumentAllPage() {
 	const sentFiles = useSentFiles();
 	const receivedFiles = useReceivedFiles();
 
-	// Mock data for files without metadata
-	const mockMetadata = {
-		fileName: "agreement.pdf",
-		fileSize: 37 * 1024, // 37 KB in bytes
-		fileType: "application/pdf",
-	};
-
 	const sentFilesData = Array.isArray(sentFiles.data)
 		? sentFiles.data.map((file) => ({
 				...file,
 				type: "sent" as const,
-				metadata:
-					(file as { metadata?: typeof mockMetadata }).metadata || mockMetadata,
 				createdAt: (file as { createdAt?: Date }).createdAt || new Date(),
 			}))
 		: [];
@@ -60,8 +51,6 @@ export default function DocumentAllPage() {
 		? receivedFiles.data.map((file) => ({
 				...file,
 				type: "received" as const,
-				metadata:
-					(file as { metadata?: typeof mockMetadata }).metadata || mockMetadata,
 				createdAt: (file as { createdAt?: Date }).createdAt || new Date(),
 			}))
 		: [];

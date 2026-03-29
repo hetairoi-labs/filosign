@@ -24,7 +24,6 @@ export function WorldIDKitSign({
 }: {
 	signerAddress: `0x${string}`;
 	file: FileInfo;
-	/** Primary button label before ID Kit opens (e.g. "Sign document" on the sign page). */
 	actionLabel?: string;
 }) {
 	const [open, setOpen] = useState(false);
