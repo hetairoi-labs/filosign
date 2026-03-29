@@ -1,9 +1,10 @@
-import { useProfilesByAddresses, useSendFile } from "@filosign/react/hooks";
+import { useAttachIncentiveToFile, useProfilesByAddresses, useSendFile } from "@filosign/react/hooks";
 import { useNavigate } from "@tanstack/react-router";
 import React, { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { Address } from "viem";
+import { type Address, parseUnits } from "viem";
 
+import { WORLD_CHAIN_SEPOLIA_TOKENS } from "@/src/constants";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { cn } from "@/src/lib/utils/utils";
 import DocumentViewer, {
@@ -29,6 +30,7 @@ export default function AddSignaturePage() {
 	const navigate = useNavigate();
 	const { createForm, clearCreateForm } = useStorePersist();
 	const sendFile = useSendFile();
+	const attachIncentive = useAttachIncentiveToFile();
 
 	const recipientAddresses = useMemo(
 		() => createForm?.recipients?.map((r) => r.walletAddress as Address) ?? [],
@@ -197,9 +199,7 @@ export default function AddSignaturePage() {
 		toast.loading("Sending documents...", { id: "send-progress" });
 
 		try {
-			const sendPromises: Promise<unknown>[] = [];
-
-			for (const doc of createForm.documents) {
+			const sendPromises = createForm.documents.map(async (doc) => {
 				const fileData = await loadDocumentFileBytes(doc);
 
 				const { signers, viewers } = buildSignersAndViewersForDocument({
@@ -219,15 +219,35 @@ export default function AddSignaturePage() {
 					throw new Error(SendEnvelopeError.NO_SIGNERS);
 				}
 
-				sendPromises.push(
-					sendFile.mutateAsync({
-						signers,
-						viewers,
-						bytes: fileData,
-						metadata: { name: doc.name },
-					}),
-				);
-			}
+				const result = await sendFile.mutateAsync({
+					signers,
+					viewers,
+					bytes: fileData,
+					metadata: { name: doc.name },
+				});
+
+				if (result.success && result.pieceCid) {
+					for (const recipient of createForm.recipients) {
+						if (recipient.incentive?.token && recipient.incentive?.amount) {
+							const tokenAddress = recipient.incentive.token.toLowerCase();
+							const tokenData = WORLD_CHAIN_SEPOLIA_TOKENS.find(
+								(t) => t.address.toLowerCase() === tokenAddress
+							);
+							const decimals = tokenData?.decimals ?? 18;
+							const amountInWei = parseUnits(recipient.incentive.amount, decimals);
+
+							await attachIncentive.mutateAsync({
+								pieceCid: result.pieceCid,
+								signer: recipient.walletAddress as Address,
+								token: recipient.incentive.token as Address,
+								amount: amountInWei,
+							});
+						}
+					}
+				}
+
+				return result;
+			});
 
 			await Promise.all(sendPromises);
 

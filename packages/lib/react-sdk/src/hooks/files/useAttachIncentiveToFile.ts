@@ -30,15 +30,17 @@ const ERC20_NAME_ABI = [
 	},
 ] as const;
 
-const MANAGER_ESCROW_ABI = [
+const ERC20_VERSION_ABI = [
 	{
 		inputs: [],
-		name: "escrow",
-		outputs: [{ internalType: "address", name: "", type: "address" }],
+		name: "version",
+		outputs: [{ internalType: "string", name: "", type: "string" }],
 		stateMutability: "view",
 		type: "function",
 	},
 ] as const;
+
+
 
 export type AttachIncentiveArgs = {
 	pieceCid: string;
@@ -84,11 +86,11 @@ export function useAttachIncentiveToFile() {
 				// ---------------------------------------------------------------
 				// Permit path: sign off-chain → server calls attachIncentiveWithPermit
 				// ---------------------------------------------------------------
-				const escrowAddress = await publicClient.readContract({
+				const escrowAddress = (await publicClient.readContract({
 					address: contracts.FSManager.address,
-					abi: MANAGER_ESCROW_ABI,
+					abi: contracts.FSManager.abi,
 					functionName: "escrow",
-				});
+				})) as Address;
 
 				const [nonce, tokenName] = await Promise.all([
 					publicClient.readContract({
@@ -108,12 +110,23 @@ export function useAttachIncentiveToFile() {
 					Math.floor(Date.now() / 1000) + PERMIT_DEADLINE_BUFFER,
 				);
 
+				let domainVersion = "1";
+				try {
+					domainVersion = await publicClient.readContract({
+						address: token,
+						abi: ERC20_VERSION_ABI,
+						functionName: "version",
+					});
+				} catch {
+					// Fallback implicitly remains "1" if `version()` doesn't exist
+				}
+
 				const permitSig = await wallet.signTypedData({
 					account: wallet.account,
 					domain: {
 						name: tokenName,
-						version: "1",
-						chainId: wallet.chain!.id,
+						version: domainVersion,
+						chainId: wallet.chain.id,
 						verifyingContract: token,
 					},
 					types: {
@@ -137,29 +150,25 @@ export function useAttachIncentiveToFile() {
 
 				const { v, r, s } = hexToSignature(permitSig);
 
-				await api.rpc.postSafe(
-					{},
-					`/files/${pieceCid}/incentive`,
-					{
-						signer,
-						token,
-						amount: amount.toString(),
-						usePermit: true,
-						deadline: deadline.toString(),
-						v: Number(v),
-						r,
-						s,
-					},
-				);
+				await api.rpc.postSafe({}, `/files/${pieceCid}/incentive`, {
+					signer,
+					token,
+					amount: amount.toString(),
+					usePermit: true,
+					deadline: deadline.toString(),
+					v: Number(v),
+					r,
+					s,
+				});
 			} else {
 				// ---------------------------------------------------------------
 				// Allowance path: approve on-chain from client → server calls attachIncentive
 				// ---------------------------------------------------------------
-				const escrowAddress = await publicClient.readContract({
+				const escrowAddress = (await publicClient.readContract({
 					address: contracts.FSManager.address,
-					abi: MANAGER_ESCROW_ABI,
+					abi: contracts.FSManager.abi,
 					functionName: "escrow",
-				});
+				})) as Address;
 
 				const allowance = await publicClient.readContract({
 					address: token,
@@ -180,11 +189,12 @@ export function useAttachIncentiveToFile() {
 					await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
 				}
 
-				await api.rpc.postSafe(
-					{},
-					`/files/${pieceCid}/incentive`,
-					{ signer, token, amount: amount.toString(), usePermit: false },
-				);
+				await api.rpc.postSafe({}, `/files/${pieceCid}/incentive`, {
+					signer,
+					token,
+					amount: amount.toString(),
+					usePermit: false,
+				});
 			}
 
 			return true;

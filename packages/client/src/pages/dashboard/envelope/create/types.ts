@@ -3,6 +3,10 @@ export type Recipient = {
 	email: string;
 	walletAddress: string;
 	role: "signer" | "cc" | "approver";
+	incentive?: {
+		token: string;
+		amount: string; // Stored as integer string of smallest unit (wei)
+	};
 };
 
 export type UploadedFile = {
@@ -15,6 +19,7 @@ export type UploadedFile = {
 
 export type EnvelopeForm = {
 	recipients: Recipient[];
+	emailSubject: string;
 	emailMessage: string;
 	documents: UploadedFile[];
 };
@@ -47,6 +52,7 @@ export type StoredDocument = {
 // Create form
 export type CreateForm = {
 	recipients: Recipient[];
+	emailSubject: string;
 	emailMessage: string;
 	documents: StoredDocument[];
 };

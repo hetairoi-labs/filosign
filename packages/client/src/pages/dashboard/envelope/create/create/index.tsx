@@ -6,6 +6,7 @@ import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 import { Form } from "@/src/lib/components/ui/form";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
+import { UserDropdown } from "../../../_components/user-dropdown";
 import type { EnvelopeForm, StoredDocument } from "../types";
 import DocumentsSection from "./_components/DocumentUpload";
 import RecipientsSection from "./_components/RecipientsSection";
@@ -18,6 +19,7 @@ export default function CreateEnvelopePage() {
 		defaultValues: {
 			recipients: [],
 			emailMessage: "",
+			emailSubject: "",
 			documents: [],
 		},
 	});
@@ -85,6 +87,7 @@ export default function CreateEnvelopePage() {
 			const createFormData = {
 				recipients: data.recipients,
 				emailMessage: data.emailMessage,
+				emailSubject: "",
 				documents: storedDocuments,
 			};
 
@@ -112,6 +115,8 @@ export default function CreateEnvelopePage() {
 					/>
 					<h3>Create New Document</h3>
 				</div>
+
+				<UserDropdown />
 			</header>
 
 			{/* Main Content */}
