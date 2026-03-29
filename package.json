@@ -55,6 +55,6 @@
 		"@tanstack/react-query": "^5.90.2"
 	},
 	"patchedDependencies": {
-		"dilithium-crystals-js@1.1.3": "patches/dilithium-crystals-js@1.1.3.patch"
-	}
+	"dilithium-crystals-js@1.1.3": "patches/dilithium-crystals-js@1.1.3.patch"
+}
 }
