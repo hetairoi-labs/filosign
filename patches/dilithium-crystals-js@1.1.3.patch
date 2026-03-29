@@ -1,5 +1,5 @@
 diff --git a/package.json b/package.json
-index 5152843..e38029d 100644
+index 263d5e9c932ff1dd723a2c3d88bc5f5d99e8bbf0..c0e97eb53429baf848baf266d74e296ed55860dc 100644
 --- a/package.json
 +++ b/package.json
 @@ -2,7 +2,7 @@
@@ -12,26 +12,61 @@ index 5152843..e38029d 100644
      "src/**/*.js",
      "src/**/*.d.ts",
 diff --git a/src/browser/index.js b/src/browser/index.js
-index 9e63e2a..7586ca4 100644
+index af3f14541de0ab15419bbffe1430b6209af37b84..6fbd53e60ee42ec26b58626202d863a762cc2bcb 100644
 --- a/src/browser/index.js
 +++ b/src/browser/index.js
-@@ -1,5 +1,6 @@
+@@ -1,23 +1,38 @@
  import dilithiumFactory from "../../dilithium.js";
 -import { DILITHIUM_PARAMS, generateKeys, sign, verify } from "../common";
-+import common from "../common.js";
++import * as commonModule from "../common.js";
++const common = commonModule.default || commonModule;
 +const { DILITHIUM_PARAMS, generateKeys, sign, verify } = common;
++
++// Helper to safely resolve WASM URL
++function getWasmUrl() {
++  if (
++    typeof chrome !== "undefined" &&
++    chrome.runtime &&
++    typeof chrome.runtime.getURL === "function"
++  ) {
++    return chrome.runtime.getURL("dilithium.wasm");
++  }
++  // Default to absolute path from root for SPAs
++  return "/dilithium.wasm";
++}
  
  // Function to fetch the WebAssembly file
  async function fetchWasm() {
-@@ -32,4 +33,5 @@ const createDilithium = () =>
-       DILITHIUM_PARAMS,
+-  const wasmUrl = chrome.runtime.getURL("dilithium.wasm");
+-  console.log(`Fetching wasm from ${wasmUrl}`);
++  const wasmUrl = getWasmUrl();
++  console.log(`[dilithium] Fetching wasm from ${wasmUrl}`);
+   const response = await fetch(wasmUrl);
+   return await response.arrayBuffer();
+ }
+ 
+ // Create the Dilithium object
+-const createDilithium = () => 
++const createDilithium = () =>
+   fetchWasm()
+     .then((wasmBinary) =>
+       dilithiumFactory({
+         wasmBinary,
+         locateFile: (path) => {
+           if (path.endsWith(".wasm")) {
+-            return chrome.runtime.getURL("dilithium.wasm");
++            return getWasmUrl();
+           }
+           return path;
+         },
+@@ -33,3 +48,4 @@ const createDilithium = () =>
      }));
  
--export { createDilithium };
-+export { createDilithium };
+ export { createDilithium };
 +export default createDilithium();
+\ No newline at end of file
 diff --git a/src/node/index.js b/src/node/index.js
-index a4f192e..536bb00 100644
+index a4f192eb2d607840810250073783106bd8ab3683..536bb0068a79f495b59572b0d3188cc932504360 100644
 --- a/src/node/index.js
 +++ b/src/node/index.js
 @@ -13,7 +13,7 @@ try {
