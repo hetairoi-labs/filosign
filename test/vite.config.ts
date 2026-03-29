@@ -21,31 +21,28 @@ export default defineConfig({
 	],
 	resolve: {
 		alias: {
-			"dilithium-crystals-js": "/dilithium-stub.js",
+			"@": "/src",
 		},
 	},
 	server: {
 		port: 3000,
+		strictPort: true,
+		host: true,
 		fs: {
 			strict: false,
 		},
-		allowedHosts: ["pineal-incantational-holley.ngrok-free.dev"],
 	},
 	optimizeDeps: {
 		exclude: [
-			"dilithium-crystals-js",
 			"@filosign/crypto-utils",
 			"@filosign/react",
 			"@filosign/contracts",
-			// IDKit loads WASM via new URL("idkit_wasm_bg.wasm", import.meta.url).
-			// Pre-bundling breaks this: import.meta.url points to the chunk, so the WASM
-			// URL 404s and returns HTML instead of binary (magic word error).
 			"@worldcoin/idkit-core",
 		],
 	},
 	build: {
 		commonjsOptions: {
-			exclude: ["dilithium-crystals-js"],
+			exclude: [],
 		},
 	},
 });

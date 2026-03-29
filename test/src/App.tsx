@@ -110,7 +110,7 @@ function initDilithium() {
 		// Provide arguments object for dilithium library (needed for Emscripten)
 		(globalThis as any).arguments = (globalThis as any).arguments || [];
 
-		const { createDilithium } = await import("./dilithium.min.js");
+		const { createDilithium } = await import("dilithium-crystals-js");
 		return createDilithium();
 	})();
 	return dilithiumPromise;
