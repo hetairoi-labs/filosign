@@ -14,14 +14,19 @@ interface IFSFileRegistry {
         address sender;
         mapping(address => bool) signers;
         uint8 signersCount;
+        uint8 signaturesCount;
         mapping(address => bytes) signatures;
         uint256 timestamp;
+        mapping(address => address) incentiveToken;
+        mapping(address => uint256) incentiveAmount;
+        mapping(address => bool) incentiveClaimed;
     }
 
     struct FileRegistrationView {
         bytes32 cidIdentifier;
         address sender;
         uint8 signersCount;
+        uint8 signaturesCount;
         uint256 timestamp;
     }
 
@@ -40,4 +45,8 @@ interface IFSFileRegistry {
     function validateFileSigningSignature(string calldata pieceCid_, address sender_, address signer_, bytes20 dl3SignatureCommitment_, uint256 timestamp_, bytes calldata signature_) external view returns (bool);
     function validateFileAckSignature(string calldata pieceCid_, address sender_, address viewer_, uint256 timestamp_, bytes calldata signature_) external view returns (bool);
     function cidIdentifier(string calldata pieceCid_) external pure returns (bytes32);
+    function setSignerIncentive(bytes32 cidId, address signer, address token, uint256 amount) external;
+    function getSignerIncentive(bytes32 cidId, address signer) external view returns (address token, uint256 amount, bool claimed);
+    function markIncentiveClaimed(bytes32 cidId, address signer) external;
+    function allSigned(bytes32 cidId) external view returns (bool);
 }
