@@ -12,13 +12,14 @@ import { decodeAbiParameters, getAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
-import { fsContracts } from "@/lib/evm";
+import { evmClient, fsContracts } from "@/lib/evm";
 import { bucket } from "@/lib/s3/client";
 import { getOrCreateUserDataset } from "@/lib/synapse";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
 
 const { FSFileRegistry } = fsContracts;
+
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
 
 const { files, fileAcknowledgements, fileParticipants, fileSignatures, users } =
@@ -446,6 +447,11 @@ export default new Hono()
 					eq(fileParticipants.wallet, userWallet),
 				),
 			);
+
+		if (!fileRecord) {
+			return respond.err(ctx, "File not found", 404);
+		}
+
 		if (!participantRecord) {
 			return respond.err(ctx, "You are not required to sign this file", 403);
 		}
@@ -491,17 +497,23 @@ export default new Hono()
 		)[0];
 
 		try {
-			await FSFileRegistry.simulate.registerFileSignatureWorldId([
-				pieceCid,
-				fileRecord.sender,
-				participantRecord.wallet,
-				dl3SignatureCommitment,
-				BigInt(worldIdResponse.merkle_root),
-				BigInt(worldIdResponse.nullifier),
-				unpackedProof,
-				BigInt(timestamp),
-				signature,
-			]);
+			await FSFileRegistry.simulate.registerFileSignatureWorldId(
+				[
+					pieceCid,
+					fileRecord.sender,
+					participantRecord.wallet,
+					dl3SignatureCommitment,
+					BigInt(worldIdResponse.merkle_root),
+					BigInt(worldIdResponse.nullifier),
+					unpackedProof,
+					BigInt(timestamp),
+					signature,
+				],
+				{
+					// viem simulates via the public client; `account` sets `msg.sender` for `onlyServer`.
+					account: evmClient.account,
+				},
+			);
 		} catch (_err) {
 			return respond.err(ctx, "Invalid World ID proof", 400);
 		}
