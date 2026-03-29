@@ -2,7 +2,6 @@ import { cp, mkdir, rm } from "node:fs/promises";
 import path from "node:path";
 import tailwindPlugin from "bun-plugin-tailwind";
 import { safeAsync } from "../utils/safe";
-import { dilithiumPlugin } from "./dilithium";
 import { fixHtml } from "./fix-html";
 import { getIdkitWasmSourcePath } from "./idkit-core-vendor";
 import idkitWasmPlugin from "./idkit-wasm-plugin";
@@ -25,7 +24,7 @@ export async function bundle() {
 		define: {
 			"process.env.NODE_ENV": JSON.stringify("production"),
 		},
-		plugins: [tailwindPlugin, dilithiumPlugin, idkitWasmPlugin],
+		plugins: [tailwindPlugin, idkitWasmPlugin],
 		splitting: true,
 		naming: {
 			chunk: "chunks/[name]-[hash].[ext]",

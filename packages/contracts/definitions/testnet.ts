@@ -1,7 +1,7 @@
 export const definitions = {
   "0x12c1": {
     "FSManager": {
-      "address": "0x37e786388869D513d01110358267945dA40656BF",
+      "address": "0x55E703351C53D72de7062A94ba8B39C37de8b701",
       "abi": [
         {
           "inputs": [],
@@ -408,7 +408,7 @@ export const definitions = {
       ]
     },
     "FSFileRegistry": {
-      "address": "0xAeCc73561d7e9f7C44FEDbcA500c22b0425e59e1",
+      "address": "0xfb5ae900D93C0245Eb2084f953e40d1c5f020c4C",
       "abi": [
         {
           "inputs": [],
@@ -1193,7 +1193,7 @@ export const definitions = {
       ]
     },
     "FSKeyRegistry": {
-      "address": "0xE22ff72d9E4dFda625c348E84d7245BFbE9407De",
+      "address": "0x76588C02b68910A7D97C48f057725ff5da6eC1D0",
       "abi": [
         {
           "inputs": [],
@@ -1525,7 +1525,7 @@ export const definitions = {
       ]
     },
     "FSWorldVerifier": {
-      "address": "0x8710f2d0101913D45fB7538D41A69B7f6b20c37b",
+      "address": "0x27e387914302D994Acc9B4D11B5AACdEbC146286",
       "abi": [
         {
           "inputs": [
@@ -1678,7 +1678,7 @@ export const definitions = {
       ]
     },
     "FSEscrow": {
-      "address": "0x5259888f68d6b72B26C2abaDF0D5b6D830512d9D",
+      "address": "0xc05d78cD2F2FA21A55E802797058b2a752811404",
       "abi": [
         {
           "inputs": [],

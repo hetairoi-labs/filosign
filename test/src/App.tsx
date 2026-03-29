@@ -93,39 +93,18 @@ export function useOtherReload() {
 	};
 }
 
-// Singleton: Emscripten FS can only init once. React Strict Mode double-mounts,
-// causing "File exists" when createDefaultDevices runs a second time.
-let dilithiumPromise: Promise<unknown> | null = null;
-
-function initDilithium() {
-	if (dilithiumPromise) return dilithiumPromise;
-	dilithiumPromise = (async () => {
-		// Mock chrome for the dilithium library
-		(globalThis as any).chrome = {
-			runtime: {
-				getURL: () => "/dilithium.wasm",
-			},
-		};
-
-		// Provide arguments object for dilithium library (needed for Emscripten)
-		(globalThis as any).arguments = (globalThis as any).arguments || [];
-
-		const { createDilithium } = await import("dilithium-crystals-js");
-		return createDilithium();
-	})();
-	return dilithiumPromise;
-}
+import dilithiumPromise from "dilithium-crystals-js";
 
 function App() {
 	const [dilithium, setDilithium] = useState<unknown>(null);
 
 	useEffect(() => {
 		let mounted = true;
-		initDilithium()
+		dilithiumPromise
 			.then((dil) => {
 				if (mounted) setDilithium(dil);
 			})
-			.catch((err: unknown) => {
+			.catch((err) => {
 				console.error("Failed to init Dilithium:", err);
 			});
 		return () => {

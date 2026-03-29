@@ -12,3 +12,6 @@ alwaysApply: false
 - [2025-02-25] Mistake: Used explicit color values (`text-white`, `bg-neutral-500`, `ring-[oklch(...)]`) instead of design tokens. Fix: Use semantic token classes (`text-foreground`, `bg-secondary`, `ring-card`).
 - [2025-02-25] Mistake: Created a separate `--brand` CSS variable when `--primary` could serve the same purpose. Fix: Reuse existing token (`--primary`) for the accent color instead of introducing new custom vars.
 - [2025-02-25] Mistake: Used hex values in `globals.css`. Fix: Convert all color values to `oklch()` format for consistency and perceptual uniformity.
+- [2026-03-29] Mistake: Manually edited Bun patch files which broke hunk headers (`hunk_header_integrity_check_failed`). Fix: Always use `bun patch` and `bun patch --commit` to let Bun generate perfectly formatted patches.
+- [2026-03-29] Mistake: Assumed a Vite-based environment for all fixes when the project follows a Bun-native HTML import pattern. Fix: Align with `Bun.serve()` and HTML-first architectures as defined in `tools/bun.mdc`.
+- [2026-03-30] Mistake: Over-complicated Dilithium integration with manual `chrome` mocks and custom singleton logic. Fix: Patch the library to handle environment detection and provide a pre-initialized ESM `default` export. This eliminates build-time regex hacks and reduces integration code by 80%.
