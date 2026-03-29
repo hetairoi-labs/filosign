@@ -5,7 +5,6 @@ WORKDIR /app
 
 # Caching bun install dependencies
 COPY package.json bun.lock ./
-COPY patches ./patches
 COPY --parents packages/*/package.json /packages/
 
 RUN --mount=type=cache,target=/root/.bun/install/cache \
