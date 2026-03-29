@@ -5,7 +5,10 @@ WORKDIR /app
 
 # Caching bun install dependencies
 COPY package.json bun.lock ./
-COPY --parents packages/*/package.json /packages/
+COPY --parents packages/*/package.json packages/*/*/package.json ./
+
+# Remove the test workspace so bun install won't look for it
+RUN sed -i '/"test",/d' package.json
 
 RUN --mount=type=cache,target=/root/.bun/install/cache \
 	bun install --frozen-lockfile
