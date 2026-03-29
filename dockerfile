@@ -11,7 +11,7 @@ COPY --parents packages/*/package.json packages/*/*/package.json ./
 RUN sed -i '/"test",/d' package.json
 
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-	bun install --frozen-lockfile
+	bun install
 
 COPY . .
 
