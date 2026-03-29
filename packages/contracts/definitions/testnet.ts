@@ -1,7 +1,7 @@
 export const definitions = {
 	"0x12c1": {
 		FSManager: {
-			address: "0x61bC52ee28f019486285215ab9E0A752248aB914",
+			address: "0x53ED4B5a63f625dDD40D908c936230bf94a33087",
 			abi: [
 				{
 					inputs: [],
@@ -244,71 +244,10 @@ export const definitions = {
 					stateMutability: "view",
 					type: "function",
 				},
-				{
-					inputs: [],
-					name: "NotAllSigned",
-					type: "error",
-				},
-				{
-					inputs: [],
-					name: "IncentiveAlreadyClaimed",
-					type: "error",
-				},
-				{
-					inputs: [],
-					name: "escrow",
-					outputs: [
-						{
-							internalType: "address",
-							name: "",
-							type: "address",
-						},
-					],
-					stateMutability: "view",
-					type: "function",
-				},
-				{
-					inputs: [
-						{ internalType: "string", name: "pieceCid_", type: "string" },
-						{ internalType: "address", name: "signer_", type: "address" },
-						{ internalType: "address", name: "token_", type: "address" },
-						{ internalType: "uint256", name: "amount_", type: "uint256" },
-					],
-					name: "attachIncentive",
-					outputs: [],
-					stateMutability: "nonpayable",
-					type: "function",
-				},
-				{
-					inputs: [
-						{ internalType: "string", name: "pieceCid_", type: "string" },
-						{ internalType: "address", name: "signer_", type: "address" },
-						{ internalType: "address", name: "token_", type: "address" },
-						{ internalType: "uint256", name: "amount_", type: "uint256" },
-						{ internalType: "uint256", name: "deadline_", type: "uint256" },
-						{ internalType: "uint8", name: "v_", type: "uint8" },
-						{ internalType: "bytes32", name: "r_", type: "bytes32" },
-						{ internalType: "bytes32", name: "s_", type: "bytes32" },
-					],
-					name: "attachIncentiveWithPermit",
-					outputs: [],
-					stateMutability: "nonpayable",
-					type: "function",
-				},
-				{
-					inputs: [
-						{ internalType: "string", name: "pieceCid_", type: "string" },
-						{ internalType: "address[]", name: "signers_", type: "address[]" },
-					],
-					name: "releaseIncentives",
-					outputs: [],
-					stateMutability: "nonpayable",
-					type: "function",
-				},
 			],
 		},
 		FSFileRegistry: {
-			address: "0x9f735A92A12Da8A0d1144B7fEE0FF90336267FEB",
+			address: "0x217c37B1B2074daa7eA85e72e9B1a614De863747",
 			abi: [
 				{
 					inputs: [],
@@ -974,7 +913,7 @@ export const definitions = {
 			],
 		},
 		FSKeyRegistry: {
-			address: "0x540d9901932f2AaC961413c01F4Cff0B745B69E6",
+			address: "0x03Eb5f19444E5cCFddfbeb3d8339ce5C43D7B0b1",
 			abi: [
 				{
 					inputs: [],
@@ -1306,7 +1245,7 @@ export const definitions = {
 			],
 		},
 		FSWorldVerifier: {
-			address: "0x729425b47e29cFC3Ce259851C79B703C8213a9D9",
+			address: "0x9f6a8bBb794140a9cCdc6B551e106B191Ef57c72",
 			abi: [
 				{
 					inputs: [
