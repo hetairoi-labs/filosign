@@ -17,7 +17,9 @@ export function ShareReceiverTest() {
 	const [checkSenderAddress, setCheckSenderAddress] = useState("");
 	const [revokeSenderAddress, setRevokeSenderAddress] = useState("");
 
-	const canReceiveFrom = useCanReceiveFrom(checkSenderAddress as `0x${string}`);
+	const canReceiveFrom = useCanReceiveFrom({
+		sender: checkSenderAddress as `0x${string}`,
+	});
 	const revokeSender = useRevokeSender();
 
 	async function handleRevokeSender() {
