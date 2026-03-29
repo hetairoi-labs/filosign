@@ -187,7 +187,10 @@ export default function WaitlistSection() {
 						>
 							<div className="flex flex-col gap-3 w-full sm:gap-4 md:flex-row">
 								<input
+									id="waitlist-email-main"
+									name="email"
 									type="email"
+									autoComplete="email"
 									placeholder="enter your email address"
 									value={email}
 									onChange={(e) => setEmail(e.target.value)}

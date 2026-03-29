@@ -119,6 +119,8 @@ export default function OtpInput({
 					type="text"
 					inputMode="numeric"
 					pattern="[0-9]*"
+					autoComplete="one-time-code"
+					name={`otp-${index}`}
 					value={value[index] || ""}
 					onChange={(e) => handleInputChange(index, e.target.value)}
 					onKeyDown={(e) => handleKeyDown(index, e)}
