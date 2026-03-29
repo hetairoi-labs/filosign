@@ -10,6 +10,7 @@ const config: HardhatUserConfig = {
 				runs: 400,
 			},
 			viaIR: true,
+			evmVersion: "cancun",
 		},
 	},
 	sourcify: { enabled: false },
