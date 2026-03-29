@@ -175,6 +175,7 @@ export default new Hono()
 			return insertResult;
 		});
 
+        //@ts-expect-error
 		ds.upload(new Uint8Array(bytes), { pieceCid, metadata: {} })
 			.then(async (uploadResult) => {
 				await file.delete();
@@ -511,6 +512,7 @@ export default new Hono()
 				],
 				{
 					// viem simulates via the public client; `account` sets `msg.sender` for `onlyServer`.
+                    //@ts-expect-error
 					account: evmClient.account,
 				},
 			);
@@ -540,6 +542,75 @@ export default new Hono()
 		});
 
 		return respond.ok(ctx, {}, "File signed successfully", 200);
+	})
+
+	.post("/:pieceCid/incentive", authenticated, async (ctx) => {
+		const userWallet = ctx.var.userWallet;
+		const pieceCid = ctx.req.param("pieceCid");
+
+		const rawBody = await ctx.req.json();
+		const baseSchema = z.object({
+			signer: zEvmAddress(),
+			token: zEvmAddress(),
+			amount: z.string().regex(/^[0-9]+$/, "amount must be a non-negative integer string"),
+			usePermit: z.boolean(),
+		});
+		const permitSchema = baseSchema.extend({
+			usePermit: z.literal(true),
+			deadline: z.string().regex(/^[0-9]+$/, "deadline must be a non-negative integer string"),
+			v: z.number().int().min(0).max(255),
+			r: zHexString(),
+			s: zHexString(),
+		});
+		const allowanceSchema = baseSchema.extend({
+			usePermit: z.literal(false),
+		});
+		const parsedBody = z.union([permitSchema, allowanceSchema]).safeParse(rawBody);
+		if (parsedBody.error) {
+			return respond.err(ctx, parsedBody.error.message, 400);
+		}
+
+		const { FSManager } = fsContracts;
+
+		// Verify the file exists and the caller is the sender
+		const [fileRecord] = await db
+			.select({ sender: files.sender })
+			.from(files)
+			.where(eq(files.pieceCid, pieceCid));
+		if (!fileRecord) {
+			return respond.err(ctx, "File not found", 404);
+		}
+		if (getAddress(fileRecord.sender) !== getAddress(userWallet)) {
+			return respond.err(ctx, "Only the file sender can attach incentives", 403);
+		}
+
+		const { signer, token, amount } = parsedBody.data;
+
+		const attachResult = await tryCatch(
+			parsedBody.data.usePermit
+				? FSManager.write.attachIncentiveWithPermit([
+						pieceCid,
+						getAddress(signer),
+						getAddress(token),
+						BigInt(amount),
+						BigInt(parsedBody.data.deadline),
+						parsedBody.data.v,
+						parsedBody.data.r,
+						parsedBody.data.s,
+					])
+				: FSManager.write.attachIncentive([
+						pieceCid,
+						getAddress(signer),
+						getAddress(token),
+						BigInt(amount),
+					]),
+		);
+
+		if (attachResult.error) {
+			return respond.err(ctx, `Failed to attach incentive: ${attachResult.error}`, 500);
+		}
+
+		return respond.ok(ctx, {}, "Incentive attached successfully", 201);
 	})
 
 	.get("/:pieceCid/s3", authenticated, async (ctx) => {
