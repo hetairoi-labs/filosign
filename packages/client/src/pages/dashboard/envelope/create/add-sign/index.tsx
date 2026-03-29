@@ -1,6 +1,12 @@
-import { useProfilesByAddresses, useSendFile } from "@filosign/react/hooks";
+import {
+	useProfilesByAddresses,
+	useRpSignature,
+	useSendFile,
+} from "@filosign/react/hooks";
+import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
-import React, { useMemo, useRef, useState } from "react";
+import type { IDKitResult, RpContext } from "@worldcoin/idkit";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import type { Address } from "viem";
 
@@ -12,17 +18,30 @@ import DocumentViewer, {
 import Header from "./_components/Header";
 import MobileSignatureToolbar from "./_components/MobileSignatureToolbar";
 import SignatureFieldsSidebar from "./_components/SignatureFieldsSidebar";
+import { WorldIDKitSign } from "./_components/WorldIDKitSign";
 import {
 	type Document,
 	fieldTypeConfigs,
 	mockDocuments,
 	type SignatureField,
 } from "./mock";
+import {
+	buildSignersAndViewersForDocument,
+	loadDocumentFileBytes,
+	type RecipientWithEncryptionProfile,
+	SendEnvelopeError,
+} from "./send-envelope";
 
 export default function AddSignaturePage() {
 	const navigate = useNavigate();
 	const { createForm, clearCreateForm } = useStorePersist();
 	const sendFile = useSendFile();
+	const { user } = usePrivy();
+	const getRpContext = useRpSignature();
+	const userAddress = user?.wallet?.address as `0x${string}` | undefined;
+
+	const [idKitOpen, setIdKitOpen] = useState(false);
+	const [idKitRp, setIdKitRp] = useState<RpContext | null>(null);
 
 	const recipientAddresses = useMemo(
 		() => createForm?.recipients?.map((r) => r.walletAddress as Address) ?? [],
@@ -74,7 +93,6 @@ export default function AddSignaturePage() {
 	const [pendingFieldType, setPendingFieldType] = useState<
 		SignatureField["type"] | null
 	>(null);
-	const [isSending, setIsSending] = useState(false);
 	const isSendingRef = useRef(false);
 
 	// Convert createForm documents to Document format
@@ -157,9 +175,98 @@ export default function AddSignaturePage() {
 		navigate({ to: "/dashboard/envelope/create" });
 	};
 
+	const executeEnvelopeSend = useCallback(
+		async (proof: IDKitResult) => {
+			if (!createForm) return;
+
+			// When POST /files accepts `worldIdProof`, pass `proof` into `sendFile.mutateAsync`.
+			void proof;
+
+			isSendingRef.current = true;
+			toast.loading("Sending documents...", { id: "send-progress" });
+
+			try {
+				const sendPromises: Promise<unknown>[] = [];
+
+				for (const doc of createForm.documents) {
+					const fileData = await loadDocumentFileBytes(doc);
+
+					const { signers, viewers } = buildSignersAndViewersForDocument({
+						docId: doc.id,
+						recipients: createForm.recipients,
+						recipientMap: recipientProfilesMapWithRecipient as Map<
+							Address,
+							RecipientWithEncryptionProfile
+						>,
+						signatureFields,
+						docWidth,
+						docHeight,
+					});
+
+					if (signers.length === 0) {
+						toast.error("At least one signer is required");
+						throw new Error(SendEnvelopeError.NO_SIGNERS);
+					}
+
+					sendPromises.push(
+						sendFile.mutateAsync({
+							signers,
+							viewers,
+							bytes: fileData,
+							metadata: { name: doc.name },
+						}),
+					);
+				}
+
+				await Promise.all(sendPromises);
+
+				clearCreateForm();
+
+				toast.success("Documents sent successfully!", {
+					id: "send-progress",
+				});
+
+				setIdKitOpen(false);
+				setIdKitRp(null);
+				navigate({ to: "/dashboard" });
+			} catch (error) {
+				if (
+					error instanceof Error &&
+					error.message === SendEnvelopeError.MISSING_DATA_URL
+				) {
+					toast.dismiss("send-progress");
+					toast.error("Document is missing file data");
+					return;
+				}
+				if (
+					error instanceof Error &&
+					error.message === SendEnvelopeError.NO_SIGNERS
+				) {
+					toast.dismiss("send-progress");
+					return;
+				}
+				console.error("Failed to send documents:", error);
+				toast.error("Failed to send documents. Please try again.", {
+					id: "send-progress",
+				});
+			} finally {
+				isSendingRef.current = false;
+			}
+		},
+		[
+			createForm,
+			sendFile,
+			signatureFields,
+			docWidth,
+			docHeight,
+			recipientProfilesMapWithRecipient,
+			clearCreateForm,
+			navigate,
+		],
+	);
+
 	const handleSend = async () => {
-		// Double-submit protection
-		if (isSendingRef.current || isSending) {
+		if (isSendingRef.current) {
 			toast.info("Already sending documents...");
 			return;
 		}
@@ -174,12 +281,8 @@ export default function AddSignaturePage() {
 			return;
 		}
 
-		// Check if all recipient profiles are loaded
-		const missingProfiles = createForm.recipients.filter(
-			(r) => !recipientProfilesMapWithRecipient.has(r.walletAddress as Address),
-		);
-		if (missingProfiles.length > 0) {
-			toast.error("Loading recipient information...");
+		if (!userAddress) {
+			toast.error("Connect your wallet to continue");
 			return;
 		}
 
@@ -188,131 +291,27 @@ export default function AddSignaturePage() {
 			return;
 		}
 
-		// Set sending state to prevent double-submit
-		isSendingRef.current = true;
-		setIsSending(true);
+		const missingProfiles = createForm.recipients.filter(
+			(r) => !recipientProfilesMapWithRecipient.has(r.walletAddress as Address),
+		);
+		if (missingProfiles.length > 0) {
+			toast.error(
+				"Could not load all recipient profiles. Please try again in a moment.",
+			);
+			return;
+		}
 
 		try {
-			toast.loading("Sending documents...", { id: "send-progress" });
-
-			// Send each document to all recipients
-			const sendPromises = [];
-			for (const doc of createForm.documents) {
-				// Convert data URL back to file
-				const response = await fetch(doc.dataUrl);
-				const blob = await response.blob();
-				const file = new File([blob], doc.name, { type: doc.type });
-				const fileData = new Uint8Array(await file.arrayBuffer());
-
-				// Separate recipients into signers and viewers based on role
-				const signers: {
-					address: Address;
-					encryptionPublicKey: `0x${string}`;
-					signaturePosition: [number, number, number, number];
-				}[] = [];
-				const viewers: { address: Address; encryptionPublicKey: string }[] = [];
-
-				// Get signature positions for this document, grouped by recipient
-				const documentSignatures = signatureFields.filter(
-					(field) => field.documentId === doc.id && field.type === "signature",
-				);
-
-				// Process each recipient
-				for (const recipient of createForm.recipients) {
-					const recipientData = recipientProfilesMapWithRecipient.get(
-						recipient.walletAddress as Address,
-					);
-					if (!recipientData) continue;
-
-					const { profile } = recipientData;
-					const address = recipient.walletAddress as Address;
-					const encryptionPublicKey =
-						profile.encryptionPublicKey as `0x${string}`;
-
-					// Find signature fields for this recipient (if we had recipient-specific fields)
-					// For now, assign signature positions sequentially to signers
-					if (recipient.role === "signer") {
-						// Find the signature field index for this signer
-						const signerIndex = createForm.recipients
-							.filter((r) => r.role === "signer")
-							.findIndex((r) => r.walletAddress === recipient.walletAddress);
-
-						// Get signature position for this signer, or use default
-						const signatureField =
-							documentSignatures[signerIndex] || documentSignatures[0];
-						// encodeFileData expects percentages (0-100 exclusive); convert from viewer pixels
-						const clamp = (v: number) => Math.max(0.01, Math.min(99.99, v));
-						const signaturePosition: [number, number, number, number] =
-							signatureField
-								? [
-										clamp((signatureField.x / docWidth) * 100),
-										clamp((signatureField.y / docHeight) * 100),
-										clamp((200 / docWidth) * 100),
-										clamp((100 / docHeight) * 100),
-									]
-								: [
-										clamp((10 / docWidth) * 100),
-										clamp((10 / docHeight) * 100),
-										clamp((200 / docWidth) * 100),
-										clamp((100 / docHeight) * 100),
-									];
-
-						signers.push({
-							address,
-							encryptionPublicKey,
-							signaturePosition,
-						});
-					} else if (recipient.role === "cc" || recipient.role === "approver") {
-						viewers.push({
-							address,
-							encryptionPublicKey,
-						});
-					}
-				}
-
-				// Ensure we have at least one signer
-				if (signers.length === 0) {
-					toast.error("At least one signer is required");
-					return;
-				}
-
-				const sendData = {
-					signers,
-					viewers,
-					bytes: fileData,
-					metadata: {
-						name: doc.name,
-						mimeType: doc.type,
-					},
-				};
-
-				console.log("Sending document:", {
-					documentName: doc.name,
-					documentSize: fileData.length,
-					signersCount: signers.length,
-					viewersCount: viewers.length,
-					sendData: { ...sendData, bytes: `[${fileData.length} bytes]` }, // Don't log the actual bytes
-				});
-
-				sendPromises.push(sendFile.mutateAsync(sendData));
+			const linkAction = process.env.BUN_PUBLIC_WORLD_ACTION;
+			if (!linkAction) {
+				toast.error("World ID is not configured");
+				return;
 			}
-
-			await Promise.all(sendPromises);
-
-			// Clear form data
-			clearCreateForm();
-
-			toast.success("Documents sent successfully!", {
-				id: "send-progress",
-			});
-
-			// Navigate back to dashboard
-			navigate({ to: "/dashboard" });
-		} catch (error) {
-			console.error("Failed to send documents:", error);
-			toast.error("Failed to send documents. Please try again.", {
-				id: "send-progress",
-			});
+			const ctx = await getRpContext.mutateAsync({ action: linkAction });
+			setIdKitRp(ctx);
+			setIdKitOpen(true);
+		} catch {
+			toast.error("Failed to prepare verification");
 		}
 	};
 
@@ -434,6 +433,20 @@ export default function AddSignaturePage() {
 				isPlacingField={isPlacingField}
 				pendingFieldType={pendingFieldType}
 			/>
+
+			{userAddress ? (
+				<WorldIDKitSign
+					signerAddress={userAddress}
+					hideTrigger
+					open={idKitOpen}
+					onOpenChange={(next) => {
+						setIdKitOpen(next);
+						if (!next) setIdKitRp(null);
+					}}
+					rpContext={idKitRp}
+					onProofSuccess={(proof) => executeEnvelopeSend(proof)}
+				/>
+			) : null}
 		</div>
 	);
 }

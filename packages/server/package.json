@@ -4,7 +4,7 @@
 		"db:push": "bunx --bun drizzle-kit push",
 		"check": "bunx --bun biome check --write",
 		"dev": "bun --hot index.ts",
-		"start": "bun --env-file=.env.prod run index.ts",
+		"start": "bun run index.ts",
 		"push": "bunx --bun drizzle-kit push"
 	},
 	"dependencies": {
@@ -14,7 +14,7 @@
 		"@filoz/synapse-sdk": "^0.37.0",
 		"@hono/zod-validator": "^0.7.3",
 		"@libsql/client": "^0.14.0",
-		"@worldcoin/idkit": "4.0.9",
+		"@worldcoin/idkit": "4.0.11",
 		"drizzle-orm": "0.44.7",
 		"drizzle-zod": "^0.8.3",
 		"ethers": "^6.15.0",

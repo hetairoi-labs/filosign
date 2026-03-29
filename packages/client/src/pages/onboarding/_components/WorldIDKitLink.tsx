@@ -1,4 +1,5 @@
 import { useLogin, useRpSignature } from "@filosign/react/hooks";
+import { CaretRightIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import {
 	IDKitRequestWidget,
@@ -34,8 +35,8 @@ export function WorldIDKitLink({
 		submittedRef.current = true;
 
 		try {
-			await login.mutateAsync({ pin, worldIdProof: proof });
 			setOpen(false);
+			await login.mutateAsync({ pin, worldIdProof: proof });
 			onSuccess();
 		} catch {
 			submittedRef.current = false;
@@ -68,8 +69,17 @@ export function WorldIDKitLink({
 			<Button
 				onClick={() => void rpMutation.mutate()}
 				disabled={rpMutation.isPending}
+				variant="primary"
+				className="w-full"
 			>
-				{rpMutation.isPending ? "Preparing..." : "Verify Human"}
+				{rpMutation.isPending ? (
+					"Preparing..."
+				) : (
+					<div className="flex items-center gap-2 group">
+						<p>Verify Human</p>
+						<CaretRightIcon className="transition-transform duration-200 size-4 group-hover:translate-x-1" />
+					</div>
+				)}
 			</Button>
 
 			{(rpMutation.isError || login.isError) && (

@@ -211,7 +211,7 @@
         "@filoz/synapse-sdk": "^0.37.0",
         "@hono/zod-validator": "^0.7.3",
         "@libsql/client": "^0.14.0",
-        "@worldcoin/idkit": "4.0.9",
+        "@worldcoin/idkit": "4.0.11",
         "drizzle-orm": "0.44.7",
         "drizzle-zod": "^0.8.3",
         "ethers": "^6.15.0",
@@ -3385,8 +3385,6 @@
 
     "@filosign/server/@types/node": ["@types/node@24.9.1", "", { "dependencies": { "undici-types": "~7.16.0" } }, "sha512-QoiaXANRkSXK6p0Duvt56W208du4P9Uye9hWLWgGMDTEoKPhuenzNcC4vGUmrNkiOKTlIrBoyNQYNpSwfEZXSg=="],
 
-    "@filosign/server/@worldcoin/idkit": ["@worldcoin/idkit@4.0.9", "", { "dependencies": { "@worldcoin/idkit-core": "4.0.13", "qrcode": "^1.5.4" }, "peerDependencies": { "react": ">=18", "react-dom": ">=18" } }, "sha512-NVDEj5ax82mxW2+vzV76o3i9OnX6ItoNzg2sjvaP+WHIyfdAVDkIMlVTZ/Baz2PNHEuR99sEYNrVq+vclHzYdw=="],
-
     "@filosign/server/viem": ["viem@2.38.3", "", { "dependencies": { "@noble/curves": "1.9.1", "@noble/hashes": "1.8.0", "@scure/bip32": "1.7.0", "@scure/bip39": "1.6.0", "abitype": "1.1.0", "isows": "1.0.7", "ox": "0.9.6", "ws": "8.18.3" }, "peerDependencies": { "typescript": ">=5.0.4" }, "optionalPeers": ["typescript"] }, "sha512-By2TutLv07iNHHtWqHHzjGipevYsfGqT7KQbGEmqLco1qTJxKnvBbSviqiu6/v/9REV6Q/FpmIxf2Z7/l5AbcQ=="],
 
     "@filosign/server/zod": ["zod@4.3.6", "", {}, "sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg=="],
@@ -3956,8 +3954,6 @@
     "@filosign/crypto-utils/@types/bun/bun-types": ["bun-types@1.3.1", "", { "dependencies": { "@types/node": "*" }, "peerDependencies": { "@types/react": "^19" } }, "sha512-NMrcy7smratanWJ2mMXdpatalovtxVggkj11bScuWuiOoXTiKIu2eVS1/7qbyI/4yHedtsn175n4Sm4JcdHLXw=="],
 
     "@filosign/server/@types/bun/bun-types": ["bun-types@1.3.1", "", { "dependencies": { "@types/node": "*" }, "peerDependencies": { "@types/react": "^19" } }, "sha512-NMrcy7smratanWJ2mMXdpatalovtxVggkj11bScuWuiOoXTiKIu2eVS1/7qbyI/4yHedtsn175n4Sm4JcdHLXw=="],
-
-    "@filosign/server/@worldcoin/idkit/@worldcoin/idkit-core": ["@worldcoin/idkit-core@4.0.13", "", { "dependencies": { "@noble/hashes": "^1.7.2", "@worldcoin/idkit-server": "1.0.0" } }, "sha512-SWeS2jGijbXI3Z+qjJn/DbdWYMuc6swdKUOaEj5m5zMLQYWLZwYNRYylvNuNLwnPAMuAgJQ8andyIFZ4RFqM4g=="],
 
     "@filoz/synapse-core/ox/@adraffy/ens-normalize": ["@adraffy/ens-normalize@1.11.1", "", {}, "sha512-nhCBV3quEgesuf7c7KYfperqSS14T8bYuvJ8PcLJp6znkZpFc0AuW4qBtr8eKVyPPe/8RSr7sglCWPU5eaxwKQ=="],
 
