@@ -1,0 +1,13 @@
+diff --git a/src/node/index.js b/src/node/index.js
+index a4f192eb2d607840810250073783106bd8ab3683..536bb0068a79f495b59572b0d3188cc932504360 100644
+--- a/src/node/index.js
++++ b/src/node/index.js
+@@ -13,7 +13,7 @@ try {
+   wasmBinary = fs.readFileSync(wasmPath);
+ } catch (err) {
+   // If that fails, try the Electron production path
+-  wasmPath = path.join(process.resourcesPath, "assets", "dilithium.wasm");
++  wasmPath = path.join(typeof process.resourcesPath !== "undefined" ? process.resourcesPath : process.cwd(), "assets", "dilithium.wasm");
+   wasmBinary = fs.readFileSync(wasmPath);
+ }
+ 
