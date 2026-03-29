@@ -2,6 +2,7 @@ import { useFilosignContext } from "@filosign/react";
 import {
 	useAckFile,
 	useApproveSender,
+	useAttachIncentiveToFile,
 	useCanReceiveFrom,
 	useCanSendTo,
 	useFileInfo,
@@ -17,7 +18,7 @@ import {
 	useUserProfileByQuery,
 	useViewFile,
 } from "@filosign/react/hooks";
-import { memo, useId, useMemo, useState } from "react";
+import { memo, useId, useMemo, useRef, useState } from "react";
 import {
 	useCurrentWalletAddress,
 	useOtherAddress,
@@ -931,6 +932,95 @@ const SentFileItem = memo(function SentFileItem(props: { pieceCid: string }) {
 					</pre>
 				</div>
 			)}
+
+			{file.signers.length > 0 && (
+				<div className="mt-3 space-y-2">
+					<h4 className="text-sm font-medium">Attach Incentives</h4>
+					{file.signers.map((signerAddress) => (
+						<TestAttachIncentive
+							key={signerAddress}
+							pieceCid={pieceCid}
+							signer={signerAddress as `0x${string}`}
+						/>
+					))}
+				</div>
+			)}
 		</article>
 	);
 });
+
+function TestAttachIncentive(props: {
+	pieceCid: string;
+	signer: `0x${string}`;
+}) {
+	const { pieceCid, signer } = props;
+	const attachIncentive = useAttachIncentiveToFile();
+	const tokenRef = useRef<HTMLInputElement>(null);
+	const amountRef = useRef<HTMLInputElement>(null);
+	const formId = useId();
+
+	const handleSubmit = (e: React.FormEvent) => {
+		e.preventDefault();
+		const token = tokenRef.current?.value.trim() as `0x${string}` | undefined;
+		const rawAmount = amountRef.current?.value.trim();
+		if (!token || !rawAmount) return;
+		attachIncentive.mutate({
+			pieceCid,
+			signer,
+			token,
+			amount: BigInt(rawAmount),
+		});
+	};
+
+	return (
+		<form
+			onSubmit={handleSubmit}
+			className="bg-background border rounded p-3 space-y-2 text-sm"
+			aria-labelledby={`${formId}-heading`}
+		>
+			<p id={`${formId}-heading`} className="font-mono text-xs text-muted-foreground break-all">
+				Signer: {signer}
+			</p>
+
+			<div className="flex flex-col sm:flex-row gap-2">
+				<input
+					ref={tokenRef}
+					type="text"
+					placeholder="Token address (0x...)"
+					required
+					pattern="^0x[0-9a-fA-F]{40}$"
+					className="flex-1 rounded border bg-card px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+					aria-label="Token address"
+				/>
+				<input
+					ref={amountRef}
+					type="text"
+					placeholder="Amount (wei)"
+					required
+					pattern="^[0-9]+$"
+					className="w-36 rounded border bg-card px-2 py-1 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+					aria-label="Amount in wei"
+				/>
+				<button
+					type="submit"
+					disabled={attachIncentive.isPending}
+					className="rounded-md px-3 py-1 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none transition-all"
+				>
+					{attachIncentive.isPending ? "Attaching..." : "Attach"}
+				</button>
+			</div>
+
+			{attachIncentive.isError && (
+				<p className="text-destructive bg-destructive/10 p-1 rounded text-xs wrap-break-word" role="alert">
+					{getErrorMessage(attachIncentive.error)}
+				</p>
+			)}
+
+			{attachIncentive.isSuccess && (
+				<p className="text-success bg-success/10 p-1 rounded text-xs">
+					Incentive attached successfully.
+				</p>
+			)}
+		</form>
+	);
+}
