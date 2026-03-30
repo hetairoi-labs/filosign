@@ -23,6 +23,7 @@ contract FSFileRegistry is EIP712 {
     struct FileRegistration {
         bytes32 cidIdentifier;
         address sender;
+        bytes20 signersCommitment;
         mapping(address => bool) signers;
         uint8 signersCount;
         uint8 signaturesCount;
@@ -37,6 +38,7 @@ contract FSFileRegistry is EIP712 {
     struct FileRegistrationView {
         bytes32 cidIdentifier;
         address sender;
+        bytes20 signersCommitment;
         uint8 signersCount;
         uint8 signaturesCount;
         uint256 timestamp;
@@ -124,6 +126,7 @@ contract FSFileRegistry is EIP712 {
             FileRegistrationView({
                 cidIdentifier: file.cidIdentifier,
                 sender: file.sender,
+                signersCommitment: file.signersCommitment,
                 signersCount: file.signersCount,
                 signaturesCount: file.signaturesCount,
                 timestamp: file.timestamp
@@ -158,6 +161,7 @@ contract FSFileRegistry is EIP712 {
 
         file.cidIdentifier = cidId;
         file.sender = sender_;
+        file.signersCommitment = computeSignersCommitment(signers_);
         file.signersCount = uint8(signers_.length);
         file.timestamp = timestamp_;
 
@@ -210,7 +214,8 @@ contract FSFileRegistry is EIP712 {
         uint256 nullifierHash_,
         uint256[8] calldata proof_,
         uint256 timestamp_,
-        bytes calldata signature_
+        bytes calldata signature_,
+        address[] calldata allSigners_ // full list of signers on each sign (high gas but high reliability)
     ) external onlyServer {
         bytes32 cidId = cidIdentifier(pieceCid_);
         FileRegistration storage file = _fileRegistrations[cidId];
@@ -236,7 +241,6 @@ contract FSFileRegistry is EIP712 {
         require(linkedWallet == signer_, "Not the designated recipient");
 
         // IDKit signal is sent as `${lowercaseAddress}:${pieceCid}`.
-        // Match that exact textual payload for on-chain verification.
         string memory signerSignal = string.concat(
             Strings.toHexString(uint160(signer_), 20),
             ":",
@@ -257,6 +261,14 @@ contract FSFileRegistry is EIP712 {
 
         file.signatures[signer_] = signature_;
         file.signaturesCount++;
+
+        if (file.signaturesCount == file.signersCount) {
+            if (allSigners_.length != uint256(file.signersCount))
+                revert BadSignersLength();
+            if (computeSignersCommitment(allSigners_) != file.signersCommitment)
+                revert InvalidSignersCommitment();
+            manager.releaseIncentives(pieceCid_, allSigners_);
+        }
 
         nonce[signer_]++;
         emit FileSigned(cidId, sender_, signer_, uint48(block.timestamp));

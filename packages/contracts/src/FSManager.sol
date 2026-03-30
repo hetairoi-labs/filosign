@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import "./FSFileRegistry.sol";
 import "./FSKeyRegistry.sol";
 import "./FSEscrow.sol";
+import "./errors/EFSFileRegistry.sol";
 import "./errors/EFSManager.sol";
 
 contract FSManager {
@@ -31,6 +32,12 @@ contract FSManager {
 
     modifier onlyServer() {
         if (msg.sender != server) revert OnlyServer();
+        _;
+    }
+
+    modifier onlyServerOrFileRegistry() {
+        if (msg.sender != server && msg.sender != fileRegistry)
+            revert OnlyServerOrFileRegistry();
         _;
     }
 
@@ -124,7 +131,7 @@ contract FSManager {
     function releaseIncentives(
         string calldata pieceCid_,
         address[] calldata signers_
-    ) external onlyServer {
+    ) external onlyServerOrFileRegistry {
         bytes32 cidId = FSFileRegistry(fileRegistry).cidIdentifier(pieceCid_);
         require(FSFileRegistry(fileRegistry).allSigned(cidId), NotAllSigned());
 

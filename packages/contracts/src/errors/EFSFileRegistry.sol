@@ -19,3 +19,4 @@ error AlreadySigned();
 error InvalidSignature();
 error IncentiveAlreadyAttached();
 error FileAlreadyFullySigned();
+error InvalidSignersCommitment();
