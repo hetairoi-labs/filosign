@@ -497,19 +497,35 @@ export default new Hono()
 			worldIdResponse.proof,
 		)[0];
 
+		const signerRows = await db
+			.select({ wallet: fileParticipants.wallet })
+			.from(fileParticipants)
+			.where(
+				and(
+					eq(fileParticipants.filePieceCid, pieceCid),
+					eq(fileParticipants.role, "signer"),
+				),
+			);
+		const allSignersCalldata = signerRows
+			.map((p) => getAddress(p.wallet))
+			.sort();
+
+		const registerSignatureArgs = [
+			pieceCid,
+			fileRecord.sender,
+			participantRecord.wallet,
+			dl3SignatureCommitment,
+			BigInt(worldIdResponse.merkle_root),
+			BigInt(worldIdResponse.nullifier),
+			unpackedProof,
+			BigInt(timestamp),
+			signature,
+			allSignersCalldata,
+		] as const;
+
 		try {
 			await FSFileRegistry.simulate.registerFileSignatureWorldId(
-				[
-					pieceCid,
-					fileRecord.sender,
-					participantRecord.wallet,
-					dl3SignatureCommitment,
-					BigInt(worldIdResponse.merkle_root),
-					BigInt(worldIdResponse.nullifier),
-					unpackedProof,
-					BigInt(timestamp),
-					signature,
-				],
+				registerSignatureArgs,
 				{
 					// viem simulates via the public client; `account` sets `msg.sender` for `onlyServer`.
 					//@ts-expect-error
@@ -520,17 +536,9 @@ export default new Hono()
 			return respond.err(ctx, "Invalid World ID proof", 400);
 		}
 
-		const txHash = await FSFileRegistry.write.registerFileSignatureWorldId([
-			pieceCid,
-			fileRecord.sender,
-			participantRecord.wallet,
-			dl3SignatureCommitment,
-			BigInt(worldIdResponse.merkle_root),
-			BigInt(worldIdResponse.nullifier),
-			unpackedProof,
-			BigInt(timestamp),
-			signature,
-		]);
+		const txHash = await FSFileRegistry.write.registerFileSignatureWorldId(
+			registerSignatureArgs,
+		);
 
 		await db.insert(fileSignatures).values({
 			filePieceCid: pieceCid,
@@ -540,36 +548,6 @@ export default new Hono()
 			onchainTxHash: txHash,
 			createdAt: new Date(timestamp * 1000),
 		});
-
-		try {
-			const cidId = await FSFileRegistry.read.cidIdentifier([pieceCid]);
-			const fullySigned = await FSFileRegistry.read.allSigned([cidId]);
-
-			if (fullySigned) {
-				const allParticipants = await db
-					.select({ wallet: fileParticipants.wallet })
-					.from(fileParticipants)
-					.where(
-						and(
-							eq(fileParticipants.filePieceCid, pieceCid),
-							eq(fileParticipants.role, "signer"),
-						),
-					);
-
-				const allSigners = allParticipants
-					.map((p) => getAddress(p.wallet))
-					.sort();
-
-				const { FSManager } = fsContracts;
-				await FSManager.simulate.releaseIncentives([pieceCid, allSigners], {
-					//@ts-expect-error
-					account: evmClient.account,
-				});
-				await FSManager.write.releaseIncentives([pieceCid, allSigners]);
-			}
-		} catch (err) {
-			console.error("Failed to check or release incentives:", err);
-		}
 
 		return respond.ok(ctx, {}, "File signed successfully", 200);
 	})
