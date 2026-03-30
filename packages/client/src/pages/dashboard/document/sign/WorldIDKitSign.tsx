@@ -44,7 +44,9 @@ export function WorldIDKitSign({
 	useEffect(() => {
 		const error = signFile.error;
 		if (signFile.isError && error instanceof Error) {
-			toast.error(error.message || "Failed to sign document. Please try again.");
+			toast.error(
+				error.message || "Failed to sign document. Please try again.",
+			);
 		}
 	}, [signFile.isError, signFile.error]);
 

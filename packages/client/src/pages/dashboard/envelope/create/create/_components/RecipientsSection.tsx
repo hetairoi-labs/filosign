@@ -515,7 +515,9 @@ export default function RecipientsSection({
 																									alt={token.name}
 																									className="size-4"
 																								/>
-																								<p className="">{token.name} ({token.symbol})</p>
+																								<p className="">
+																									{token.name} ({token.symbol})
+																								</p>
 																							</SelectItem>
 																						),
 																					)}
