@@ -6,3 +6,4 @@ error CannotApproveSelf();
 error SenderNotApproved();
 error NotAllSigned();
 error IncentiveAlreadyClaimed();
+error OnlyServerOrFileRegistry();
