@@ -1,8 +1,9 @@
 import { useFilosignContext } from "@filosign/react";
 import { useRequestApproval } from "@filosign/react/hooks";
 import { ChatCircleIcon, PlusIcon, WalletIcon } from "@phosphor-icons/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { safeAsync } from "@/lib/utils/safe";
 import { getAddress, isAddress } from "viem";
 import { Button } from "@/src/lib/components/ui/button";
 import {
@@ -50,34 +51,27 @@ export default function AddRecipientDialog({
 			return;
 		}
 
-		try {
-			await sendShareRequest.mutateAsync({
+		const [, error] = await safeAsync(
+			sendShareRequest.mutateAsync({
 				recipientWallet: walletAddress,
 				message: message.trim() || undefined,
-			});
+			}),
+		);
 
-			toast.success("Share request sent successfully!");
-			setWalletAddress("");
-			setMessage("");
-			setOpen(false);
-			onSuccess?.();
-		} catch (error) {
+		if (error) {
 			console.error(error);
-			toast.error("Failed to send share request. Please try again.");
+			toast.error(error.message || "Failed to send share request. Please try again.");
+			return;
 		}
+
+		toast.success("Share request sent successfully!");
+		setWalletAddress("");
+		setMessage("");
+		setOpen(false);
+		onSuccess?.();
 	};
 
-	useEffect(() => {
-		if (sendShareRequest.isError && sendShareRequest.error) {
-			const errorMessage =
-				sendShareRequest.error instanceof Error
-					? sendShareRequest.error.message
-					: typeof sendShareRequest.error === "string"
-						? sendShareRequest.error
-						: "Failed to send share request. Please try again.";
-			toast.error(errorMessage);
-		}
-	}, [sendShareRequest.isError, sendShareRequest.error]);
+
 
 	const handleClose = () => {
 		setWalletAddress("");
@@ -112,10 +106,12 @@ export default function AddRecipientDialog({
 						</Label>
 						<Input
 							id="wallet-address"
+							name="wallet-address"
 							placeholder="0x..."
 							value={walletAddress}
 							onChange={(e) => setWalletAddress(e.target.value)}
 							className="font-mono"
+							autoComplete="off"
 						/>
 					</div>
 
