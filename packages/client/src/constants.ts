@@ -44,7 +44,8 @@ export const WORLD_CHAIN_SEPOLIA_TOKENS = [
 	// {
 	// 	name: "Worldcoin",
 	// 	symbol: "WLD",
-	// 	address: "0x2e6621e5e3F916d5e512124dD79e06b55E258054",
+	// 	address: "0x2cFc85d8E48F8EAB294be644d9E25C3030863003",
+	// 	icon: "https://cryptologos.cc/logos/worldcoin-org-wld-logo.svg?v=040",
 	// 	decimals: 18,
 	// 	faucets: [
 	// 		{
@@ -58,13 +59,7 @@ export const WORLD_CHAIN_SEPOLIA_TOKENS = [
 	// 	symbol: "LINK",
 	// 	address: "0xC82Efc286047746404801314B959088562B24801",
 	// 	decimals: 18,
+	// 	icon: "https://cryptologos.cc/logos/chainlink-link-logo.svg?v=040",
 	// 	faucets: [{ name: "Chainlink", url: "https://faucets.chain.link/" }],
-	// },
-	// {
-	// 	name: "Pimlico Test",
-	// 	symbol: "PIM",
-	// 	address: "0xFC3e86566895Fb007c6A0d3809eb2827DF94F751",
-	// 	decimals: 18,
-	// 	faucets: [],
 	// },
 ] as const;

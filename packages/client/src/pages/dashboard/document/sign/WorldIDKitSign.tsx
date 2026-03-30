@@ -11,7 +11,9 @@ import {
 	orbLegacy,
 	type RpContext,
 } from "@worldcoin/idkit";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { safeAsync } from "@/lib/utils/safe";
 import { Button } from "@/src/lib/components/ui/button";
 
 const WORLD_ID_APP_ID = process.env.BUN_PUBLIC_WORLD_APP_ID;
@@ -39,25 +41,40 @@ export function WorldIDKitSign({
 		typeof file.pieceCid === "string" &&
 		file.pieceCid.length > 0;
 
+	useEffect(() => {
+		const error = signFile.error;
+		if (signFile.isError && error instanceof Error) {
+			toast.error(error.message || "Failed to sign document. Please try again.");
+		}
+	}, [signFile.isError, signFile.error]);
+
 	const handleSuccess = async (proof: IDKitResult) => {
 		if (!canSign || submittedRef.current) return;
 		submittedRef.current = true;
 
-		try {
-			setOpen(false);
-			await signFile.mutateAsync({
+		setOpen(false);
+		const [, error] = await safeAsync(
+			signFile.mutateAsync({
 				pieceCid: file.pieceCid,
 				worldIdProof: proof,
-			});
-			await Promise.all([
-				queryClient.invalidateQueries({
-					queryKey: ["fsQ-file-info", file.pieceCid],
-				}),
-				queryClient.invalidateQueries({ queryKey: ["received-files"] }),
-			]);
-		} catch {
+			}),
+		);
+
+		if (error) {
 			submittedRef.current = false;
+			return;
 		}
+
+		await Promise.all([
+			queryClient.invalidateQueries({
+				queryKey: ["fsQ-file-info", file.pieceCid],
+			}),
+			queryClient.invalidateQueries({
+				queryKey: ["fsQ-document-incentive", file.pieceCid, signerAddress],
+			}),
+			queryClient.invalidateQueries({ queryKey: ["received-files"] }),
+		]);
+		toast.success("Document signed successfully!");
 	};
 
 	const rpMutation = {
@@ -84,17 +101,17 @@ export function WorldIDKitSign({
 				{rpMutation.isPending ? (
 					"Preparing..."
 				) : rpMutation.isError || signFile.isError ? (
-					<div className="flex items-center gap-2 group">
-						<p>{actionLabel}</p>
-						<CaretRightIcon className="transition-transform duration-200 size-4 group-hover:translate-x-1" />
-					</div>
-				) : (
 					<div className="flex items-center text-destructive gap-2 group">
 						<p>Signing Failed</p>
 						<WarningCircleIcon
 							weight="bold"
 							className="transition-transform duration-200 size-5 group-hover:translate-x-1"
 						/>
+					</div>
+				) : (
+					<div className="flex items-center gap-2 group">
+						<p>{actionLabel}</p>
+						<CaretRightIcon className="transition-transform duration-200 size-4 group-hover:translate-x-1" />
 					</div>
 				)}
 			</Button>

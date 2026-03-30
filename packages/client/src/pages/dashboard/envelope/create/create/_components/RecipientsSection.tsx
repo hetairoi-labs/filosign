@@ -370,6 +370,7 @@ export default function RecipientsSection({
 																			<Input
 																				{...field}
 																				placeholder="Recipient name"
+																				autoComplete="name"
 																			/>
 																			<FormMessage />
 																		</FormItem>
@@ -393,6 +394,7 @@ export default function RecipientsSection({
 																				{...field}
 																				type="email"
 																				placeholder="email@example.com"
+																				autoComplete="email"
 																			/>
 																			<FormMessage />
 																		</FormItem>
@@ -421,6 +423,7 @@ export default function RecipientsSection({
 																				{...field}
 																				placeholder="0x..."
 																				className="font-mono"
+																				autoComplete="off"
 																				onBlur={(e) => {
 																					const value = e.target.value;
 																					if (isAddress(value)) {
@@ -507,7 +510,12 @@ export default function RecipientsSection({
 																								key={token.address}
 																								value={token.address}
 																							>
-																								{token.name} ({token.symbol})
+																								<img
+																									src={token.icon}
+																									alt={token.name}
+																									className="size-4"
+																								/>
+																								<p className="">{token.name} ({token.symbol})</p>
 																							</SelectItem>
 																						),
 																					)}
@@ -548,6 +556,7 @@ export default function RecipientsSection({
 																				{...field}
 																				value={field.value || ""}
 																				placeholder="e.g. 1.5"
+																				autoComplete="off"
 																			/>
 																			<FormMessage />
 																		</FormItem>
@@ -649,13 +658,15 @@ function TokenBalanceChecker({
 	symbol: string;
 }) {
 	const { address } = useAccount();
-	const { data, refetch, isFetching } = useReadContract({
+	const { data, refetch, isFetching, error } = useReadContract({
 		address: tokenAddress,
 		abi: erc20Abi,
 		functionName: "balanceOf",
 		args: address ? [address] : undefined,
 		query: { enabled: false },
 	});
+
+	console.log(error);
 
 	const [hasChecked, setHasChecked] = useState(false);
 
