@@ -30,6 +30,11 @@ export const definitions = {
 				},
 				{
 					inputs: [],
+					name: "OnlyServerOrFileRegistry",
+					type: "error",
+				},
+				{
+					inputs: [],
 					name: "SenderAlreadyApproved",
 					type: "error",
 				},
@@ -494,6 +499,11 @@ export const definitions = {
 				},
 				{
 					inputs: [],
+					name: "InvalidSignersCommitment",
+					type: "error",
+				},
+				{
+					inputs: [],
 					name: "OnlyManager",
 					type: "error",
 				},
@@ -748,6 +758,11 @@ export const definitions = {
 									internalType: "address",
 									name: "sender",
 									type: "address",
+								},
+								{
+									internalType: "bytes20",
+									name: "signersCommitment",
+									type: "bytes20",
 								},
 								{
 									internalType: "uint8",
@@ -1007,6 +1022,11 @@ export const definitions = {
 							internalType: "bytes",
 							name: "signature_",
 							type: "bytes",
+						},
+						{
+							internalType: "address[]",
+							name: "allSigners_",
+							type: "address[]",
 						},
 					],
 					name: "registerFileSignatureWorldId",
