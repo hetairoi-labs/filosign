@@ -7,10 +7,9 @@ import {
 	MagnifyingGlassIcon,
 	PlusIcon,
 } from "@phosphor-icons/react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
-import { FileViewer } from "@/src/lib/components/custom/FileViewer";
 import { Button } from "@/src/lib/components/ui/button";
 import { Input } from "@/src/lib/components/ui/input";
 import { Loader } from "@/src/lib/components/ui/loader";
@@ -26,14 +25,8 @@ import FileCard from "./_components/FileCard";
 
 export default function DocumentAllPage() {
 	const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
-	const [viewerOpen, setViewerOpen] = useState(false);
-	const [selectedFile, setSelectedFile] = useState<{
-		pieceCid: string;
-		sender: string;
-		status: string;
-		type?: "sent" | "received";
-	} | null>(null);
 	const [isFilterOpen, setIsFilterOpen] = useState(false);
+	const navigate = useNavigate();
 
 	// File queries
 	const sentFiles = useSentFiles();
@@ -67,16 +60,10 @@ export default function DocumentAllPage() {
 		pieceCid: string;
 		[key: string]: unknown;
 	}) => {
-		// Open file viewer with full file object
-		setSelectedFile(
-			file as {
-				pieceCid: string;
-				sender: string;
-				status: string;
-				type?: "sent" | "received";
-			},
-		);
-		setViewerOpen(true);
+		navigate({
+			to: "/dashboard/document/sign",
+			search: { pieceCid: file.pieceCid },
+		});
 	};
 
 	return (
@@ -275,44 +262,6 @@ export default function DocumentAllPage() {
 							</div>
 						) : (
 							<>
-								{/* Sent Files Section */}
-								{sentFilesData.length > 0 && (
-									<motion.div
-										className="space-y-4"
-										initial={{ opacity: 0, y: 10 }}
-										animate={{ opacity: 1, y: 0 }}
-										transition={{ duration: 0.2, delay: 0.4 }}
-									>
-										<h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-											Sent Files ({sentFilesData.length})
-										</h3>
-										{viewMode === "list" ? (
-											<div className="space-y-2">
-												{sentFilesData.map((file) => (
-													<FileCard
-														key={`sent-${file.pieceCid}`}
-														file={file}
-														onClick={handleItemClick}
-														variant="list"
-													/>
-												))}
-											</div>
-										) : (
-											<div className="grid grid-cols-2 @xl:grid-cols-3 @2xl:grid-cols-4 @3xl:grid-cols-5 @5xl:grid-cols-5 gap-4">
-												{sentFilesData.map((file) => (
-													<FileCard
-														key={`sent-${file.pieceCid}`}
-														file={file}
-														onClick={handleItemClick}
-														variant="grid"
-													/>
-												))}
-											</div>
-										)}
-									</motion.div>
-								)}
-
-								{/* Received Files Section */}
 								{receivedFilesData.length > 0 && (
 									<motion.div
 										className="space-y-4"
@@ -348,16 +297,52 @@ export default function DocumentAllPage() {
 										)}
 									</motion.div>
 								)}
+
+								{sentFilesData.length > 0 && (
+									<motion.div
+										className="space-y-4"
+										initial={{ opacity: 0, y: 10 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ duration: 0.2, delay: 0.4 }}
+									>
+										<h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+											Sent Files ({sentFilesData.length})
+										</h3>
+										{viewMode === "list" ? (
+											<div className="space-y-2">
+												{sentFilesData.map((file) => (
+													<FileCard
+														key={`sent-${file.pieceCid}`}
+														file={file}
+														onClick={handleItemClick}
+														variant="list"
+													/>
+												))}
+											</div>
+										) : (
+											<div className="grid grid-cols-2 @xl:grid-cols-3 @2xl:grid-cols-4 @3xl:grid-cols-5 @5xl:grid-cols-5 gap-4">
+												{sentFilesData.map((file) => (
+													<FileCard
+														key={`sent-${file.pieceCid}`}
+														file={file}
+														onClick={handleItemClick}
+														variant="grid"
+													/>
+												))}
+											</div>
+										)}
+									</motion.div>
+								)}
 							</>
 						)}
 					</motion.div>
 				</div>
 			</div>
-			<FileViewer
+			{/* <FileViewer
 				open={viewerOpen}
 				onOpenChange={setViewerOpen}
 				file={selectedFile}
-			/>
+			/> */}
 		</DashboardLayout>
 	);
 }

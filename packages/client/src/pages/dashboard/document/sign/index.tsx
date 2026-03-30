@@ -1,4 +1,5 @@
 import {
+	useAckFile,
 	useDocumentIncentive,
 	useFileInfo,
 	useViewFile,
@@ -8,12 +9,15 @@ import {
 	ArrowLeftIcon,
 	ArrowSquareOutIcon,
 	CheckCircleIcon,
+	CheckIcon,
+	ClockIcon,
 	DownloadIcon,
 	FileArrowDownIcon,
 	FileTextIcon,
 	MagnifyingGlassMinusIcon,
 	MagnifyingGlassPlusIcon,
 	ScrollIcon,
+	SpinnerIcon,
 } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -25,6 +29,7 @@ import { CopyButton } from "@/src/lib/components/custom/CopyButton";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
 import { Loader } from "@/src/lib/components/ui/loader";
+import { cn } from "@/src/lib/utils";
 import {
 	buildCompliancePdfOnly,
 	buildDocumentPlusCompliancePdf,
@@ -45,6 +50,8 @@ export default function SignDocumentPage() {
 		isLoading: fileLoading,
 		error: fileError,
 	} = useFileInfo({ pieceCid });
+
+	const acknowledgeFile = useAckFile();
 
 	const { data: incentive } = useDocumentIncentive({
 		pieceCid,
@@ -209,6 +216,18 @@ export default function SignDocumentPage() {
 
 	const formatAddress = (address: string) => {
 		return `${address.slice(0, 6)}...${address.slice(-4)}`;
+	};
+
+	const handleAcknowledge = async () => {
+		if (!pieceCid) return;
+
+		try {
+			await acknowledgeFile.mutateAsync({ pieceCid });
+			toast.success("File acknowledged!");
+		} catch (error) {
+			console.error(error);
+			toast.error("Failed to acknowledge file");
+		}
 	};
 
 	const renderFileContent = () => {
@@ -403,15 +422,29 @@ export default function SignDocumentPage() {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-screen bg-background p-8">
 				<FileTextIcon className="h-16 w-16 text-amber-500 mb-4" />
-				<h2 className="text-xl font-semibold mb-2">File Not Acknowledged</h2>
+				<h2 className="text-xl font-semibold mb-2">Accept File?</h2>
 				<p className="text-muted-foreground mb-4 text-center max-w-md">
-					This document must be acknowledged before it can be viewed and signed.
-					Please acknowledge it from your dashboard first.
+					This document must be acknowledged before it can be viewed or signed.
 				</p>
-				<Button onClick={() => navigate({ to: "/dashboard" })}>
-					<ArrowLeftIcon className="h-4 w-4 mr-2" />
-					Back to Dashboard
-				</Button>
+				<div className="flex items-center gap-3">
+					<Button
+						onClick={handleAcknowledge}
+						disabled={acknowledgeFile.isPending}
+						variant="primary"
+					>
+						{acknowledgeFile.isPending ? (
+							<>
+								<SpinnerIcon className="size-5 animate-spin" />
+								Accepting
+							</>
+						) : (
+							<>
+								<CheckCircleIcon className="size-5" />
+								Accept File
+							</>
+						)}
+					</Button>
+				</div>
 			</div>
 		);
 	}
@@ -472,7 +505,7 @@ export default function SignDocumentPage() {
 									rel="noopener noreferrer"
 									className="inline-flex items-center gap-1 text-xs font-medium text-ring hover:text-ring/90 hover:underline"
 								>
-									View on {explorerLabel}
+									{explorerLabel}
 									<ArrowSquareOutIcon className="size-3.5" />
 								</a>
 							) : (
@@ -593,7 +626,7 @@ export default function SignDocumentPage() {
 											rel="noopener noreferrer"
 											className="inline-flex items-center gap-1 text-xs font-medium text-ring hover:text-ring/90 hover:underline"
 										>
-											View on {explorerLabel}
+											{explorerLabel}
 											<ArrowSquareOutIcon className="size-3.5" />
 										</a>
 									) : (
@@ -605,7 +638,12 @@ export default function SignDocumentPage() {
 							)}
 							{incentive && incentive.amount > 0n && (
 								<div className="flex flex-wrap items-center gap-2 mt-2">
-									<Badge variant="secondary">
+									<Badge
+										variant="default"
+										className={cn(
+											incentive.claimed ? "bg-accent" : "bg-chart-1",
+										)}
+									>
 										<pre className="font-medium">
 											{formatUnits(incentive.amount, tokenInfo?.decimals ?? 18)}
 										</pre>
@@ -618,11 +656,19 @@ export default function SignDocumentPage() {
 											className="size-4"
 										/>
 									</Badge>
-									{incentive.claimed && (
-										<span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
-											(Distributed)
-										</span>
-									)}
+									<div className="items-center text-xs font-medium text-ring hover:text-ring/90">
+										{incentive.claimed ? (
+											<span className="inline-flex items-center gap-1">
+												Distributed
+												<CheckIcon className="size-3.5" />
+											</span>
+										) : (
+											<span className="inline-flex items-center gap-1 text-chart-1">
+												Pending
+												<ClockIcon className="size-3.5" />
+											</span>
+										)}
+									</div>
 								</div>
 							)}
 						</div>

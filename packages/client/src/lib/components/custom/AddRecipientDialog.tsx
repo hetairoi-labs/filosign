@@ -3,8 +3,8 @@ import { useRequestApproval } from "@filosign/react/hooks";
 import { ChatCircleIcon, PlusIcon, WalletIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { safeAsync } from "@/lib/utils/safe";
 import { getAddress, isAddress } from "viem";
+import { safeAsync } from "@/lib/utils/safe";
 import { Button } from "@/src/lib/components/ui/button";
 import {
 	Dialog,
@@ -60,7 +60,9 @@ export default function AddRecipientDialog({
 
 		if (error) {
 			console.error(error);
-			toast.error(error.message || "Failed to send share request. Please try again.");
+			toast.error(
+				error.message || "Failed to send share request. Please try again.",
+			);
 			return;
 		}
 
@@ -70,8 +72,6 @@ export default function AddRecipientDialog({
 		setOpen(false);
 		onSuccess?.();
 	};
-
-
 
 	const handleClose = () => {
 		setWalletAddress("");
