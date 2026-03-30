@@ -20,11 +20,12 @@ import {
 import type * as React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { defaultChain } from "@/src/constants";
+import { defaultChain, erc20DisplayForChain } from "@/src/constants";
 import {
 	buildCompliancePdfOnly,
 	buildDocumentPlusCompliancePdf,
 	downloadPdfBytes,
+	fetchSignerIncentivesForCompliancePdf,
 } from "@/src/lib/utils/compliance-pdf";
 import { Button } from "../ui/button";
 import { Loader } from "../ui/loader";
@@ -76,7 +77,7 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		height: 800,
 	});
 
-	const { wallet } = useFilosignContext();
+	const { wallet, contracts } = useFilosignContext();
 
 	// Get detailed file info including decryption keys
 	const { data: fileInfo, isLoading: fileLoading } = useFileInfo({
@@ -194,12 +195,21 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		setPdfExportBusy(true);
 		try {
 			const explorerBase = defaultChain.blockExplorers?.default?.url ?? null;
+			const signerIncentives = contracts?.FSFileRegistry?.read
+				? await fetchSignerIncentivesForCompliancePdf(
+						contracts.FSFileRegistry.read,
+						file.pieceCid,
+						fileInfo.signers,
+						erc20DisplayForChain,
+					)
+				: undefined;
 			const bytes = await buildCompliancePdfOnly({
 				file: fileInfo as FileInfo,
 				fileData: fileData ? toViewFileResult(fileData) : null,
 				chainName: defaultChain.name,
 				explorerBaseUrl: explorerBase,
 				exportedAtIso: new Date().toISOString(),
+				signerIncentives,
 			});
 			const safe = file.pieceCid.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 48);
 			downloadPdfBytes(bytes, `filosign-file-record-${safe}`);
@@ -211,7 +221,7 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		} finally {
 			setPdfExportBusy(false);
 		}
-	}, [fileInfo, fileData, file]);
+	}, [contracts?.FSFileRegistry?.read, file?.pieceCid, fileData, fileInfo]);
 
 	const handleDownloadDocumentWithCompliancePdf = useCallback(async () => {
 		if (!fileInfo || !file?.pieceCid || !fileData) {
@@ -221,12 +231,21 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		setPdfExportBusy(true);
 		try {
 			const explorerBase = defaultChain.blockExplorers?.default?.url ?? null;
+			const signerIncentives = contracts?.FSFileRegistry?.read
+				? await fetchSignerIncentivesForCompliancePdf(
+						contracts.FSFileRegistry.read,
+						file.pieceCid,
+						fileInfo.signers,
+						erc20DisplayForChain,
+					)
+				: undefined;
 			const bytes = await buildDocumentPlusCompliancePdf({
 				file: fileInfo as FileInfo,
 				fileData: toViewFileResult(fileData),
 				chainName: defaultChain.name,
 				explorerBaseUrl: explorerBase,
 				exportedAtIso: new Date().toISOString(),
+				signerIncentives,
 			});
 			const safe = file.pieceCid.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 48);
 			downloadPdfBytes(bytes, `filosign-document-with-record-${safe}`);
@@ -238,7 +257,7 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		} finally {
 			setPdfExportBusy(false);
 		}
-	}, [fileInfo, fileData, file]);
+	}, [contracts?.FSFileRegistry?.read, file?.pieceCid, fileData, fileInfo]);
 
 	// Handle escape key to close
 	useEffect(() => {

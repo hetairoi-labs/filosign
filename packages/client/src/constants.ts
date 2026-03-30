@@ -63,3 +63,18 @@ export const WORLD_CHAIN_SEPOLIA_TOKENS = [
 	// 	faucets: [{ name: "Chainlink", url: "https://faucets.chain.link/" }],
 	// },
 ] as const;
+
+/** Token symbol + decimals for PDF / UI when address is in the known list. */
+export function erc20DisplayForChain(token: `0x${string}`): {
+	label: string;
+	decimals: number;
+} {
+	const t = WORLD_CHAIN_SEPOLIA_TOKENS.find(
+		(x) => x.address.toLowerCase() === token.toLowerCase(),
+	);
+	if (t) return { label: t.symbol, decimals: t.decimals };
+	return {
+		label: `${token.slice(0, 6)}…${token.slice(-4)}`,
+		decimals: 18,
+	};
+}
