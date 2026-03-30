@@ -12,6 +12,7 @@ interface IFSFileRegistry {
     struct FileRegistration {
         bytes32 cidIdentifier;
         address sender;
+        bytes20 signersCommitment;
         mapping(address => bool) signers;
         uint8 signersCount;
         uint8 signaturesCount;
@@ -25,6 +26,7 @@ interface IFSFileRegistry {
     struct FileRegistrationView {
         bytes32 cidIdentifier;
         address sender;
+        bytes20 signersCommitment;
         uint8 signersCount;
         uint8 signaturesCount;
         uint256 timestamp;
@@ -38,7 +40,7 @@ interface IFSFileRegistry {
     function computeSignersCommitment(address[] calldata signers_) external pure returns (bytes20);
     function fileRegistrations(bytes32 cidId) external view returns (FileRegistrationView memory);
     function registerFile(string calldata pieceCid_, address sender_, address[] calldata signers_, uint256 timestamp_, bytes calldata signature_) external;
-    function registerFileSignatureWorldId(string calldata pieceCid_, address sender_, address signer_, bytes20 dl3SignatureCommitment_, uint256 root_, uint256 nullifierHash_, uint256[8] calldata proof_, uint256 timestamp_, bytes calldata signature_) external;
+    function registerFileSignatureWorldId(string calldata pieceCid_, address sender_, address signer_, bytes20 dl3SignatureCommitment_, uint256 root_, uint256 nullifierHash_, uint256[8] calldata proof_, uint256 timestamp_, bytes calldata signature_, address[] calldata allSigners_) external;
     function isSigner(bytes32 cidId, address who) external view returns (bool);
     function hasSigned(bytes32 cidId, address who) external view returns (bool);
     function validateFileRegistrationSignature(string calldata pieceCid_, address sender_, address[] calldata signers_, uint256 timestamp_, bytes calldata signature_) external view returns (bool);
