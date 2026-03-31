@@ -9,7 +9,7 @@ import { useConnectButtonLogic } from "@/src/lib/components/custom/ConnectButton
 import { Image } from "@/src/lib/components/custom/Image";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
-import TrustedCompanies from "./trusted-companies";
+// import TrustedCompanies from "./trusted-companies";
 
 export default function HeroSection() {
 	const { buttonState, isLoading, primaryCta, signIn } =
@@ -170,7 +170,7 @@ export default function HeroSection() {
 				/>
 			</motion.div>
 
-			<TrustedCompanies />
+			{/* <TrustedCompanies /> */}
 		</section>
 	);
 }
