@@ -1,3 +1,4 @@
+import { ArrowSquareOutIcon, GithubLogoIcon } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 
 export default function ChangelogHero() {
@@ -22,6 +23,22 @@ export default function ChangelogHero() {
 					A changelog of new features, design improvements and enhancements
 					lately
 				</motion.p>
+
+				<motion.a
+					href="https://github.com/hetairoi-labs/filosign/blob/main/CHANGELOG.md"
+					target="_blank"
+					rel="noreferrer"
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.4, delay: 0.3 }}
+					className="inline-flex items-center gap-2 px-3 py-2 rounded-full bg-background hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground ring-1 ring-border/50 mb-6"
+				>
+					<GithubLogoIcon className="size-4" weight="fill" />
+					<span className="text-sm font-medium font-manrope">
+						Changelog on GitHub
+					</span>
+					<ArrowSquareOutIcon className="size-4" />
+				</motion.a>
 
 				{/* <motion.form
 					initial={{ opacity: 0, y: 20 }}
