@@ -23,7 +23,6 @@ interface SignatureUploadProps {
 }
 
 interface UploadAreaProps {
-	title: string;
 	icon: React.ReactNode;
 	uploadedFile: string | null;
 	onFileUpload: (dataUrl: string) => void;
@@ -31,7 +30,6 @@ interface UploadAreaProps {
 }
 
 function UploadArea({
-	title,
 	icon,
 	uploadedFile,
 	onFileUpload,
@@ -113,12 +111,13 @@ function UploadArea({
 							className="object-contain max-w-full max-h-32"
 						/>
 						<div className="flex gap-2 justify-center">
-							<span
+							<button
+								type="button"
 								className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-3 cursor-pointer"
 								onClick={handleUploadClick}
 							>
 								Change
-							</span>
+							</button>
 							<Button
 								variant="outline"
 								size="sm"
@@ -158,14 +157,12 @@ export default function SignatureUpload({
 			<h4 className="text-muted-foreground">Upload Signature</h4>
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<UploadArea
-					title="Upload Signature"
 					icon={<SignatureIcon className="size-16 text-muted-foreground" />}
 					uploadedFile={signatureData}
 					onFileUpload={onSignatureUpload}
 					onFileClear={onSignatureClear}
 				/>
 				<UploadArea
-					title="Upload Initials"
 					icon={<TextAaIcon className="size-16 text-muted-foreground" />}
 					uploadedFile={initialsData}
 					onFileUpload={onInitialsUpload}
