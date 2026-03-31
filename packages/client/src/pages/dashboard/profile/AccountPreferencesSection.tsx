@@ -39,7 +39,6 @@ const PreferenceField = ({
 );
 
 interface AccountPreferencesSectionProps {
-	form: any;
 	sectionState: {
 		hasChanges: boolean;
 		state: { isSaving: boolean; isSaved: boolean; error?: string };
@@ -48,7 +47,6 @@ interface AccountPreferencesSectionProps {
 }
 
 export function AccountPreferencesSection({
-	form,
 	sectionState,
 }: AccountPreferencesSectionProps) {
 	return (

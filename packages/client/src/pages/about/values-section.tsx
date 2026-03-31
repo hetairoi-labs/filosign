@@ -30,7 +30,7 @@ const values: ValueItem[] = [
 		type: "text",
 		title: "Trustless Security",
 		description:
-			"We leverage decentralized networks to ensure your documents are verifiable and tamper-proof, removing the need for blind trust.",
+			"Building on decentralized networks to ensure your documents are verifiable and tamper-proof, removing the need for blind trust.",
 		icon: <ShieldCheckIcon className="size-6" />,
 	},
 	{
@@ -42,7 +42,7 @@ const values: ValueItem[] = [
 		type: "text",
 		title: "User Sovereignty",
 		description:
-			"You own your data. Our non-custodial architecture means we never see your private keys or document contents.",
+			"You own your data. Our non-custodial architecture means we never hold your private keys or document contents.",
 		icon: <LockKeyIcon className="size-6" />,
 	},
 	{
@@ -103,7 +103,7 @@ export default function ValuesSection() {
 						transition={{ duration: 0.5, delay: 0.1 }}
 						className="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight max-w-3xl mx-auto font-manrope"
 					>
-						We're builders who think signing should be secure
+						We're founders who think privacy should be a fundamental right!
 					</motion.h2>
 				</div>
 

@@ -13,7 +13,6 @@ export default function WaitlistNewSection() {
 		if (!email) return;
 
 		try {
-			// await joinWaitlist.mutateAsync(email);
 			setIsSubmitted(true);
 			setIsDuplicate(false);
 			setEmail("");

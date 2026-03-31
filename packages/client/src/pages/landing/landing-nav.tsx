@@ -10,8 +10,8 @@ interface NavLink {
 
 const navLinks: NavLink[] = [
 	{ label: "About", href: "/about" },
-	{ label: "Pricing", href: "/pricing" },
-	{ label: "Blog", href: "/blog" },
+	// { label: "Pricing", href: "/pricing" },
+	// { label: "Blog", href: "/blog" },
 	{ label: "Changelog", href: "/changelog" },
 ];
 
@@ -55,12 +55,22 @@ export default function LandingNavbar() {
 				}}
 			>
 				{/* Logo */}
-				<Logo
-					textDelay={0.35}
-					iconDelay={0.26}
-					className="px-0"
-					redirectTo="/"
-				/>
+				<div className="flex items-center gap-4">
+					<Logo
+						textDelay={0.35}
+						iconDelay={0.26}
+						className="px-0 hidden md:block"
+						redirectTo="/"
+						iconOnly
+					/>
+					<Logo
+						textDelay={0.35}
+						iconDelay={0.26}
+						className="px-0"
+						redirectTo="/"
+						textOnly
+					/>
+				</div>
 
 				{/* Desktop Navigation Links */}
 				<motion.div

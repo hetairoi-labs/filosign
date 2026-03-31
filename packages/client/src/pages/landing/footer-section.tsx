@@ -131,7 +131,7 @@ export default function FooterSection() {
 							<TwitterLogoIcon className="size-6" weight="fill" />
 						</a>
 						<a
-							href="https://github.com/filosign-dapp/core"
+							href="https://github.com/hetairoi-labs/filosign"
 							target="_blank"
 							rel="noreferrer"
 							className="p-2 rounded-full bg-background hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground"

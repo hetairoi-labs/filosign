@@ -5,7 +5,7 @@ import HeroSection from "./hero-section";
 import LandingNavbar from "./landing-nav";
 // import TestimonialSection from "./testimonial-section";
 // import TrustedCompanies from "./trusted-companies";
-import WaitlistNewSection from "./waitlist-new";
+// import WaitlistNewSection from "./waitlist-new";
 
 export default function LandingPage() {
 	return (
@@ -15,7 +15,7 @@ export default function LandingPage() {
 			<HeroSection />
 			<FeaturesBento />
 			<BentoGridSection />
-			<WaitlistNewSection />
+			{/* <WaitlistNewSection /> */}
 			<div className="h-[var(--section-gap)]" />
 			<FooterSection />
 		</div>

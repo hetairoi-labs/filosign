@@ -183,7 +183,7 @@ export default function Crop({
 								quality -= 0.1;
 								compressImage();
 							} else {
-								const fileName = image.name.replace(/\.[^/.]+$/, "") + ".jpg";
+								const fileName = `${image.name.replace(/\.[^/.]+$/, "")}.jpg`;
 								const file = new File([blob], fileName, {
 									type: "image/jpeg",
 									lastModified: Date.now(),

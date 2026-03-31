@@ -157,7 +157,7 @@ export default function PricingSection() {
 									<span className="text-4xl font-medium font-manrope">
 										${isYearly ? plan.price.yearly : plan.price.monthly}
 									</span>
-									<span className="text-sm text-muted-foreground">USDFC</span>
+									<span className="text-sm text-muted-foreground">USD</span>
 								</div>
 								<div className="text-sm text-muted-foreground mt-1">
 									/month {plan.name !== "Free" && "for one user"}

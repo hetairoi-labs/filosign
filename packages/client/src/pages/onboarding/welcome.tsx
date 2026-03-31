@@ -26,8 +26,6 @@ export default function OnboardingWelcomeCompletePage() {
 		}
 	}, [onboardingForm]);
 
-	console.log(isLoggedIn.data);
-
 	async function handleSubmit() {
 		if (!isLoggedIn.data) {
 			toast.error("Preparing your account...");

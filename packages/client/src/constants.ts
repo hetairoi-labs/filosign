@@ -10,8 +10,6 @@ export const defaultChain =
 			? worldchainSepolia
 			: worldchain;
 
-console.log("BUN_PUBLIC_CHAIN", process.env.BUN_PUBLIC_CHAIN);
-
 export const WORLD_CHAIN_SEPOLIA_TOKENS = [
 	{
 		name: "USD Coin",

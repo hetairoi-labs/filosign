@@ -1,5 +1,6 @@
 import { LightningIcon } from "@phosphor-icons/react";
 import { motion } from "motion/react";
+import { Image } from "@/src/lib/components/custom/Image";
 
 export default function QuoteSection() {
 	return (
@@ -25,10 +26,10 @@ export default function QuoteSection() {
 					className="text-3xl sm:text-4xl md:text-5xl font-medium leading-tight tracking-tight font-manrope text-foreground"
 				>
 					<blockquote>
-						"When we pioneered decentralized signing, we aimed to make
-						cryptographic security accessible to everyone. Today, that vision
-						guides every innovation - revolutionizing how the world agrees on
-						truth."
+						"We started Filosign with one mission: To revolutionize the
+						traditional centralized document signing infrastructure and replace
+						the trust with trustless, modern, privacy-centric, and
+						mathematically verified foundation."
 					</blockquote>
 				</motion.h2>
 
@@ -39,15 +40,19 @@ export default function QuoteSection() {
 					transition={{ duration: 0.5, delay: 0.4 }}
 					className="flex flex-col items-center space-y-4"
 				>
-					<span className="font-caveat font-light text-5xl md:text-6xl text-foreground/80 transform -rotate-5">
-						Marsian
-					</span>
 					<div className="flex flex-col items-center">
-						<span className="text-sm font-semibold text-foreground uppercase tracking-wide">
-							Spandan Barve
+						<Image
+							src="/static/kartik.jpeg"
+							alt="Kartikay"
+							width={100}
+							height={100}
+							className="rounded-full"
+						/>
+						<span className="text-sm mt-4 font-semibold text-foreground uppercase tracking-wide">
+							Kartik
 						</span>
 						<span className="text-sm text-muted-foreground">
-							Co-Founder & CTO @Filosign
+							Co-Founder & CEO, Filosign
 						</span>
 					</div>
 				</motion.div>

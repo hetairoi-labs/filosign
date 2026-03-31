@@ -454,7 +454,6 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 	if (!open) return null;
 
 	return (
-		// biome-ignore lint/a11y/useSemanticElements: full-viewport modal backdrop (click/Escape to close)
 		<div
 			className="fixed inset-0 z-50 bg-foreground/90 backdrop-blur-sm"
 			onClick={handleBackdropClick}
