@@ -5,12 +5,18 @@ import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
 import { Button } from "@/src/lib/components/ui/button";
 
-export default function ConnectButton() {
+export type ConnectButtonState =
+	| "loading"
+	| "signin"
+	| "get-started"
+	| "dashboard";
+
+export function useConnectButtonLogic() {
 	const { ready, authenticated, login: loginPrivy, logout } = usePrivy();
 	const isRegistered = useIsRegistered();
 
-	// Determine button state for smooth transitions
-	const getButtonState = () => {
+	// Determine button state for smooth transitions.
+	const getButtonState = (): ConnectButtonState => {
 		if (!ready) return "loading";
 		if (!authenticated || isRegistered.isPending) return "signin";
 		if (!isRegistered.data) return "get-started";
@@ -19,6 +25,28 @@ export default function ConnectButton() {
 
 	const buttonState = getButtonState();
 	const isLoading = buttonState === "loading";
+
+	const primaryCta =
+		buttonState === "dashboard"
+			? { label: "Dashboard", to: "/dashboard" }
+			: buttonState === "get-started"
+				? { label: "Get started", to: "/onboarding" }
+				: null;
+
+	return {
+		ready,
+		authenticated,
+		isLoading,
+		buttonState,
+		primaryCta,
+		signIn: () => loginPrivy(),
+		logout: () => logout(),
+	} as const;
+}
+
+export default function ConnectButton() {
+	const { authenticated, isLoading, buttonState, primaryCta, signIn, logout } =
+		useConnectButtonLogic();
 
 	return (
 		<motion.div
@@ -38,9 +66,7 @@ export default function ConnectButton() {
 				<Button
 					variant="secondary"
 					onClick={
-						buttonState === "signin" && !isLoading
-							? () => loginPrivy()
-							: undefined
+						buttonState === "signin" && !isLoading ? () => signIn() : undefined
 					}
 					disabled={isLoading}
 					className="min-w-28"
@@ -65,12 +91,12 @@ export default function ConnectButton() {
 			) : null}
 
 			{/* Get started / Dashboard buttons */}
-			{buttonState === "get-started" || buttonState === "dashboard" ? (
+			{primaryCta ? (
 				<Button variant="secondary" asChild className="min-w-28 mr-2">
-					<Link to={buttonState === "dashboard" ? "/dashboard" : "/onboarding"}>
+					<Link to={primaryCta.to}>
 						<AnimatePresence mode="wait">
 							<motion.span
-								key={buttonState}
+								key={primaryCta.to}
 								initial={{ opacity: 0, y: 10 }}
 								animate={{ opacity: 1, y: 0 }}
 								exit={{ opacity: 0, y: -10 }}
@@ -81,7 +107,7 @@ export default function ConnectButton() {
 								}}
 								layout
 							>
-								{buttonState === "dashboard" ? "Dashboard" : "Get started"}
+								{primaryCta.label}
 							</motion.span>
 						</AnimatePresence>
 					</Link>

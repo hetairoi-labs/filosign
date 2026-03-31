@@ -3,7 +3,9 @@ import {
 	SparkleIcon,
 	TwitterLogoIcon,
 } from "@phosphor-icons/react";
+import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
+import { useConnectButtonLogic } from "@/src/lib/components/custom/ConnectButton";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 
@@ -36,6 +38,9 @@ const footerSections = [
 ];
 
 export default function FooterSection() {
+	const { primaryCta, isLoading, buttonState, signIn } =
+		useConnectButtonLogic();
+
 	return (
 		<footer className="bg-card rounded-t-[3rem] py-24 min-h-[80dvh] flex flex-col justify-between">
 			<div className="max-w-7xl mx-auto px-8 md:px-page w-full flex-1 flex flex-col justify-between">
@@ -57,13 +62,31 @@ export default function FooterSection() {
 							viewport={{ once: true }}
 							transition={{ delay: 0.1 }}
 						>
-							<Button
-								variant={"primary"}
-								className="group bg-primary text-primary-foreground h-12 rounded-xl"
-							>
-								<SparkleIcon className="size-4" weight="fill" />
-								Try Filosign today
-							</Button>
+							{primaryCta ? (
+								<Button
+									variant={"primary"}
+									className="group bg-primary text-primary-foreground h-12 rounded-xl"
+									asChild
+								>
+									<Link
+										to={primaryCta.to}
+										className="flex items-center justify-center gap-2"
+									>
+										<SparkleIcon className="size-4" weight="fill" />
+										Try Filosign today
+									</Link>
+								</Button>
+							) : (
+								<Button
+									variant={"primary"}
+									className="group bg-primary text-primary-foreground h-12 rounded-xl"
+									disabled={buttonState === "loading" || isLoading}
+									onClick={buttonState === "signin" ? signIn : undefined}
+								>
+									<SparkleIcon className="size-4" weight="fill" />
+									Try Filosign today
+								</Button>
+							)}
 						</motion.div>
 					</div>
 

@@ -84,9 +84,9 @@ const Marquee = ({
 		>
 			{Array(repeat)
 				.fill(0)
-				.map(() => (
+				.map((_, marqueeIndex) => (
 					<motion.div
-						key={`marquee-repeat-${repeat}-${vertical ? "vertical" : "horizontal"}`}
+						key={`marquee-repeat-${marqueeIndex}-${vertical ? "vertical" : "horizontal"}`}
 						className={cn("flex shrink-0 justify-around [gap:var(--gap)]", {
 							"flex-row": !vertical,
 							"flex-col": vertical,

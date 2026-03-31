@@ -1,12 +1,20 @@
-import { CaretRightIcon, CircleIcon, PlayIcon } from "@phosphor-icons/react";
+import {
+	CaretRightIcon,
+	CircleIcon,
+	GithubLogoIcon,
+} from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
+import { useConnectButtonLogic } from "@/src/lib/components/custom/ConnectButton";
 import { Image } from "@/src/lib/components/custom/Image";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
 import TrustedCompanies from "./trusted-companies";
 
 export default function HeroSection() {
+	const { buttonState, isLoading, primaryCta, signIn } =
+		useConnectButtonLogic();
+
 	return (
 		<section className="lg:max-w-[80dvw] mx-auto flex flex-col gap-6 md:gap-8 py-12 p-8 md:p-page">
 			{/* Text Content Group */}
@@ -84,20 +92,33 @@ export default function HeroSection() {
 					}}
 					className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2"
 				>
-					<Button
-						variant="primary"
-						size="lg"
-						asChild
-						className="w-full sm:w-auto"
-					>
-						<Link
-							to="/"
-							className="flex items-center justify-center gap-2 group"
+					{primaryCta ? (
+						<Button
+							variant="primary"
+							size="lg"
+							asChild
+							className="w-full sm:w-auto"
 						>
-							Get started
+							<Link
+								to={primaryCta.to}
+								className="flex items-center justify-center gap-2 group"
+							>
+								Get Started
+								<CaretRightIcon className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+							</Link>
+						</Button>
+					) : (
+						<Button
+							variant="primary"
+							size="lg"
+							className="w-full sm:w-auto"
+							disabled={buttonState === "loading" || isLoading}
+							onClick={buttonState === "signin" ? signIn : undefined}
+						>
+							Get Started
 							<CaretRightIcon className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
-						</Link>
-					</Button>
+						</Button>
+					)}
 
 					<Button
 						variant="ghost"
@@ -105,13 +126,15 @@ export default function HeroSection() {
 						asChild
 						className="w-full sm:w-auto"
 					>
-						<Link
-							to="/"
+						<a
+							href="https://github.com/hetairoi-labs/filosign"
+							target="_blank"
+							rel="noreferrer"
 							className="flex items-center justify-center gap-2 group"
 						>
-							<PlayIcon className="w-4 h-4 transition-transform duration-200 group-hover:rotate-120" />
-							See it in action
-						</Link>
+							<GithubLogoIcon className="size-4" weight="fill" />
+							Source code
+						</a>
 					</Button>
 				</motion.div>
 			</motion.div>
