@@ -49,7 +49,7 @@ export default function Logo({
 			{!textOnly && (
 				<motion.div
 					className={cn(
-						"p-2 rounded-md bg-secondary transition-colors duration-200 ml-1",
+						"p-2 rounded-md bg-secondary transition-colors duration-200",
 					)}
 					initial={animatedLogo ? { scale: 0, rotate: -180 } : {}}
 					animate={animatedLogo ? { scale: 1, rotate: 0 } : {}}
@@ -63,9 +63,7 @@ export default function Logo({
 					<LightningIcon
 						className={cn(
 							`size-6 text-foreground transition-all duration-200`,
-							animatedLogo
-								? `group-hover/logo:rotate-12 group-hover/logo:scale-105`
-								: "",
+							animatedLogo ? `group-hover/logo:rotate-12` : "",
 							iconClassName,
 						)}
 						weight="fill"

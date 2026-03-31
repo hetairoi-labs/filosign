@@ -5,32 +5,21 @@ import {
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import Logo from "@/src/lib/components/custom/Logo";
-import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
 
 const footerSections = [
 	{
 		title: "Product",
 		links: [
-			{ label: "Why Filosign", href: "#" },
-			{ label: "Platform", href: "#" },
+			{ label: "Why Filosign", href: "/about" },
+			{ label: "What's new", href: "/changelog" },
 			{ label: "Pricing", href: "/pricing" },
-			{ label: "What's new", href: "#" },
-		],
-	},
-	{
-		title: "Solutions",
-		links: [
-			{ label: "By product", href: "#" },
-			{ label: "For founders", href: "#", badge: "New" },
-			{ label: "For startups", href: "#" },
-			{ label: "For enterprise", href: "#" },
 		],
 	},
 	{
 		title: "Company",
 		links: [
-			{ label: "About us", href: "#" },
+			{ label: "About us", href: "https://hetairoi.xyz" },
 			{ label: "Contact", href: "#" },
 			{ label: "Newsroom", href: "#" },
 			{ label: "Privacy", href: "#" },
@@ -78,7 +67,7 @@ export default function FooterSection() {
 						</motion.div>
 					</div>
 
-					<div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-4 border-t border-border/50 pt-16">
+					<div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-4 border-t border-border/50 pt-16">
 						{footerSections.map((section) => (
 							<div key={section.title} className="flex flex-col gap-6">
 								<h4 className="text-sm font-medium text-muted-foreground font-manrope">
@@ -92,14 +81,6 @@ export default function FooterSection() {
 												className="text-sm font-medium hover:text-primary transition-colors font-manrope flex items-center gap-2 group"
 											>
 												{link.label}
-												{link.badge && (
-													<Badge
-														variant="secondary"
-														className="h-5 px-1.5 text-[10px] font-medium bg-lime-200 text-black hover:bg-lime-300"
-													>
-														{link.badge}
-													</Badge>
-												)}
 											</a>
 										</li>
 									))}
