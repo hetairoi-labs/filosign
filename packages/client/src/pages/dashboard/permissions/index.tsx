@@ -47,7 +47,7 @@ export default function PermissionsPage() {
 
 	const getStatusBadge = (status: string) => {
 		switch (status.toLowerCase()) {
-			case "PENDING":
+			case "pending":
 				return (
 					<Badge
 						variant="secondary"
@@ -57,8 +57,8 @@ export default function PermissionsPage() {
 						Pending
 					</Badge>
 				);
-			case "ACCEPTED":
-			case "ALLOWED":
+			case "accepted":
+			case "allowed":
 				return (
 					<Badge
 						variant="secondary"
@@ -68,8 +68,8 @@ export default function PermissionsPage() {
 						Allowed
 					</Badge>
 				);
-			case "REJECTED":
-			case "DENIED":
+			case "rejected":
+			case "denied":
 				return (
 					<Badge
 						variant="secondary"
@@ -104,27 +104,13 @@ export default function PermissionsPage() {
 	// Categorize requests
 	const receivedRequestsData = receivedRequests.data || [];
 	const pendingRequests = Array.isArray(receivedRequestsData)
-		? receivedRequestsData.filter(
-				(req: any) => req.status === "PENDING" || req.status === "pending",
-			)
+		? receivedRequestsData.filter((req) => req.status === "PENDING")
 		: [];
 	const _allowedRequests = Array.isArray(receivedRequestsData)
-		? receivedRequestsData.filter(
-				(req: any) =>
-					req.status === "ACCEPTED" ||
-					req.status === "ALLOWED" ||
-					req.status === "accepted" ||
-					req.status === "allowed",
-			)
+		? receivedRequestsData.filter((req) => req.status === "ACCEPTED")
 		: [];
 	const _rejectedRequests = Array.isArray(receivedRequestsData)
-		? receivedRequestsData.filter(
-				(req: any) =>
-					req.status === "REJECTED" ||
-					req.status === "DENIED" ||
-					req.status === "rejected" ||
-					req.status === "denied",
-			)
+		? receivedRequestsData.filter((req) => req.status === "REJECTED")
 		: [];
 
 	return (
@@ -207,9 +193,9 @@ export default function PermissionsPage() {
 								</div>
 							) : (
 								<div className="space-y-3">
-									{pendingRequests.map((req: any, i: number) => (
+									{pendingRequests.map((req, _i: number) => (
 										<div
-											key={i}
+											key={req.id ?? req.senderWallet}
 											className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
 										>
 											<div>
@@ -257,10 +243,10 @@ export default function PermissionsPage() {
 							) : (
 								<div className="space-y-3">
 									{allowedSenders.data
-										.filter((approval: any) => approval.active)
-										.map((approval: any, i: number) => (
+										.filter((approval) => approval.active)
+										.map((approval, _i: number) => (
 											<div
-												key={i}
+												key={approval.recipientWallet}
 												className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
 											>
 												<div className="flex items-center gap-3">
@@ -320,9 +306,9 @@ export default function PermissionsPage() {
 								</div>
 							) : (
 								<div className="space-y-3">
-									{sentRequests.data.map((req: any, i: number) => (
+									{sentRequests.data.map((req, _i: number) => (
 										<div
-											key={i}
+											key={req.id ?? req.recipientWallet}
 											className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
 										>
 											<div>
@@ -382,10 +368,10 @@ export default function PermissionsPage() {
 							) : (
 								<div className="space-y-3">
 									{allowedReceivers.data
-										.filter((approval: any) => approval.active)
-										.map((approval: any, i: number) => (
+										.filter((approval) => approval.active)
+										.map((approval, _i: number) => (
 											<div
-												key={i}
+												key={approval.senderWallet}
 												className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
 											>
 												<div className="flex items-center gap-3">
