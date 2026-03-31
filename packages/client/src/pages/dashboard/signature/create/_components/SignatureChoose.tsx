@@ -149,7 +149,8 @@ export default function SignatureChoose({
 
 			<div className="grid gap-3 max-h-80 overflow-y-auto border-2 border-dashed p-4 rounded-large mt-4 hide-scrollbar">
 				{signatureOptions.map((option) => (
-					<div
+					<button
+						type="button"
 						key={option.id}
 						className={cn(
 							"flex items-center gap-4 p-4 border rounded-lg cursor-pointer transition-all hover:bg-card",
@@ -202,7 +203,7 @@ export default function SignatureChoose({
 								</div>
 							</div>
 						</div>
-					</div>
+					</button>
 				))}
 			</div>
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/src/lib/utils";
 
 interface OtpInputProps {
@@ -22,6 +22,14 @@ export default function OtpInput({
 }: OtpInputProps) {
 	const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
 	const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+	const otpKeys = useMemo(
+		() =>
+			Array.from(
+				{ length },
+				(_, i) => `otp-${i}-${Math.random().toString(36).slice(2)}`,
+			),
+		[length],
+	);
 
 	// Initialize refs array
 	useEffect(() => {
@@ -110,32 +118,32 @@ export default function OtpInput({
 
 	return (
 		<div className={cn("flex gap-2 justify-center", className)}>
-			{Array.from({ length }, (_, index) => (
+			{otpKeys.map((otpKey, otpIndex) => (
 				<input
-					key={index}
+					key={otpKey}
 					ref={(el) => {
-						inputRefs.current[index] = el;
+						inputRefs.current[otpIndex] = el;
 					}}
 					type="text"
 					inputMode="numeric"
 					pattern="[0-9]*"
 					autoComplete="one-time-code"
-					name={`otp-${index}`}
-					value={value[index] || ""}
-					onChange={(e) => handleInputChange(index, e.target.value)}
-					onKeyDown={(e) => handleKeyDown(index, e)}
-					onFocus={() => handleFocus(index)}
+					name={`otp-${otpIndex}`}
+					value={value[otpIndex] || ""}
+					onChange={(e) => handleInputChange(otpIndex, e.target.value)}
+					onKeyDown={(e) => handleKeyDown(otpIndex, e)}
+					onFocus={() => handleFocus(otpIndex)}
 					onBlur={handleBlur}
 					onPaste={handlePaste}
 					disabled={disabled}
 					className={cn(
-						"w-12 h-12 text-center text-xl font-mono border-2 rounded-lg transition-all duration-200",
+						"size-10 sm:size-12 text-center text-lg sm:text-xl font-mono border-2 rounded-lg transition-all duration-200",
 						"bg-background text-foreground placeholder:text-muted-foreground",
 						"focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
-						focusedIndex === index
+						focusedIndex === otpIndex
 							? "border-primary ring-2 ring-primary/20"
 							: "border-border hover:border-border/80",
-						value[index] && "border-primary bg-primary/5",
+						value[otpIndex] && "border-primary bg-primary/5",
 						disabled && "opacity-50 cursor-not-allowed",
 					)}
 					maxLength={1}

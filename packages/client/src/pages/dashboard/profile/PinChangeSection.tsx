@@ -1,4 +1,5 @@
 import { LockIcon } from "@phosphor-icons/react";
+import type { UseFormReturn } from "react-hook-form";
 import {
 	Card,
 	CardContent,
@@ -15,9 +16,10 @@ import {
 } from "@/src/lib/components/ui/form";
 import { Input } from "@/src/lib/components/ui/input";
 import { SaveButton } from "./components/SaveButton";
+import type { ProfileForm } from "./hooks/use-section-state";
 
 interface PinChangeSectionProps {
-	form: any;
+	form: UseFormReturn<ProfileForm>;
 	sectionState: {
 		hasChanges: boolean;
 		state: { isSaving: boolean; isSaved: boolean; error?: string };

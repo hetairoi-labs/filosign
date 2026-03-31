@@ -1,6 +1,9 @@
 import { useCallback, useState } from "react";
+import type { UseFormReturn } from "react-hook-form";
 
-export const useFileUpload = (form: any) => {
+import type { ProfileForm } from "./use-section-state";
+
+export const useFileUpload = (form: UseFormReturn<ProfileForm>) => {
 	const [uploadError, setUploadError] = useState<string>();
 
 	const uploadFile = useCallback(

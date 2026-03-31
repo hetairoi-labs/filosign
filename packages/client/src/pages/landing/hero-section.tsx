@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Image } from "@/src/lib/components/custom/Image";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
+import TrustedCompanies from "./trusted-companies";
 
 export default function HeroSection() {
 	return (
@@ -37,7 +38,7 @@ export default function HeroSection() {
 							className="size-4 animate-pulse text-secondary"
 							weight="fill"
 						/>{" "}
-						Closed Beta
+						WorldChain Sepolia Testnet
 					</Badge>
 				</motion.div>
 
@@ -145,6 +146,8 @@ export default function HeroSection() {
 					className="size-full rounded-large relative z-10 shadow-sm"
 				/>
 			</motion.div>
+
+			<TrustedCompanies />
 		</section>
 	);
 }

@@ -4,10 +4,10 @@ import {
 	RocketLaunchIcon,
 	SpinnerBallIcon,
 } from "@phosphor-icons/react";
+import { useMutation } from "@tanstack/react-query";
 import { AnimatePresence, motion, useInView } from "motion/react";
 import { useRef, useState } from "react";
 import { Button } from "@/src/lib/components/ui/button";
-import { useApi } from "@/src/lib/hooks/use-api";
 
 export default function WaitlistSection() {
 	const [email, setEmail] = useState("");
@@ -21,7 +21,15 @@ export default function WaitlistSection() {
 		margin: "-100px",
 	});
 
-	const { joinWaitlist } = useApi();
+	// dummy fn
+	const joinWaitlist = useMutation({
+		mutationFn: async (email: string) => {
+			const _response = await fetch("/api/waitlist", {
+				method: "POST",
+				body: JSON.stringify({ email }),
+			});
+		},
+	});
 
 	const handleJoinWaitlist = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -32,11 +40,12 @@ export default function WaitlistSection() {
 			setIsSubmitted(true);
 			setIsDuplicate(false); // New registration
 			setEmail(""); // Clear the email field on success
-		} catch (error: any) {
+		} catch (error) {
 			// Check if the error is specifically about duplicate email (409 status)
 			if (
-				error?.message?.includes("Email already registered") ||
-				error?.message?.includes("already registered")
+				error instanceof Error &&
+				(error.message.includes("Email already registered") ||
+					error.message.includes("already registered"))
 			) {
 				// Treat duplicate email as success - user is already registered
 				setIsSubmitted(true);

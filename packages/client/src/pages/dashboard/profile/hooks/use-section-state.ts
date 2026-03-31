@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import type { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 
 // Simplified form validation schema
@@ -51,7 +52,7 @@ export interface SectionState {
 // Custom hook for section management
 export const useSectionState = (
 	sectionKey: SectionKey,
-	form: any,
+	form: UseFormReturn<ProfileForm>,
 	originalValues: ProfileForm,
 ) => {
 	const [state, setState] = useState<SectionState>({

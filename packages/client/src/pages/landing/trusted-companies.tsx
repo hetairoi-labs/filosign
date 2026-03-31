@@ -13,34 +13,42 @@ import { cn } from "@/src/lib/utils";
 
 const companies = [
 	{
+		slug: "gitcoin",
 		name: "Gitcoin",
 		icon: CoinIcon,
 	},
 	{
+		slug: "filecoin-foundation",
 		name: "Filecoin Foundation",
 		icon: DatabaseIcon,
 	},
 	{
+		slug: "hedera-hashgraph",
 		name: "Hedera Hashgraph",
 		icon: HexagonIcon,
 	},
 	{
+		slug: "aragon",
 		name: "Aragon",
 		icon: GlobeHemisphereWestIcon,
 	},
 	{
+		slug: "matter-labs",
 		name: "Matter Labs",
 		icon: AtomIcon,
 	},
 	{
+		slug: "metaplex",
 		name: "Metaplex",
 		icon: CubeIcon,
 	},
 	{
+		slug: "towns",
 		name: "Towns",
 		icon: BuildingsIcon,
 	},
 	{
+		slug: "near",
 		name: "Near",
 		icon: AlienIcon,
 	},
@@ -76,9 +84,9 @@ const Marquee = ({
 		>
 			{Array(repeat)
 				.fill(0)
-				.map((_, i) => (
+				.map(() => (
 					<motion.div
-						key={i}
+						key={`marquee-repeat-${repeat}-${vertical ? "vertical" : "horizontal"}`}
 						className={cn("flex shrink-0 justify-around [gap:var(--gap)]", {
 							"flex-row": !vertical,
 							"flex-col": vertical,
@@ -121,7 +129,7 @@ export default function TrustedCompanies() {
 						<Marquee className="[--duration:80s]">
 							{companies.map((company) => (
 								<div
-									key={company.name}
+									key={company.slug}
 									className="flex items-center gap-2 text-muted-foreground/80 hover:text-foreground transition-colors px-8"
 								>
 									<company.icon className="h-6 w-6" weight="fill" />

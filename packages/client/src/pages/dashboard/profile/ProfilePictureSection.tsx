@@ -1,4 +1,5 @@
 import { CameraIcon, TrashIcon, UserIcon } from "@phosphor-icons/react";
+import type { UseFormReturn } from "react-hook-form";
 import { Button } from "@/src/lib/components/ui/button";
 import {
 	Card,
@@ -9,9 +10,10 @@ import {
 } from "@/src/lib/components/ui/card";
 import { FormField } from "@/src/lib/components/ui/form";
 import { SaveButton } from "./components/SaveButton";
+import type { ProfileForm } from "./hooks/use-section-state";
 
 interface ProfilePictureSectionProps {
-	form: any;
+	form: UseFormReturn<ProfileForm>;
 	sectionState: {
 		hasChanges: boolean;
 		state: { isSaving: boolean; isSaved: boolean; error?: string };
