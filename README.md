@@ -7,7 +7,7 @@ Trustless digital signatures on the decentralized web. Replace trust in a provid
 
 ---
 
-> **PL-Genesis Submission:** Please read our [CHANGELOG.md](CHANGELOG.md) for full details on our World Chain deployment, zero-gas UX, and Proof of Contribution escrow infrastructure.
+> **PL-Genesis Submission:** Please read our [CHANGELOG.md](CHANGELOG.md) for full details on our hackathon submission including World ID integration, World Chain deployment, Zero-Gas UX, and Proof of Contribution escrow infrastructure.
 
 ---
 
