@@ -2,9 +2,11 @@
 
 Trustless digital signatures on the decentralized web. Replace trust in a provider with math: agreements stay secure, verifiable, and permanent on Filecoin.
 
-[Website](https://app.filosign.xyz)  
+[Website](https://app.filosign.xyz)
+<br/>
 [GitHub](https://github.com/filosign-dapp)
-[Sample Signed Document](https://drive.google.com/file/d/16pJh2Q6yCDbyrSy3ZN02NNgaG6oi23Y0/view?usp=sharing)
+<br/>
+[Sample Compliance Document](https://drive.google.com/file/d/16pJh2Q6yCDbyrSy3ZN02NNgaG6oi23Y0/view?usp=sharing)
 
 ---
 
