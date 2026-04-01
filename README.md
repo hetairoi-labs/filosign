@@ -6,7 +6,7 @@ Trustless digital signatures on the decentralized web. Replace trust in a provid
 <br/>
 [GitHub](https://github.com/filosign-dapp)
 <br/>
-[Sample Compliance Document](https://drive.google.com/file/d/16pJh2Q6yCDbyrSy3ZN02NNgaG6oi23Y0/view?usp=sharing)
+[Sample Signed PDF](https://drive.google.com/file/d/16pJh2Q6yCDbyrSy3ZN02NNgaG6oi23Y0/view?usp=sharing)
 
 ---
 
