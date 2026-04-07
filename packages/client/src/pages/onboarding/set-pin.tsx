@@ -17,7 +17,7 @@ import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { handleError } from "@/src/lib/utils";
 import OnboardingProtector from "./_components/OnboardingProtector";
 import OtpInput from "./_components/OtpInput";
-import { WorldIDKitLink } from "./_components/WorldIDKitLink";
+import { useLogin } from "@filosign/react/hooks";
 
 export default function OnboardingSetPinPage() {
 	const [pin, setPin] = useState("");
@@ -29,6 +29,7 @@ export default function OnboardingSetPinPage() {
 
 	const logout = useLogout();
 	const isRegistered = useIsRegistered();
+	const login = useLogin();
 
 	const handleRegistrationComplete = async () => {
 		if (!onboardingForm) return;
@@ -131,11 +132,22 @@ export default function OnboardingSetPinPage() {
 									</Button>
 
 									{pinsMatch ? (
-										<WorldIDKitLink
-											pin={pin}
-											onSuccess={handleRegistrationComplete}
-											className="flex-1"
-										/>
+										<Button
+											onClick={() =>
+												void login
+													.mutateAsync({ pin })
+													.then(handleRegistrationComplete)
+											}
+											disabled={login.isPending}
+											className="flex-1 group"
+											variant="primary"
+										>
+											{login.isPending ? "Registering..." : "Create account"}
+											<CaretRightIcon
+												className="transition-transform duration-200 size-4 group-hover:translate-x-1"
+												weight="bold"
+											/>
+										</Button>
 									) : (
 										<Button
 											onClick={handlePinSubmit}
@@ -143,7 +155,7 @@ export default function OnboardingSetPinPage() {
 											className="flex-1 group"
 											variant="primary"
 										>
-											{step === "enter" ? "Continue" : "Verify ID"}
+											{step === "enter" ? "Continue" : "Confirm PIN"}
 											<CaretRightIcon
 												className="transition-transform duration-200 size-4 group-hover:translate-x-1"
 												weight="bold"

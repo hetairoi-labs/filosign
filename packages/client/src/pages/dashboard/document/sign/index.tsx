@@ -3,6 +3,7 @@ import {
 	useAckFile,
 	useDocumentIncentive,
 	useFileInfo,
+	useSignFile,
 	useViewFile,
 	type ViewFileResult,
 } from "@filosign/react/hooks";
@@ -41,7 +42,6 @@ import {
 	downloadPdfBytes,
 	fetchSignerIncentivesForCompliancePdf,
 } from "@/src/lib/utils/compliance-pdf";
-import { WorldIDKitSign } from "./WorldIDKitSign";
 
 export default function SignDocumentPage() {
 	const navigate = useNavigate();
@@ -96,6 +96,7 @@ export default function SignDocumentPage() {
 	const showWorldIdSign = Boolean(signerAddress && file && !alreadySigned);
 
 	const viewFile = useViewFile();
+	const signFile = useSignFile();
 
 	const [zoom, setZoom] = useState(100);
 	const [viewError, setViewError] = useState<string | null>(null);
@@ -252,6 +253,17 @@ export default function SignDocumentPage() {
 		} catch (error) {
 			console.error(error);
 			toast.error("Failed to acknowledge file");
+		}
+	};
+
+	const handleSign = async () => {
+		if (!pieceCid) return;
+		try {
+			await signFile.mutateAsync({ pieceCid });
+			toast.success("Document signed successfully!");
+		} catch (error) {
+			console.error(error);
+			toast.error(error instanceof Error ? error.message : "Failed to sign");
 		}
 	};
 
@@ -597,13 +609,21 @@ export default function SignDocumentPage() {
 							</Button>
 
 							{showWorldIdSign && signerAddress && (
-								<div className="shrink-0">
-									<WorldIDKitSign
-										signerAddress={signerAddress}
-										file={file}
-										actionLabel="Sign"
-									/>
-								</div>
+								<Button
+									variant="primary"
+									size="sm"
+									onClick={() => void handleSign()}
+									disabled={signFile.isPending}
+								>
+									{signFile.isPending ? (
+										<>
+											<SpinnerIcon className="size-4 mr-2 animate-spin" />
+											Signing…
+										</>
+									) : (
+										"Sign"
+									)}
+								</Button>
 							)}
 						</div>
 					</div>
@@ -762,13 +782,21 @@ export default function SignDocumentPage() {
 						{showWorldIdSign && signerAddress && (
 							<>
 								<div className="w-px h-6 bg-border mx-2" />
-								<div className="shrink-0">
-									<WorldIDKitSign
-										signerAddress={signerAddress}
-										file={file}
-										actionLabel="Sign Document"
-									/>
-								</div>
+								<Button
+									variant="primary"
+									size="sm"
+									onClick={() => void handleSign()}
+									disabled={signFile.isPending}
+								>
+									{signFile.isPending ? (
+										<>
+											<SpinnerIcon className="size-4 mr-2 animate-spin" />
+											Signing…
+										</>
+									) : (
+										"Sign document"
+									)}
+								</Button>
 							</>
 						)}
 					</div>

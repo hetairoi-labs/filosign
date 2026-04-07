@@ -1,7 +1,6 @@
 import { serve } from "bun";
 import { env } from "@/env";
 import html from "@/src/index.html";
-import { idkitVendorResponse } from "./lib/utils/idkit-vendor";
 
 const isDev = env.NODE_ENV === "development";
 
@@ -16,8 +15,6 @@ const server = serve({
 	idleTimeout: 60,
 
 	routes: {
-		"/vendor/worldcoin-idkit-core/*": idkitVendorResponse,
-
 		"/static/*": (req) => {
 			const url = new URL(req.url);
 			const filePath = url.pathname.replace("/static/", "");

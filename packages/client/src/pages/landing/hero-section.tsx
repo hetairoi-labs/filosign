@@ -46,7 +46,7 @@ export default function HeroSection() {
 							className="size-4 animate-pulse text-secondary"
 							weight="fill"
 						/>{" "}
-						WorldChain Sepolia Testnet
+						Public Beta
 					</Badge>
 				</motion.div>
 
