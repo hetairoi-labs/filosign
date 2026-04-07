@@ -275,7 +275,7 @@ export default new Hono()
 			(p) => getAddress(p.wallet) === userWalletNorm,
 		);
 		if (!participantUser) {
-			return respond.err(ctx, "You dont need to access this fle :D", 403);
+			return respond.err(ctx, "You dont have access to this file", 403);
 		}
 
 		const fileSignaturesRecord = await db
