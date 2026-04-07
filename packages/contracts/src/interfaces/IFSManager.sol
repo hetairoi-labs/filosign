@@ -7,7 +7,6 @@ interface IFSManager {
     function cidRegistry() external view returns (address);
     function fileRegistry() external view returns (address);
     function keyRegistry() external view returns (address);
-    function worldVerifier() external view returns (address);
     function escrow() external view returns (address);
     function server() external view returns (address);
     function version() external view returns (uint8);
@@ -17,7 +16,6 @@ interface IFSManager {
     event IncentiveAttached();
     event IncentivesReleased();
     function setActiveVersion(uint8 version_) external;
-    function setWorldVerifier(address _worldVerifier) external;
     function isRegistered(address account_) external view returns (bool);
     function approveSender(address sender_) external;
     function revokeSender(address sender_) external;

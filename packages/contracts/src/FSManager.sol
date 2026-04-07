@@ -11,7 +11,6 @@ contract FSManager {
     address public cidRegistry;
     address public fileRegistry;
     address public keyRegistry;
-    address public worldVerifier;
     address public escrow;
 
     address public immutable server;
@@ -50,10 +49,6 @@ contract FSManager {
 
     function setActiveVersion(uint8 version_) external onlyServer {
         version = version_;
-    }
-
-    function setWorldVerifier(address _worldVerifier) external onlyServer {
-        worldVerifier = _worldVerifier;
     }
 
     function isRegistered(address account_) public view returns (bool) {

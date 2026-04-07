@@ -3,19 +3,13 @@ pragma solidity ^0.8.26;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 import "./errors/EFSFileRegistry.sol";
 import "./errors/EFSCommon.sol";
 import "./interfaces/IFSManager.sol";
-import "./interfaces/IFSWorldVerifier.sol";
-import "./interfaces/IWorldID.sol";
 
 contract FSFileRegistry is EIP712 {
     using ECDSA for bytes32;
-
-    IWorldID public worldId;
-    uint256 public signDocExternalNullifier;
 
     uint256 constant SIGNATURE_VALIDITY_PERIOD = 2 minutes;
     uint256 constant SIGNATURE_MAX_DRIFT_PERIOD = 1 minutes;
@@ -73,18 +67,6 @@ contract FSFileRegistry is EIP712 {
 
     constructor() EIP712("FSFileRegistry", "1") {
         manager = IFSManager(msg.sender); // expect msg.sender to be fsmanager
-    }
-
-    function initializeWorldId(
-        IWorldID _worldId,
-        string memory _appId,
-        string memory _signActionId
-    ) external onlyServer {
-        worldId = _worldId;
-        uint256 appIdHash = uint256(keccak256(abi.encodePacked(_appId))) >> 8;
-        signDocExternalNullifier =
-            uint256(keccak256(abi.encodePacked(appIdHash, _signActionId))) >>
-            8;
     }
 
     bytes32 private constant REGISTER_FILE_TYPEHASH =
@@ -173,49 +155,14 @@ contract FSFileRegistry is EIP712 {
         emit FileRegistered(cidId, sender_, uint48(timestamp_));
     }
 
-    // LEGACY: signing flow without world id
-    // function registerFileSignature(
-    //     string calldata pieceCid_,
-    //     address sender_,
-    //     address signer_,
-    //     bytes20 dl3SignatureCommitment_,
-    //     uint256 timestamp_,
-    //     bytes calldata signature_
-    // ) external onlyServer {
-    //     require(
-    //         validateFileSigningSignature(
-    //             pieceCid_,
-    //             sender_,
-    //             signer_,
-    //             dl3SignatureCommitment_,
-    //             timestamp_,
-    //             signature_
-    //         ),
-    //         InvalidSignature()
-    //     );
-
-    //     bytes32 cidId = cidIdentifier(pieceCid_);
-    //     FileRegistration storage file = _fileRegistrations[cidId];
-    //     if (file.timestamp == 0) revert FileNotRegistered();
-    //     if (file.signatures[signer_].length != 0) revert AlreadySigned();
-    //     file.signatures[signer_] = signature_;
-
-    //     nonce[signer_]++;
-    //     emit FileSigned(cidId, sender_, signer_, uint48(timestamp_));
-    // }
-
-    // NEW: signing flow with world id verification
-    function registerFileSignatureWorldId(
+    function registerFileSignature(
         string calldata pieceCid_,
         address sender_,
         address signer_,
         bytes20 dl3SignatureCommitment_,
-        uint256 root_,
-        uint256 nullifierHash_,
-        uint256[8] calldata proof_,
         uint256 timestamp_,
         bytes calldata signature_,
-        address[] calldata allSigners_ // full list of signers on each sign (high gas but high reliability)
+        address[] calldata allSigners_ // full list of signers on final sign (high gas but high reliability)
     ) external onlyServer {
         bytes32 cidId = cidIdentifier(pieceCid_);
         FileRegistration storage file = _fileRegistrations[cidId];
@@ -233,30 +180,6 @@ contract FSFileRegistry is EIP712 {
                 signature_
             ),
             InvalidSignature()
-        );
-
-        // world id check
-        address linkedWallet = IFSWorldVerifier(manager.worldVerifier())
-            .nullifierToAddress(nullifierHash_);
-        require(linkedWallet == signer_, "Not the designated recipient");
-
-        // IDKit signal is sent as `${lowercaseAddress}:${pieceCid}`.
-        string memory signerSignal = string.concat(
-            Strings.toHexString(uint160(signer_), 20),
-            ":",
-            pieceCid_
-        );
-        uint256 signalHash = uint256(
-            keccak256(abi.encodePacked(signerSignal))
-        ) >> 8;
-
-        worldId.verifyProof(
-            root_,
-            1,
-            signalHash,
-            nullifierHash_,
-            signDocExternalNullifier,
-            proof_
         );
 
         file.signatures[signer_] = signature_;
