@@ -11,13 +11,15 @@ interface IFSManager {
     function server() external view returns (address);
     function version() external view returns (uint8);
     function approvedSenders(address key, address key1) external view returns (bool);
+    function approveNonce(address key) external view returns (uint256);
     event SenderApproved();
     event SenderRevoked();
     event IncentiveAttached();
     event IncentivesReleased();
     function setActiveVersion(uint8 version_) external;
     function isRegistered(address account_) external view returns (bool);
-    function approveSender(address sender_) external;
+    function approveSender(address recipient_, address sender_, uint256 nonce_, uint256 deadline_, bytes calldata signature_) external;
+    function validateApproveSenderSignature(address recipient_, address sender_, uint256 nonce_, uint256 deadline_, bytes calldata signature_) external view returns (bool);
     function revokeSender(address sender_) external;
     function attachIncentive(string calldata pieceCid_, address signer_, address token_, uint256 amount_) external;
     function attachIncentiveWithPermit(string calldata pieceCid_, address signer_, address token_, uint256 amount_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external;

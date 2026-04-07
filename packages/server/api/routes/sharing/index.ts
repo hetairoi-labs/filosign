@@ -1,8 +1,12 @@
+import { zEvmAddress, zHexString } from "@filosign/shared/zod";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { getAddress, isAddress } from "viem";
+import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
+import { fsContracts } from "@/lib/evm";
+import { processTransaction } from "@/lib/indexer/process";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
 
@@ -10,6 +14,7 @@ import { tryCatch } from "@/lib/utils/tryCatch";
 const REQUEST_SPAM_BASE_HOURS = 3;
 
 const { shareApprovals, shareRequests, userInvites, users } = db.schema;
+const { FSManager } = fsContracts;
 export default new Hono()
 	.post("/request", authenticated, async (ctx) => {
 		const { recipientWallet, message } = await ctx.req.json();
@@ -390,6 +395,44 @@ export default new Hono()
 			.where(eq(shareRequests.id, id));
 
 		return respond.ok(ctx, {}, "Request accepted", 200);
+	})
+	.post("/approve", authenticated, async (ctx) => {
+		const recipient = ctx.var.userWallet;
+		const rawBody = await ctx.req.json();
+
+		const parsedBody = z
+			.object({
+				sender: zEvmAddress(),
+				nonce: z.coerce.bigint(),
+				deadline: z.coerce.bigint(),
+				signature: zHexString(),
+			})
+			.safeParse(rawBody);
+
+		if (parsedBody.error) {
+			return respond.err(ctx, parsedBody.error.message, 400);
+		}
+
+		const { sender, nonce, deadline, signature } = parsedBody.data;
+
+		// Contract call is `onlyServer`; this API server is the server signer.
+		const args = [
+			recipient,
+			getAddress(sender),
+			nonce,
+			deadline,
+			signature,
+		] as const;
+
+		const simResult = await tryCatch(FSManager.simulate.approveSender(args));
+		if (simResult.error) {
+			return respond.err(ctx, "Invalid approval signature", 400);
+		}
+
+		const txHash = await FSManager.write.approveSender(args);
+		await processTransaction(txHash, {});
+
+		return respond.ok(ctx, { txHash }, "Sender approved", 201);
 	})
 	.get("/receivable-from", authenticated, async (ctx) => {
 		const userWallet = ctx.var.userWallet;

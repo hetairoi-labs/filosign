@@ -1,4 +1,9 @@
-import { calibration, Synapse } from "@filoz/synapse-sdk";
+import {
+	calibration,
+	mainnet,
+	Synapse,
+	type SynapseOptions,
+} from "@filoz/synapse-sdk";
 import { eq } from "drizzle-orm";
 import type { Address } from "viem";
 import { http } from "viem";
@@ -16,11 +21,17 @@ const account = privateKeyToAccount(
 		: `0x${env.EVM_PRIVATE_KEY_SYNAPSE}`) as `0x${string}`,
 );
 
-export const synapse = Synapse.create({
+const synapseChain = env.CHAIN === "mainnet" ? mainnet : calibration;
+
+const synapseOptions: SynapseOptions = {
 	account,
-	transport: http(calibration.rpcUrls.default.http[0]),
+	chain: synapseChain,
+	transport: http(synapseChain.rpcUrls.default.http[0]),
+	source: "filosign",
 	withCDN: WITH_CDN,
-});
+};
+
+export const synapse = Synapse.create(synapseOptions);
 
 export async function getOrCreateUserDataset(walletAddress: Address) {
 	const [existing] = await db
@@ -32,7 +43,6 @@ export async function getOrCreateUserDataset(walletAddress: Address) {
 		const ctx = await tryCatch(
 			synapse.storage.createContext({
 				dataSetId: BigInt(existing.dataSetId),
-				providerAddress: existing.providerAddress as Address,
 				metadata: { filosign_user: walletAddress },
 			}),
 		);

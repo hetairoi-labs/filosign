@@ -129,18 +129,8 @@ export default new Hono()
 			BigInt(timestamp),
 			signature,
 		]);
+
 		const ds = await getOrCreateUserDataset(sender);
-		const actualSize = bytes.byteLength;
-		const preflight = await ds.preflightUpload({
-			size: Math.ceil(actualSize),
-		});
-		if (!preflight.allowanceCheck.sufficient) {
-			return respond.err(
-				ctx,
-				"Insufficient storage allowance, complain to the devs",
-				402,
-			);
-		}
 
 		await db.transaction(async (tx) => {
 			const [insertResult] = await tx
@@ -174,8 +164,7 @@ export default new Hono()
 			return insertResult;
 		});
 
-		//@ts-expect-error
-		ds.upload(new Uint8Array(bytes), { pieceCid, metadata: {} })
+		ds.upload(new Uint8Array(bytes), { pieceMetadata: {} })
 			.then(async (uploadResult) => {
 				await file.delete();
 
@@ -196,6 +185,11 @@ export default new Hono()
 					"Filecoin addPieces failed (file remains in S3):",
 					err?.message ?? err,
 				);
+				console.warn("[files.upload] synapse upload failed", {
+					pieceCid,
+					sender,
+					error: err?.message ?? String(err),
+				});
 			});
 
 		return respond.ok(ctx, {}, "File uploaded to filecoin warmstorage", 201);
@@ -516,8 +510,9 @@ export default new Hono()
 			return respond.err(ctx, "Invalid signature", 400);
 		}
 
-		const txHash =
-			await FSFileRegistry.write.registerFileSignature(registerSignatureArgs);
+		const txHash = await FSFileRegistry.write.registerFileSignature(
+			registerSignatureArgs,
+		);
 
 		await db.insert(fileSignatures).values({
 			filePieceCid: pieceCid,

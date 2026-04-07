@@ -6,13 +6,14 @@
 		"dev": "bun --hot index.ts",
 		"start": "bun run index.ts",
 		"push": "bunx --bun drizzle-kit push",
+		"tsc": "tsc --noEmit",
 		"compile": "bun build --compile --minify --sourcemap --bytecode ./index.ts --outfile out/server"
 	},
 	"dependencies": {
 		"@filosign/contracts": "workspace:*",
 		"@filosign/crypto-utils": "workspace:*",
 		"@filosign/shared": "workspace:*",
-		"@filoz/synapse-sdk": "^0.37.0",
+		"@filoz/synapse-sdk": "^0.40.3",
 		"@hono/zod-validator": "^0.7.3",
 		"@libsql/client": "^0.14.0",
 		"@worldcoin/idkit": "4.0.11",

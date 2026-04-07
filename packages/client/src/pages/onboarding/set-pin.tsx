@@ -1,4 +1,4 @@
-import { useIsRegistered, useLogout } from "@filosign/react/hooks";
+import { useIsRegistered, useLogin, useLogout } from "@filosign/react/hooks";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
@@ -17,7 +17,6 @@ import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { handleError } from "@/src/lib/utils";
 import OnboardingProtector from "./_components/OnboardingProtector";
 import OtpInput from "./_components/OtpInput";
-import { useLogin } from "@filosign/react/hooks";
 
 export default function OnboardingSetPinPage() {
 	const [pin, setPin] = useState("");

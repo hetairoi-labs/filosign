@@ -45,7 +45,7 @@ export async function eip712signature(
 	contracts: FilosignContracts,
 	contractName: keyof Pick<
 		FilosignContracts,
-		"FSFileRegistry" | "FSKeyRegistry"
+		"FSFileRegistry" | "FSKeyRegistry" | "FSManager"
 	>,
 	args: Omit<SignTypedDataParameters, "domain" | "privateKey">,
 ) {

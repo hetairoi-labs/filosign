@@ -10,12 +10,59 @@ export const definitions = {
         },
         {
           "inputs": [],
+          "name": "ApproveSignatureExpired",
+          "type": "error"
+        },
+        {
+          "inputs": [],
           "name": "CannotApproveSelf",
           "type": "error"
         },
         {
           "inputs": [],
+          "name": "ECDSAInvalidSignature",
+          "type": "error"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "length",
+              "type": "uint256"
+            }
+          ],
+          "name": "ECDSAInvalidSignatureLength",
+          "type": "error"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "s",
+              "type": "bytes32"
+            }
+          ],
+          "name": "ECDSAInvalidSignatureS",
+          "type": "error"
+        },
+        {
+          "inputs": [],
           "name": "IncentiveAlreadyClaimed",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "InvalidApproveNonce",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "InvalidApproveSignature",
+          "type": "error"
+        },
+        {
+          "inputs": [],
+          "name": "InvalidShortString",
           "type": "error"
         },
         {
@@ -47,6 +94,23 @@ export const definitions = {
           "inputs": [],
           "name": "SenderNotRegistered",
           "type": "error"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "string",
+              "name": "str",
+              "type": "string"
+            }
+          ],
+          "name": "StringTooLong",
+          "type": "error"
+        },
+        {
+          "anonymous": false,
+          "inputs": [],
+          "name": "EIP712DomainChanged",
+          "type": "event"
         },
         {
           "anonymous": false,
@@ -134,8 +198,47 @@ export const definitions = {
           "inputs": [
             {
               "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ],
+          "name": "approveNonce",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "recipient_",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
               "name": "sender_",
               "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "nonce_",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline_",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "signature_",
+              "type": "bytes"
             }
           ],
           "name": "approveSender",
@@ -258,6 +361,49 @@ export const definitions = {
         },
         {
           "inputs": [],
+          "name": "eip712Domain",
+          "outputs": [
+            {
+              "internalType": "bytes1",
+              "name": "fields",
+              "type": "bytes1"
+            },
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "version",
+              "type": "string"
+            },
+            {
+              "internalType": "uint256",
+              "name": "chainId",
+              "type": "uint256"
+            },
+            {
+              "internalType": "address",
+              "name": "verifyingContract",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "salt",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "extensions",
+              "type": "uint256[]"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function"
+        },
+        {
+          "inputs": [],
           "name": "escrow",
           "outputs": [
             {
@@ -369,6 +515,45 @@ export const definitions = {
           "name": "setActiveVersion",
           "outputs": [],
           "stateMutability": "nonpayable",
+          "type": "function"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "recipient_",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "sender_",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "nonce_",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "deadline_",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bytes",
+              "name": "signature_",
+              "type": "bytes"
+            }
+          ],
+          "name": "validateApproveSenderSignature",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
           "type": "function"
         },
         {
