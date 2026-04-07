@@ -1,7 +1,7 @@
-import { LightningIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { cn } from "../../utils";
+import { Image } from "./Image";
 
 interface LogoProps {
 	className?: string;
@@ -49,7 +49,7 @@ export default function Logo({
 			{!textOnly && (
 				<motion.div
 					className={cn(
-						"p-2 rounded-md bg-secondary transition-colors duration-200",
+						"p-1.5 rounded-sm bg-secondary transition-colors duration-200",
 					)}
 					initial={animatedLogo ? { scale: 0, rotate: -180 } : {}}
 					animate={animatedLogo ? { scale: 1, rotate: 0 } : {}}
@@ -60,13 +60,16 @@ export default function Logo({
 						delay: iconDelay,
 					}}
 				>
-					<LightningIcon
+					<Image
+						src="/static/logo.webp"
+						alt="Filosign Logo"
+						width={64}
+						height={64}
 						className={cn(
-							`size-6 text-foreground transition-all duration-200`,
-							animatedLogo ? `group-hover/logo:rotate-12` : "",
+							`size-8 text-foreground transition-all duration-150`,
+							animatedLogo ? `group-hover/logo:-rotate-180` : "",
 							iconClassName,
 						)}
-						weight="fill"
 					/>
 				</motion.div>
 			)}

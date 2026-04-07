@@ -178,7 +178,6 @@ export function buildCompliancePdfSummary(
 		{ label: "Chain", value: chainName },
 		{ label: "Piece CID", value: file.pieceCid },
 		{ label: "Sender", value: file.sender },
-		{ label: "Status", value: file.status },
 		{ label: "Created", value: file.createdAt },
 		{
 			label: "Registration tx",

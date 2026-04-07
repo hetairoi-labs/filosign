@@ -192,6 +192,12 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 
 	const handleDownloadCompliancePdf = useCallback(async () => {
 		if (!fileInfo || !file?.pieceCid) return;
+		if (fileInfo.status !== "foc") {
+			toast.info(
+				"Compliance report will be available soon (once uploaded to FOC).",
+			);
+			return;
+		}
 		setPdfExportBusy(true);
 		try {
 			const explorerBase = defaultChain.blockExplorers?.default?.url ?? null;
@@ -226,6 +232,12 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 	const handleDownloadDocumentWithCompliancePdf = useCallback(async () => {
 		if (!fileInfo || !file?.pieceCid || !fileData) {
 			toast.error("Load the document first to bundle with the compliance PDF.");
+			return;
+		}
+		if (fileInfo.status !== "foc") {
+			toast.info(
+				"Compliance report will be available soon (once uploaded to FOC).",
+			);
 			return;
 		}
 		setPdfExportBusy(true);
