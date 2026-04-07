@@ -37,7 +37,6 @@ export default defineConfig({
 			"@filosign/crypto-utils",
 			"@filosign/react",
 			"@filosign/contracts",
-			"@worldcoin/idkit-core",
 		],
 	},
 	build: {

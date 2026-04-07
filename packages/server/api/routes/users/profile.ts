@@ -1,8 +1,7 @@
-import { zIDKitResult } from "@filosign/shared/world";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { decodeAbiParameters, isAddress } from "viem";
+import { isAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
@@ -11,9 +10,8 @@ import { processTransaction } from "@/lib/indexer/process";
 import { bucket } from "@/lib/s3/client";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
-import { getWorldIdLinkErrorMessage } from "@/lib/utils/world-errors";
 
-const { FSKeyRegistry, FSWorldVerifier } = fsContracts;
+const { FSKeyRegistry } = fsContracts;
 
 const { users } = db.schema;
 export default new Hono()
@@ -68,7 +66,6 @@ export default new Hono()
 				encryptionPublicKey: zHexString(),
 				signaturePublicKey: zHexString(),
 				walletAddress: zEvmAddress(),
-				worldIdProof: zIDKitResult,
 			})
 			.safeParse(rawBody);
 
@@ -87,37 +84,7 @@ export default new Hono()
 			encryptionPublicKey,
 			signaturePublicKey,
 			walletAddress,
-			worldIdProof,
 		} = parsedBody.data;
-
-		if (worldIdProof.protocol_version === "3.0") {
-			const alreadyLinked = await FSWorldVerifier.read.addressToNullifier([
-				walletAddress,
-			]);
-			if (alreadyLinked === 0n) {
-				const response = worldIdProof.responses[0];
-				const unpackedProof = decodeAbiParameters(
-					[{ type: "uint256[8]" }],
-					response.proof as `0x${string}`,
-				)[0];
-				const linkTx = await tryCatch(
-					FSWorldVerifier.write.linkWallet([
-						walletAddress,
-						BigInt(response.merkle_root),
-						BigInt(response.nullifier),
-						unpackedProof,
-					]),
-				);
-				if (linkTx.error) {
-					console.error("World ID linking failed:", linkTx.error);
-					return respond.err(
-						ctx,
-						getWorldIdLinkErrorMessage(linkTx.error),
-						500,
-					);
-				}
-			}
-		}
 
 		const valid = await tryCatch(
 			FSKeyRegistry.read.validateKeygenDataRegistrationSignature([

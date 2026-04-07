@@ -20,6 +20,7 @@ export const app = new Hono()
 			credentials: true,
 		}),
 	)
+	.get("/", (c) => c.text("OK"))
 	.route("/api", apiRouter);
 
 export default {

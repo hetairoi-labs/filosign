@@ -45,8 +45,6 @@ import {
 	TRUNCATED_FILE_NAME_LENGTH,
 	validateFile,
 } from "./lib/validation";
-import { IDKitLinkTest } from "./world/IDKitLinkTest";
-import { IDKitSignTest } from "./world/IDKitSignTest";
 
 type TestName =
 	| "login"
@@ -118,11 +116,13 @@ function TestLogin(props: { notify: NotifierFn }) {
 	const isLoggedIn = useIsLoggedIn();
 	const userAddress = useCurrentWalletAddress();
 
-	useEffectOnce(() => {
-		if (isLoggedIn.data === false) {
-			login.mutate({ pin: TEST_PIN });
-		}
-	}, [isLoggedIn.data]);
+	const loginMutation = {
+		mutate: () => login.mutate({ pin: TEST_PIN }),
+		isPending: login.isPending,
+		isError: login.isError,
+		isSuccess: login.isSuccess,
+		error: login.error,
+	};
 
 	useEffectOnce(() => {
 		notify("login");
@@ -140,7 +140,18 @@ function TestLogin(props: { notify: NotifierFn }) {
 		>
 			<SectionHeading id="login-heading" title="Login Test" />
 
-			<IDKitLinkTest userAddress={userAddress} pin={TEST_PIN} />
+			<div className="flex flex-wrap gap-2 items-center">
+				<Button mutation={loginMutation} disabled={isLoggedIn.data === true}>
+					{isLoggedIn.data === true
+						? "Logged in"
+						: login.isPending
+							? "Logging in..."
+							: "Login"}
+				</Button>
+				<span className="text-xs text-muted-foreground font-mono break-all">
+					{userAddress}
+				</span>
+			</div>
 
 			{login.isPending && (
 				<p
@@ -770,7 +781,14 @@ const ReceivedFileItem = memo(function ReceivedFileItem(props: {
 
 				{canView && file.signatures.length === 0 && currentUserAddress && (
 					<div className="mt-2">
-						<IDKitSignTest signerAddress={currentUserAddress} file={file} />
+						<Button
+							mutation={signFile}
+							mutationArgs={{
+								pieceCid: file.pieceCid,
+							}}
+						>
+							{signFile.isPending ? "Signing…" : "Sign Document"}
+						</Button>
 					</div>
 				)}
 				{file.signatures.length > 0 && (

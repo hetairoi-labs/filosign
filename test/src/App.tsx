@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
-import { hardhat, worldchain, worldchainSepolia } from "viem/chains";
+import { base, baseSepolia, hardhat } from "viem/chains";
 import Test from "./Test.js";
 
 const raw = import.meta.env.VITE_CHAIN;
@@ -20,9 +20,9 @@ if (chainKey !== "local" && chainKey !== "testnet" && chainKey !== "mainnet") {
 }
 const chain =
 	chainKey === "testnet"
-		? worldchainSepolia
+		? baseSepolia
 		: chainKey === "mainnet"
-			? worldchain
+			? base
 			: hardhat;
 const transport = http();
 
@@ -30,7 +30,7 @@ export const wallet1 = createWalletClient({
 	chain,
 	transport,
 	account: privateKeyToAccount(
-		"0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
+		"0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
 	),
 });
 
@@ -38,7 +38,7 @@ export const wallet2 = createWalletClient({
 	chain,
 	transport,
 	account: privateKeyToAccount(
-		"0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
+		"0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d",
 	),
 });
 

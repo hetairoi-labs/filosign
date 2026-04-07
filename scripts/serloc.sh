@@ -29,7 +29,7 @@ pkill -f "bun run index.ts" 2>/dev/null || true
 lsof -ti:30011 | xargs kill -9 2>/dev/null || true
 sleep 1
 
-CHAIN="local" DB_NAME="test" bun run index.ts &
+CHAIN="local" DB_NAME="test" bun run --hot index.ts &
 SERVER_PID=$!
 
 echo "Server started with PID $SERVER_PID"
