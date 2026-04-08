@@ -6,7 +6,7 @@
 		"start": "bun run index.ts",
 		"push": "bunx --bun drizzle-kit push",
 		"tsc": "tsc --noEmit",
-		"db:purge": "bun run scripts/drop-db.ts",
+		"db:purge": "bun run scripts/clear-db.ts",
 		"db:push": "bunx --bun drizzle-kit push",
 		"compile": "bun build --compile --minify --sourcemap --bytecode ./index.ts --outfile out/server"
 	},
