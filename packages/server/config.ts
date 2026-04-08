@@ -1,13 +1,13 @@
 import type { ChainKey } from "@filosign/contracts";
 import { isHex } from "viem";
 import { privateKeyToAddress } from "viem/accounts";
-import { hardhat, worldchain, worldchainSepolia } from "viem/chains";
+import { base, baseSepolia, hardhat } from "viem/chains";
 import env from "./env";
 
 const CHAIN_MAP = {
 	local: hardhat,
-	testnet: worldchainSepolia,
-	mainnet: worldchain,
+	testnet: baseSepolia,
+	mainnet: base,
 } as const;
 
 const INDEXER = {

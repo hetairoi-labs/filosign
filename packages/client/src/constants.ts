@@ -1,20 +1,23 @@
-import { hardhat, worldchain, worldchainSepolia } from "viem/chains";
+import { base, baseSepolia, hardhat } from "viem/chains";
 
-const chains = [hardhat, worldchain, worldchainSepolia] as const;
+const chains = [hardhat, baseSepolia, base] as const;
 export const privyChains = [...chains];
 export const wagmiChains = chains;
 export const defaultChain =
 	process.env.BUN_PUBLIC_CHAIN === "local"
 		? hardhat
 		: process.env.BUN_PUBLIC_CHAIN === "testnet"
-			? worldchainSepolia
-			: worldchain;
+			? baseSepolia
+			: base;
 
 export const WORLD_CHAIN_SEPOLIA_TOKENS = [
 	{
 		name: "USD Coin",
 		symbol: "USDC",
-		address: "0x66145f38cBAC35Ca6F1Dfb4914dF98F1614aeA88",
+		address:
+			defaultChain === base
+				? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" // mainnet USDC
+				: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // testnet USDC
 		icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Circle_USDC_Logo.svg/1280px-Circle_USDC_Logo.svg.png?_=20220815163658",
 		decimals: 6,
 		faucets: [{ name: "Circle Faucet", url: "https://faucet.circle.com" }],

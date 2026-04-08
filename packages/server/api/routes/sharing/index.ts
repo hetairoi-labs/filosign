@@ -5,7 +5,7 @@ import { getAddress, isAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
-import { fsContracts } from "@/lib/evm";
+import { evmClient, fsContracts } from "@/lib/evm";
 import { processTransaction } from "@/lib/indexer/process";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
@@ -61,7 +61,7 @@ export default new Hono()
 			return respond.err(ctx, "Already approved", 409);
 		}
 
-		// spam prevetion: count cancelsed requests
+		// spam prevention: count cancelled requests
 		const cancelledRequests = await db
 			.select()
 			.from(shareRequests)
@@ -138,14 +138,6 @@ export default new Hono()
 			);
 		}
 
-		if (
-			!inviteeEmail ||
-			typeof inviteeEmail !== "string" ||
-			!inviteeEmail.includes("@")
-		) {
-			return respond.err(ctx, "Invalid inviteeEmail", 400);
-		}
-
 		const [existingUser] = await db
 			.select()
 			.from(users)
@@ -157,7 +149,7 @@ export default new Hono()
 			return respond.ok(
 				ctx,
 				{ address: existingUser.walletAddress },
-				"Email is alreadt registered on the platform, request by address instead",
+				"Email is already registered on the platform, request by address instead",
 				303,
 			);
 		}
@@ -255,12 +247,7 @@ export default new Hono()
 
 			return respond.ok(ctx, { requests }, "Received requests retrieved", 200);
 		} catch (error) {
-			console.error("Error fetching received share requests:", {
-				userWallet,
-				error: error instanceof Error ? error.message : String(error),
-				stack: error instanceof Error ? error.stack : undefined,
-			});
-
+			console.error("Error fetching received share requests", error);
 			return respond.err(ctx, "Failed to retrieve received requests", 500);
 		}
 	})
@@ -284,12 +271,7 @@ export default new Hono()
 
 			return respond.ok(ctx, { requests }, "Sent requests retrieved", 200);
 		} catch (error) {
-			console.error("Error fetching sent share requests:", {
-				userWallet,
-				error: error instanceof Error ? error.message : String(error),
-				stack: error instanceof Error ? error.stack : undefined,
-			});
-
+			console.error("Error fetching sent share requests", error);
 			return respond.err(ctx, "Failed to retrieve sent requests", 500);
 		}
 	})
@@ -415,7 +397,6 @@ export default new Hono()
 
 		const { sender, nonce, deadline, signature } = parsedBody.data;
 
-		// Contract call is `onlyServer`; this API server is the server signer.
 		const args = [
 			recipient,
 			getAddress(sender),
@@ -424,9 +405,13 @@ export default new Hono()
 			signature,
 		] as const;
 
-		const simResult = await tryCatch(FSManager.simulate.approveSender(args));
-		if (simResult.error) {
-			return respond.err(ctx, "Invalid approval signature", 400);
+		try {
+			// Use address only: avoids viem duplicate-version Account type mismatches in tooling.
+			await FSManager.simulate.approveSender(args, {
+				account: evmClient.account.address,
+			});
+		} catch (_err) {
+			return respond.err(ctx, "Invalid signature", 400);
 		}
 
 		const txHash = await FSManager.write.approveSender(args);
