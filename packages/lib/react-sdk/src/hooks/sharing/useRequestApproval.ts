@@ -27,13 +27,7 @@ export function useRequestApproval() {
 				);
 			}
 
-			if (recipientEmail && recipientWallet) {
-				throw new Error(
-					"Provide only one of recipientWallet or recipientEmail",
-				);
-			}
-
-			if (recipientEmail) {
+			if (recipientEmail && !recipientWallet) {
 				const response = await api.rpc.base.post("/sharing/request/invite", {
 					inviteeEmail: recipientEmail,
 				});
@@ -62,10 +56,13 @@ export function useRequestApproval() {
 					message: z.string().nullable(),
 					status: z.string(),
 					createdAt: z.string(),
+					emailSent: z.boolean().optional(),
+					emailError: z.string().optional(),
 				},
 				"/sharing/request",
 				{
 					recipientWallet,
+					recipientEmail,
 					message: message || null,
 				},
 			);

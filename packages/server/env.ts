@@ -10,6 +10,8 @@ const envKeys = [
 	"PG_URI",
 	"DB_NAME",
 	"FRONTEND_URL",
+	"RESEND_API_KEY",
+	"RESEND_FROM_EMAIL",
 	"CHAIN",
 	"SUPER_PASS",
 	"WORLD_ID_RP_ID",

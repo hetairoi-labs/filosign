@@ -5,12 +5,14 @@ import {
 	toBytes,
 } from "@filosign/crypto-utils/node";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, inArray, ne } from "drizzle-orm";
 import { Hono } from "hono";
+import type { Address } from "viem";
 import { getAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
+import { sendDocumentReceivedEmail } from "@/lib/email/invites";
 import { evmClient, fsContracts } from "@/lib/evm";
 import { bucket } from "@/lib/s3/client";
 import { getOrCreateUserDataset } from "@/lib/synapse";
@@ -163,6 +165,59 @@ export default new Hono()
 
 			return insertResult;
 		});
+
+		const participantWallets = [
+			...new Set(participants.map((p) => getAddress(p.address))),
+		];
+		const participantProfiles = participantWallets.length
+			? await db
+					.select({
+						walletAddress: users.walletAddress,
+						email: users.email,
+					})
+					.from(users)
+					.where(inArray(users.walletAddress, participantWallets))
+			: [];
+		const [senderProfile] = await db
+			.select({
+				email: users.email,
+				firstName: users.firstName,
+				lastName: users.lastName,
+				username: users.username,
+			})
+			.from(users)
+			.where(eq(users.walletAddress, sender));
+		const senderName =
+			[senderProfile?.firstName, senderProfile?.lastName]
+				.filter(Boolean)
+				.join(" ") ||
+			senderProfile?.username ||
+			senderProfile?.email ||
+			undefined;
+
+		const emailResults = await Promise.all(
+			participantProfiles
+				.filter((profile) => profile.email)
+				.map((profile) =>
+					tryCatch(
+						sendDocumentReceivedEmail({
+							to: profile.email as string,
+							senderWallet: sender as Address,
+							recipientWallet: profile.walletAddress as Address,
+							pieceCid,
+							senderName,
+						}),
+					),
+				),
+		);
+		const emailFailures = emailResults.filter((result) => result.error);
+		if (emailFailures.length > 0) {
+			console.error("Failed to send document notification emails", {
+				pieceCid,
+				failedCount: emailFailures.length,
+				errors: emailFailures.map((result) => result.error?.message),
+			});
+		}
 
 		ds.upload(new Uint8Array(bytes), { pieceMetadata: {} })
 			.then(async (uploadResult) => {

@@ -1,8 +1,9 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthedApi } from "../auth";
 
 export function useUpdateUserProfile() {
 	const { data: api } = useAuthedApi();
+	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: async (args: {
@@ -19,6 +20,9 @@ export function useUpdateUserProfile() {
 				firstName: args.firstName,
 				lastName: args.lastName,
 			});
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["user"] });
 		},
 	});
 }

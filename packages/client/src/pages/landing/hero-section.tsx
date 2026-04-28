@@ -77,7 +77,8 @@ export default function HeroSection() {
 					}}
 					className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed -mt-2 font-manrope font-light"
 				>
-					Secure, fast, and easy-to-use document signing on filecoin.
+					Send, sign, and verify sensitive documents with encrypted workflows
+					and portable proof packets your team can inspect.
 				</motion.p>
 
 				{/* Action Buttons */}

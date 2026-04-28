@@ -1,6 +1,11 @@
 import { useFilosignContext } from "@filosign/react";
 import { useRequestApproval } from "@filosign/react/hooks";
-import { ChatCircleIcon, PlusIcon, WalletIcon } from "@phosphor-icons/react";
+import {
+	ChatCircleIcon,
+	EnvelopeIcon,
+	PlusIcon,
+	WalletIcon,
+} from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { getAddress, isAddress } from "viem";
@@ -29,6 +34,7 @@ export default function AddRecipientDialog({
 }: AddRecipientDialogProps) {
 	const [open, setOpen] = useState(false);
 	const [walletAddress, setWalletAddress] = useState("");
+	const [recipientEmail, setRecipientEmail] = useState("");
 	const [message, setMessage] = useState("");
 
 	const { wallet } = useFilosignContext();
@@ -37,6 +43,14 @@ export default function AddRecipientDialog({
 	const handleSendRequest = async () => {
 		if (!isAddress(walletAddress)) {
 			toast.error("Please enter a valid wallet address");
+			return;
+		}
+
+		if (
+			recipientEmail.trim() &&
+			!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim())
+		) {
+			toast.error("Please enter a valid email address");
 			return;
 		}
 
@@ -51,9 +65,10 @@ export default function AddRecipientDialog({
 			return;
 		}
 
-		const [, error] = await safeAsync(
+		const [result, error] = await safeAsync(
 			sendShareRequest.mutateAsync({
 				recipientWallet: walletAddress,
+				recipientEmail: recipientEmail.trim() || undefined,
 				message: message.trim() || undefined,
 			}),
 		);
@@ -66,8 +81,30 @@ export default function AddRecipientDialog({
 			return;
 		}
 
-		toast.success("Share request sent successfully!");
+		if (recipientEmail.trim()) {
+			const emailSent =
+				result && typeof result === "object" && "emailSent" in result
+					? result.emailSent
+					: false;
+			const emailError =
+				result && typeof result === "object" && "emailError" in result
+					? result.emailError
+					: undefined;
+
+			if (emailSent) {
+				toast.success("Share request sent and email notification delivered.");
+			} else {
+				toast.warning(
+					emailError
+						? `Share request sent, but email failed: ${emailError}`
+						: "Share request sent, but email notification was not delivered.",
+				);
+			}
+		} else {
+			toast.success("Share request sent successfully!");
+		}
 		setWalletAddress("");
+		setRecipientEmail("");
 		setMessage("");
 		setOpen(false);
 		onSuccess?.();
@@ -75,6 +112,7 @@ export default function AddRecipientDialog({
 
 	const handleClose = () => {
 		setWalletAddress("");
+		setRecipientEmail("");
 		setMessage("");
 		setOpen(false);
 	};
@@ -113,6 +151,29 @@ export default function AddRecipientDialog({
 							className="font-mono"
 							autoComplete="off"
 						/>
+					</div>
+
+					<div className="space-y-2">
+						<Label
+							htmlFor="recipient-email"
+							className="flex items-center gap-2"
+						>
+							<EnvelopeIcon className="w-4 h-4" />
+							Notification Email (Optional)
+						</Label>
+						<Input
+							id="recipient-email"
+							name="recipient-email"
+							type="email"
+							placeholder="recipient@example.com"
+							value={recipientEmail}
+							onChange={(e) => setRecipientEmail(e.target.value)}
+							autoComplete="email"
+						/>
+						<p className="text-xs text-muted-foreground">
+							We'll email this address so they can log in with the wallet above
+							and review the request.
+						</p>
 					</div>
 
 					{/* Message Input */}

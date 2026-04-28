@@ -1,10 +1,12 @@
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { Hono } from "hono";
+import type { Address } from "viem";
 import { getAddress, isAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
+import { sendShareRequestEmail } from "@/lib/email/invites";
 import { evmClient, fsContracts } from "@/lib/evm";
 import { processTransaction } from "@/lib/indexer/process";
 import { respond } from "@/lib/utils/respond";
@@ -17,12 +19,20 @@ const { shareApprovals, shareRequests, userInvites, users } = db.schema;
 const { FSManager } = fsContracts;
 export default new Hono()
 	.post("/request", authenticated, async (ctx) => {
-		const { recipientWallet, message } = await ctx.req.json();
+		const rawBody = await ctx.req.json();
+		const parsedBody = z
+			.object({
+				recipientWallet: zEvmAddress(),
+				recipientEmail: z.string().email().optional(),
+				message: z.string().max(500).nullable().optional(),
+			})
+			.safeParse(rawBody);
 
-		if (!recipientWallet || !isAddress(recipientWallet)) {
-			return respond.err(ctx, "Invalid recipientWallet", 400);
+		if (parsedBody.error) {
+			return respond.err(ctx, parsedBody.error.message, 400);
 		}
 
+		const { recipientWallet, recipientEmail, message } = parsedBody.data;
 		const recipient = getAddress(recipientWallet);
 		const sender = ctx.var.userWallet;
 
@@ -107,7 +117,44 @@ export default new Hono()
 				createdAt: shareRequests.createdAt,
 			});
 
-		return respond.ok(ctx, newRequest, "Share request created", 201);
+		let emailSent = false;
+		let emailError: string | undefined;
+
+		if (recipientEmail) {
+			const [self] = await db
+				.select()
+				.from(users)
+				.where(eq(users.walletAddress, sender));
+			const senderName =
+				[self?.firstName, self?.lastName].filter(Boolean).join(" ") ||
+				self?.username ||
+				self?.email ||
+				undefined;
+
+			try {
+				await sendShareRequestEmail({
+					to: recipientEmail,
+					senderWallet: sender as Address,
+					recipientWallet: recipient as Address,
+					senderName,
+					message: message || null,
+				});
+				emailSent = true;
+			} catch (error) {
+				emailError =
+					error instanceof Error
+						? error.message
+						: "Failed to send notification";
+				console.error("Failed to send share request email", error);
+			}
+		}
+
+		return respond.ok(
+			ctx,
+			{ ...newRequest, emailSent, emailError },
+			"Share request created",
+			201,
+		);
 	})
 	// TODO - @kartikay please implement the email sending logic and encode invite ID in sent link
 	.post("/request/invite", authenticated, async (ctx) => {

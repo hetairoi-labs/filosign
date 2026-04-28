@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.20
 # Stage 1: Build
-FROM oven/bun:1.3.11 AS builder
+FROM oven/bun:1.3.12 AS builder
 WORKDIR /app
 
 # Caching bun install dependencies

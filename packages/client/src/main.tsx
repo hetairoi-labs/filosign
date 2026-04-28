@@ -2,6 +2,7 @@ import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { Toaster } from "sonner";
+import ProfileEmailSync from "./lib/components/custom/ProfileEmailSync";
 import { ErrorBoundary } from "./lib/components/errors/ErrorBoundary";
 import { QueryClientProvider } from "./lib/context/query-client";
 import { ThemeProvider } from "./lib/context/theme-provider";
@@ -33,6 +34,7 @@ const App = () => {
 											weight: "regular",
 										}}
 									>
+										<ProfileEmailSync />
 										<RouterProvider router={router} />
 										<Toaster position="bottom-right" />
 									</IconContext.Provider>
