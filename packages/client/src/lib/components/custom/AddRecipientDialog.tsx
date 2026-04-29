@@ -1,14 +1,12 @@
-import { useFilosignContext } from "@filosign/react";
 import { useRequestApproval } from "@filosign/react/hooks";
 import {
-	ChatCircleIcon,
+	CheckCircleIcon,
 	EnvelopeIcon,
 	PlusIcon,
-	WalletIcon,
+	SpinnerGapIcon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { getAddress, isAddress } from "viem";
 import { safeAsync } from "@/lib/utils/safe";
 import { Button } from "@/src/lib/components/ui/button";
 import {
@@ -28,93 +26,68 @@ interface AddRecipientDialogProps {
 	onSuccess?: () => void;
 }
 
+type Step = "email" | "success";
+
 export default function AddRecipientDialog({
 	trigger,
 	onSuccess,
 }: AddRecipientDialogProps) {
 	const [open, setOpen] = useState(false);
-	const [walletAddress, setWalletAddress] = useState("");
-	const [recipientEmail, setRecipientEmail] = useState("");
+	const [email, setEmail] = useState("");
 	const [message, setMessage] = useState("");
+	const [step, setStep] = useState<Step>("email");
+	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [result, setResult] = useState<{
+		exists?: boolean;
+		requested?: boolean;
+		invited?: boolean;
+		alreadyRequested?: boolean;
+		alreadyApproved?: boolean;
+		alreadyInvited?: boolean;
+	} | null>(null);
 
-	const { wallet } = useFilosignContext();
 	const sendShareRequest = useRequestApproval();
 
-	const handleSendRequest = async () => {
-		if (!isAddress(walletAddress)) {
-			toast.error("Please enter a valid wallet address");
-			return;
-		}
+	const isValidEmail = (email: string) => {
+		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+	};
 
-		if (
-			recipientEmail.trim() &&
-			!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail.trim())
-		) {
+	const handleSubmit = async () => {
+		if (!isValidEmail(email.trim())) {
 			toast.error("Please enter a valid email address");
 			return;
 		}
 
-		// Normalize addresses for comparison
-		const normalizedRecipient = getAddress(walletAddress);
-		const normalizedSender = wallet?.account?.address
-			? getAddress(wallet.account.address)
-			: null;
+		setIsSubmitting(true);
 
-		if (normalizedSender && normalizedRecipient === normalizedSender) {
-			toast.error("You cannot add yourself as a recipient");
-			return;
-		}
-
-		const [result, error] = await safeAsync(
+		// Single API call handles both cases
+		const [data, error] = await safeAsync(
 			sendShareRequest.mutateAsync({
-				recipientWallet: walletAddress,
-				recipientEmail: recipientEmail.trim() || undefined,
+				recipientEmail: email.trim(),
 				message: message.trim() || undefined,
 			}),
 		);
 
+		setIsSubmitting(false);
+
 		if (error) {
-			console.error(error);
-			toast.error(
-				error.message || "Failed to send share request. Please try again.",
-			);
+			toast.error(error.message || "Something went wrong");
 			return;
 		}
 
-		if (recipientEmail.trim()) {
-			const emailSent =
-				result && typeof result === "object" && "emailSent" in result
-					? result.emailSent
-					: false;
-			const emailError =
-				result && typeof result === "object" && "emailError" in result
-					? result.emailError
-					: undefined;
-
-			if (emailSent) {
-				toast.success("Share request sent and email notification delivered.");
-			} else {
-				toast.warning(
-					emailError
-						? `Share request sent, but email failed: ${emailError}`
-						: "Share request sent, but email notification was not delivered.",
-				);
-			}
-		} else {
-			toast.success("Share request sent successfully!");
-		}
-		setWalletAddress("");
-		setRecipientEmail("");
-		setMessage("");
-		setOpen(false);
-		onSuccess?.();
+		setResult(data || {});
+		setStep("success");
 	};
 
 	const handleClose = () => {
-		setWalletAddress("");
-		setRecipientEmail("");
-		setMessage("");
 		setOpen(false);
+		setTimeout(() => {
+			setStep("email");
+			setEmail("");
+			setMessage("");
+			setResult(null);
+		}, 200);
+		onSuccess?.();
 	};
 
 	return (
@@ -127,60 +100,188 @@ export default function AddRecipientDialog({
 					</Button>
 				)}
 			</DialogTrigger>
+
 			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>Add New Recipient</DialogTitle>
-					<DialogDescription>
-						Send a share request to allow someone to receive documents from you.
-					</DialogDescription>
-				</DialogHeader>
+				{step === "email" && (
+					<>
+						<DialogHeader>
+							<DialogTitle>Add Recipient</DialogTitle>
+							<DialogDescription>
+								Enter their email address. We&apos;ll handle the rest - connect
+								if they&apos;re on Filosign, or invite them to join.
+							</DialogDescription>
+						</DialogHeader>
 
-				<div className="space-y-4 py-4">
-					{/* Wallet Address Input */}
-					<div className="space-y-2">
-						<Label htmlFor="wallet-address" className="flex items-center gap-2">
-							<WalletIcon className="w-4 h-4" />
-							Wallet Address *
-						</Label>
-						<Input
-							id="wallet-address"
-							name="wallet-address"
-							placeholder="0x..."
-							value={walletAddress}
-							onChange={(e) => setWalletAddress(e.target.value)}
-							className="font-mono"
-							autoComplete="off"
-						/>
-					</div>
+						<div className="space-y-4 py-4">
+							<div className="space-y-2">
+								<Label htmlFor="email" className="flex items-center gap-2">
+									<EnvelopeIcon className="w-4 h-4" />
+									Email Address
+								</Label>
+								<Input
+									id="email"
+									type="email"
+									placeholder="name@example.com"
+									value={email}
+									onChange={(e) => setEmail(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter" && !isSubmitting) {
+											handleSubmit();
+										}
+									}}
+									autoFocus
+								/>
+							</div>
 
-					{/* Message Input */}
-					<div className="space-y-2">
-						<Label htmlFor="message" className="flex items-center gap-2">
-							<ChatCircleIcon className="w-4 h-4" />
-							Message (Optional)
-						</Label>
-						<Textarea
-							id="message"
-							placeholder="Add a personal message with your share request..."
-							value={message}
-							onChange={(e) => setMessage(e.target.value)}
-							rows={3}
-						/>
-					</div>
-				</div>
+							<div className="space-y-2">
+								<Label htmlFor="message">Message (Optional)</Label>
+								<Textarea
+									id="message"
+									placeholder="Hey, I want to send you some documents on Filosign..."
+									value={message}
+									onChange={(e) => setMessage(e.target.value)}
+									rows={3}
+								/>
+							</div>
+						</div>
 
-				<div className="flex justify-end gap-3">
-					<Button variant="outline" onClick={handleClose}>
-						Cancel
-					</Button>
-					<Button
-						onClick={handleSendRequest}
-						disabled={sendShareRequest.isPending || !walletAddress.trim()}
-						variant="primary"
-					>
-						{sendShareRequest.isPending ? "Sending..." : "Send Request"}
-					</Button>
-				</div>
+						<div className="flex justify-end gap-3">
+							<Button
+								variant="outline"
+								onClick={() => setOpen(false)}
+								disabled={isSubmitting}
+							>
+								Cancel
+							</Button>
+							<Button
+								onClick={handleSubmit}
+								disabled={!isValidEmail(email.trim()) || isSubmitting}
+								variant="primary"
+							>
+								{isSubmitting ? (
+									<>
+										<SpinnerGapIcon className="w-4 h-4 animate-spin" />
+										Sending...
+									</>
+								) : (
+									"Send Request"
+								)}
+							</Button>
+						</div>
+					</>
+				)}
+
+				{step === "success" && result && (
+					<>
+						<DialogHeader>
+							<DialogTitle className="flex items-center gap-2">
+								<CheckCircleIcon className="w-6 h-6 text-green-500" />
+								{result.alreadyApproved
+									? "Already Connected"
+									: result.alreadyRequested
+										? "Request Pending"
+										: result.alreadyInvited
+											? "Already Invited"
+											: result.exists
+												? "Request Sent"
+												: "Invite Sent"}
+							</DialogTitle>
+						</DialogHeader>
+
+						<div className="py-2 space-y-4">
+							{/* Already connected */}
+							{result.alreadyApproved && (
+								<div className="text-center space-y-2">
+									<p className="text-muted-foreground">
+										You&apos;re already connected with <strong>{email}</strong>.
+									</p>
+									<p className="text-sm text-muted-foreground">
+										You can send them documents right away.
+									</p>
+								</div>
+							)}
+
+							{/* Request already pending */}
+							{result.alreadyRequested && (
+								<div className="text-center space-y-2">
+									<p className="text-muted-foreground">
+										You&apos;ve already sent a request to{" "}
+										<strong>{email}</strong>.
+									</p>
+									<p className="text-sm text-muted-foreground">
+										Waiting for them to accept.
+									</p>
+								</div>
+							)}
+
+							{/* Already invited */}
+							{result.alreadyInvited && (
+								<div className="text-center space-y-2">
+									<p className="text-muted-foreground">
+										You&apos;ve already invited <strong>{email}</strong>.
+									</p>
+									<p className="text-sm text-muted-foreground">
+										They&apos;ll receive your invitation email.
+									</p>
+								</div>
+							)}
+
+							{/* User exists - request sent */}
+							{result.exists && result.requested && (
+								<div className="text-center space-y-2">
+									<p className="text-muted-foreground">
+										<strong>{email}</strong> is on Filosign!
+									</p>
+									<p className="text-sm text-muted-foreground">
+										They&apos;ll receive a notification to accept your
+										connection request.
+									</p>
+								</div>
+							)}
+
+							{/* User doesn't exist - invite sent */}
+							{result.invited && !result.alreadyInvited && (
+								<div className="text-center space-y-2">
+									<p className="text-muted-foreground">
+										<strong>{email}</strong> invited!
+									</p>
+									<p className="text-sm text-muted-foreground">
+										They&apos;ll receive an email invitation. Once they join,
+										you can send them documents.
+									</p>
+								</div>
+							)}
+
+							{message && (
+								<div className="bg-muted/30 p-3 rounded-lg">
+									<p className="text-xs text-muted-foreground mb-1">
+										Your message:
+									</p>
+									<p className="text-sm italic">&quot;{message}&quot;</p>
+								</div>
+							)}
+						</div>
+
+						<div className="flex justify-end gap-3">
+							{(result.requested ||
+								result.invited ||
+								result.alreadyInvited) && (
+								<Button
+									onClick={() => {
+										handleClose();
+										window.location.href = "/dashboard";
+									}}
+									variant="outline"
+								>
+									Back to Dashboard
+								</Button>
+							)}
+							<Button onClick={handleClose} variant="primary">
+								{result.alreadyApproved ? "Close" : "Done"}
+							</Button>
+						</div>
+					</>
+				)}
 			</DialogContent>
 		</Dialog>
 	);

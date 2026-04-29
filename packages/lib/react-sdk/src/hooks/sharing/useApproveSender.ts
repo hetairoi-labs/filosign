@@ -1,9 +1,9 @@
 import { eip712signature } from "@filosign/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Address } from "viem";
+import z from "zod";
 import { useFilosignContext } from "../../context/FilosignProvider";
 import { useAuthedApi } from "../auth/useAuthedApi";
-import z from "zod";
 
 export function useApproveSender() {
 	const { contracts, wallet } = useFilosignContext();

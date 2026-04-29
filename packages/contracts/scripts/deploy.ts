@@ -40,6 +40,19 @@ async function main() {
 	});
 
 	const manager = await hre.viem.deployContract("FSManager");
+	console.log("FSManager deployed at:", manager.address);
+
+	// Wait for deployment to be confirmed
+	await new Promise((resolve) => setTimeout(resolve, 3000));
+
+	// Verify deployment succeeded by checking code at address
+	const publicClient = await hre.viem.getPublicClient();
+	const code = await publicClient.getBytecode({ address: manager.address });
+	if (!code || code === "0x") {
+		console.error("Deployment failed - no code at manager address");
+		process.exit(1);
+	}
+
 	const fileRegistry = await hre.viem.getContractAt(
 		"FSFileRegistry",
 		await manager.read.fileRegistry(),

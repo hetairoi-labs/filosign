@@ -191,7 +191,7 @@ export default function RecipientsSection({
 												trigger={
 													<Button type="button" variant="primary">
 														<PaperPlaneTiltIcon className="size-4" />
-														<p className="hidden md:block">Send Request</p>
+														<p className="hidden md:block">Add New Recipient</p>
 													</Button>
 												}
 												onSuccess={handleRequestSuccess}
@@ -203,7 +203,7 @@ export default function RecipientsSection({
 												<PopoverTrigger asChild>
 													<Button type="button" variant="outline">
 														<UserIcon className="size-4" />
-														<p className="hidden md:block">Select Recipient</p>
+														<p className="hidden md:block">Your Contacts</p>
 													</Button>
 												</PopoverTrigger>
 												<PopoverContent className="w-80 p-0 mt-2" align="end">

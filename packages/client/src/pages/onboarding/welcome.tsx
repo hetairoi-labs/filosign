@@ -1,3 +1,4 @@
+import { useFilosignContext } from "@filosign/react";
 import { useIsLoggedIn, useUpdateUserProfile } from "@filosign/react/hooks";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { motion } from "motion/react";
@@ -19,6 +20,7 @@ export default function OnboardingWelcomeCompletePage() {
 	const { onboardingForm, setOnboardingForm } = useStorePersist();
 	const isLoggedIn = useIsLoggedIn();
 	const updateUserProfile = useUpdateUserProfile();
+	const { api } = useFilosignContext();
 
 	useEffect(() => {
 		if (onboardingForm?.firstName || onboardingForm?.lastName) {
@@ -44,6 +46,37 @@ export default function OnboardingWelcomeCompletePage() {
 				lastName: "",
 				hasOnboarded: true,
 			});
+		}
+
+		// Check for pending invite from session storage
+		const pendingInviteId = sessionStorage.getItem("pendingInviteId");
+		console.log("Checking for pending invite:", pendingInviteId);
+		if (pendingInviteId && api) {
+			try {
+				console.log("Claiming invite:", pendingInviteId);
+				const response = await api.rpc.base.post(
+					`/sharing/invite/${pendingInviteId}/claim`,
+					{},
+				);
+				console.log("Claim response:", response);
+				sessionStorage.removeItem("pendingInviteId");
+				toast.success(
+					"Connection request received! Check your notifications to accept it.",
+				);
+				// Redirect to permissions page to see the pending request
+				window.location.href = "/dashboard/permissions";
+				return;
+			} catch (error) {
+				console.error("Failed to claim invite:", error);
+				toast.error(
+					error instanceof Error
+						? error.message
+						: "Failed to accept invite. Please ask the sender to add you again.",
+				);
+				// Continue to dashboard even if claim fails
+			}
+		} else {
+			console.log("No pending invite found in sessionStorage");
 		}
 
 		window.location.href = "/dashboard";

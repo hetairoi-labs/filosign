@@ -20,6 +20,7 @@ import FilesPage from "./dashboard/files";
 import PermissionsPage from "./dashboard/permissions";
 import ProfilePage from "./dashboard/profile";
 import CreateNewSignaturePage from "./dashboard/signature/create";
+import InvitePage from "./invite";
 import LandingPage from "./landing";
 import LogoPage from "./logo";
 import OnboardingWelcomePage from "./onboarding";
@@ -272,6 +273,14 @@ const logoRoute = createRoute({
 	},
 });
 
+const inviteRoute = createRoute({
+	getParentRoute: () => rootRoute,
+	path: "/invite/$inviteId",
+	component: function Invite() {
+		return withPageErrorBoundary(InvitePage)({});
+	},
+});
+
 const routeTree = rootRoute.addChildren([
 	indexRoute,
 	aboutRoute,
@@ -297,6 +306,7 @@ const routeTree = rootRoute.addChildren([
 	notFoundRoute,
 	testRoute,
 	logoRoute,
+	inviteRoute,
 ]);
 const router = createRouter({
 	routeTree,

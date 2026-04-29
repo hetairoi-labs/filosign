@@ -1,7 +1,7 @@
 import {
 	ChartBarIcon,
 	CheckCircleIcon,
-	QrCodeIcon,
+	LockKeyIcon,
 	ShieldCheckIcon,
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
@@ -50,84 +50,81 @@ function BentoCard({
 export default function FeaturesBento() {
 	const cards: BentoCardConfig[] = [
 		{
-			title: "Quantum-Safe Security",
+			title: "You Control Everything",
 			description:
-				"Future-proof encryption using Dilithium crystals to protect your signatures against quantum threats.",
+				"Unlike other platforms, you own your identity, files, and signatures. No vendor lock-in. If we disappear, your proofs remain permanently verifiable on the blockchain.",
 			body: (
 				<div className="bg-white rounded-2xl p-5 shadow-sm border border-border/40 w-full space-y-3.5 h-[192px] flex flex-col justify-center">
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-3">
 							<ShieldCheckIcon className="size-5 text-primary" weight="fill" />
 							<span className="text-sm font-medium font-manrope">
-								Dilithium 3
+								Self-Sovereign
 							</span>
 						</div>
 						<span className="text-[10px] font-medium bg-secondary text-primary px-2.5 font-manrope py-1 rounded-full">
-							Secure
+							You Own It
 						</span>
 					</div>
 					<div className="flex items-center justify-between opacity-40">
 						<div className="flex items-center gap-3">
 							<div className="size-5 rounded-full border border-foreground/30 flex items-center justify-center text-[10px] font-medium font-manrope">
-								R
+								V
 							</div>
-							<span className="text-sm font-manrope">RSA-2048</span>
+							<span className="text-sm font-manrope">Vendor Controlled</span>
 						</div>
 						<span className="text-[10px] font-medium bg-muted text-muted-foreground px-2.5 font-manrope py-1 rounded-full">
-							Legacy
+							They Own It
 						</span>
 					</div>
 					<div className="flex items-center justify-between opacity-40 pb-1">
 						<div className="flex items-center gap-3">
 							<div className="size-5 rounded-full border border-foreground/30 flex items-center justify-center text-[10px] font-medium font-manrope">
-								E
+								D
 							</div>
-							<span className="text-sm font-manrope">ECDSA</span>
+							<span className="text-sm font-manrope">Database Storage</span>
 						</div>
 						<span className="text-[10px] font-medium bg-muted text-muted-foreground px-2.5 font-manrope py-1 rounded-full">
-							Legacy
+							Can Be Lost
 						</span>
 					</div>
 				</div>
 			),
 		},
 		{
-			title: "Instant Verification",
+			title: "True End-to-End Encryption",
 			description:
-				"Verify document authenticity instantly with our verifiable QR codes and on-chain proofs.",
+				"Documents are encrypted in your browser before they ever leave your device. Only you and your recipients hold the keys. To us and everyone else, your files are just gibberish.",
 			body: (
 				<div className="bg-white p-5 rounded-2xl shadow-sm border border-border/40 w-full flex flex-col items-center h-[192px] justify-center">
 					<div className="bg-white p-2 rounded-lg">
-						<QrCodeIcon className="size-24 text-primary" weight="fill" />
+						<LockKeyIcon className="size-24 text-primary" weight="fill" />
 					</div>
 					<div className="w-full">
-						<button
-							type="button"
-							className="w-full py-2.5 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium font-manrope hover:opacity-90 transition-opacity cursor-pointer shadow-sm"
-						>
-							Verify Now
-						</button>
+						<div className="w-full py-2.5 px-4 bg-primary text-primary-foreground rounded-lg text-sm font-medium font-manrope text-center">
+							Client-Side Encrypted
+						</div>
 					</div>
 				</div>
 			),
 		},
 		{
-			title: "Organized Workspaces",
+			title: "Spam-Free by Design",
 			description:
-				"Keep your teams and data perfectly organized in separate workspaces.",
+				"Senders must request permission before they can send you files. You have full control over who can contact you, completely preventing unwanted signing requests and document spam.",
 			body: (
 				<div className="bg-white rounded-2xl p-5 shadow-sm border border-border/40 w-full h-[192px] flex flex-col justify-center">
 					<div className="space-y-2">
 						<div className="flex items-center gap-4 p-3 bg-[#F2F9F0] rounded-xl relative overflow-hidden">
 							<div className="size-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm font-manrope z-10">
-								F
+								A
 							</div>
 							<div className="flex-1 z-10">
 								<div className="text-sm font-semibold text-foreground font-manrope">
-									Filosign Inc.
+									Allowed Contacts
 								</div>
 								<div className="text-xs text-muted-foreground font-manrope">
-									Enterprise
+									Can send you files
 								</div>
 							</div>
 							<div className="size-12 rounded-full bg-primary flex items-center justify-center absolute -right-3 -bottom-3 z-0">
@@ -139,14 +136,14 @@ export default function FeaturesBento() {
 						</div>
 						<div className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted/20 transition-colors opacity-60">
 							<div className="size-10 rounded-lg bg-muted flex items-center justify-center font-bold text-muted-foreground text-sm font-manrope">
-								L
+								S
 							</div>
 							<div className="flex-1">
 								<div className="text-sm font-medium font-manrope">
-									Legal Team
+									Spam Senders
 								</div>
 								<div className="text-xs text-muted-foreground font-manrope">
-									Internal
+									Blocked until approved
 								</div>
 							</div>
 						</div>
@@ -175,7 +172,8 @@ export default function FeaturesBento() {
 					transition={{ delay: 0.1 }}
 					className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto font-manrope font-light"
 				>
-					Automated workflows, quantum-safe security, and real-time insights.
+					Self-sovereign identity, end-to-end encryption, and programmable
+					settlement. You control everything.
 				</motion.p>
 			</div>
 
@@ -193,7 +191,7 @@ export default function FeaturesBento() {
 					</motion.div>
 				))}
 
-				{/* Card 4: Real-time Analytics */}
+				{/* Card 4: Programmable Settlement */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					whileInView={{ opacity: 1, y: 0 }}
@@ -207,60 +205,73 @@ export default function FeaturesBento() {
 								<div className="flex items-center gap-2 text-primary mb-1">
 									<ChartBarIcon className="size-5" />
 									<span className="font-medium text-sm font-manrope">
-										Analytics
+										Programmable Settlement
 									</span>
 								</div>
 								<CardTitle className="text-2xl md:text-3xl font-manrope font-light">
-									Real-time status tracking with actionable insights
+									Attach payments directly to signatures
 								</CardTitle>
 								<p className="text-muted-foreground text-base leading-relaxed font-manrope font-light">
-									Automated audit trails, instant reconciliation, and detailed
-									analytics for all your envelopes.
+									Attach incentives like USDT to documents. Signers
+									automatically receive payment the moment they sign. Perfect
+									for instant contractor payouts, cross-border payments, and DAO
+									grants—eliminating invoice delays and wire fees.
 								</p>
 							</div>
 
 							<div className="bg-white rounded-2xl p-6 shadow-sm border border-border/40 w-full">
-								<div className="flex items-center justify-between mb-8">
-									<div>
-										<div className="text-sm text-muted-foreground font-medium font-manrope">
-											Total Signed
+								<div className="flex items-center justify-between mb-6">
+									<div className="flex items-center gap-3">
+										<div className="size-10 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm font-manrope">
+											S
 										</div>
-										<div className="text-3xl mt-1 font-manrope">1,257</div>
+										<div>
+											<div className="text-sm font-semibold text-foreground font-manrope">
+												Sign & Get Paid
+											</div>
+											<div className="text-xs text-muted-foreground font-manrope">
+												Instant settlement
+											</div>
+										</div>
 									</div>
 									<div className="text-right">
 										<div className="text-sm text-muted-foreground font-medium font-manrope">
-											Completion Rate
+											Auto-Payout
 										</div>
-										<div className="text-3xl text-primary mt-1 font-manrope">
-											94%
+										<div className="text-2xl text-primary mt-1 font-manrope">
+											100%
 										</div>
 									</div>
 								</div>
 
-								{/* Simple CSS Chart */}
-								<div className="h-40 flex items-end justify-between gap-2 md:gap-4">
-									{[40, 65, 45, 80, 55, 90, 75].map((height, i) => (
-										<div
-											// biome-ignore lint/suspicious/noArrayIndexKey: static array
-											key={i}
-											className="w-full bg-secondary/80 rounded-t-lg relative group overflow-hidden"
-											style={{ height: `${height}%` }}
-										>
-											<div
-												className="absolute bottom-0 left-0 w-full bg-primary rounded-t-lg transition-all duration-700 ease-out"
-												style={{ height: `${height * 0.6}%` }}
-											/>
-										</div>
-									))}
-								</div>
-								<div className="flex justify-between mt-4 text-[10px] font-medium uppercase text-muted-foreground/70 tracking-wider">
-									<span>Jan</span>
-									<span>Feb</span>
-									<span>Mar</span>
-									<span>Apr</span>
-									<span>May</span>
-									<span>Jun</span>
-									<span>Jul</span>
+								<div className="space-y-3">
+									<div className="flex items-center gap-3 p-3 bg-[#F2F9F0] rounded-xl">
+										<CheckCircleIcon
+											className="size-5 text-primary"
+											weight="bold"
+										/>
+										<span className="text-sm font-manrope">
+											Contractor signs handover
+										</span>
+									</div>
+									<div className="flex items-center gap-3 p-3 bg-[#F2F9F0] rounded-xl">
+										<CheckCircleIcon
+											className="size-5 text-primary"
+											weight="bold"
+										/>
+										<span className="text-sm font-manrope">
+											Payment releases instantly
+										</span>
+									</div>
+									<div className="flex items-center gap-3 p-3 bg-[#F2F9F0] rounded-xl">
+										<CheckCircleIcon
+											className="size-5 text-primary"
+											weight="bold"
+										/>
+										<span className="text-sm font-manrope">
+											No invoices, no delays
+										</span>
+									</div>
 								</div>
 							</div>
 						</div>

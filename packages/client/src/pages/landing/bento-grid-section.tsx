@@ -126,8 +126,8 @@ export default function BentoGridSection() {
 					badgeBgColor="bg-secondary-medium"
 					stat="5x"
 					subtitle="Faster Closing"
-					title="Instantaneous Deals"
-					description="Stop chasing signatures. Automated routing and reminders keep your agreements moving forward."
+					title="Programmable Settlement"
+					description="Attach payments directly to signatures. Signers automatically receive payment the moment they sign."
 					delay={0.3}
 				/>
 			</div>

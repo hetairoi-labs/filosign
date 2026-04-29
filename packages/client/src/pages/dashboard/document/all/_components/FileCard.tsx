@@ -148,10 +148,7 @@ export default function FileCard({
 
 				{/* File info */}
 				<div className="space-y-0.5 min-w-0">
-					<p
-						className="text-xs font-medium truncate"
-						title={fileName}
-					>
+					<p className="text-xs font-medium truncate" title={fileName}>
 						{fileName}
 					</p>
 					<p className="text-[10px] text-muted-foreground truncate">

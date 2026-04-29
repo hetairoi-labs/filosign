@@ -6,7 +6,7 @@ import { getAddress, isAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
-import { sendShareRequestEmail } from "@/lib/email/invites";
+import { sendInviteEmail, sendShareRequestEmail } from "@/lib/email/invites";
 import { evmClient, fsContracts } from "@/lib/evm";
 import { processTransaction } from "@/lib/indexer/process";
 import { respond } from "@/lib/utils/respond";
@@ -156,53 +156,115 @@ export default new Hono()
 			201,
 		);
 	})
-	// TODO - @kartikay please implement the email sending logic and encode invite ID in sent link
+	// Email-based connection - one endpoint handles both cases
 	.post("/request/invite", authenticated, async (ctx) => {
 		const { inviteeEmail, message } = await ctx.req.json();
 
 		if (
 			!inviteeEmail ||
 			typeof inviteeEmail !== "string" ||
-			!inviteeEmail.includes("@")
+			!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteeEmail)
 		) {
-			return respond.err(ctx, "Invalid inviteeEmail", 400);
+			return respond.err(ctx, "Please provide a valid email address", 400);
 		}
 
 		if (message && (typeof message !== "string" || message.length > 500)) {
-			return respond.err(ctx, "Invalid message", 400);
+			return respond.err(ctx, "Message too long (max 500 characters)", 400);
 		}
 
+		// Get sender info
 		const [self] = await db
-			.select()
+			.select({
+				firstName: users.firstName,
+				lastName: users.lastName,
+			})
 			.from(users)
 			.where(eq(users.walletAddress, ctx.var.userWallet));
 
-		if (!self.email) {
-			return respond.err(
-				ctx,
-				"You must have an email associated with your account to send invites",
-				400,
-			);
-		}
-
+		// Check if user already exists by email
 		const [existingUser] = await db
-			.select()
+			.select({ walletAddress: users.walletAddress })
 			.from(users)
 			.where(eq(users.email, inviteeEmail));
 
-		ctx.res.headers.set("Location", `/api/sharing/request`);
-
+		// CASE 1: User exists - send direct share request
 		if (existingUser) {
+			// Check for existing request
+			const [existingRequest] = await db
+				.select()
+				.from(shareRequests)
+				.where(
+					and(
+						eq(shareRequests.senderWallet, ctx.var.userWallet),
+						eq(shareRequests.recipientWallet, existingUser.walletAddress),
+						eq(shareRequests.status, "PENDING"),
+					),
+				);
+
+			if (existingRequest) {
+				return respond.ok(
+					ctx,
+					{ exists: true, alreadyRequested: true },
+					"Request already sent",
+					200,
+				);
+			}
+
+			// Check if already approved
+			const [latestApproval] = await db
+				.select()
+				.from(shareApprovals)
+				.where(
+					and(
+						eq(shareApprovals.senderWallet, ctx.var.userWallet),
+						eq(shareApprovals.recipientWallet, existingUser.walletAddress),
+					),
+				)
+				.orderBy(desc(shareApprovals.createdAt))
+				.limit(1);
+
+			if (latestApproval?.active) {
+				return respond.ok(
+					ctx,
+					{ exists: true, alreadyApproved: true },
+					"Already connected",
+					200,
+				);
+			}
+
+			// Create share request
+			await db.insert(shareRequests).values({
+				senderWallet: ctx.var.userWallet,
+				recipientWallet: existingUser.walletAddress,
+				message: message ?? null,
+			});
+
+			// Send email notification
+			try {
+				await sendShareRequestEmail({
+					to: inviteeEmail,
+					senderWallet: ctx.var.userWallet,
+					recipientWallet: existingUser.walletAddress,
+					senderName: self?.firstName
+						? `${self.firstName} ${self.lastName || ""}`.trim()
+						: undefined,
+					message: message ?? null,
+				});
+			} catch {
+				// Best effort
+			}
+
 			return respond.ok(
 				ctx,
-				{ address: existingUser.walletAddress },
-				"Email is already registered on the platform, request by address instead",
-				303,
+				{ exists: true, requested: true },
+				"Request sent",
+				201,
 			);
 		}
 
+		// CASE 2: User doesn't exist - create invite
 		const [existingInvite] = await db
-			.select()
+			.select({ id: userInvites.id })
 			.from(userInvites)
 			.where(
 				and(
@@ -212,13 +274,15 @@ export default new Hono()
 			);
 
 		if (existingInvite) {
-			return respond.err(
+			return respond.ok(
 				ctx,
-				"An invite to this email from you already exists",
-				409,
+				{ invited: true, alreadyInvited: true },
+				"Already invited",
+				200,
 			);
 		}
 
+		// Create invite
 		const [newInvite] = await db
 			.insert(userInvites)
 			.values({
@@ -228,8 +292,76 @@ export default new Hono()
 			})
 			.returning();
 
-		return respond.ok(ctx, newInvite, "Invite sent", 201);
+		// Send invite email
+		try {
+			await sendInviteEmail({
+				to: inviteeEmail,
+				senderWallet: ctx.var.userWallet,
+				senderName: self?.firstName
+					? `${self.firstName} ${self.lastName || ""}`.trim()
+					: undefined,
+				message: message ?? null,
+				inviteId: newInvite.id,
+			});
+		} catch (emailError) {
+			console.error("Failed to send invite email:", emailError);
+		}
+
+		return respond.ok(ctx, { invited: true }, "Invite sent", 201);
 	})
+	.get("/invite/:id", async (ctx) => {
+		const id = ctx.req.param("id");
+		if (!id) {
+			return respond.err(ctx, "Invite ID is required", 400);
+		}
+
+		try {
+			const [invite] = await db
+				.select({
+					id: userInvites.id,
+					inviteeEmail: userInvites.inviteeEmail,
+					message: userInvites.message,
+					createdAt: userInvites.createdAt,
+					sender: userInvites.sender,
+				})
+				.from(userInvites)
+				.where(eq(userInvites.id, id));
+
+			if (!invite) {
+				return respond.err(ctx, "Invite not found or expired", 404);
+			}
+
+			// Get sender details
+			const [sender] = await db
+				.select({
+					firstName: users.firstName,
+					lastName: users.lastName,
+					walletAddress: users.walletAddress,
+				})
+				.from(users)
+				.where(eq(users.walletAddress, invite.sender));
+
+			return respond.ok(
+				ctx,
+				{
+					id: invite.id,
+					inviteeEmail: invite.inviteeEmail,
+					message: invite.message,
+					createdAt: invite.createdAt,
+					senderName: sender
+						? `${sender.firstName || ""} ${sender.lastName || ""}`.trim() ||
+							`${sender.walletAddress.slice(0, 6)}...${sender.walletAddress.slice(-4)}`
+						: `${invite.sender.slice(0, 6)}...${invite.sender.slice(-4)}`,
+				},
+				"Invite details retrieved",
+				200,
+			);
+		} catch (error) {
+			console.error("Error fetching invite:", error);
+			return respond.err(ctx, "Failed to retrieve invite", 500);
+		}
+	})
+
 	.post("/invite/:id/claim", authenticated, async (ctx) => {
 		const id = ctx.req.param("id");
 		if (!id) {
