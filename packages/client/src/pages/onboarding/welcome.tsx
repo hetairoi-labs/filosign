@@ -60,11 +60,7 @@ export default function OnboardingWelcomeCompletePage() {
 				);
 				console.log("Claim response:", response);
 				sessionStorage.removeItem("pendingInviteId");
-				toast.success(
-					"Connection request received! Check your notifications to accept it.",
-				);
-				// Redirect to permissions page to see the pending request
-				window.location.href = "/dashboard/permissions";
+				window.location.href = "/dashboard";
 				return;
 			} catch (error) {
 				console.error("Failed to claim invite:", error);

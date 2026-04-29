@@ -47,43 +47,44 @@ export async function sendShareRequestEmail(args: SendShareRequestEmailArgs) {
 	const senderLabel =
 		args.senderName?.trim() || formatAddress(args.senderWallet);
 	const escapedSenderLabel = escapeHtml(senderLabel);
-	const escapedSenderWallet = escapeHtml(args.senderWallet);
-	const escapedRecipientWallet = escapeHtml(args.recipientWallet);
 	const escapedMessage = args.message?.trim()
 		? escapeHtml(args.message.trim())
 		: null;
 
-	const subject = `${senderLabel} sent you a Filosign request`;
+	const subject = `${senderLabel} wants to send you documents`;
 	const text = [
-		`${senderLabel} sent you a Filosign request.`,
+		`${senderLabel} wants to send you secure documents on Filosign.`,
 		"",
-		`Sender wallet: ${args.senderWallet}`,
-		`Recipient wallet: ${args.recipientWallet}`,
-		...(args.message?.trim() ? ["", `Message: ${args.message.trim()}`] : []),
+		...(args.message?.trim() ? [`"${args.message.trim()}"`, ""] : []),
+		"To start receiving their documents, accept their connection request:",
+		requestUrl,
 		"",
-		`Open Filosign with the recipient wallet to review the request: ${requestUrl}`,
+		"Go to Settings > Permissions and click Accept.",
 	].join("\n");
 
 	const html = `
 		<div style="font-family: Inter, Arial, sans-serif; color: #111827; line-height: 1.5; max-width: 560px;">
-			<h1 style="font-size: 22px; margin: 0 0 12px;">You have a Filosign request</h1>
-			<p style="margin: 0 0 16px;">
-				${escapedSenderLabel} sent a request to your wallet on Filosign.
-			</p>
-			<div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 0 0 16px;">
-				<p style="margin: 0 0 8px;"><strong>Sender wallet:</strong><br />${escapedSenderWallet}</p>
-				<p style="margin: 0;"><strong>Recipient wallet:</strong><br />${escapedRecipientWallet}</p>
-			</div>
+			<h1 style="font-size: 22px; margin: 0 0 12px;">${escapedSenderLabel} wants to send you documents</h1>
+			
 			${
 				escapedMessage
-					? `<blockquote style="border-left: 3px solid #111827; margin: 0 0 16px; padding-left: 12px; color: #374151;">${escapedMessage}</blockquote>`
+					? `<blockquote style="background: #f9fafb; border-left: 3px solid #111827; margin: 0 0 16px; padding: 12px 16px; color: #374151; font-style: italic;">"${escapedMessage}"</blockquote>`
 					: ""
 			}
-			<p style="margin: 0 0 20px;">
-				Open Filosign and log in with the recipient wallet above. The request will be waiting in your permissions page.
+			
+			<p style="margin: 0 0 16px;">
+				<strong>${escapedSenderLabel}</strong> wants to send you secure documents. Accept their request to start receiving them.
 			</p>
-			<a href="${requestUrl}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 10px 14px; font-weight: 600;">
-				Open Filosign
+			
+			<div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 16px; margin: 0 0 20px;">
+				<p style="margin: 0 0 8px; font-weight: 600; color: #166534;">What you need to do:</p>
+				<p style="margin: 0; color: #374151;">
+					Go to Settings > Permissions and click "Accept" to allow them to send you documents.
+				</p>
+			</div>
+			
+			<a href="${requestUrl}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 12px 20px; font-weight: 600;">
+				Review Request
 			</a>
 		</div>
 	`;
@@ -108,49 +109,57 @@ export async function sendInviteEmail(args: SendInviteEmailArgs) {
 	const senderLabel =
 		args.senderName?.trim() || formatAddress(args.senderWallet);
 	const escapedSenderLabel = escapeHtml(senderLabel);
-	const escapedSenderWallet = escapeHtml(args.senderWallet);
 	const escapedMessage = args.message?.trim()
 		? escapeHtml(args.message.trim())
 		: null;
 
-	const subject = `${senderLabel} wants to send you documents on Filosign`;
+	const subject = `${senderLabel} wants to send you documents securely`;
 	const text = [
 		`${senderLabel} wants to send you secure documents on Filosign.`,
 		"",
-		`From: ${args.senderWallet}`,
-		...(args.message?.trim() ? ["", `Message: ${args.message.trim()}`] : []),
+		...(args.message?.trim() ? [`"${args.message.trim()}"`, ""] : []),
+		"Filosign is a secure document platform with legally binding signatures.",
 		"",
-		"Filosign is an end-to-end encrypted document signing platform.",
-		"Join for free to receive documents:",
+		"To receive their documents:",
+		"1. Click the link below to join",
+		"2. Create your account (takes 1 minute)",
+		"3. Accept their connection request",
+		"4. Start receiving documents",
+		"",
 		inviteUrl,
+		"",
+		"It's free to use.",
 	].join("\n");
 
 	const html = `
 		<div style="font-family: Inter, Arial, sans-serif; color: #111827; line-height: 1.5; max-width: 560px;">
-			<h1 style="font-size: 22px; margin: 0 0 12px;">Someone wants to send you documents</h1>
-			<p style="margin: 0 0 16px;">
-				<strong>${escapedSenderLabel}</strong> wants to send you secure, encrypted documents on Filosign.
-			</p>
-			<div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 0 0 16px;">
-				<p style="margin: 0;"><strong>From wallet:</strong><br />${escapedSenderWallet}</p>
-			</div>
+			<h1 style="font-size: 22px; margin: 0 0 12px;">${escapedSenderLabel} wants to send you documents</h1>
+			
 			${
 				escapedMessage
-					? `<blockquote style="border-left: 3px solid #111827; margin: 0 0 16px; padding-left: 12px; color: #374151;">${escapedMessage}</blockquote>`
+					? `<blockquote style="background: #f9fafb; border-left: 3px solid #111827; margin: 0 0 16px; padding: 12px 16px; color: #374151; font-style: italic;">"${escapedMessage}"</blockquote>`
 					: ""
 			}
-			<p style="margin: 0 0 12px;">
-				<strong>What is Filosign?</strong>
+			
+			<p style="margin: 0 0 16px;">
+				<strong>${escapedSenderLabel}</strong> wants to send you secure, legally binding documents on Filosign.
 			</p>
-			<p style="margin: 0 0 20px; color: #374151;">
-				An end-to-end encrypted document signing platform. Your documents are encrypted in your browser 
-				and stored on the blockchain - only you and the sender can access them.
-			</p>
-			<a href="${inviteUrl}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 10px 14px; font-weight: 600;">
-				Join Filosign Free
+			
+			<div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 16px; margin: 0 0 20px;">
+				<p style="margin: 0 0 12px; font-weight: 600; color: #166534;">How it works:</p>
+				<ol style="margin: 0; padding-left: 20px; color: #374151;">
+					<li style="margin-bottom: 8px;">Click below to join (takes 1 minute)</li>
+					<li style="margin-bottom: 8px;">Accept their connection request</li>
+					<li>Start receiving secure documents</li>
+				</ol>
+			</div>
+			
+			<a href="${inviteUrl}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 12px 20px; font-weight: 600;">
+				Accept Invitation
 			</a>
+			
 			<p style="margin: 16px 0 0; font-size: 12px; color: #6b7280;">
-				No crypto knowledge required. We cover all fees.
+				Free to use. Your documents are encrypted and legally binding.
 			</p>
 		</div>
 	`;
@@ -173,41 +182,32 @@ export async function sendDocumentReceivedEmail(
 	args: SendDocumentReceivedEmailArgs,
 ) {
 	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
-	const documentUrl = `${appUrl}/dashboard}`;
+	const documentUrl = `${appUrl}/dashboard`;
 	const senderLabel =
 		args.senderName?.trim() || formatAddress(args.senderWallet);
 	const escapedSenderLabel = escapeHtml(senderLabel);
-	const escapedSenderWallet = escapeHtml(args.senderWallet);
-	const escapedRecipientWallet = escapeHtml(args.recipientWallet);
-	const escapedPieceCid = escapeHtml(args.pieceCid);
 
-	const subject = `${senderLabel} sent you a document on Filosign`;
+	const subject = `${senderLabel} sent you a document`;
 	const text = [
-		`${senderLabel} sent you a document on Filosign.`,
+		`${senderLabel} sent you a secure document on Filosign.`,
 		"",
-		`Sender wallet: ${args.senderWallet}`,
-		`Recipient wallet: ${args.recipientWallet}`,
-		`Document: ${args.pieceCid}`,
-		"",
-		`Open Filosign with the recipient wallet to review it: ${documentUrl}`,
+		"Log in to view, sign, and download it:",
+		documentUrl,
 	].join("\n");
 
 	const html = `
 		<div style="font-family: Inter, Arial, sans-serif; color: #111827; line-height: 1.5; max-width: 560px;">
-			<h1 style="font-size: 22px; margin: 0 0 12px;">You have received a new document</h1>
+			<h1 style="font-size: 22px; margin: 0 0 12px;">You have a new document</h1>
 			<p style="margin: 0 0 16px;">
-				${escapedSenderLabel} sent a document to your wallet on Filosign.
+				<strong>${escapedSenderLabel}</strong> sent you a secure document.
 			</p>
-			<div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin: 0 0 16px;">
-				<p style="margin: 0 0 8px;"><strong>Sender wallet:</strong><br />${escapedSenderWallet}</p>
-				<p style="margin: 0 0 8px;"><strong>Recipient wallet:</strong><br />${escapedRecipientWallet}</p>
-				<p style="margin: 0;"><strong>Document:</strong><br />${escapedPieceCid}</p>
+			<div style="background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 12px; padding: 16px; margin: 0 0 20px;">
+				<p style="margin: 0; color: #0c4a6e;">
+					Log in to view, sign, and download your document.
+				</p>
 			</div>
-			<p style="margin: 0 0 20px;">
-				Open Filosign and log in with the recipient wallet above. The document will be waiting in your received documents.
-			</p>
-			<a href="${documentUrl}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 10px 14px; font-weight: 600;">
-				Open Filosign
+			<a href="${documentUrl}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 12px 20px; font-weight: 600;">
+				View Document
 			</a>
 		</div>
 	`;
