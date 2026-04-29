@@ -2,10 +2,11 @@ import { useAcceptedPeople } from "@filosign/react/hooks";
 import {
 	CaretDownIcon,
 	CheckIcon,
-	MinusIcon,
+	CoinsIcon,
 	PaperPlaneTiltIcon,
 	UserIcon,
 	UsersIcon,
+	XIcon,
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
@@ -32,6 +33,7 @@ import {
 	AvatarFallback,
 	AvatarImage,
 } from "@/src/lib/components/ui/avatar";
+import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
 import {
 	Collapsible,
@@ -329,315 +331,12 @@ export default function RecipientsSection({
 											</motion.div>
 										</motion.div>
 									) : (
-										<motion.div
-											className="space-y-3"
-											initial={{ opacity: 0, y: 20 }}
-											animate={{ opacity: 1, y: 0 }}
-											transition={{
-												type: "spring",
-												stiffness: 230,
-												damping: 25,
-												delay: 0.1,
-											}}
-										>
-											{fields.map((field, index) => (
-												<motion.div
-													key={field.id}
-													className="p-4 rounded-lg border-1 border-border/60 bg-background space-y-3"
-													initial={{ opacity: 0, scale: 0.9 }}
-													animate={{ opacity: 1, scale: 1 }}
-													transition={{
-														type: "spring",
-														stiffness: 230,
-														damping: 25,
-														duration: 0.3,
-													}}
-												>
-													<div className="flex items-start justify-between gap-4">
-														<div className="flex-1 flex flex-col gap-4">
-															<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-																<FormField
-																	control={control}
-																	name={`recipients.${index}.name`}
-																	rules={{
-																		required: "Name is required",
-																	}}
-																	render={({ field }) => (
-																		<FormItem>
-																			<FormLabel className="text-sm font-semibold text-foreground">
-																				Name
-																			</FormLabel>
-																			<Input
-																				{...field}
-																				placeholder="Recipient name"
-																				autoComplete="name"
-																			/>
-																			<FormMessage />
-																		</FormItem>
-																	)}
-																/>
-																<FormField
-																	control={control}
-																	name={`recipients.${index}.email`}
-																	rules={{
-																		pattern: {
-																			value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-																			message: "Invalid email format",
-																		},
-																	}}
-																	render={({ field }) => (
-																		<FormItem>
-																			<FormLabel className="text-sm font-semibold text-foreground">
-																				Email
-																			</FormLabel>
-																			<Input
-																				{...field}
-																				type="email"
-																				placeholder="email@example.com"
-																				autoComplete="email"
-																			/>
-																			<FormMessage />
-																		</FormItem>
-																	)}
-																/>
-																<FormField
-																	control={control}
-																	name={`recipients.${index}.walletAddress`}
-																	rules={{
-																		required: "Wallet address is required",
-																		validate: (value) => {
-																			if (!value)
-																				return "Wallet address is required";
-																			if (!isAddress(value)) {
-																				return "Invalid wallet address";
-																			}
-																			return true;
-																		},
-																	}}
-																	render={({ field }) => (
-																		<FormItem>
-																			<FormLabel className="text-sm font-semibold text-foreground">
-																				Wallet Address
-																			</FormLabel>
-																			<Input
-																				{...field}
-																				placeholder="0x..."
-																				className="font-mono"
-																				autoComplete="off"
-																				onBlur={(e) => {
-																					const value = e.target.value;
-																					if (isAddress(value)) {
-																						field.onChange(getAddress(value));
-																					}
-																				}}
-																			/>
-																			<FormMessage />
-																		</FormItem>
-																	)}
-																/>
-																<FormField
-																	control={control}
-																	name={`recipients.${index}.role`}
-																	render={({ field }) => (
-																		<FormItem>
-																			<FormLabel className="text-sm font-semibold text-foreground">
-																				Role
-																			</FormLabel>
-																			<Select
-																				value={field.value}
-																				onValueChange={field.onChange}
-																			>
-																				<SelectTrigger>
-																					<SelectValue />
-																				</SelectTrigger>
-																				<SelectContent>
-																					<SelectItem value="signer">
-																						Signer
-																					</SelectItem>
-																					<SelectItem value="cc">CC</SelectItem>
-																					<SelectItem value="approver">
-																						Approver
-																					</SelectItem>
-																				</SelectContent>
-																			</Select>
-																			<FormMessage />
-																		</FormItem>
-																	)}
-																/>
-															</div>
-															{/* Incentive Fields */}
-															<div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-border/60">
-																<FormField
-																	control={control}
-																	name={`recipients.${index}.incentive.token`}
-																	rules={{
-																		validate: (value) => {
-																			if (value && !isAddress(value))
-																				return "Invalid token address";
-																			return true;
-																		},
-																	}}
-																	render={({ field }) => (
-																		<FormItem>
-																			<FormLabel className="text-sm font-semibold text-foreground flex justify-between">
-																				<span>Incentive Token</span>
-																				<span className="text-xs text-muted-foreground font-normal">
-																					Optional
-																				</span>
-																			</FormLabel>
-																			<Select
-																				value={field.value || "none"}
-																				onValueChange={(val) => {
-																					if (val === "none") {
-																						field.onChange("");
-																					} else if (val && isAddress(val)) {
-																						field.onChange(getAddress(val));
-																					} else {
-																						field.onChange(val);
-																					}
-																				}}
-																			>
-																				<SelectTrigger className="font-mono">
-																					<SelectValue placeholder="Select token" />
-																				</SelectTrigger>
-																				<SelectContent>
-																					<SelectItem value="none">
-																						None
-																					</SelectItem>
-																					{WORLD_CHAIN_SEPOLIA_TOKENS.map(
-																						(token) => (
-																							<SelectItem
-																								key={token.address}
-																								value={token.address}
-																							>
-																								<img
-																									src={token.icon}
-																									alt={token.name}
-																									className="size-4"
-																								/>
-																								<p className="">
-																									{token.name} ({token.symbol})
-																								</p>
-																							</SelectItem>
-																						),
-																					)}
-																				</SelectContent>
-																			</Select>
-																			<FormMessage />
-																		</FormItem>
-																	)}
-																/>
-																<FormField
-																	control={control}
-																	name={`recipients.${index}.incentive.amount`}
-																	rules={{
-																		validate: (value, formValues) => {
-																			const token =
-																				formValues.recipients[index]?.incentive
-																					?.token;
-																			if (token && !value)
-																				return "Amount required if token set";
-																			if (value && !token)
-																				return "Token required if amount set";
-																			if (value && Number.isNaN(Number(value)))
-																				return "Invalid amount";
-																			if (value && Number(value) <= 0)
-																				return "Amount must be greater than 0";
-																			return true;
-																		},
-																	}}
-																	render={({ field }) => (
-																		<FormItem>
-																			<FormLabel className="text-sm font-semibold text-foreground flex justify-between">
-																				<span>Incentive Amount</span>
-																				<span className="text-xs text-muted-foreground font-normal">
-																					Optional
-																				</span>
-																			</FormLabel>
-																			<Input
-																				{...field}
-																				value={field.value || ""}
-																				placeholder="e.g. 1.5"
-																				autoComplete="off"
-																			/>
-																			<FormMessage />
-																		</FormItem>
-																	)}
-																/>
-															</div>
-															{/* Incentive Faucet & Warning */}
-															{recipients?.[index]?.incentive?.token && (
-																<div className="mt-4 p-3 bg-card rounded-md text-sm text-foreground/80 space-y-2 border border-border">
-																	<p className="flex items-center text-destructive gap-1.5 leading-snug">
-																		As the sender, you must hold enough tokens
-																		to pay these incentives. The incentives will
-																		be locked into the contract upon sending. If
-																		you lack sufficient balance or allowance,
-																		your transaction will fail.
-																	</p>
-																	{(() => {
-																		const currentToken =
-																			WORLD_CHAIN_SEPOLIA_TOKENS.find(
-																				(t) =>
-																					t.address.toLowerCase() ===
-																					recipients[
-																						index
-																					].incentive?.token?.toLowerCase(),
-																			);
-																		if (currentToken) {
-																			const FaucetsSection = currentToken
-																				.faucets?.length ? (
-																				<div className="flex flex-wrap gap-2 items-center text-xs">
-																					<span className="font-semibold text-muted-foreground">
-																						Need {currentToken.symbol}? Faucets:
-																					</span>
-																					{currentToken.faucets.map(
-																						(faucet) => (
-																							<a
-																								key={faucet.url}
-																								href={faucet.url}
-																								target="_blank"
-																								rel="noreferrer"
-																								className="text-chart-1 font-semibold hover:underline transition-colors"
-																							>
-																								{faucet.name}
-																							</a>
-																						),
-																					)}
-																				</div>
-																			) : null;
-
-																			return (
-																				<div className="mt-3 pt-3 border-t border-border/50 flex flex-col gap-3">
-																					<TokenBalanceChecker
-																						tokenAddress={
-																							currentToken.address as Address
-																						}
-																						decimals={currentToken.decimals}
-																						symbol={currentToken.symbol}
-																					/>
-																					{FaucetsSection}
-																				</div>
-																			);
-																		}
-																		return null;
-																	})()}
-																</div>
-															)}
-														</div>
-														<Button
-															type="button"
-															variant="ghost"
-															size="sm"
-															onClick={() => remove(index)}
-															className="text-destructive hover:text-destructive"
-														>
-															<MinusIcon className="size-4" />
-														</Button>
-													</div>
-												</motion.div>
-											))}
-										</motion.div>
+										<CompactRecipientList
+											fields={fields}
+											control={control}
+											recipients={recipients}
+											remove={remove}
+										/>
 									)}
 								</div>
 								<FormMessage />
@@ -647,6 +346,333 @@ export default function RecipientsSection({
 				</CollapsibleContent>
 			</Collapsible>
 		</motion.section>
+	);
+}
+
+// Compact recipient card with inline text display and collapsible incentives
+interface CompactRecipientListProps {
+	fields: FieldArrayWithId<EnvelopeForm, "recipients", "id">[];
+	control: Control<EnvelopeForm>;
+	recipients: EnvelopeForm["recipients"] | undefined;
+	remove: UseFieldArrayRemove;
+}
+
+function CompactRecipientList({
+	fields,
+	control,
+	recipients,
+	remove,
+}: CompactRecipientListProps) {
+	return (
+		<motion.div
+			className="space-y-2"
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{
+				type: "spring",
+				stiffness: 230,
+				damping: 25,
+				delay: 0.1,
+			}}
+		>
+			{fields.map((field, index) => (
+				<CompactRecipientCard
+					key={field.id}
+					index={index}
+					control={control}
+					recipientData={recipients?.[index]}
+					onRemove={() => remove(index)}
+				/>
+			))}
+		</motion.div>
+	);
+}
+
+interface CompactRecipientCardProps {
+	index: number;
+	control: Control<EnvelopeForm>;
+	recipientData: EnvelopeForm["recipients"][number] | undefined;
+	onRemove: () => void;
+}
+
+function CompactRecipientCard({
+	index,
+	control,
+	recipientData,
+	onRemove,
+}: CompactRecipientCardProps) {
+	const [showIncentive, setShowIncentive] = useState(
+		!!recipientData?.incentive?.token,
+	);
+
+	// Format wallet address for display
+	const formatWallet = (addr: string) => {
+		if (!addr || addr.length < 10) return addr;
+		return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+	};
+
+	// Get token symbol if set
+	const tokenSymbol = useMemo(() => {
+		if (!recipientData?.incentive?.token) return null;
+		const token = WORLD_CHAIN_SEPOLIA_TOKENS.find(
+			(t) =>
+				t.address.toLowerCase() ===
+				recipientData.incentive?.token?.toLowerCase(),
+		);
+		return token?.symbol || "Token";
+	}, [recipientData?.incentive?.token]);
+
+	return (
+		<motion.div
+			className="rounded-lg border bg-muted/5 border-border/60 overflow-hidden"
+			initial={{ opacity: 0, scale: 0.95 }}
+			animate={{ opacity: 1, scale: 1 }}
+			transition={{
+				type: "spring",
+				stiffness: 230,
+				damping: 25,
+				duration: 0.3,
+			}}
+		>
+			{/* Main row with better spacing */}
+			<div className="flex items-start gap-4 p-4">
+				{/* Avatar */}
+				<div className="shrink-0 pt-0.5">
+					<div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
+						<UserIcon className="size-5 text-primary" />
+					</div>
+				</div>
+
+				{/* Info column - fixed display, no editing */}
+				<div className="flex-1 min-w-0 space-y-1">
+					{/* Name and Role selector row */}
+					<div className="flex items-center gap-2 flex-wrap">
+						<span className="font-medium text-sm">
+							{recipientData?.name || "Unnamed"}
+						</span>
+						<FormField
+							control={control}
+							name={`recipients.${index}.role`}
+							render={({ field }) => (
+								<Select value={field.value} onValueChange={field.onChange}>
+									<SelectTrigger className="h-7 w-28 text-xs px-2">
+										<SelectValue />
+									</SelectTrigger>
+									<SelectContent>
+										<SelectItem value="signer">Signer</SelectItem>
+										<SelectItem value="cc">CC</SelectItem>
+										<SelectItem value="approver">Approver</SelectItem>
+									</SelectContent>
+								</Select>
+							)}
+						/>
+						{recipientData?.incentive?.token && (
+							<Badge
+								variant="outline"
+								className="text-[10px] h-5 px-1.5 border-primary/30"
+							>
+								<CoinsIcon className="size-3" />
+								{recipientData.incentive.amount || "0"} {tokenSymbol}
+							</Badge>
+						)}
+					</div>
+
+					{/* Fixed contact info - wallet and email (read-only) */}
+					<div className="text-xs text-muted-foreground font-mono">
+						{formatWallet(recipientData?.walletAddress || "")}
+					</div>
+					{recipientData?.email && (
+						<div className="text-xs text-muted-foreground">
+							{recipientData.email}
+						</div>
+					)}
+				</div>
+
+				{/* Actions - text buttons instead of icons */}
+				<div className="shrink-0 flex self-center gap-2">
+					<Button
+						type="button"
+						variant="outline"
+						size="sm"
+						className="h-8 text-xs px-3"
+						onClick={() => setShowIncentive(!showIncentive)}
+					>
+						{showIncentive ? "Hide Incentive" : "Attach Incentive"}
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="h-8 text-xs px-3 text-destructive hover:text-destructive"
+						onClick={onRemove}
+					>
+						Remove
+					</Button>
+				</div>
+			</div>
+
+			{/* Collapsible incentive section */}
+			{showIncentive && (
+				<IncentiveSection
+					index={index}
+					control={control}
+					recipientData={recipientData}
+					onClose={() => setShowIncentive(false)}
+				/>
+			)}
+		</motion.div>
+	);
+}
+
+// Incentive section with token selection and amount
+interface IncentiveSectionProps {
+	index: number;
+	control: Control<EnvelopeForm>;
+	recipientData: EnvelopeForm["recipients"][number] | undefined;
+	onClose: () => void;
+}
+
+function IncentiveSection({
+	index,
+	control,
+	recipientData,
+	onClose,
+}: IncentiveSectionProps) {
+	return (
+		<div className="border-t border-border/60 px-3 py-3">
+			<div className="flex items-center justify-between mb-2">
+				<span className="text-xs font-medium text-muted-foreground">
+					Attach Incentive
+				</span>
+				<Button
+					type="button"
+					variant="ghost"
+					size="sm"
+					className="h-6 w-6 p-0"
+					onClick={onClose}
+				>
+					<XIcon className="size-3" />
+				</Button>
+			</div>
+			<div className="grid grid-cols-2 gap-3">
+				<FormField
+					control={control}
+					name={`recipients.${index}.incentive.token`}
+					rules={{
+						validate: (value) => {
+							if (value && !isAddress(value)) return "Invalid token";
+							return true;
+						},
+					}}
+					render={({ field }) => (
+						<FormItem className="space-y-1">
+							<Select
+								value={field.value || "none"}
+								onValueChange={(val) => {
+									if (val === "none") {
+										field.onChange("");
+									} else if (val && isAddress(val)) {
+										field.onChange(getAddress(val));
+									}
+								}}
+							>
+								<SelectTrigger className="h-8 text-xs">
+									<SelectValue placeholder="Select token" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="none">None</SelectItem>
+									{WORLD_CHAIN_SEPOLIA_TOKENS.map((token) => (
+										<SelectItem key={token.address} value={token.address}>
+											<div className="flex items-center gap-2">
+												<img
+													src={token.icon}
+													alt={token.name}
+													className="size-4"
+												/>
+												<span className="text-xs">{token.symbol}</span>
+											</div>
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<FormMessage className="text-xs" />
+						</FormItem>
+					)}
+				/>
+				<FormField
+					control={control}
+					name={`recipients.${index}.incentive.amount`}
+					rules={{
+						validate: (value, formValues) => {
+							const token = formValues.recipients[index]?.incentive?.token;
+							if (token && !value) return "Amount required";
+							if (value && !token) return "Select token first";
+							if (value && Number.isNaN(Number(value))) return "Invalid amount";
+							if (value && Number(value) <= 0) return "Must be > 0";
+							return true;
+						},
+					}}
+					render={({ field }) => (
+						<FormItem className="space-y-1">
+							<Input
+								{...field}
+								value={field.value || ""}
+								placeholder="Amount"
+								className="h-8 text-xs"
+								type="number"
+								step="any"
+							/>
+							<FormMessage className="text-xs" />
+						</FormItem>
+					)}
+				/>
+			</div>
+
+			{/* Token warning and balance checker */}
+			{recipientData?.incentive?.token && (
+				<div className="mt-3 p-2.5 bg-background rounded-md border border-border/60">
+					<p className="text-[11px] text-destructive leading-snug mb-2">
+						You must hold enough tokens. They will be locked when sending.
+					</p>
+					{(() => {
+						const currentToken = WORLD_CHAIN_SEPOLIA_TOKENS.find(
+							(t) =>
+								t.address.toLowerCase() ===
+								recipientData.incentive?.token?.toLowerCase(),
+						);
+						if (!currentToken) return null;
+
+						return (
+							<div className="space-y-2">
+								<TokenBalanceChecker
+									tokenAddress={currentToken.address as Address}
+									decimals={currentToken.decimals}
+									symbol={currentToken.symbol}
+								/>
+								{currentToken.faucets?.length > 0 && (
+									<div className="flex flex-wrap gap-1.5 items-center text-[10px]">
+										<span className="text-muted-foreground">
+											Need {currentToken.symbol}?
+										</span>
+										{currentToken.faucets.map((faucet) => (
+											<a
+												key={faucet.url}
+												href={faucet.url}
+												target="_blank"
+												rel="noreferrer"
+												className="text-primary hover:underline"
+											>
+												{faucet.name}
+											</a>
+										))}
+									</div>
+								)}
+							</div>
+						);
+					})()}
+				</div>
+			)}
+		</div>
 	);
 }
 
