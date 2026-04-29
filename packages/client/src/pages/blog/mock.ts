@@ -135,7 +135,7 @@ Ready to take control of your documents? [Start for free](/onboarding) today.
 		heroImage: "/static/banner.webp",
 		heroVideo: "/static/demo.webm",
 		content: `
-Six months ago, We started working on Filosign; an idea focused on creating a completely private and end-to-end encrypted document signing standard.
+Six months ago, we started working on Filosign; an idea focused on creating a completely private and end-to-end encrypted document signing standard.
 
 *"But e-sign is a commodity, so why do we need a new app for it?"*
 
@@ -149,7 +149,7 @@ To achieve that, our main challenges were:
 Filosign solves these challenges using a combination of cryptography and blockchain technology:
 
 *   End-to-end client-side encryption of files, encrypted such that only the senders and recipients can decrypt and view them with their identity (a wallet).
-*   Recipients can sign the document using their wallet directly, which means, Signatures are now transactions on a blockchain. Blockchain transactions are permanent records stored publicly with a unique hash, and can be verified by anyone.
+*   Recipients can sign the document using their wallet directly, which means, signatures are now transactions on a blockchain. Blockchain transactions are permanent records stored publicly with a unique hash, and can be verified by anyone.
 
 ### As of today, Filosign has the following capabilities:
 
@@ -158,8 +158,8 @@ Filosign solves these challenges using a combination of cryptography and blockch
 *   **End-to-End Encryption:** Your documents are encrypted right in your browser. Only you and your recipients hold the keys to decrypt and view the content. To us or anyone on the outside, the files are just gibberish.
 *   **Decentralized Storage:** We store the encrypted documents on a decentralized service (Filecoin Onchain Cloud) instead of a centralized database. Being stored in this way, your files are always available, even if our own servers go down.
 *   **On-Chain Proofs:** Signatures are permanent transactions on the blockchain. They are tamper-proof, and are stored publicly so anyone can independently verify them from anywhere.
-*   **No Gas Required:** You can use the entire platform without needing anything more than a free account. We cover all the gas for users internally so you don't ever have to worry it, just how it should be.
-*   **Compliance Report:** For convenience, you can generate proof packet (a PDF report) that contains all the details about the contract, including the specific on-chain transaction hashes for the signature. This is handy for legal purposes.
+*   **No Gas Required:** You can use the entire platform without needing anything more than a free account. We cover all the gas for users internally so you don't ever have to worry about it, just how it should be.
+*   **Compliance Report:** For convenience, you can generate a proof packet (a PDF report) that contains all the details about the contract, including the specific on-chain transaction hashes for the signature. This is handy for legal purposes.
 
 *Here is what a Filosign proof packet looks like:*
 
@@ -173,12 +173,12 @@ Because of this chosen architecture, we can do some things that traditional plat
 
 Senders can attach incentives (like USDT) for signers directly to the document and the signer automatically receives those tokens in their wallet as soon as they sign. This is really powerful. It fundamentally unifies signatures and payments in single flow and changes how high-stakes or sensitive work gets done. Consider the following examples:
 
-*   **Cross-Border Payouts:** Contractors / Freelancers across the glove can sign a final handover agreement and instantly receives their payment, eliminating invoice delays and wire fees.
+*   **Cross-Border Payouts:** Contractors / Freelancers across the globe can sign a final handover agreement and instantly receives their payment, eliminating invoice delays and wire fees.
 *   **Open Source and DAO Grants:** Developers signing a milestone document to automatically unlock treasury funds.
 
 During the past six months, Filosign has evolved a lot, thanks to all the people who nudged us in the right direction and believed in our vision. We have kept building it quietly until now, trying to get the core right and now we need your feedback to make it perfect!
 
-So today, we are releasing the public beta for Filosign for you to try, test and break. You can get started by connecting your social account or your wallet if you have one. Nothing else required. Send a file to a friend, attach incentives, sign a doc, and tell us what all is broken or missing so we can fix it.
+So today, we are releasing the public beta for Filosign for you to try, test and break. You can get started by connecting your social account or your wallet if you have one. Nothing else required. Send a file to a friend, attach incentives, sign a doc, and tell us what breaks or is missing so we can fix it.
 
 We are excited to hear what you think about it, what features do you want, or any issues you face while trying to use it. We will use this feedback to improve the platform!
 

@@ -18,3 +18,4 @@ alwaysApply: false
 - [2026-04-28] Mistake: Suggested replacing a strong existing hero headline and wrote a sub-headline that was too long. Fix: Preserve working hero positioning and keep landing-page sub-headlines short, sharp, and campaign-aligned.
 - [2026-04-29] Mistake: Imported Privy unlink hooks (`useUnlinkWallet`/`useUnlinkOAuth`) that aren’t exported in the installed `@privy-io/react-auth` version, causing typecheck failures. Fix: Removed unlink wiring and kept only link-method actions in the profile settings UI.
 - [2026-04-29] Mistake: Ran `biome check --write` and it caused unrelated large diffs. Fix: Reverted non-profile auto-fixes and reran targeted linting for the touched profile files.
+- [2026-04-29] Mistake: Attempted a patch with mismatched hunk context, so copy edits didn’t apply on the first try. Fix: Re-read the exact target lines and re-applied a correctly-contextualized patch.
