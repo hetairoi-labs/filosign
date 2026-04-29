@@ -178,11 +178,11 @@ Senders can attach incentives (like USDT) for signers directly to the document a
 
 During the past six months, Filosign has evolved a lot, thanks to all the people who nudged us in the right direction and believed in our vision. We have kept building it quietly until now, trying to get the core right and now we need your feedback to make it perfect!
 
-So today, we are releasing the public beta for Filosign for you to try, test and break. You can get started by connecting your social account (or your wallet if you have one). Nothing else required. We are excited to hear what you think about it, what features do you want, and any issues you face while trying to use it. We will use this to improve the platform for mainnet release!
+So today, we are releasing the public beta for Filosign for you to try, test and break. You can get started by connecting your social account or your wallet if you have one. Nothing else required. Send a file to a friend, attach incentives, sign a doc, and tell us what all is broken or missing so we can fix it.
 
-Get started here: [staging.filosign.xyz](http://staging.filosign.xyz)
+We are excited to hear what you think about it, what features do you want, or any issues you face while trying to use it. We will use this feedback to improve the platform!
 
-Send a file to a friend, attach incentives, sign a doc, and tell us what all is broken or missing so we can fix it. We can't wait to hear what you think about it!
+Here's the link: [staging.filosign.xyz](http://staging.filosign.xyz)
 
 > Note: Filosign is currently in Beta and is deployed on a testnet (Base Sepolia). The incentives you attach to documents here is just testnet tokens (tUSDT) that you can claim from free faucets to play with, and any files you uploads may get wiped out in future. This environment is a playground for you to test the app without any financial risk or permanent record. Everything functions exactly how it will on the real blockchain so you can try all the features and see if it is for you. A stable mainnet launch with permanent storage will follow soon.
 `,
