@@ -1,6 +1,5 @@
-import { CameraIcon, TrashIcon, UserIcon } from "@phosphor-icons/react";
+import { CameraIcon, UserIcon } from "@phosphor-icons/react";
 import type { UseFormReturn } from "react-hook-form";
-import { Button } from "@/src/lib/components/ui/button";
 import {
 	Card,
 	CardContent,
@@ -77,15 +76,6 @@ export function ProfilePictureSection({
 									<p className="text-sm text-destructive">{uploadError}</p>
 								)}
 								<div className="flex gap-2">
-									{field.value && (
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => form.setValue("profilePicture", null)}
-										>
-											<TrashIcon className="size-4 text-destructive" />
-										</Button>
-									)}
 									<SaveButton
 										show={sectionState.hasChanges || sectionState.state.isSaved}
 										onSave={sectionState.save}

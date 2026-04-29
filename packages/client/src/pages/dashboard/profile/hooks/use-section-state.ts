@@ -1,52 +1,39 @@
+import {
+	useUpdateUserAvatar,
+	useUpdateUserProfile,
+} from "@filosign/react/hooks";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { z } from "zod";
+import { toast } from "sonner";
 
-// Simplified form validation schema
-const profileSchema = z.object({
-	personal: z.object({
-		firstName: z
-			.string()
-			.min(1, "First name is required")
-			.max(50, "First name too long"),
-		lastName: z
-			.string()
-			.min(1, "Last name is required")
-			.max(50, "Last name too long"),
-		bio: z.string().max(500, "Bio must be less than 500 characters"),
-		walletAddress: z.string().optional(),
-	}),
-	preferences: z.object({
-		emailNotifications: z.boolean(),
-		pushNotifications: z.boolean(),
-		twoFactorAuth: z.boolean(),
-	}),
-	profilePicture: z.string().nullable(),
-	pin: z
-		.object({
-			current: z
-				.string()
-				.min(1, "Current PIN is required")
-				.regex(/^\d{6}$/, "PIN must be exactly 6 digits"),
-			new: z
-				.string()
-				.min(1, "New PIN is required")
-				.regex(/^\d{6}$/, "PIN must be exactly 6 digits"),
-			confirm: z.string().min(1, "Please confirm your PIN"),
-		})
-		.refine((data) => data.new === data.confirm, {
-			message: "PINs don't match",
-			path: ["pin", "confirm"],
-		}),
-});
+import type { ProfileForm } from "../types";
 
-export type ProfileForm = z.infer<typeof profileSchema>;
-export type SectionKey = "personal" | "preferences" | "profilePicture" | "pin";
+export type { ProfileForm } from "../types";
+
+export type SectionKey = "personal" | "profilePicture";
 
 export interface SectionState {
 	isSaving: boolean;
 	isSaved: boolean;
 	error?: string;
+}
+
+function dataUrlToFile(dataUrl: string, filename: string): File {
+	const match = dataUrl.match(/^data:(.*?);base64,(.*)$/);
+	if (!match) {
+		throw new Error("Unsupported image format");
+	}
+
+	const mime = match[1];
+	const base64 = match[2];
+	const binaryString = atob(base64);
+	const bytes = new Uint8Array(binaryString.length);
+	for (let i = 0; i < binaryString.length; i++) {
+		bytes[i] = binaryString.charCodeAt(i);
+	}
+
+	return new File([bytes], filename, { type: mime });
 }
 
 // Custom hook for section management
@@ -55,6 +42,10 @@ export const useSectionState = (
 	form: UseFormReturn<ProfileForm>,
 	originalValues: ProfileForm,
 ) => {
+	const queryClient = useQueryClient();
+	const updateUserProfile = useUpdateUserProfile();
+	const updateUserAvatar = useUpdateUserAvatar();
+
 	const [state, setState] = useState<SectionState>({
 		isSaving: false,
 		isSaved: false,
@@ -68,29 +59,13 @@ export const useSectionState = (
 				if (!name) return; // Skip if no specific field changed
 
 				// Only check for changes in this section
-				if (sectionKey === "pin" && name.startsWith("pin.")) {
-					const pinValues = form.getValues("pin");
-					const hasPinChanges = Boolean(
-						pinValues.current || pinValues.new || pinValues.confirm,
-					);
-					setHasChangesState(hasPinChanges);
-				} else if (sectionKey === "personal" && name.startsWith("personal.")) {
+				if (sectionKey === "personal" && name.startsWith("personal.")) {
 					const personalValues = form.getValues("personal");
 					const original = originalValues.personal;
 					const hasPersonalChanges =
 						personalValues.firstName !== original.firstName ||
-						personalValues.lastName !== original.lastName ||
-						personalValues.bio !== original.bio;
+						personalValues.lastName !== original.lastName;
 					setHasChangesState(hasPersonalChanges);
-				} else if (
-					sectionKey === "preferences" &&
-					name.startsWith("preferences.")
-				) {
-					const prefValues = form.getValues("preferences");
-					const original = originalValues.preferences;
-					const hasPrefChanges =
-						JSON.stringify(prefValues) !== JSON.stringify(original);
-					setHasChangesState(hasPrefChanges);
 				} else if (
 					sectionKey === "profilePicture" &&
 					name === "profilePicture"
@@ -115,23 +90,67 @@ export const useSectionState = (
 	const save = useCallback(async () => {
 		setState({ isSaving: true, isSaved: false, error: undefined });
 
-		try {
-			// Simulate API call - replace with actual API
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+		if (sectionKey === "personal") {
+			const { firstName, lastName } = form.getValues("personal");
+			const args = {
+				firstName,
+				lastName: lastName || undefined,
+			};
 
-			if (sectionKey === "pin") {
-				form.setValue("pin", { current: "", new: "", confirm: "" });
+			await updateUserProfile
+				.mutateAsync(args)
+				.then(() => {
+					setHasChangesState(false);
+					setState({ isSaving: false, isSaved: true });
+				})
+				.catch((error: unknown) => {
+					const errorMessage =
+						error instanceof Error ? error.message : "Failed to update profile";
+					setState({ isSaving: false, isSaved: false, error: errorMessage });
+					toast.error(errorMessage);
+				});
+
+			return;
+		}
+
+		if (sectionKey === "profilePicture") {
+			const picValue = form.getValues("profilePicture");
+
+			if (!picValue || typeof picValue !== "string") {
+				const errorMessage = "Please upload a profile picture";
+				setState({ isSaving: false, isSaved: false, error: errorMessage });
+				toast.error(errorMessage);
+				return;
 			}
 
-			// Reset change state after successful save
-			setHasChangesState(false);
-			setState({ isSaving: false, isSaved: true });
-		} catch (error) {
-			const errorMessage =
-				error instanceof Error ? error.message : "An error occurred";
-			setState({ isSaving: false, isSaved: false, error: errorMessage });
+			// Only data URLs can be converted to `File` for upload.
+			if (!picValue.startsWith("data:")) {
+				const errorMessage =
+					"Please upload a new profile picture to save changes";
+				setState({ isSaving: false, isSaved: false, error: errorMessage });
+				toast.error(errorMessage);
+				return;
+			}
+
+			const avatarFile = dataUrlToFile(picValue, "avatar.webp");
+
+			await updateUserAvatar
+				.mutateAsync({ avatar: avatarFile })
+				.then(() => {
+					// `useUserProfile` fetches `queryKey: ["user"]`; avatar mutations don’t invalidate it.
+					void queryClient.invalidateQueries({ queryKey: ["user"] });
+
+					setHasChangesState(false);
+					setState({ isSaving: false, isSaved: true });
+				})
+				.catch((error: unknown) => {
+					const errorMessage =
+						error instanceof Error ? error.message : "Failed to update avatar";
+					setState({ isSaving: false, isSaved: false, error: errorMessage });
+					toast.error(errorMessage);
+				});
 		}
-	}, [sectionKey, form]);
+	}, [sectionKey, form, queryClient, updateUserAvatar, updateUserProfile]);
 
 	return { state, hasChanges: hasChangesState, save };
 };

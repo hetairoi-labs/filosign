@@ -15,7 +15,6 @@ import {
 	FormMessage,
 } from "@/src/lib/components/ui/form";
 import { Input } from "@/src/lib/components/ui/input";
-import { Textarea } from "@/src/lib/components/ui/textarea";
 import { SaveButton } from "./components/SaveButton";
 import type { ProfileForm } from "./hooks/use-section-state";
 
@@ -96,23 +95,6 @@ export function PersonalInfoSection({
 					/>
 				</div>
 
-				<FormField
-					control={form.control}
-					name="personal.bio"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>Bio</FormLabel>
-							<FormControl>
-								<Textarea
-									placeholder="Tell us about yourself..."
-									rows={3}
-									{...field}
-								/>
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
 				<SaveButton
 					show={sectionState.hasChanges || sectionState.state.isSaved}
 					onSave={sectionState.save}

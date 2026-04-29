@@ -1,69 +1,83 @@
+import { useUserProfile } from "@filosign/react/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CaretLeftIcon } from "@phosphor-icons/react";
-import { usePrivy } from "@privy-io/react-auth";
+import { useLinkAccount, usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 import { Form } from "@/src/lib/components/ui/form";
-import { useStorePersist } from "@/src/lib/hooks/use-store";
-import { AccountPreferencesSection } from "./AccountPreferencesSection";
 import { useFileUpload } from "./hooks/use-file-upload";
-import type { ProfileForm } from "./hooks/use-section-state";
 import { useSectionState } from "./hooks/use-section-state";
 import { PersonalInfoSection } from "./PersonalInfoSection";
-import { PinChangeSection } from "./PinChangeSection";
 import { ProfilePictureSection } from "./ProfilePictureSection";
+import type { ProfileForm } from "./types";
 import { profileSchema } from "./types";
 
 export default function ProfilePage() {
-	const { onboardingForm } = useStorePersist();
 	const { user } = usePrivy();
 
-	const firstName = onboardingForm?.firstName || "";
-	const lastName = onboardingForm?.lastName || "";
 	const walletAddress = user?.wallet?.address || "";
-
-	const mockProfileData = {
-		personal: {
-			firstName,
-			lastName,
-			bio: "",
-			walletAddress,
-		},
-		preferences: {
-			emailNotifications: true,
-			pushNotifications: false,
-			twoFactorAuth: onboardingForm?.hasOnboarded || false,
-		},
-		profilePicture: null,
-		pin: {
-			current: "",
-			new: "",
-			confirm: "",
-		},
-	};
+	const userProfileQuery = useUserProfile();
 
 	const form = useForm<ProfileForm>({
 		resolver: zodResolver(profileSchema),
-		defaultValues: mockProfileData,
+		defaultValues: {
+			personal: {
+				firstName: "",
+				lastName: "",
+				walletAddress,
+			},
+			profilePicture: null,
+		},
 		mode: "onSubmit",
 	});
 
-	const personalSection = useSectionState("personal", form, mockProfileData);
-	const preferencesSection = useSectionState(
-		"preferences",
-		form,
-		mockProfileData,
-	);
+	const baseValues = useMemo(() => {
+		const userProfile = userProfileQuery.data as
+			| {
+					firstName?: string | null;
+					lastName?: string | null;
+					avatarUrl?: string | null;
+			  }
+			| undefined;
+		return {
+			personal: {
+				firstName: userProfile?.firstName ?? "",
+				lastName: userProfile?.lastName ?? "",
+				walletAddress,
+			},
+			profilePicture: userProfile?.avatarUrl ?? null,
+		};
+	}, [userProfileQuery.data, walletAddress]);
+
+	useEffect(() => {
+		if (!userProfileQuery.data) return;
+		form.reset(baseValues);
+	}, [form, baseValues, userProfileQuery.data]);
+
+	const personalSection = useSectionState("personal", form, baseValues);
 	const profilePictureSection = useSectionState(
 		"profilePicture",
 		form,
-		mockProfileData,
+		baseValues,
 	);
-	const pinSection = useSectionState("pin", form, mockProfileData);
 	const { uploadFile, uploadError } = useFileUpload(form);
+
+	const { linkWallet, linkGoogle, linkTwitter, linkGithub, linkDiscord } =
+		useLinkAccount();
+
+	type LinkedAccount = {
+		type?: string;
+		address?: string;
+		walletAddress?: string;
+		subject?: string;
+	};
+
+	const linkedAccounts = ((user as { linkedAccounts?: LinkedAccount[] } | null)
+		?.linkedAccounts ?? []) as LinkedAccount[];
 
 	return (
 		<div className="min-h-screen">
@@ -127,15 +141,90 @@ export default function ProfilePage() {
 
 							{/* Personal Information */}
 							<PersonalInfoSection form={form} sectionState={personalSection} />
+							{/* Privy linked accounts */}
+							<div className="space-y-4">
+								<div>
+									<h3 className="text-lg font-semibold">Linked Accounts</h3>
+									<p className="text-sm text-muted-foreground">
+										Manage how you log in by linking additional login methods.
+									</p>
+								</div>
 
-							{/* PIN Change */}
-							<PinChangeSection form={form} sectionState={pinSection} />
+								<div className="flex flex-wrap gap-2">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => linkWallet()}
+									>
+										Link Wallet
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => linkGoogle()}
+									>
+										Link Google
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => linkTwitter()}
+									>
+										Link Twitter
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => linkGithub()}
+									>
+										Link GitHub
+									</Button>
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => linkDiscord()}
+									>
+										Link Discord
+									</Button>
+								</div>
 
-							{/* Account Preferences */}
-							<AccountPreferencesSection
-								form={form}
-								sectionState={preferencesSection}
-							/>
+								<div className="space-y-2">
+									{linkedAccounts.length === 0 ? (
+										<p className="text-sm text-muted-foreground">
+											No linked accounts found.
+										</p>
+									) : (
+										linkedAccounts.map((account, idx) => {
+											const type: string = String(account.type ?? "unknown");
+											const label = type.includes(":")
+												? type.split(":")[1]
+												: type;
+
+											return (
+												<div
+													key={
+														account.subject ??
+														account.address ??
+														`${type}-${idx}`
+													}
+													className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-card/30 px-4 py-2"
+												>
+													<div className="min-w-0">
+														<p className="text-sm font-medium truncate">
+															{label}
+														</p>
+														{account.address && (
+															<p className="text-xs text-muted-foreground font-mono truncate">
+																{String(account.address).slice(0, 8)}...
+															</p>
+														)}
+													</div>
+												</div>
+											);
+										})
+									)}
+								</div>
+							</div>
 						</motion.div>
 					</main>
 				</form>
