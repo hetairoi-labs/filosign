@@ -167,6 +167,8 @@ Filosign solves these challenges using a combination of cryptography and blockch
 
 *This includes a record of who sent it, who signed it, when was it signed and the transaction hash for the signature.*
 
+On Legality: By utilizing cryptographic identity and blockchain timestamps, Filosign is designed to satisfy the core requirements of frameworks like the ESIGN Act and eIDAS. We provide the mathematical proof; you provide the intent.
+
 ## Programmable Settlement
 
 Because of this chosen architecture, we can do some things that traditional platforms simply cannot: Programmable Settlement. Here is an example of what is possible:

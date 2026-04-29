@@ -42,7 +42,6 @@ export default function BlogPostPage() {
 						initial={{ opacity: 0, scale: 0.98 }}
 						animate={{ opacity: 1, scale: 1 }}
 						transition={{ duration: 0.5, delay: 0.2 }}
-						className="rounded-[2rem] overflow-hidden shadow-sm"
 					>
 						{post.heroVideo ? (
 							<video
@@ -50,7 +49,7 @@ export default function BlogPostPage() {
 								loop
 								muted
 								playsInline
-								className="w-full h-auto object-cover aspect-[16/9] lg:aspect-[2/1]"
+								className="w-full h-auto rounded-xl object-cover aspect-[16/9] lg:aspect-[2/1]"
 							>
 								<source src={post.heroVideo} type="video/webm" />
 							</video>
@@ -60,7 +59,7 @@ export default function BlogPostPage() {
 								alt={post.title}
 								width={1280}
 								height={720}
-								className="w-full h-auto object-cover aspect-[16/9] lg:aspect-[2/1]"
+								className="w-full h-auto rounded-xl object-cover aspect-[16/9] lg:aspect-[2/1]"
 							/>
 						)}
 					</motion.div>
