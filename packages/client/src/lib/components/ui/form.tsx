@@ -4,11 +4,11 @@ import * as React from "react";
 import {
 	Controller,
 	type ControllerProps,
+	type FieldError,
 	type FieldPath,
 	type FieldValues,
 	FormProvider,
 	useFormContext,
-	useFormState,
 } from "react-hook-form";
 
 import { cn } from "../../utils";
@@ -43,15 +43,14 @@ const FormField = <
 const useFormField = () => {
 	const fieldContext = React.useContext(FormFieldContext);
 	const itemContext = React.useContext(FormItemContext);
-	const { getFieldState } = useFormContext();
-	const formState = useFormState({ name: fieldContext.name });
-	const fieldState = getFieldState(fieldContext.name, formState);
+	const { getFieldState, formState } = useFormContext();
 
 	if (!fieldContext) {
 		throw new Error("useFormField should be used within <FormField>");
 	}
 
 	const { id } = itemContext;
+	const fieldState = getFieldState(fieldContext.name, formState);
 
 	return {
 		id,
@@ -134,11 +133,40 @@ function FormDescription({ className, ...props }: React.ComponentProps<"p">) {
 	);
 }
 
+/**
+ * Extract error message from react-hook-form FieldError
+ * Returns undefined if no valid message found
+ */
+function getErrorMessage(error: FieldError | undefined): string | undefined {
+	if (!error) return undefined;
+
+	// Primary: use custom message from validation rule
+	if (error.message) {
+		return String(error.message);
+	}
+
+	// Fallback: use error type if no custom message
+	if (error.type) {
+		const typeMessages: Record<string, string> = {
+			required: "This field is required",
+			min: "Value is too small",
+			max: "Value is too large",
+			minLength: "Input is too short",
+			maxLength: "Input is too long",
+			pattern: "Invalid format",
+			validate: "Validation failed",
+		};
+		return typeMessages[error.type] || `Error: ${error.type}`;
+	}
+
+	return undefined;
+}
+
 function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
 	const { error, formMessageId } = useFormField();
-	const body = error ? String(error?.message) : props.children;
+	const message = getErrorMessage(error);
 
-	if (!body) {
+	if (!message) {
 		return null;
 	}
 
@@ -149,7 +177,7 @@ function FormMessage({ className, ...props }: React.ComponentProps<"p">) {
 			className={cn("text-destructive text-sm font-medium", className)}
 			{...props}
 		>
-			{body}
+			{message}
 		</p>
 	);
 }

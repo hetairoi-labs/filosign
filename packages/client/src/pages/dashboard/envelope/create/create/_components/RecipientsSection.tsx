@@ -3,20 +3,12 @@ import {
 	CaretDownIcon,
 	CheckIcon,
 	CoinsIcon,
-	PaperPlaneTiltIcon,
 	UserIcon,
 	UsersIcon,
 	XIcon,
 } from "@phosphor-icons/react";
 import { motion } from "motion/react";
 import { useMemo, useState } from "react";
-import {
-	type Control,
-	type FieldArrayWithId,
-	type UseFieldArrayAppend,
-	type UseFieldArrayRemove,
-	useWatch,
-} from "react-hook-form";
 import { toast } from "sonner";
 import {
 	type Address,
@@ -48,13 +40,6 @@ import {
 	CommandList,
 } from "@/src/lib/components/ui/command";
 import {
-	FormField,
-	FormItem,
-	FormLabel,
-	FormMessage,
-} from "@/src/lib/components/ui/form";
-import { Input } from "@/src/lib/components/ui/input";
-import {
 	Popover,
 	PopoverContent,
 	PopoverTrigger,
@@ -67,22 +52,23 @@ import {
 	SelectValue,
 } from "@/src/lib/components/ui/select";
 import { cn } from "@/src/lib/utils/utils";
-import type { EnvelopeForm } from "../../types";
+import type { EnvelopeForm, Recipient } from "../../types";
 
 interface RecipientsSectionProps {
-	control: Control<EnvelopeForm>;
-	fields: FieldArrayWithId<EnvelopeForm, "recipients", "id">[];
-	append: UseFieldArrayAppend<EnvelopeForm, "recipients">;
-	remove: UseFieldArrayRemove;
+	recipients: EnvelopeForm["recipients"];
+	onChange: (recipients: EnvelopeForm["recipients"]) => void;
+	onBlur: () => void;
+	error?: string;
+	isTouched?: boolean;
 }
 
 export default function RecipientsSection({
-	control,
-	fields,
-	append,
-	remove,
+	recipients,
+	onChange,
+	onBlur,
+	error,
+	isTouched,
 }: RecipientsSectionProps) {
-	const recipients = useWatch({ control, name: "recipients" });
 	const [isRecipientsOpen, setIsRecipientsOpen] = useState(true);
 	const [selectPopoverOpen, setSelectPopoverOpen] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
@@ -105,8 +91,9 @@ export default function RecipientsSection({
 	}, [acceptedPeople.data, searchQuery]);
 
 	const existingAddresses = useMemo(
-		() => new Set(fields.map((f) => f.walletAddress?.toLowerCase())),
-		[fields],
+		() =>
+			new Set((recipients || []).map((r) => r.walletAddress?.toLowerCase())),
+		[recipients],
 	);
 
 	const handleSelectConnection = (person: {
@@ -120,18 +107,30 @@ export default function RecipientsSection({
 			return;
 		}
 
-		append({
+		const newRecipient: Recipient = {
 			name: person.displayName || "",
 			email: "",
 			walletAddress: normalized,
 			role: "signer",
-		});
+		};
+
+		onChange([...(recipients || []), newRecipient]);
 		setSelectPopoverOpen(false);
 		setSearchQuery("");
 		toast.success("Recipient added");
 	};
 
-	const handleRequestSuccess = () => {};
+	const removeRecipient = (index: number) => {
+		const updated = [...(recipients || [])];
+		updated.splice(index, 1);
+		onChange(updated);
+	};
+
+	const updateRecipient = (index: number, updates: Partial<Recipient>) => {
+		const updated = [...(recipients || [])];
+		updated[index] = { ...updated[index], ...updates };
+		onChange(updated);
+	};
 
 	return (
 		<motion.section
@@ -144,6 +143,7 @@ export default function RecipientsSection({
 				damping: 25,
 				delay: 0.4,
 			}}
+			onBlur={onBlur}
 		>
 			<Collapsible open={isRecipientsOpen} onOpenChange={setIsRecipientsOpen}>
 				<CollapsibleTrigger asChild>
@@ -151,15 +151,10 @@ export default function RecipientsSection({
 						<h4 className="flex items-center gap-3">
 							<UsersIcon
 								className={cn(
-									"size-5 text-muted-foreground transition-transform duration-200",
+									"size-5 text-muted-foreground transition-colors duration-200",
 								)}
 							/>
-							Add recipients
-							{fields.length > 0 && (
-								<span className="text-sm text-muted-foreground">
-									({fields.length})
-								</span>
-							)}
+							Add Recipients
 						</h4>
 						<CaretDownIcon
 							className={cn(
@@ -172,177 +167,181 @@ export default function RecipientsSection({
 				</CollapsibleTrigger>
 
 				<CollapsibleContent className="mt-6">
-					<FormField
-						control={control}
-						name="recipients"
-						rules={{
-							validate: (value) => {
-								if (!value || value.length === 0) {
-									return "At least 1 recipient is required";
-								}
-								return true;
-							},
-						}}
-						render={() => (
-							<FormItem>
-								<div className="space-y-4">
-									<div className="flex items-center justify-between gap-2">
-										<FormLabel>Recipients</FormLabel>
-										<div className="flex items-center gap-3">
-											<AddRecipientDialog
-												trigger={
-													<Button type="button" variant="primary">
-														<PaperPlaneTiltIcon className="size-4" />
-														<p className="hidden md:block">Add New Recipient</p>
-													</Button>
-												}
-												onSuccess={handleRequestSuccess}
-											/>
-											<Popover
-												open={selectPopoverOpen}
-												onOpenChange={setSelectPopoverOpen}
-											>
-												<PopoverTrigger asChild>
-													<Button type="button" variant="outline">
-														<UserIcon className="size-4" />
-														<p className="hidden md:block">Your Contacts</p>
-													</Button>
-												</PopoverTrigger>
-												<PopoverContent className="w-80 p-0 mt-2" align="end">
-													<Command>
-														<CommandInput
-															placeholder="Search connections..."
-															value={searchQuery}
-															onValueChange={setSearchQuery}
-														/>
-														<CommandList>
-															<CommandEmpty>
-																{acceptedPeople.isLoading
-																	? "Loading..."
-																	: "No connections found"}
-															</CommandEmpty>
-															{filteredConnections.map((person) => {
-																const normalized = getAddress(
-																	person.walletAddress,
-																).toLowerCase();
-																const isSelected =
-																	existingAddresses.has(normalized);
-																return (
-																	<CommandItem
-																		key={person.walletAddress}
-																		onSelect={() =>
-																			handleSelectConnection(person)
-																		}
-																		disabled={isSelected}
-																		className={cn(
-																			isSelected &&
-																				"opacity-50 cursor-not-allowed",
-																		)}
-																	>
-																		<div className="flex items-center gap-3 w-full">
-																			<Avatar className="size-8">
-																				{person.avatarUrl && (
-																					<AvatarImage src={person.avatarUrl} />
-																				)}
-																				<AvatarFallback>
-																					<UserIcon className="size-4" />
-																				</AvatarFallback>
-																			</Avatar>
-																			<div className="flex-1 min-w-0">
-																				<div className="font-medium text-sm truncate">
-																					{person.displayName ||
-																						`${person.walletAddress.slice(0, 6)}...${person.walletAddress.slice(-4)}`}
-																				</div>
-																				<div className="text-xs text-muted-foreground font-mono truncate">
-																					{person.walletAddress.slice(0, 10)}...
-																				</div>
-																			</div>
-																			{isSelected && (
-																				<CheckIcon className="size-4 text-primary" />
-																			)}
-																		</div>
-																	</CommandItem>
-																);
-															})}
-														</CommandList>
-													</Command>
-												</PopoverContent>
-											</Popover>
-										</div>
-									</div>
+					<div className="space-y-4">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<p className="text-sm text-muted-foreground">
+									Add recipients to send documents to
+								</p>
+								{recipients && recipients.length > 0 && (
+									<span className="text-sm bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+										{recipients.length} recipient
+										{recipients.length !== 1 ? "s" : ""}
+									</span>
+								)}
+							</div>
 
-									{fields.length === 0 ? (
-										<motion.div
-											className="border-2 border-primary/20 rounded-lg p-16 text-center transition-colors bg-muted/5 hover:border-muted-foreground/50"
-											transition={{ duration: 0.2 }}
+							<div className="flex items-center gap-2">
+								<AddRecipientDialog
+									onSuccess={() => {
+										// Refresh accepted people list after adding
+										acceptedPeople.refetch();
+									}}
+								/>
+								{acceptedPeople.data?.people &&
+									acceptedPeople.data.people.length > 0 && (
+										<Popover
+											open={selectPopoverOpen}
+											onOpenChange={setSelectPopoverOpen}
 										>
-											<motion.div
-												initial={{ opacity: 0, y: 20 }}
-												animate={{ opacity: 1, y: 0 }}
-												transition={{
-													type: "spring",
-													stiffness: 230,
-													damping: 25,
-													delay: 0.1,
-												}}
-												className="space-y-6"
-											>
-												<motion.div
-													className="flex justify-center"
-													initial={{ opacity: 0 }}
-													animate={{ opacity: 1 }}
-													transition={{
-														type: "spring",
-														stiffness: 230,
-														damping: 25,
-														delay: 0.2,
-													}}
-												>
-													<motion.div
-														className="p-6 rounded-full bg-muted/20"
-														transition={{
-															type: "spring",
-															stiffness: 230,
-															damping: 25,
-															duration: 0.3,
-														}}
-													>
-														<UsersIcon className="h-12 w-12 text-primary" />
-													</motion.div>
-												</motion.div>
-												<motion.div
-													className="space-y-4"
-													initial={{ opacity: 0, y: 10 }}
-													animate={{ opacity: 1, y: 0 }}
-													transition={{
-														type: "spring",
-														stiffness: 230,
-														damping: 25,
-														delay: 0.3,
-													}}
-												>
-													<p className="text-muted-foreground">
-														No recipients selected
-													</p>
-													<p className="text-xs text-muted-foreground">
-														Add recipients to send documents to
-													</p>
-												</motion.div>
-											</motion.div>
-										</motion.div>
-									) : (
-										<CompactRecipientList
-											fields={fields}
-											control={control}
-											recipients={recipients}
-											remove={remove}
-										/>
+											<PopoverTrigger asChild>
+												<Button type="button" variant="outline">
+													<UserIcon className="size-4" />
+													<p className="hidden md:block">Your Contacts</p>
+												</Button>
+											</PopoverTrigger>
+											<PopoverContent className="w-80 p-0 mt-2" align="end">
+												<Command>
+													<CommandInput
+														placeholder="Search connections..."
+														value={searchQuery}
+														onValueChange={setSearchQuery}
+													/>
+													<CommandList>
+														<CommandEmpty>
+															{acceptedPeople.isLoading
+																? "Loading..."
+																: "No connections found"}
+														</CommandEmpty>
+														{filteredConnections.map((person) => {
+															const normalized = getAddress(
+																person.walletAddress,
+															).toLowerCase();
+															const isSelected =
+																existingAddresses.has(normalized);
+															return (
+																<CommandItem
+																	key={person.walletAddress}
+																	onSelect={() =>
+																		handleSelectConnection(person)
+																	}
+																	disabled={isSelected}
+																	className={cn(
+																		isSelected &&
+																			"opacity-50 cursor-not-allowed",
+																	)}
+																>
+																	<div className="flex items-center gap-3 w-full">
+																		<Avatar className="size-8">
+																			{person.avatarUrl && (
+																				<AvatarImage src={person.avatarUrl} />
+																			)}
+																			<AvatarFallback>
+																				<UserIcon className="size-4" />
+																			</AvatarFallback>
+																		</Avatar>
+																		<div className="flex-1 min-w-0">
+																			<div className="font-medium text-sm truncate">
+																				{person.displayName ||
+																					`${person.walletAddress.slice(0, 6)}...${person.walletAddress.slice(-4)}`}
+																			</div>
+																			<div className="text-sm text-muted-foreground font-mono truncate">
+																				{person.walletAddress.slice(0, 10)}...
+																			</div>
+																		</div>
+																		{isSelected && (
+																			<CheckIcon className="size-4 text-primary" />
+																		)}
+																	</div>
+																</CommandItem>
+															);
+														})}
+													</CommandList>
+												</Command>
+											</PopoverContent>
+										</Popover>
 									)}
-								</div>
-								<FormMessage />
-							</FormItem>
+							</div>
+						</div>
+
+						{!recipients || recipients.length === 0 ? (
+							<motion.div
+								className="border-2 border-primary/20 rounded-lg p-16 text-center transition-colors bg-muted/5 hover:border-muted-foreground/50"
+								transition={{ duration: 0.2 }}
+							>
+								<motion.div
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{
+										type: "spring",
+										stiffness: 230,
+										damping: 25,
+										delay: 0.1,
+									}}
+									className="space-y-6"
+								>
+									<motion.div
+										className="flex justify-center"
+										initial={{ opacity: 0 }}
+										animate={{ opacity: 1 }}
+										transition={{
+											type: "spring",
+											stiffness: 230,
+											damping: 25,
+											delay: 0.2,
+										}}
+									>
+										<motion.div
+											className="p-6 rounded-full bg-muted/20"
+											transition={{
+												type: "spring",
+												stiffness: 230,
+												damping: 25,
+												duration: 0.3,
+											}}
+										>
+											<UsersIcon className="h-12 w-12 text-primary" />
+										</motion.div>
+									</motion.div>
+									<motion.div
+										className="space-y-4"
+										initial={{ opacity: 0, y: 10 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{
+											type: "spring",
+											stiffness: 230,
+											damping: 25,
+											delay: 0.3,
+										}}
+									>
+										<p className="text-muted-foreground">
+											No recipients selected
+										</p>
+										<p className="text-sm text-muted-foreground">
+											Add recipients to send documents to
+										</p>
+									</motion.div>
+								</motion.div>
+							</motion.div>
+						) : (
+							<CompactRecipientList
+								recipients={recipients}
+								onUpdateRecipient={updateRecipient}
+								onRemoveRecipient={removeRecipient}
+							/>
 						)}
-					/>
+
+						{/* Validation error */}
+						{error && isTouched && (
+							<motion.p
+								initial={{ opacity: 0, y: -10 }}
+								animate={{ opacity: 1, y: 0 }}
+								className="text-sm text-destructive font-medium"
+							>
+								{error}
+							</motion.p>
+						)}
+					</div>
 				</CollapsibleContent>
 			</Collapsible>
 		</motion.section>
@@ -351,17 +350,15 @@ export default function RecipientsSection({
 
 // Compact recipient card with inline text display and collapsible incentives
 interface CompactRecipientListProps {
-	fields: FieldArrayWithId<EnvelopeForm, "recipients", "id">[];
-	control: Control<EnvelopeForm>;
-	recipients: EnvelopeForm["recipients"] | undefined;
-	remove: UseFieldArrayRemove;
+	recipients: Recipient[];
+	onUpdateRecipient: (index: number, updates: Partial<Recipient>) => void;
+	onRemoveRecipient: (index: number) => void;
 }
 
 function CompactRecipientList({
-	fields,
-	control,
 	recipients,
-	remove,
+	onUpdateRecipient,
+	onRemoveRecipient,
 }: CompactRecipientListProps) {
 	return (
 		<motion.div
@@ -375,13 +372,13 @@ function CompactRecipientList({
 				delay: 0.1,
 			}}
 		>
-			{fields.map((field, index) => (
+			{recipients.map((recipient, index) => (
 				<CompactRecipientCard
-					key={field.id}
+					key={`${recipient.walletAddress}-${index}`}
+					recipient={recipient}
 					index={index}
-					control={control}
-					recipientData={recipients?.[index]}
-					onRemove={() => remove(index)}
+					onUpdate={onUpdateRecipient}
+					onRemove={onRemoveRecipient}
 				/>
 			))}
 		</motion.div>
@@ -389,20 +386,20 @@ function CompactRecipientList({
 }
 
 interface CompactRecipientCardProps {
+	recipient: Recipient;
 	index: number;
-	control: Control<EnvelopeForm>;
-	recipientData: EnvelopeForm["recipients"][number] | undefined;
-	onRemove: () => void;
+	onUpdate: (index: number, updates: Partial<Recipient>) => void;
+	onRemove: (index: number) => void;
 }
 
 function CompactRecipientCard({
+	recipient,
 	index,
-	control,
-	recipientData,
+	onUpdate,
 	onRemove,
 }: CompactRecipientCardProps) {
 	const [showIncentive, setShowIncentive] = useState(
-		!!recipientData?.incentive?.token,
+		!!recipient.incentive?.token,
 	);
 
 	// Format wallet address for display
@@ -413,18 +410,17 @@ function CompactRecipientCard({
 
 	// Get token symbol if set
 	const tokenSymbol = useMemo(() => {
-		if (!recipientData?.incentive?.token) return null;
+		if (!recipient.incentive?.token) return null;
 		const token = WORLD_CHAIN_SEPOLIA_TOKENS.find(
 			(t) =>
-				t.address.toLowerCase() ===
-				recipientData.incentive?.token?.toLowerCase(),
+				t.address.toLowerCase() === recipient.incentive?.token?.toLowerCase(),
 		);
 		return token?.symbol || "Token";
-	}, [recipientData?.incentive?.token]);
+	}, [recipient.incentive?.token]);
 
 	return (
 		<motion.div
-			className="rounded-lg border bg-muted/5 border-border/60 overflow-hidden"
+			className="rounded-lg border bg-background shadow-sm overflow-hidden"
 			initial={{ opacity: 0, scale: 0.95 }}
 			animate={{ opacity: 1, scale: 1 }}
 			transition={{
@@ -434,77 +430,90 @@ function CompactRecipientCard({
 				duration: 0.3,
 			}}
 		>
-			{/* Main row with better spacing */}
+			{/* Main row */}
 			<div className="flex items-start gap-4 p-4">
 				{/* Avatar */}
-				<div className="shrink-0 pt-0.5">
-					<div className="size-10 rounded-full bg-primary/10 flex items-center justify-center">
-						<UserIcon className="size-5 text-primary" />
+				<div className="shrink-0">
+					<div className="size-11 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10 flex items-center justify-center">
+						<UserIcon className="size-5 text-primary" weight="duotone" />
 					</div>
 				</div>
 
-				{/* Info column - fixed display, no editing */}
-				<div className="flex-1 min-w-0 space-y-1">
-					{/* Name and Role selector row */}
-					<div className="flex items-center gap-2 flex-wrap">
-						<span className="font-medium text-sm">
-							{recipientData?.name || "Unnamed"}
+				{/* Info column */}
+				<div className="flex-1 min-w-0 space-y-1.5">
+					{/* Name row */}
+					<div className="flex items-center gap-2">
+						<span className="font-semibold text-sm text-foreground">
+							{recipient.name || "Unnamed"}
 						</span>
-						<FormField
-							control={control}
-							name={`recipients.${index}.role`}
-							render={({ field }) => (
-								<Select value={field.value} onValueChange={field.onChange}>
-									<SelectTrigger className="h-7 w-28 text-xs px-2">
-										<SelectValue />
-									</SelectTrigger>
-									<SelectContent>
-										<SelectItem value="signer">Signer</SelectItem>
-										<SelectItem value="cc">CC</SelectItem>
-										<SelectItem value="approver">Approver</SelectItem>
-									</SelectContent>
-								</Select>
-							)}
-						/>
-						{recipientData?.incentive?.token && (
+						{recipient.incentive?.token && (
 							<Badge
-								variant="outline"
-								className="text-[10px] h-5 px-1.5 border-primary/30"
+								variant="secondary"
+								className="text-[10px] h-5 px-2 font-medium"
 							>
-								<CoinsIcon className="size-3" />
-								{recipientData.incentive.amount || "0"} {tokenSymbol}
+								<CoinsIcon className="size-3" weight="fill" />
+								{recipient.incentive.amount || "0"} {tokenSymbol}
 							</Badge>
 						)}
 					</div>
 
-					{/* Fixed contact info - wallet and email (read-only) */}
-					<div className="text-xs text-muted-foreground font-mono">
-						{formatWallet(recipientData?.walletAddress || "")}
+					{/* Wallet address */}
+					<div className="text-sm font-mono bg-muted/20 rounded-sm px-2 py-1 my-2 inline-block">
+						{recipient.walletAddress}
 					</div>
-					{recipientData?.email && (
-						<div className="text-xs text-muted-foreground">
-							{recipientData.email}
-						</div>
+
+					{/* Email */}
+					{recipient.email && (
+						<div className="text-sm text-foreground/70">{recipient.email}</div>
 					)}
+
+					{/* Role selector row */}
+					<div className="flex items-center gap-2 pt-1">
+						<span className="text-sm text-foreground/60">Role:</span>
+						<Select
+							value={recipient.role}
+							onValueChange={(val) =>
+								onUpdate(index, { role: val as Recipient["role"] })
+							}
+						>
+							<SelectTrigger className="h-7 w-32 text-sm px-2">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="signer">Signer</SelectItem>
+								<SelectItem value="cc">Viewer</SelectItem>
+							</SelectContent>
+						</Select>
+					</div>
 				</div>
 
-				{/* Actions - text buttons instead of icons */}
+				{/* Actions */}
 				<div className="shrink-0 flex self-center gap-2">
 					<Button
 						type="button"
 						variant="outline"
 						size="sm"
-						className="h-8 text-xs px-3"
+						className="h-9 text-sm px-3 font-medium"
 						onClick={() => setShowIncentive(!showIncentive)}
 					>
-						{showIncentive ? "Hide Incentive" : "Attach Incentive"}
+						{showIncentive ? (
+							<>
+								<XIcon className="size-3.5 mr-1.5" />
+								Hide
+							</>
+						) : (
+							<>
+								<CoinsIcon className="size-3.5 mr-1.5" />
+								Add Incentive
+							</>
+						)}
 					</Button>
 					<Button
 						type="button"
 						variant="ghost"
 						size="sm"
-						className="h-8 text-xs px-3 text-destructive hover:text-destructive"
-						onClick={onRemove}
+						className="h-8 text-sm px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+						onClick={() => onRemove(index)}
 					>
 						Remove
 					</Button>
@@ -514,9 +523,8 @@ function CompactRecipientCard({
 			{/* Collapsible incentive section */}
 			{showIncentive && (
 				<IncentiveSection
-					index={index}
-					control={control}
-					recipientData={recipientData}
+					recipient={recipient}
+					onUpdate={(updates) => onUpdate(index, updates)}
 					onClose={() => setShowIncentive(false)}
 				/>
 			)}
@@ -526,22 +534,20 @@ function CompactRecipientCard({
 
 // Incentive section with token selection and amount
 interface IncentiveSectionProps {
-	index: number;
-	control: Control<EnvelopeForm>;
-	recipientData: EnvelopeForm["recipients"][number] | undefined;
+	recipient: Recipient;
+	onUpdate: (updates: Partial<Recipient>) => void;
 	onClose: () => void;
 }
 
 function IncentiveSection({
-	index,
-	control,
-	recipientData,
+	recipient,
+	onUpdate,
 	onClose,
 }: IncentiveSectionProps) {
 	return (
 		<div className="border-t border-border/60 px-3 py-3">
 			<div className="flex items-center justify-between mb-2">
-				<span className="text-xs font-medium text-muted-foreground">
+				<span className="text-sm font-medium text-muted-foreground">
 					Attach Incentive
 				</span>
 				<Button
@@ -555,81 +561,57 @@ function IncentiveSection({
 				</Button>
 			</div>
 			<div className="grid grid-cols-2 gap-3">
-				<FormField
-					control={control}
-					name={`recipients.${index}.incentive.token`}
-					rules={{
-						validate: (value) => {
-							if (value && !isAddress(value)) return "Invalid token";
-							return true;
-						},
+				<Select
+					value={recipient.incentive?.token || "none"}
+					onValueChange={(val) => {
+						if (val === "none") {
+							onUpdate({
+								incentive: { token: "", amount: "" },
+							});
+						} else if (val && isAddress(val)) {
+							onUpdate({
+								incentive: {
+									token: getAddress(val),
+									amount: recipient.incentive?.amount || "",
+								},
+							});
+						}
 					}}
-					render={({ field }) => (
-						<FormItem className="space-y-1">
-							<Select
-								value={field.value || "none"}
-								onValueChange={(val) => {
-									if (val === "none") {
-										field.onChange("");
-									} else if (val && isAddress(val)) {
-										field.onChange(getAddress(val));
-									}
-								}}
-							>
-								<SelectTrigger className="h-8 text-xs">
-									<SelectValue placeholder="Select token" />
-								</SelectTrigger>
-								<SelectContent>
-									<SelectItem value="none">None</SelectItem>
-									{WORLD_CHAIN_SEPOLIA_TOKENS.map((token) => (
-										<SelectItem key={token.address} value={token.address}>
-											<div className="flex items-center gap-2">
-												<img
-													src={token.icon}
-													alt={token.name}
-													className="size-4"
-												/>
-												<span className="text-xs">{token.symbol}</span>
-											</div>
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<FormMessage className="text-xs" />
-						</FormItem>
-					)}
-				/>
-				<FormField
-					control={control}
-					name={`recipients.${index}.incentive.amount`}
-					rules={{
-						validate: (value, formValues) => {
-							const token = formValues.recipients[index]?.incentive?.token;
-							if (token && !value) return "Amount required";
-							if (value && !token) return "Select token first";
-							if (value && Number.isNaN(Number(value))) return "Invalid amount";
-							if (value && Number(value) <= 0) return "Must be > 0";
-							return true;
-						},
-					}}
-					render={({ field }) => (
-						<FormItem className="space-y-1">
-							<Input
-								{...field}
-								value={field.value || ""}
-								placeholder="Amount"
-								className="h-8 text-xs"
-								type="number"
-								step="any"
-							/>
-							<FormMessage className="text-xs" />
-						</FormItem>
-					)}
+				>
+					<SelectTrigger className="h-8 text-sm">
+						<SelectValue placeholder="Select token" />
+					</SelectTrigger>
+					<SelectContent>
+						<SelectItem value="none">None</SelectItem>
+						{WORLD_CHAIN_SEPOLIA_TOKENS.map((token) => (
+							<SelectItem key={token.address} value={token.address}>
+								<div className="flex items-center gap-2">
+									<img src={token.icon} alt={token.name} className="size-4" />
+									<span className="text-sm">{token.symbol}</span>
+								</div>
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				<input
+					type="number"
+					value={recipient.incentive?.amount || ""}
+					onChange={(e) =>
+						onUpdate({
+							incentive: {
+								token: recipient.incentive?.token || "",
+								amount: e.target.value,
+							},
+						})
+					}
+					placeholder="Amount"
+					className="h-8 text-sm px-3 rounded-md border border-input bg-background"
+					step="any"
 				/>
 			</div>
 
 			{/* Token warning and balance checker */}
-			{recipientData?.incentive?.token && (
+			{recipient.incentive?.token && (
 				<div className="mt-3 p-2.5 bg-background rounded-md border border-border/60">
 					<p className="text-[11px] text-destructive leading-snug mb-2">
 						You must hold enough tokens. They will be locked when sending.
@@ -638,7 +620,7 @@ function IncentiveSection({
 						const currentToken = WORLD_CHAIN_SEPOLIA_TOKENS.find(
 							(t) =>
 								t.address.toLowerCase() ===
-								recipientData.incentive?.token?.toLowerCase(),
+								recipient.incentive?.token?.toLowerCase(),
 						);
 						if (!currentToken) return null;
 
@@ -649,7 +631,7 @@ function IncentiveSection({
 									decimals={currentToken.decimals}
 									symbol={currentToken.symbol}
 								/>
-								{currentToken.faucets?.length > 0 && (
+								{currentToken.faucets && currentToken.faucets.length > 0 && (
 									<div className="flex flex-wrap gap-1.5 items-center text-[10px]">
 										<span className="text-muted-foreground">
 											Need {currentToken.symbol}?
@@ -711,7 +693,7 @@ function TokenBalanceChecker({
 				size="sm"
 				onClick={handleCheck}
 				disabled={isFetching || !address}
-				className="h-7 text-xs px-3 bg-background/50"
+				className="h-7 text-sm px-3 bg-background/50"
 			>
 				{isFetching ? "Checking..." : "Check Balance"}
 			</Button>
