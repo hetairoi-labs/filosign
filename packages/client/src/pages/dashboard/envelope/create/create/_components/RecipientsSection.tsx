@@ -402,12 +402,6 @@ function CompactRecipientCard({
 		!!recipient.incentive?.token,
 	);
 
-	// Format wallet address for display
-	const formatWallet = (addr: string) => {
-		if (!addr || addr.length < 10) return addr;
-		return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
-	};
-
 	// Get token symbol if set
 	const tokenSymbol = useMemo(() => {
 		if (!recipient.incentive?.token) return null;

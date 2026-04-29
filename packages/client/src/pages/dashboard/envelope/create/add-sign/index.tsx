@@ -86,6 +86,7 @@ export default function AddSignaturePage() {
 	const [pendingFieldType, setPendingFieldType] = useState<
 		SignatureField["type"] | null
 	>(null);
+	const [sendStatus, setSendStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
 	const isSendingRef = useRef(false);
 
 	// Convert createForm documents to Document format
@@ -176,11 +177,15 @@ export default function AddSignaturePage() {
 
 		if (!createForm || !createForm.documents.length) {
 			toast.error("No documents to send");
+			setSendStatus("error");
+			setTimeout(() => setSendStatus("idle"), 3000);
 			return;
 		}
 
 		if (!createForm.recipients || createForm.recipients.length === 0) {
 			toast.error("No recipients selected");
+			setSendStatus("error");
+			setTimeout(() => setSendStatus("idle"), 3000);
 			return;
 		}
 
@@ -196,10 +201,13 @@ export default function AddSignaturePage() {
 			toast.error(
 				"Could not load all recipient profiles. Please try again in a moment.",
 			);
+			setSendStatus("error");
+			setTimeout(() => setSendStatus("idle"), 3000);
 			return;
 		}
 
 		isSendingRef.current = true;
+		setSendStatus("loading");
 		toast.loading("Sending documents...", { id: "send-progress" });
 
 		try {
@@ -260,18 +268,23 @@ export default function AddSignaturePage() {
 
 			clearCreateForm();
 
+			setSendStatus("success");
 			toast.success("Documents sent successfully!", {
 				id: "send-progress",
 			});
 
-			navigate({ to: "/dashboard" });
+			setTimeout(() => {
+				navigate({ to: "/dashboard" });
+			}, 1500);
 		} catch (error) {
+			setSendStatus("error");
 			if (
 				error instanceof Error &&
 				error.message === SendEnvelopeError.MISSING_DATA_URL
 			) {
 				toast.dismiss("send-progress");
 				toast.error("Document is missing file data");
+				setTimeout(() => setSendStatus("idle"), 3000);
 				return;
 			}
 			if (
@@ -279,12 +292,14 @@ export default function AddSignaturePage() {
 				error.message === SendEnvelopeError.NO_SIGNERS
 			) {
 				toast.dismiss("send-progress");
+				setTimeout(() => setSendStatus("idle"), 3000);
 				return;
 			}
 			console.error("Failed to send documents:", error);
 			toast.error("Failed to send documents. Please try again.", {
 				id: "send-progress",
 			});
+			setTimeout(() => setSendStatus("idle"), 3000);
 		} finally {
 			isSendingRef.current = false;
 		}
@@ -303,7 +318,7 @@ export default function AddSignaturePage() {
 
 	return (
 		<div className="min-h-screen bg-background flex flex-col">
-			<Header onSend={handleSend} />
+			<Header onSend={handleSend} status={sendStatus} />
 
 			{/* Main Content */}
 			<div className="flex flex-1">
