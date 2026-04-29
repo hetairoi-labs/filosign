@@ -27,13 +27,13 @@ const categories: Category[] = [
 
 const featuredPost: BlogPost = {
 	id: "featured-1",
-	title: "From seed to scale: How DeFi.org secured 1M+ contracts with Filosign",
-	date: "Jan 11, 2025",
-	category: "Customer Stories",
+	title: "Introducing Filosign",
+	date: "Apr 29, 2026",
+	category: "Filosign News",
 	excerpt:
-		"In early 2024, DeFi.org was scaling rapidly across European markets. Their smart contract automation platform needed a way to legally bind off-chain agreements without compromising decentralization.",
+		"Six months ago, we started working on Filosign to build a completely private and end-to-end encrypted document signing standard.",
 	image: "/static/images/stock_1.webp",
-	slug: "/blog/post-1",
+	slug: "/blog/introducing-filosign",
 };
 
 const recentPosts: BlogPost[] = [

@@ -150,25 +150,23 @@ export default function HeroSection() {
 					damping: 50,
 					delay: 1.5,
 				}}
-				className="relative flex items-center justify-center p-4 md:p-6 rounded-3xl mt-4 overflow-hidden group"
+				className="relative flex items-center justify-center rounded-3xl mt-4 overflow-hidden group"
 			>
 				{/* Background Stock Image */}
-				<Image
-					src="/static/images/stock_1.webp"
-					alt="Background"
-					width={1200}
-					height={600}
-					className="absolute inset-0 w-full h-full object-cover bg-secondary opacity-90 scale-110 transition-transform duration-1000 group-hover:scale-150"
-				/>
+
 				<div className="absolute inset-0" />
 
-				<Image
-					src="/static/5.png"
-					alt="Filosign"
-					width={500}
-					height={500}
-					className="size-full rounded-large relative z-10 shadow-sm"
-				/>
+				<video
+					autoPlay
+					loop
+					muted
+					playsInline
+					width={1200}
+					height={600}
+					className="w-full h-auto aspect-video rounded-large relative z-10 shadow-sm object-cover"
+				>
+					<source src="static/demo.webm" type="video/webm" />
+				</video>
 			</motion.div>
 
 			{/* <TrustedCompanies /> */}

@@ -19,9 +19,13 @@ export default function BlogHero() {
 							Jan 6, 2025
 						</div>
 						<h1 className="text-4xl md:text-5xl lg:text-6xl font-medium font-manrope tracking-tight text-foreground leading-[1.1]">
-							Understanding decentralized identity: A founder's guide to smart
-							security
+							Introducing Filosign
 						</h1>
+						<p className="text-lg text-muted-foreground">
+							Six months ago, we started working on Filosign to build a
+							completely private and end-to-end encrypted document signing
+							standard. Today, we're launching it to the public.
+						</p>
 						<div className="pt-4">
 							<Button
 								asChild
@@ -32,8 +36,7 @@ export default function BlogHero() {
 								<Link
 									to="/blog/$postId"
 									params={{
-										postId:
-											"understanding-decentralized-identity-a-founders-guide-to-smart-security",
+										postId: "introduction",
 									}}
 								>
 									Read article
@@ -52,8 +55,8 @@ export default function BlogHero() {
 						<Image
 							src="/static/images/stock_4.webp"
 							alt="Woman working on laptop"
-							width={800}
-							height={600}
+							width={1280}
+							height={720}
 							className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105"
 						/>
 					</motion.div>

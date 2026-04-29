@@ -1,17 +1,34 @@
-export const blogPost = {
-	id: "post-1",
-	title: "The future of digital agreements: Why we built Filosign",
-	readingTime: "5 min",
-	date: "Jan 6, 2025",
+export type BlogPost = {
+	id: string;
+	title: string;
+	readingTime: string;
+	date: string;
 	author: {
-		name: "Alex Rivera",
-		role: "Article written by",
-		avatar: "/static/images/stock_7.webp",
-	},
-	heroImage: "/static/images/stock_4.webp",
-	quote:
-		'"We needed a way to sign documents that didn\'t rely on a central authority holding the keys," says Sarah Chen, CTO of OpenDocs.',
-	content: `
+		name: string;
+		role: string;
+		avatar: string;
+	};
+	heroImage: string;
+	heroVideo?: string;
+	quote?: string;
+	content: string;
+};
+
+export const blogPosts: Record<string, BlogPost> = {
+	"post-1": {
+		id: "post-1",
+		title: "The future of digital agreements: Why we built Filosign",
+		readingTime: "5 min",
+		date: "Jan 6, 2025",
+		author: {
+			name: "Kartikay Tiwari",
+			role: "Article written by",
+			avatar: "/static/banner.webp",
+		},
+		heroImage: "/static/banner.webp",
+		quote:
+			'"We needed a way to sign documents that didn\'t rely on a central authority holding the keys," says Sarah Chen, CTO of OpenDocs.',
+		content: `
 In the world of digital agreements, trust has always been outsourced. When you sign a document using a traditional e-signature platform, you're not just trusting the other party—you're trusting the platform itself to store, secure, and verify that signature. But what happens when that centralized trust fails? Or when privacy is paramount?
 
 At **Filosign**, we asked a simple question: *What if you could prove a document was signed without trusting a middleman?*
@@ -104,4 +121,72 @@ As we move towards a more decentralized web, the tools we use to agree and trans
 
 Ready to take control of your documents? [Start for free](/onboarding) today.
 `,
+	},
+	"introducing-filosign": {
+		id: "introducing-filosign",
+		title: "Introducing Filosign",
+		readingTime: "3 min",
+		date: "Apr 29, 2026",
+		author: {
+			name: "Kartik",
+			role: "Written by",
+			avatar: "/static/kartik.jpeg",
+		},
+		heroImage: "/static/banner.webp",
+		heroVideo: "/static/demo.webm",
+		content: `
+Six months ago, We started working on Filosign; an idea focused on creating a completely private and end-to-end encrypted document signing standard.
+
+*"But e-sign is a commodity, so why do we need a new app for it?"*
+
+Because almost all of the e-signature solutions out there are tied to a particular vendor and the vendor controls your files as well as your signatures, not you. If that vendor gets breached, all your sensitive data is at the risk of being exposed to bad actors. If their database disappears, your proof disappears. We propose a new standard that overcomes these flaws.
+
+To achieve that, our main challenges were:
+
+*   Nobody apart from the sender and the recipients should be able to access the files.
+*   The signature needs to be permanently tied to the sender and recipient in a way that it is verifiable (and accessible) by anyone, from anywhere.
+
+Filosign solves these challenges using a combination of cryptography and blockchain technology:
+
+*   End-to-end client-side encryption of files, encrypted such that only the senders and recipients can decrypt and view them with their identity (a wallet).
+*   Recipients can sign the document using their wallet directly, which means, Signatures are now transactions on a blockchain. Blockchain transactions are permanent records stored publicly with a unique hash, and can be verified by anyone.
+
+### As of today, Filosign has the following capabilities:
+
+*   **Wallet-Native Identity:** In web3, wallets are the primary way to prove ownership and take action. So it makes sense to use the exact same wallet to sign documents on your behalf. You can bring your own wallet, or sign up using a social provider like Google or X, and we will create one for you internally.
+*   **Controlled Permissions:** You have full control over who you receive signing requests from. Senders have to add you as a contact and wait for you to accept before they can send a file, which completely prevents spam.
+*   **End-to-End Encryption:** Your documents are encrypted right in your browser. Only you and your recipients hold the keys to decrypt and view the content. To us or anyone on the outside, the files are just gibberish.
+*   **Decentralized Storage:** We store the encrypted documents on a decentralized service (Filecoin Onchain Cloud) instead of a centralized database. Being stored in this way, your files are always available, even if our own servers go down.
+*   **On-Chain Proofs:** Signatures are permanent transactions on the blockchain. They are tamper-proof, and are stored publicly so anyone can independently verify them from anywhere.
+*   **No Gas Required:** You can use the entire platform without needing anything more than a free account. We cover all the gas for users internally so you don't ever have to worry it, just how it should be.
+*   **Compliance Report:** For convenience, you can generate proof packet (a PDF report) that contains all the details about the contract, including the specific on-chain transaction hashes for the signature. This is handy for legal purposes.
+
+*Here is what a Filosign proof packet looks like:*
+
+![image_1777432785623_0](https://cdn.filosign.ishtails.xyz/assets/proof.webp)
+
+*This includes a record of who sent it, who signed it, when was it signed and the transaction hash for the signature.*
+
+## Programmable Settlement
+
+Because of this chosen architecture, we can do some things that traditional platforms simply cannot: Programmable Settlement. Here is an example of what is possible:
+
+Senders can attach incentives (like USDT) for signers directly to the document and the signer automatically receives those tokens in their wallet as soon as they sign. This is really powerful. It fundamentally unifies signatures and payments in single flow and changes how high-stakes or sensitive work gets done. Consider the following examples:
+
+*   **Cross-Border Payouts:** Contractors / Freelancers across the glove can sign a final handover agreement and instantly receives their payment, eliminating invoice delays and wire fees.
+*   **Open Source and DAO Grants:** Developers signing a milestone document to automatically unlock treasury funds.
+
+During the past six months, Filosign has evolved a lot, thanks to all the people who nudged us in the right direction and believed in our vision. We have kept building it quietly until now, trying to get the core right and now we need your feedback to make it perfect!
+
+So today, we are releasing the public beta for Filosign for you to try, test and break. You can get started by connecting your social account (or your wallet if you have one). Nothing else required. We are excited to hear what you think about it, what features do you want, and any issues you face while trying to use it. We will use this to improve the platform for mainnet release!
+
+Get started here: [staging.filosign.xyz](http://staging.filosign.xyz)
+
+Send a file to a friend, attach incentives, sign a doc, and tell us what all is broken or missing so we can fix it. We can't wait to hear what you think about it!
+
+> Note: Filosign is currently in Beta and is deployed on a testnet (Base Sepolia). The incentives you attach to documents here is just testnet tokens (tUSDT) that you can claim from free faucets to play with, and any files you uploads may get wiped out in future. This environment is a playground for you to test the app without any financial risk or permanent record. Everything functions exactly how it will on the real blockchain so you can try all the features and see if it is for you. A stable mainnet launch with permanent storage will follow soon.
+`,
+	},
 };
+
+export const blogPost = blogPosts["post-1"];

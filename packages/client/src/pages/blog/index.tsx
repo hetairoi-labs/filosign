@@ -10,8 +10,8 @@ function BlogPage() {
 			<LandingNavbar />
 			<main>
 				<BlogHero />
-				<EditorsPicks />
-				<RecentlyPublished />
+				{/* <EditorsPicks /> */}
+				{/* <RecentlyPublished /> */}
 			</main>
 			<FooterSection />
 		</div>

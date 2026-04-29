@@ -11,19 +11,6 @@ export type ChangelogEntry = {
 
 export const ChangelogEntries: ChangelogEntry[] = [
 	{
-		id: "7",
-		date: "Mar 31, 2026",
-		type: "Feature",
-		title: "World ID Privacy-Preserving Verification",
-		description: [
-			"Integrated World ID to provide Sybil-proof, privacy-preserving human verification for all document signers.",
-			"ZK-proofs to ensure each signer is a unique human without compromising their personal identity or wallet history.",
-			"Fully on-chain verification using World ID Router on World Chain for maximum transparency and security.",
-		],
-		image:
-			"https://images.prismic.io/worldcoin-company-website/aTrua3NYClf9oEjG_WorldChain.png?auto=format%2Ccompress&w=2400&h=1260",
-	},
-	{
 		id: "8",
 		date: "Mar 31, 2026",
 		type: "Feature",
