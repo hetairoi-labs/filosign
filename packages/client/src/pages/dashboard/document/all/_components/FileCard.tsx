@@ -120,7 +120,7 @@ export default function FileCard({
 	if (variant === "grid") {
 		return (
 			<motion.div
-				className="group bg-background border rounded-lg p-3 hover:bg-accent/50 transition-colors cursor-pointer"
+				className="group bg-background border rounded-lg p-2 hover:bg-accent/50 transition-colors cursor-pointer"
 				initial={{ opacity: 0, scale: 0.9 }}
 				animate={{ opacity: 1, scale: 1 }}
 				transition={{
@@ -132,33 +132,30 @@ export default function FileCard({
 				onClick={handleClick}
 			>
 				{/* Preview/Icon */}
-				<div className="aspect-square mb-3 bg-card rounded-lg flex items-center justify-center">
+				<div className="aspect-square mb-2 bg-card rounded-md flex items-center justify-center">
 					{isLoading ? (
-						<SpinnerGapIcon className="size-8 animate-spin text-muted-foreground/50" />
+						<SpinnerGapIcon className="size-6 animate-spin text-muted-foreground/50" />
 					) : shouldShowPreview ? (
 						<Image
 							src={previewDataUrl}
 							alt={fileName}
-							className="w-full h-full object-cover object-top rounded-lg"
+							className="w-full h-full object-cover object-top rounded-md"
 						/>
 					) : (
-						<FileIconComponent className={cn("size-12", iconColor)} />
+						<FileIconComponent className={cn("size-8", iconColor)} />
 					)}
 				</div>
 
 				{/* File info */}
-				<div className="space-y-1 min-w-0">
+				<div className="space-y-0.5 min-w-0">
 					<p
-						className="text-sm font-medium truncate break-all"
+						className="text-xs font-medium truncate"
 						title={fileName}
 					>
 						{fileName}
 					</p>
-					<p className="text-xs text-muted-foreground truncate">
+					<p className="text-[10px] text-muted-foreground truncate">
 						{formatFileSize(fileSize)}
-					</p>
-					<p className="text-xs text-muted-foreground">
-						{file.createdAt ? formatDate(file.createdAt) : "Unknown date"}
 					</p>
 				</div>
 			</motion.div>

@@ -29,6 +29,7 @@ export default function ProfilePage() {
 				firstName: "",
 				lastName: "",
 				walletAddress,
+				email: "",
 			},
 			profilePicture: null,
 		},
@@ -40,6 +41,7 @@ export default function ProfilePage() {
 			| {
 					firstName?: string | null;
 					lastName?: string | null;
+					email?: string | null;
 					avatarUrl?: string | null;
 			  }
 			| undefined;
@@ -48,6 +50,7 @@ export default function ProfilePage() {
 				firstName: userProfile?.firstName ?? "",
 				lastName: userProfile?.lastName ?? "",
 				walletAddress,
+				email: userProfile?.email ?? "",
 			},
 			profilePicture: userProfile?.avatarUrl ?? null,
 		};
@@ -132,99 +135,16 @@ export default function ProfilePage() {
 							className="space-y-8 w-full"
 						>
 							{/* Profile Picture Section */}
-							<ProfilePictureSection
+							{/* <ProfilePictureSection
 								form={form}
 								sectionState={profilePictureSection}
 								uploadFile={uploadFile}
 								uploadError={uploadError}
-							/>
+							/> */}
 
 							{/* Personal Information */}
 							<PersonalInfoSection form={form} sectionState={personalSection} />
 							{/* Privy linked accounts */}
-							<div className="space-y-4">
-								<div>
-									<h3 className="text-lg font-semibold">Linked Accounts</h3>
-									<p className="text-sm text-muted-foreground">
-										Manage how you log in by linking additional login methods.
-									</p>
-								</div>
-
-								<div className="flex flex-wrap gap-2">
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => linkWallet()}
-									>
-										Link Wallet
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => linkGoogle()}
-									>
-										Link Google
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => linkTwitter()}
-									>
-										Link Twitter
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => linkGithub()}
-									>
-										Link GitHub
-									</Button>
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => linkDiscord()}
-									>
-										Link Discord
-									</Button>
-								</div>
-
-								<div className="space-y-2">
-									{linkedAccounts.length === 0 ? (
-										<p className="text-sm text-muted-foreground">
-											No linked accounts found.
-										</p>
-									) : (
-										linkedAccounts.map((account, idx) => {
-											const type: string = String(account.type ?? "unknown");
-											const label = type.includes(":")
-												? type.split(":")[1]
-												: type;
-
-											return (
-												<div
-													key={
-														account.subject ??
-														account.address ??
-														`${type}-${idx}`
-													}
-													className="flex items-center justify-between gap-3 rounded-lg border border-border/60 bg-card/30 px-4 py-2"
-												>
-													<div className="min-w-0">
-														<p className="text-sm font-medium truncate">
-															{label}
-														</p>
-														{account.address && (
-															<p className="text-xs text-muted-foreground font-mono truncate">
-																{String(account.address).slice(0, 8)}...
-															</p>
-														)}
-													</div>
-												</div>
-											);
-										})
-									)}
-								</div>
-							</div>
 						</motion.div>
 					</main>
 				</form>

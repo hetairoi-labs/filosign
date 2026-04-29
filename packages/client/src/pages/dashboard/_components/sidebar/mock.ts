@@ -47,36 +47,36 @@ export const sidebarData = {
 				},
 			],
 		},
-		{
-			title: "Signatures",
-			url: "#",
-			icon: SignatureIcon,
-			items: [
-				{
-					title: "Create Signature",
-					url: "/dashboard/signature/create",
-				},
-			],
-		},
-		{
-			title: "Settings",
-			url: "#",
-			icon: GearIcon,
-			items: [
-				{
-					title: "Profile",
-					url: "/dashboard/settings/profile",
-				},
-				{
-					title: "Connections",
-					url: "/dashboard/connections",
-				},
-				{
-					title: "Permissions",
-					url: "/dashboard/settings/permissions",
-				},
-			],
-		},
+		// {
+		// 	title: "Signatures",
+		// 	url: "#",
+		// 	icon: SignatureIcon,
+		// 	items: [
+		// 		{
+		// 			title: "Create Signature",
+		// 			url: "/dashboard/signature/create",
+		// 		},
+		// 	],
+		// },
+		// {
+		// 	title: "Settings",
+		// 	url: "#",
+		// 	icon: GearIcon,
+		// 	items: [
+		// 		{
+		// 			title: "Profile",
+		// 			url: "/dashboard/settings/profile",
+		// 		},
+		// 		{
+		// 			title: "Connections",
+		// 			url: "/dashboard/connections",
+		// 		},
+		// 		{
+		// 			title: "Permissions",
+		// 			url: "/dashboard/settings/permissions",
+		// 		},
+		// 	],
+		// },
 	],
 	projects: [
 		{

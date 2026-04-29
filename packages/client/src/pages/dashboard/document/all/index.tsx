@@ -4,14 +4,12 @@ import {
 	FunnelIcon,
 	GridFourIcon,
 	ListIcon,
-	MagnifyingGlassIcon,
 	PlusIcon,
 } from "@phosphor-icons/react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { Button } from "@/src/lib/components/ui/button";
-import { Input } from "@/src/lib/components/ui/input";
 import { Loader } from "@/src/lib/components/ui/loader";
 import {
 	Select,
@@ -85,7 +83,7 @@ export default function DocumentAllPage() {
 						</div>
 
 						<div className="flex items-center gap-4">
-							<motion.div
+							{/* <motion.div
 								className="flex items-center justify-between"
 								initial={{ opacity: 0, y: -20 }}
 								animate={{ opacity: 1, y: 0 }}
@@ -133,7 +131,7 @@ export default function DocumentAllPage() {
 								>
 									<FunnelIcon className="size-4" />
 								</Button>
-							</motion.div>
+							</motion.div> */}
 
 							<div className="flex items-center gap-2 bg-card rounded-lg p-1">
 								<Button
@@ -284,7 +282,7 @@ export default function DocumentAllPage() {
 												))}
 											</div>
 										) : (
-											<div className="grid grid-cols-2 @xl:grid-cols-3 @2xl:grid-cols-4 @3xl:grid-cols-5 @5xl:grid-cols-5 gap-4">
+											<div className="grid grid-cols-4 @xl:grid-cols-5 @2xl:grid-cols-6 @3xl:grid-cols-8 @5xl:grid-cols-10 gap-3">
 												{receivedFilesData.map((file) => (
 													<FileCard
 														key={`received-${file.pieceCid}`}
@@ -320,7 +318,7 @@ export default function DocumentAllPage() {
 												))}
 											</div>
 										) : (
-											<div className="grid grid-cols-2 @xl:grid-cols-3 @2xl:grid-cols-4 @3xl:grid-cols-5 @5xl:grid-cols-5 gap-4">
+											<div className="grid grid-cols-4 @xl:grid-cols-5 @2xl:grid-cols-6 @3xl:grid-cols-8 @5xl:grid-cols-10 gap-3">
 												{sentFilesData.map((file) => (
 													<FileCard
 														key={`sent-${file.pieceCid}`}

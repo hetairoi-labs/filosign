@@ -111,11 +111,6 @@ export function UserDropdown() {
 									</Button>
 								)}
 							</div>
-							{userProfile?.email && (
-								<p className="text-xs text-muted-foreground">
-									{userProfile.email}
-								</p>
-							)}
 						</div>
 					</DropdownMenuItem>
 				</motion.div>
@@ -133,16 +128,6 @@ export function UserDropdown() {
 						action: () => {
 							navigate({ to: "/dashboard/settings/profile" });
 						},
-					},
-					{
-						icon: GearIcon,
-						label: "Preferences",
-						action: () => console.log("Preferences"),
-					},
-					{
-						icon: BellIcon,
-						label: "Notifications",
-						action: () => console.log("Notifications"),
 					},
 				].map((item, index) => (
 					<motion.div

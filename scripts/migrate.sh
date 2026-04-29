@@ -16,6 +16,12 @@ case "$ENVIRONMENT" in
   testnet)
     echo "Deploying contracts to testnet..."
     bun run --cwd packages/contracts migrate:testnet
+
+    echo "Purging database..."
+    bun run --cwd packages/server db:purge
+
+    echo "Pushing database schema..."
+    bun run --cwd packages/server db:push
     ;;
   mainnet)
     echo "Deploying contracts to mainnet..."
@@ -27,9 +33,3 @@ case "$ENVIRONMENT" in
     exit 1
     ;;
 esac
-
-echo "Purging database..."
-bun run db:purge
-
-echo "Pushing database schema..."
-bun run db:push

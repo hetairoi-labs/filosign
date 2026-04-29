@@ -273,6 +273,7 @@ export default function SignDocumentPage() {
 		try {
 			await signFile.mutateAsync({ pieceCid });
 			toast.success("Document signed successfully!");
+			window.location.reload();
 		} catch (error) {
 			console.error(error);
 			toast.error(error instanceof Error ? error.message : "Failed to sign");

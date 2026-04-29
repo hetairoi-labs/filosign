@@ -11,6 +11,7 @@ export const profileSchema = z.object({
 			.min(1, "Last name is required")
 			.max(50, "Last name too long"),
 		walletAddress: z.string().optional(),
+		email: z.string().email("Invalid email").optional(),
 	}),
 	profilePicture: z.string().nullable(),
 });

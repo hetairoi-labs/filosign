@@ -62,7 +62,7 @@ export const useStorePersist = create<StorePersist>()(
 				}),
 
 			sidebar: {
-				isOpen: true,
+				isOpen: false,
 				expandedItems: [],
 				lastClickedMenu: undefined,
 			},

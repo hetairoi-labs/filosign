@@ -65,6 +65,26 @@ export function PersonalInfoSection({
 					)}
 				/>
 
+				<FormField
+					control={form.control}
+					name="personal.email"
+					render={({ field }) => (
+						<FormItem>
+							<FormLabel>Email</FormLabel>
+							<FormControl>
+								<Input
+									placeholder="email@example.com"
+									type="email"
+									readOnly
+									disabled
+									{...field}
+								/>
+							</FormControl>
+							<FormMessage />
+						</FormItem>
+					)}
+				/>
+
 				<div className="grid grid-cols-2 gap-4">
 					<FormField
 						control={form.control}

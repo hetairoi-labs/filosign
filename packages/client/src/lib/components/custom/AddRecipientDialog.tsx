@@ -153,29 +153,6 @@ export default function AddRecipientDialog({
 						/>
 					</div>
 
-					<div className="space-y-2">
-						<Label
-							htmlFor="recipient-email"
-							className="flex items-center gap-2"
-						>
-							<EnvelopeIcon className="w-4 h-4" />
-							Notification Email (Optional)
-						</Label>
-						<Input
-							id="recipient-email"
-							name="recipient-email"
-							type="email"
-							placeholder="recipient@example.com"
-							value={recipientEmail}
-							onChange={(e) => setRecipientEmail(e.target.value)}
-							autoComplete="email"
-						/>
-						<p className="text-xs text-muted-foreground">
-							We'll email this address so they can log in with the wallet above
-							and review the request.
-						</p>
-					</div>
-
 					{/* Message Input */}
 					<div className="space-y-2">
 						<Label htmlFor="message" className="flex items-center gap-2">
