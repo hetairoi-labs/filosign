@@ -23,7 +23,7 @@ import FileCard from "./_components/FileCard";
 
 export default function DocumentAllPage() {
 	const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
-	const [isFilterOpen, setIsFilterOpen] = useState(false);
+	const [isFilterOpen, _setIsFilterOpen] = useState(false);
 	const navigate = useNavigate();
 
 	// File queries

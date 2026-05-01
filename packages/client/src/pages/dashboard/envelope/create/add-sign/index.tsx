@@ -86,7 +86,9 @@ export default function AddSignaturePage() {
 	const [pendingFieldType, setPendingFieldType] = useState<
 		SignatureField["type"] | null
 	>(null);
-	const [sendStatus, setSendStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
+	const [sendStatus, setSendStatus] = useState<
+		"idle" | "loading" | "success" | "error"
+	>("idle");
 	const isSendingRef = useRef(false);
 
 	// Convert createForm documents to Document format

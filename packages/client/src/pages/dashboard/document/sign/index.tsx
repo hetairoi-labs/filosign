@@ -20,6 +20,7 @@ import {
 	MagnifyingGlassPlusIcon,
 	ScrollIcon,
 	SpinnerIcon,
+	UserIcon,
 } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -93,7 +94,15 @@ export default function SignDocumentPage() {
 	const explorerLabel =
 		defaultChain.blockExplorers?.default?.name ?? "Block explorer";
 
-	const showWorldIdSign = Boolean(signerAddress && file && !alreadySigned);
+	const isSender = Boolean(
+		signerAddress &&
+			file?.sender &&
+			signerAddress.toLowerCase() === file.sender.toLowerCase(),
+	);
+
+	const showWorldIdSign = Boolean(
+		signerAddress && file && !alreadySigned && !isSender,
+	);
 
 	const viewFile = useViewFile();
 	const signFile = useSignFile();
@@ -173,12 +182,6 @@ export default function SignDocumentPage() {
 
 	const handleDownloadCompliancePdf = useCallback(async () => {
 		if (!file || !pieceCid) return;
-		if (file.status !== "foc") {
-			toast.info(
-				"Compliance report will be available soon (once uploaded to FOC).",
-			);
-			return;
-		}
 		setPdfExportBusy(true);
 		try {
 			const explorerBase = defaultChain.blockExplorers?.default?.url ?? null;
@@ -213,12 +216,6 @@ export default function SignDocumentPage() {
 	const handleDownloadDocumentWithCompliancePdf = useCallback(async () => {
 		if (!file || !pieceCid || !fileData) {
 			toast.error("Load the document first to bundle with the compliance PDF.");
-			return;
-		}
-		if (file.status !== "foc") {
-			toast.info(
-				"Compliance report will be available soon (once uploaded to FOC).",
-			);
 			return;
 		}
 		setPdfExportBusy(true);
@@ -630,7 +627,7 @@ export default function SignDocumentPage() {
 								>
 									{signFile.isPending ? (
 										<>
-											<SpinnerIcon className="size-4 mr-2 animate-spin" />
+											<SpinnerIcon className="size-4 animate-spin" />
 											Signing…
 										</>
 									) : (
@@ -803,7 +800,7 @@ export default function SignDocumentPage() {
 								>
 									{signFile.isPending ? (
 										<>
-											<SpinnerIcon className="size-4 mr-2 animate-spin" />
+											<SpinnerIcon className="size-4 animate-spin" />
 											Signing…
 										</>
 									) : (
@@ -815,8 +812,11 @@ export default function SignDocumentPage() {
 					</div>
 				</div>
 			</div>
-			<div className="flex-1 overflow-hidden bg-muted/5">
-				<div ref={containerRef} className="w-full h-full overflow-auto">
+
+			{/* Main content area with aside for signature status */}
+			<div className="flex-1 flex overflow-hidden bg-muted/5">
+				{/* Document viewer */}
+				<div ref={containerRef} className="flex-1 h-full overflow-auto">
 					<div
 						ref={documentRef}
 						className="relative w-full h-full bg-background"
@@ -824,6 +824,183 @@ export default function SignDocumentPage() {
 						{renderFileContent()}
 					</div>
 				</div>
+
+				{/* Signature Status Aside */}
+				<aside className="hidden lg:block w-72 border-l border-border bg-background overflow-y-auto">
+					<div className="p-4 space-y-4">
+						<h3 className="font-semibold text-sm flex items-center gap-2">
+							<ScrollIcon className="size-4" />
+							Signature Status
+						</h3>
+
+						{/* Progress summary */}
+						<div className="flex items-center justify-between text-sm">
+							<span className="text-muted-foreground">Progress</span>
+							<span className="font-medium">
+								{file.signatures?.length || 0} of {file.signers?.length || 0}{" "}
+								signed
+							</span>
+						</div>
+						<div className="h-2 bg-muted rounded-full overflow-hidden">
+							<div
+								className="h-full bg-chart-2 transition-all duration-500"
+								style={{
+									width: `${file.signers?.length ? ((file.signatures?.length || 0) / file.signers.length) * 100 : 0}%`,
+								}}
+							/>
+						</div>
+
+						{/* Signer list */}
+						<div className="space-y-2 pt-2">
+							{(file.signers || []).map(
+								(
+									signer:
+										| string
+										| {
+												wallet: string;
+												name: string | null;
+												email: string | null;
+										  },
+								) => {
+									const signerWallet =
+										typeof signer === "string" ? signer : signer.wallet;
+									const signature = file.signatures?.find(
+										(s) =>
+											s.signer.toLowerCase() === signerWallet.toLowerCase(),
+									);
+									const hasSigned = Boolean(signature);
+									const isYou =
+										signerAddress?.toLowerCase() === signerWallet.toLowerCase();
+									const signerName =
+										typeof signer === "string" ? null : signer.name;
+									const signerEmail =
+										typeof signer === "string" ? null : signer.email;
+									const displayName = signerName || formatAddress(signerWallet);
+
+									return (
+										<div
+											key={signerWallet}
+											className={cn(
+												"flex items-center gap-3 p-3 rounded-lg border",
+												hasSigned
+													? "bg-chart-2/10 border-chart-2/30"
+													: "bg-muted/30 border-border",
+											)}
+										>
+											<div
+												className={cn(
+													"size-8 rounded-full flex items-center justify-center shrink-0",
+													hasSigned ? "bg-chart-2" : "bg-muted",
+												)}
+											>
+												{hasSigned ? (
+													<CheckIcon
+														className="size-4 text-white"
+														weight="bold"
+													/>
+												) : (
+													<ClockIcon className="size-4 text-muted-foreground" />
+												)}
+											</div>
+											<div className="flex-1 min-w-0">
+												<p className="text-sm font-medium truncate">
+													{displayName}
+													{isYou && (
+														<span className="text-xs text-muted-foreground ml-1">
+															(You)
+														</span>
+													)}
+												</p>
+												{signerEmail && (
+													<p className="text-xs text-muted-foreground truncate">
+														{signerEmail}
+													</p>
+												)}
+												<p
+													className={cn(
+														"text-xs",
+														hasSigned
+															? "text-chart-2"
+															: "text-muted-foreground",
+													)}
+												>
+													{hasSigned ? "Signed" : "Pending"}
+												</p>
+											</div>
+											{signature?.onchainTxHash && (
+												<a
+													href={`${defaultChain.blockExplorers?.default?.url}/tx/${signature.onchainTxHash}`}
+													target="_blank"
+													rel="noopener noreferrer"
+													className="text-muted-foreground hover:text-foreground"
+													title="View on explorer"
+												>
+													<ArrowSquareOutIcon className="size-4" />
+												</a>
+											)}
+										</div>
+									);
+								},
+							)}
+						</div>
+
+						{/* Viewers section */}
+						{file.viewers && file.viewers.length > 0 && (
+							<div className="pt-4 border-t border-border">
+								<h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+									Viewers ({file.viewers.length})
+								</h4>
+								<div className="space-y-2">
+									{file.viewers.map(
+										(
+											viewer:
+												| string
+												| {
+														wallet: string;
+														name: string | null;
+														email: string | null;
+												  },
+										) => {
+											const viewerWallet =
+												typeof viewer === "string" ? viewer : viewer.wallet;
+											const viewerName =
+												typeof viewer === "string" ? null : viewer.name;
+											const viewerEmail =
+												typeof viewer === "string" ? null : viewer.email;
+											const displayName =
+												viewerName || formatAddress(viewerWallet);
+
+											return (
+												<div
+													key={viewerWallet}
+													className="flex items-center gap-3 p-2 rounded-lg bg-muted/20"
+												>
+													<div className="size-6 rounded-full bg-muted flex items-center justify-center shrink-0">
+														<UserIcon className="size-3 text-muted-foreground" />
+													</div>
+													<div className="flex-1 min-w-0">
+														<p className="text-sm text-muted-foreground truncate">
+															{displayName}
+															{signerAddress?.toLowerCase() ===
+																viewerWallet.toLowerCase() && (
+																<span className="text-xs ml-1">(You)</span>
+															)}
+														</p>
+														{viewerEmail && (
+															<p className="text-xs text-muted-foreground/70 truncate">
+																{viewerEmail}
+															</p>
+														)}
+													</div>
+												</div>
+											);
+										},
+									)}
+								</div>
+							</div>
+						)}
+					</div>
+				</aside>
 			</div>
 		</div>
 	);

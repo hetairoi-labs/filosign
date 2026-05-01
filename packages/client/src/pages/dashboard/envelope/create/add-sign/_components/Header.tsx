@@ -1,4 +1,9 @@
-import { CheckCircleIcon, PaperPlaneRightIcon, SpinnerGapIcon, XCircleIcon } from "@phosphor-icons/react";
+import {
+	CheckCircleIcon,
+	PaperPlaneRightIcon,
+	SpinnerGapIcon,
+	XCircleIcon,
+} from "@phosphor-icons/react";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 import { cn } from "@/src/lib/utils/utils";
@@ -65,7 +70,7 @@ export default function Header({ onSend, status = "idle" }: HeaderProps) {
 					className={cn(
 						"gap-2 transition-colors duration-300",
 						isSuccess && "bg-green-600 hover:bg-green-700",
-						isError && "bg-destructive hover:bg-destructive/90"
+						isError && "bg-destructive hover:bg-destructive/90",
 					)}
 				>
 					{getButtonContent()}
