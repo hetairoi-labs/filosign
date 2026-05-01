@@ -1,11 +1,5 @@
 import { useLogout, useUserProfile } from "@filosign/react/hooks";
-import {
-	BellIcon,
-	CopySimpleIcon,
-	GearIcon,
-	SignOutIcon,
-	UserIcon,
-} from "@phosphor-icons/react";
+import { CopySimpleIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";

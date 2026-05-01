@@ -1,8 +1,6 @@
 import FooterSection from "../landing/footer-section";
 import LandingNavbar from "../landing/landing-nav";
 import BlogHero from "./blog-hero";
-import EditorsPicks from "./editors-picks";
-import RecentlyPublished from "./recently-published";
 
 function BlogPage() {
 	return (

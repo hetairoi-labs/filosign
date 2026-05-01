@@ -12,7 +12,6 @@ import { Form } from "@/src/lib/components/ui/form";
 import { useFileUpload } from "./hooks/use-file-upload";
 import { useSectionState } from "./hooks/use-section-state";
 import { PersonalInfoSection } from "./PersonalInfoSection";
-import { ProfilePictureSection } from "./ProfilePictureSection";
 import type { ProfileForm } from "./types";
 import { profileSchema } from "./types";
 
@@ -62,15 +61,14 @@ export default function ProfilePage() {
 	}, [form, baseValues, userProfileQuery.data]);
 
 	const personalSection = useSectionState("personal", form, baseValues);
-	const profilePictureSection = useSectionState(
+	const _profilePictureSection = useSectionState(
 		"profilePicture",
 		form,
 		baseValues,
 	);
-	const { uploadFile, uploadError } = useFileUpload(form);
+	useFileUpload(form);
 
-	const { linkWallet, linkGoogle, linkTwitter, linkGithub, linkDiscord } =
-		useLinkAccount();
+	useLinkAccount();
 
 	type LinkedAccount = {
 		type?: string;
@@ -79,7 +77,7 @@ export default function ProfilePage() {
 		subject?: string;
 	};
 
-	const linkedAccounts = ((user as { linkedAccounts?: LinkedAccount[] } | null)
+	const _linkedAccounts = ((user as { linkedAccounts?: LinkedAccount[] } | null)
 		?.linkedAccounts ?? []) as LinkedAccount[];
 
 	return (

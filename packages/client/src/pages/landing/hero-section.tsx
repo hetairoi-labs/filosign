@@ -6,7 +6,6 @@ import {
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useConnectButtonLogic } from "@/src/lib/components/custom/ConnectButton";
-import { Image } from "@/src/lib/components/custom/Image";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
 // import TrustedCompanies from "./trusted-companies";

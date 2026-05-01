@@ -157,7 +157,9 @@ export default function InvitePage() {
 					) : authenticated ? (
 						<div className="space-y-4">
 							<Loader />
-							<p className="text-muted-foreground">Setting up your account...</p>
+							<p className="text-muted-foreground">
+								Setting up your account...
+							</p>
 						</div>
 					) : (
 						<div className="space-y-6">

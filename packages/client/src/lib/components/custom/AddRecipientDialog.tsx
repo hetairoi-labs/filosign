@@ -94,8 +94,8 @@ export default function AddRecipientDialog({
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger asChild>
 				{trigger || (
-					<Button variant="primary" size="sm">
-						<PlusIcon className="w-4 h-4 mr-2" />
+					<Button variant="primary">
+						<PlusIcon className="w-4 h-4" />
 						Add Recipient
 					</Button>
 				)}
