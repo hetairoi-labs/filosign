@@ -120,7 +120,9 @@ export default new Hono()
 		let emailSent = false;
 		let emailError: string | undefined;
 
-		if (recipientEmail) {
+		{
+			// Emails are for any user when they get a request.
+			// If the caller doesn't provide an email, try to use the recipient's email on record.
 			const [self] = await db
 				.select()
 				.from(users)
@@ -131,21 +133,32 @@ export default new Hono()
 				self?.email ||
 				undefined;
 
-			try {
-				await sendShareRequestEmail({
-					to: recipientEmail,
-					senderWallet: sender as Address,
-					recipientWallet: recipient as Address,
-					senderName,
-					message: message || null,
-				});
-				emailSent = true;
-			} catch (error) {
-				emailError =
-					error instanceof Error
-						? error.message
-						: "Failed to send notification";
-				console.error("Failed to send share request email", error);
+			const emailToNotify = recipientEmail
+				? recipientEmail
+				: ((
+						await db
+							.select({ email: users.email })
+							.from(users)
+							.where(eq(users.walletAddress, recipient))
+					)[0]?.email ?? undefined);
+
+			if (emailToNotify) {
+				try {
+					await sendShareRequestEmail({
+						to: emailToNotify,
+						senderWallet: sender as Address,
+						recipientWallet: recipient as Address,
+						senderName,
+						message: message || null,
+					});
+					emailSent = true;
+				} catch (error) {
+					emailError =
+						error instanceof Error
+							? error.message
+							: "Failed to send notification";
+					console.error("Failed to send share request email", error);
+				}
 			}
 		}
 

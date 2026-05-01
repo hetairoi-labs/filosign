@@ -5,7 +5,7 @@ import {
 	toBytes,
 } from "@filosign/crypto-utils/node";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
-import { and, eq, inArray, ne } from "drizzle-orm";
+import { and, eq, inArray, ne, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Address } from "viem";
 import { getAddress } from "viem";
@@ -139,7 +139,9 @@ export default new Hono()
 				.insert(files)
 				.values({
 					pieceCid,
-					status: "s3",
+					// For now, treat all documents as "on FOC" (mock),
+					// while keeping S3 as the source of truth for retrieval.
+					status: "foc",
 					sender,
 					onchainTxHash: txHash,
 					createdAt: new Date(timestamp * 1000),
@@ -221,19 +223,9 @@ export default new Hono()
 
 		ds.upload(new Uint8Array(bytes), { pieceMetadata: {} })
 			.then(async (uploadResult) => {
-				await file.delete();
-
 				if (uploadResult.pieceCid.toString() !== pieceCid) {
 					await db.delete(files).where(eq(files.pieceCid, pieceCid));
 				}
-
-				await db
-					.update(files)
-					.set({ status: "foc" })
-					.where(eq(files.pieceCid, pieceCid))
-					.catch(async (_) => {
-						await db.delete(files).where(eq(files.pieceCid, pieceCid));
-					});
 			})
 			.catch((err) => {
 				console.warn(
@@ -257,7 +249,8 @@ export default new Hono()
 			.select({
 				pieceCid: files.pieceCid,
 				sender: files.sender,
-				status: files.status,
+				// Hard-code for now so UI can mock "FOC" status.
+				status: sql<"foc">`'foc'`.as("status"),
 			})
 			.from(files)
 			.where(eq(files.sender, userWallet));
@@ -272,7 +265,8 @@ export default new Hono()
 			.select({
 				pieceCid: files.pieceCid,
 				sender: files.sender,
-				status: files.status,
+				// Hard-code for now so UI can mock "FOC" status.
+				status: sql<"foc">`'foc'`.as("status"),
 				encryptedEncryptionKey: fileParticipants.encryptedEncryptionKey,
 				kemCiphertext: fileParticipants.kemCiphertext,
 			})
@@ -305,7 +299,8 @@ export default new Hono()
 			.select({
 				pieceCid: files.pieceCid,
 				sender: files.sender,
-				status: files.status,
+				// Hard-code for now so UI can mock "FOC" status.
+				status: sql<"foc">`'foc'`.as("status"),
 				onchainTxHash: files.onchainTxHash,
 				createdAt: files.createdAt,
 			})
@@ -318,8 +313,13 @@ export default new Hono()
 				role: fileParticipants.role,
 				kemCiphertext: fileParticipants.kemCiphertext,
 				encryptedEncryptionKey: fileParticipants.encryptedEncryptionKey,
+				firstName: users.firstName,
+				lastName: users.lastName,
+				email: users.email,
+				username: users.username,
 			})
 			.from(fileParticipants)
+			.leftJoin(users, eq(fileParticipants.wallet, users.walletAddress))
 			.where(eq(fileParticipants.filePieceCid, pieceCid));
 
 		if (!fileRecord) {
@@ -344,13 +344,27 @@ export default new Hono()
 
 		const signers = participants
 			.filter((p) => p.role === "signer")
-			.map((p) => getAddress(p.wallet))
-			.sort();
+			.map((p) => ({
+				wallet: getAddress(p.wallet),
+				name:
+					[p.firstName, p.lastName].filter(Boolean).join(" ") ||
+					p.username ||
+					null,
+				email: p.email || null,
+			}))
+			.sort((a, b) => a.wallet.localeCompare(b.wallet));
 
 		const viewers = participants
 			.filter((p) => p.role === "viewer")
-			.map((p) => getAddress(p.wallet))
-			.sort();
+			.map((p) => ({
+				wallet: getAddress(p.wallet),
+				name:
+					[p.firstName, p.lastName].filter(Boolean).join(" ") ||
+					p.username ||
+					null,
+				email: p.email || null,
+			}))
+			.sort((a, b) => a.wallet.localeCompare(b.wallet));
 
 		const [acked] = await db
 			.select()

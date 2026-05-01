@@ -56,10 +56,10 @@ export async function sendShareRequestEmail(args: SendShareRequestEmailArgs) {
 		`${senderLabel} wants to send you secure documents on Filosign.`,
 		"",
 		...(args.message?.trim() ? [`"${args.message.trim()}"`, ""] : []),
-		"To start receiving their documents, accept their connection request:",
+		"To start receiving their documents, approve their connection request:",
 		requestUrl,
 		"",
-		"Go to Settings > Permissions and click Accept.",
+		"Go to Settings > Permissions and click Approve.",
 	].join("\n");
 
 	const html = `
@@ -79,7 +79,7 @@ export async function sendShareRequestEmail(args: SendShareRequestEmailArgs) {
 			<div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 16px; margin: 0 0 20px;">
 				<p style="margin: 0 0 8px; font-weight: 600; color: #166534;">What you need to do:</p>
 				<p style="margin: 0; color: #374151;">
-					Go to Settings > Permissions and click "Accept" to allow them to send you documents.
+					Go to Settings > Permissions and click "Approve" to allow them to send you documents.
 				</p>
 			</div>
 			

@@ -1,4 +1,5 @@
 export { useAcceptedPeople } from "./useAcceptedPeople";
+export { useAcceptRequest } from "./useAcceptRequest";
 export { useApproveSender } from "./useApproveSender";
 export { useCancelRequest } from "./useCancelRequest";
 export { useCanReceiveFrom } from "./useCanReceiveFrom";

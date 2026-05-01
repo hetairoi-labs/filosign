@@ -1,8 +1,10 @@
 import {
+	useAcceptRequest,
 	useApproveSender,
 	useCancelRequest,
 	useReceivableFrom,
 	useReceivedRequests,
+	useRejectRequest,
 	useSendableTo,
 	useSentRequests,
 } from "@filosign/react/hooks";
@@ -38,7 +40,9 @@ export default function PermissionsPage() {
 	const allowedReceivers = useReceivableFrom();
 
 	// Mutations for managing permissions
-	const _allowSharing = useApproveSender();
+	const allowSharing = useApproveSender();
+	const acceptRequest = useAcceptRequest();
+	const rejectRequest = useRejectRequest();
 	const cancelRequest = useCancelRequest();
 
 	const formatAddress = (address: string) => {
@@ -98,6 +102,30 @@ export default function PermissionsPage() {
 			toast.success("Request cancelled");
 		} catch (_error) {
 			toast.error("Failed to cancel request");
+		}
+	};
+
+	const handleApproveRequest = async (args: {
+		requestId: string;
+		senderWallet: string;
+	}) => {
+		try {
+			await allowSharing.mutateAsync({
+				sender: args.senderWallet as `0x${string}`,
+			});
+			await acceptRequest.mutateAsync({ requestId: args.requestId });
+			toast.success("Request approved");
+		} catch (_error) {
+			toast.error("Failed to approve request");
+		}
+	};
+
+	const handleRejectRequest = async (requestId: string) => {
+		try {
+			await rejectRequest.mutateAsync(requestId);
+			toast.success("Request rejected");
+		} catch (_error) {
+			toast.error("Failed to reject request");
 		}
 	};
 
@@ -208,7 +236,40 @@ export default function PermissionsPage() {
 													</div>
 												)}
 											</div>
-											{getStatusBadge(req.status)}
+											<div className="flex items-center gap-2">
+												<Button
+													variant="default"
+													size="sm"
+													className="h-8"
+													onClick={() =>
+														handleApproveRequest({
+															requestId: req.id,
+															senderWallet: req.senderWallet,
+														})
+													}
+													disabled={
+														allowSharing.isPending ||
+														acceptRequest.isPending ||
+														rejectRequest.isPending
+													}
+												>
+													Approve
+												</Button>
+												<Button
+													variant="outline"
+													size="sm"
+													className="h-8"
+													onClick={() => handleRejectRequest(req.id)}
+													disabled={
+														allowSharing.isPending ||
+														acceptRequest.isPending ||
+														rejectRequest.isPending
+													}
+												>
+													Reject
+												</Button>
+												{getStatusBadge(req.status)}
+											</div>
 										</div>
 									))}
 								</div>
