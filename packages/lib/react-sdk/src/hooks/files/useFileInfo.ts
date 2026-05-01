@@ -9,8 +9,12 @@ export type FileInfo = {
 	status: string;
 	onchainTxHash: `0x${string}`;
 	createdAt: string;
-	signers: string[];
-	viewers: string[];
+	signers: Array<
+		string | { wallet: string; name: string | null; email: string | null }
+	>;
+	viewers: Array<
+		string | { wallet: string; name: string | null; email: string | null }
+	>;
 	signatures: Array<{
 		signer: string;
 		timestamp: string;
@@ -19,6 +23,15 @@ export type FileInfo = {
 	kemCiphertext: `0x${string}` | null;
 	encryptedEncryptionKey: `0x${string}` | null;
 };
+
+const zParticipant = z.union([
+	z.string(),
+	z.object({
+		wallet: z.string(),
+		name: z.string().nullable(),
+		email: z.string().nullable(),
+	}),
+]);
 
 export function useFileInfo(args: { pieceCid: string | undefined }) {
 	const { data: api } = useAuthedApi();
@@ -34,8 +47,8 @@ export function useFileInfo(args: { pieceCid: string | undefined }) {
 					status: z.string(),
 					onchainTxHash: zHexString(),
 					createdAt: z.string(),
-					signers: z.array(z.string()),
-					viewers: z.array(z.string()),
+					signers: z.array(zParticipant),
+					viewers: z.array(zParticipant),
 					signatures: z.array(
 						z.object({
 							signer: z.string(),

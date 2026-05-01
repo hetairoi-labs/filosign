@@ -68,6 +68,18 @@ type RegistryRead = {
 	) => Promise<readonly [`0x${string}`, bigint, boolean]>;
 };
 
+type Participant =
+	| string
+	| {
+			wallet: string;
+			name: string | null;
+			email: string | null;
+	  };
+
+function participantWallet(p: Participant): string {
+	return typeof p === "string" ? p : p.wallet;
+}
+
 /**
  * Load incentive rows for every signer (on-chain). Pass result as `signerIncentives`
  * on CompliancePdfSummaryOptions.
@@ -75,13 +87,14 @@ type RegistryRead = {
 export async function fetchSignerIncentivesForCompliancePdf(
 	registryRead: RegistryRead,
 	pieceCid: string,
-	signers: string[],
+	signers: Participant[],
 	tokenDisplay: (token: `0x${string}`) => { label: string; decimals: number },
 ): Promise<SignerIncentiveForPdf[]> {
 	const cidId = await registryRead.cidIdentifier([pieceCid]);
 	const result: SignerIncentiveForPdf[] = [];
 
-	for (const raw of signers) {
+	for (const s of signers) {
+		const raw = participantWallet(s);
 		let addr: `0x${string}`;
 		try {
 			addr = getAddress(raw) as `0x${string}`;
@@ -196,7 +209,8 @@ export function buildCompliancePdfSummary(
 	const participantLines: CompliancePdfLine[] = [
 		{ text: `Signers (${file.signers.length}):` },
 	];
-	for (const a of file.signers) {
+	for (const s of file.signers as Participant[]) {
+		const a = participantWallet(s);
 		const privy = privyIdMap?.[a];
 		const base = privy ? `  - ${a} (Privy: ${privy})` : `  - ${a}`;
 		participantLines.push({
@@ -205,7 +219,8 @@ export function buildCompliancePdfSummary(
 	}
 	participantLines.push({ text: "" });
 	participantLines.push({ text: `Viewers (${file.viewers.length}):` });
-	for (const a of file.viewers) {
+	for (const v of file.viewers as Participant[]) {
+		const a = participantWallet(v);
 		const privy = privyIdMap?.[a];
 		participantLines.push({
 			text: privy ? `  - ${a} (Privy: ${privy})` : `  - ${a}`,

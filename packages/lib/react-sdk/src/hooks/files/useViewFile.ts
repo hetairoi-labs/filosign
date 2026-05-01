@@ -29,15 +29,18 @@ export function useViewFile() {
 
 	return useMutation<ViewFileResult, Error, ViewFileArgs>({
 		mutationFn: async (args) => {
-			const { pieceCid, kemCiphertext, encryptedEncryptionKey, status } = args;
+			const { pieceCid, kemCiphertext, encryptedEncryptionKey } = args;
 
-			if (!contracts || !wallet || !runtime) {
+			if (!contracts || !wallet || !runtime || !api) {
 				throw new Error("not conected iido");
 			}
 
 			let data: Uint8Array;
 
-			if (status === "s3") {
+			// S3 is the source of truth for now.
+			// We still upload to Filecoin Onchain Cloud, but downloads should prefer S3
+			// (and fall back to Filecoin when needed).
+			try {
 				const s3Response = await api.rpc.getSafe(
 					{
 						presignedUrl: z.string(),
@@ -60,7 +63,7 @@ export function useViewFile() {
 				}
 
 				data = new Uint8Array(await downloadResponse.arrayBuffer());
-			} else {
+			} catch (s3Err) {
 				const filecoinUrl = `https://${runtime.serverAddressSynapse}.calibration.filbeam.io/${pieceCid}`;
 
 				const fileResponse = await fetch(filecoinUrl);
@@ -69,13 +72,19 @@ export function useViewFile() {
 					const errorText = await fileResponse.text();
 					console.error("Filecoin error response:", errorText);
 					throw new Error(
-						`Failed to fetch file from Filecoin: ${fileResponse.status} - ${errorText}`,
+						`Failed to fetch file from S3 and Filecoin: ${fileResponse.status} - ${errorText}`,
 					);
 				}
 
 				const arrayBuffer = await fileResponse.arrayBuffer();
-
 				data = new Uint8Array(arrayBuffer);
+				console.warn(
+					"[useViewFile] S3 download failed, fell back to Filecoin",
+					{
+						pieceCid,
+						error: s3Err instanceof Error ? s3Err.message : String(s3Err),
+					},
+				);
 			}
 
 			const keyStore = idb({

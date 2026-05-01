@@ -14,6 +14,15 @@ export function useSignFile() {
 	const { contracts, wallet, api, wasm } = useFilosignContext();
 	const { action: cryptoAction } = useCryptoSeed();
 
+	const zParticipant = z.union([
+		z.string(),
+		z.object({
+			wallet: z.string(),
+			name: z.string().nullable(),
+			email: z.string().nullable(),
+		}),
+	]);
+
 	return useMutation({
 		mutationFn: async (args: { pieceCid: string }) => {
 			let success = false;
@@ -33,8 +42,8 @@ export function useSignFile() {
 						sender: z.string(),
 						status: z.string(),
 						createdAt: z.string(),
-						signers: z.array(z.string()),
-						viewers: z.array(z.string()),
+						signers: z.array(zParticipant),
+						viewers: z.array(zParticipant),
 					},
 					`/files/${pieceCid}`,
 				);
