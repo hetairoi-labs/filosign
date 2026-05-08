@@ -1,4 +1,10 @@
 import { describe, expect, it } from "bun:test";
+import {
+	computeCommitment,
+	deriveDeterministicSeed32FromSignature,
+	expandDeterministicSeed,
+	seedKeyGen,
+} from "./src/impl/node/utils";
 import cryptoUtils, { randomBytes } from "./src/lib-node";
 
 const { KEM, encryption, signatures } = cryptoUtils;
@@ -128,5 +134,43 @@ describe("Encryption (AES-GCM)", async () => {
 		});
 
 		expect(decryptedMessage).toEqual(message);
+	});
+});
+
+describe("Deterministic Key Seed", async () => {
+	it("derives the same core and expanded seed for same signature+salt", async () => {
+		const signature = `0x${"11".repeat(65)}` as `0x${string}`;
+		const saltSeed = `0x${"22".repeat(16)}` as `0x${string}`;
+
+		const coreA = await deriveDeterministicSeed32FromSignature({
+			signature,
+			saltSeed,
+		});
+		const coreB = await deriveDeterministicSeed32FromSignature({
+			signature,
+			saltSeed,
+		});
+
+		expect(coreA).toEqual(coreB);
+
+		const expandedA = await expandDeterministicSeed(coreA);
+		const expandedB = await expandDeterministicSeed(coreB);
+		expect(expandedA).toEqual(expandedB);
+		expect(expandedA.length).toBe(64);
+	});
+
+	it("matches commitments when recovering from the same 32-byte seed core", async () => {
+		const seedCore32 = randomBytes(32);
+		const seed = await expandDeterministicSeed(seedCore32);
+		const regenerated = await expandDeterministicSeed(seedCore32);
+
+		const keygenA = await seedKeyGen(seed, { dl });
+		const keygenB = await seedKeyGen(regenerated, { dl });
+
+		expect(keygenA.commitmentKem).toBe(keygenB.commitmentKem);
+		expect(keygenA.commitmentSig).toBe(keygenB.commitmentSig);
+		expect(keygenA.commitmentKem).toBe(
+			computeCommitment([keygenA.kemKeypair.publicKey.toString()]),
+		);
 	});
 });
