@@ -31,8 +31,8 @@ export function SecuritySlide() {
 					animate={inView ? { opacity: 1, y: 0 } : {}}
 					transition={{ duration: 0.5, delay: 0.2 }}
 				>
-					Our platform is fully non-custodial, based on a two-factor model that
-					you control.
+					Our platform is fully non-custodial, with wallet-based identity and
+					local PIN-protected seed storage.
 				</motion.p>
 			</div>
 

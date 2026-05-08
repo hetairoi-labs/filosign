@@ -57,7 +57,7 @@ export default function PinAuthDialog({
 				<DialogHeader>
 					<DialogTitle>Enter your PIN</DialogTitle>
 					<DialogDescription>
-						Please enter your 6-digit PIN to access your account.
+						Please enter your PIN (6-10 digits) to access your account.
 					</DialogDescription>
 				</DialogHeader>
 

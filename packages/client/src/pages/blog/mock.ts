@@ -54,7 +54,7 @@ Filosign leverages the power of the Filecoin network and quantum-resistant crypt
 | **Verification** | Platform-Dependent | Cryptographically Verifiable Anywhere |
 | **Privacy** | Platform Can Read Docs | End-to-End Client-Side Encryption |
 | **Cryptography** | Standard RSA/ECDSA | Post-Quantum (Kyber + Dilithium) |
-| **Authentication** | Password/2FA | Dual-Factor (PIN + Wallet Signature) |
+| **Authentication** | Password/2FA | Wallet Identity + Local PIN Unlock |
 | **Cost** | High Per-User Fees | Pay-as-you-go / Low Flat Rate |
 
 > "Decentralized identity isn't just about privacy; it's about ownership. When you sign with your own keys, you own the attestation forever." — *Dr. Gavin Wood*
@@ -63,14 +63,14 @@ Filosign leverages the power of the Filecoin network and quantum-resistant crypt
 
 Under the hood, Filosign combines user-friendly design with robust web3 technologies. You don't need to be a crypto expert to use it—it feels just like the tools you already know, but with mathematical certainty.
 
-### Dual-Factor Authentication
+### Wallet Identity + Local PIN Protection
 
-Filosign uses a non-custodial, two-factor model that combines your Web3 wallet (something you have) with a PIN (something you know):
+Filosign uses a non-custodial model where your wallet proves identity and your PIN protects local seed storage:
 
 1.  **Wallet Signature**: You prove ownership of your address by signing a unique challenge.
-2.  **PIN-based Key**: Your memorable PIN is hashed using Argon2id (memory-hard, resistant to brute-force).
-3.  **Master Seed**: A secure master seed is generated client-side, serving as the root for all encryption keys.
-4.  **Two-Factor Wrapping**: The wallet signature and PIN-based key combine to create a wrapper key that can only be regenerated when both factors are present.
+2.  **Deterministic Seed**: A secure seed is derived client-side from wallet signature material and on-chain salts.
+3.  **PIN Wrapping**: The local seed is encrypted with a PIN-derived key (Argon2id + AES-GCM), so a stolen browser profile is still protected.
+4.  **Recovery Phrase**: A 24-word recovery phrase can restore access if you forget your PIN.
 
 ### Document Encryption & Storage
 

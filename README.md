@@ -41,7 +41,7 @@ FiloSign has five main layers:
 ## Core Workflow
 
 1. A user connects a wallet and completes FiloSign onboarding.
-2. The app derives local signing/encryption key material from wallet-backed registration data and a PIN.
+2. The app derives local signing/encryption key material from wallet-backed registration data and on-chain salts, then encrypts the local seed with the user's PIN.
 3. A sender requests permission to send documents to a recipient wallet.
 4. The recipient approves the sender.
 5. The sender creates an envelope, places fields, encrypts the document, uploads it, and registers it.
