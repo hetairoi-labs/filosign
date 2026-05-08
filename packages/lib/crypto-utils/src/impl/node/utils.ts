@@ -13,7 +13,6 @@ import {
 	toHex,
 	type WalletClient,
 } from "viem";
-import { argon, hash } from "./hash";
 import * as KEM from "./KEM";
 import * as signatures from "./signatures";
 
@@ -27,6 +26,10 @@ export function randomHex(n = 32) {
 	const bytes = randomBytes(n);
 	return toHex(bytes);
 }
+
+const REGISTER_CHALLENGE_INFO = "filosign-keygen-v2";
+const KEY_SEED_CORE_INFO = "fs-key-seed-core-v2";
+const KEY_SEED_EXPAND_INFO = "fs-key-seed-expand-v1";
 
 export async function hkdfExtractExpand(
 	source: Uint8Array,
@@ -99,7 +102,6 @@ export async function walletKeyGen(
 	wallet: Wallet,
 	args: {
 		dl: signatures.DL;
-		pin: string;
 		salts?: {
 			challenge: Hex;
 			seed: Hex;
@@ -107,31 +109,18 @@ export async function walletKeyGen(
 		};
 	},
 ) {
-	const { pin, salts, dl } = args;
+	const { salts, dl } = args;
 	const saltPin = salts?.pin ? toBytes(salts.pin) : randomBytes(16);
 	const saltSeed = salts?.seed ? toBytes(salts.seed) : randomBytes(16);
 	const saltChallenge = salts?.challenge
 		? toBytes(salts.challenge)
 		: randomBytes(16);
 
-	const pinArgoned = argon(hash(pin));
-
-	const registerChallenge = generateRegisterChallenge(
-		wallet.account.address,
-		toHex(saltChallenge),
-		pinArgoned.toString(),
-	);
-
-	const signature = await wallet.signMessage({
-		message: registerChallenge,
+	const seedCore32 = await deriveDeterministicSeed32(wallet, {
+		saltChallenge: toHex(saltChallenge),
+		saltSeed: toHex(saltSeed),
 	});
-
-	const seed = await hkdfExtractExpand(
-		saltSeed,
-		toBytes(signature),
-		toBytes(pinArgoned.toString()),
-		64,
-	);
+	const seed = await expandDeterministicSeed(seedCore32);
 
 	const kemKeypair = await KEM.keyGen({ seed });
 	const sigKeypair = await signatures.keyGen({ seed, dl });
@@ -141,6 +130,7 @@ export async function walletKeyGen(
 
 	return {
 		seed,
+		seedCore32,
 		saltPin: toHex(saltPin),
 		saltSeed: toHex(saltSeed),
 		saltChallenge: toHex(saltChallenge),
@@ -149,6 +139,48 @@ export async function walletKeyGen(
 		commitmentKem,
 		commitmentSig,
 	};
+}
+
+export async function deriveDeterministicSeed32(
+	wallet: Wallet,
+	args: {
+		saltChallenge: Hex;
+		saltSeed: Hex;
+	},
+) {
+	const registerChallenge = generateRegisterChallenge(
+		wallet.account.address,
+		args.saltChallenge,
+		REGISTER_CHALLENGE_INFO,
+	);
+	const signature = await wallet.signMessage({
+		message: registerChallenge,
+	});
+	return deriveDeterministicSeed32FromSignature({
+		signature,
+		saltSeed: args.saltSeed,
+	});
+}
+
+export async function deriveDeterministicSeed32FromSignature(args: {
+	signature: Hex;
+	saltSeed: Hex;
+}) {
+	return hkdfExtractExpand(
+		toBytes(args.signature),
+		toBytes(args.saltSeed),
+		toBytes(KEY_SEED_CORE_INFO),
+		32,
+	);
+}
+
+export async function expandDeterministicSeed(seedCore32: Uint8Array) {
+	return hkdfExtractExpand(
+		seedCore32,
+		seedCore32,
+		toBytes(KEY_SEED_EXPAND_INFO),
+		64,
+	);
 }
 
 export async function seedKeyGen(
