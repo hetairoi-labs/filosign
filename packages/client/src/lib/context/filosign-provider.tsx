@@ -17,7 +17,7 @@ export function FilosignProvider({ children }: { children: React.ReactNode }) {
 				// Mock chrome for the dilithium library
 				(globalThis as any).chrome = {
 					runtime: {
-						getURL: () => "/static/dilithium.wasm",
+						getURL: () => "/dilithium.wasm",
 					},
 				};
 
@@ -55,7 +55,7 @@ export function FilosignProvider({ children }: { children: React.ReactNode }) {
 
 	return (
 		<FilosignProviderBase
-			apiBaseUrl={process.env.BUN_PUBLIC_PLATFORM_URL || "localhost:30011"}
+			apiBaseUrl={import.meta.env.VITE_PLATFORM_URL || "localhost:30011"}
 			wasm={{
 				dilithium,
 			}}

@@ -4,7 +4,6 @@
 		"allowJs": true,
 		"strictNullChecks": true,
 		"strict": true,
-		// Bundler mode
 		"moduleResolution": "bundler",
 		"module": "Preserve",
 		"allowImportingTsExtensions": true,
@@ -16,7 +15,8 @@
 		},
 		"target": "ESNext",
 		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true
+		"forceConsistentCasingInFileNames": true,
+		"types": ["vite/client"]
 	},
 	"include": ["**/*.ts", "**/*.tsx"],
 	"exclude": ["dist", "node_modules"]

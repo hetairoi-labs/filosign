@@ -1,6 +1,6 @@
 import { RouterProvider } from "@tanstack/react-router";
 import { StrictMode } from "react";
-import { createRoot, type Root } from "react-dom/client";
+import { createRoot } from "react-dom/client";
 import { Toaster } from "sonner";
 import ProfileEmailSync from "./lib/components/custom/ProfileEmailSync";
 import { ErrorBoundary } from "./lib/components/errors/ErrorBoundary";
@@ -8,7 +8,7 @@ import { QueryClientProvider } from "./lib/context/query-client";
 import { ThemeProvider } from "./lib/context/theme-provider";
 import router from "./pages/app";
 import "./globals.css";
-import { Buffer as BufferI } from "node:buffer";
+import { Buffer as BufferI } from "buffer";
 import { IconContext } from "@phosphor-icons/react";
 import { FilosignProvider } from "./lib/context/filosign-provider";
 import { PrivyProvider } from "./lib/context/privy-provider";
@@ -23,7 +23,7 @@ const App = () => {
 	return (
 		<StrictMode>
 			<ErrorBoundary>
-				<ThemeProvider defaultTheme="dark" storageKey="theme">
+				<ThemeProvider defaultTheme="light" storageKey="theme">
 					<QueryClientProvider>
 						<PrivyProvider>
 							<WagmiProvider>
@@ -47,7 +47,6 @@ const App = () => {
 		</StrictMode>
 	);
 };
-const app = <App />;
 
 window.Buffer = window.Buffer || BufferI;
 
@@ -56,13 +55,4 @@ BigInt.prototype.toJSON = function () {
 	return this.toString();
 };
 
-let root: Root;
-if (import.meta.hot) {
-	if (!import.meta.hot.data.root) {
-		import.meta.hot.data.root = createRoot(rootElement);
-	}
-	root = import.meta.hot.data.root;
-} else {
-	root = createRoot(rootElement);
-}
-root.render(app);
+createRoot(rootElement).render(<App />);

@@ -4,9 +4,9 @@ const chains = [hardhat, baseSepolia, base] as const;
 export const privyChains = [...chains];
 export const wagmiChains = chains;
 export const defaultChain =
-	process.env.BUN_PUBLIC_CHAIN === "local"
+	import.meta.env.VITE_CHAIN === "local"
 		? hardhat
-		: process.env.BUN_PUBLIC_CHAIN === "testnet"
+		: import.meta.env.VITE_CHAIN === "testnet"
 			? baseSepolia
 			: base;
 
