@@ -1,5 +1,5 @@
-import { idb } from "../../../utils/idb";
 import { useFilosignContext } from "../../context/FilosignProvider";
+import { getSessionSeed } from "./session-seed";
 
 export function useCryptoSeed() {
 	const { wallet, wasm } = useFilosignContext();
@@ -11,17 +11,11 @@ export function useCryptoSeed() {
 		if (!wallet) {
 			throw new Error("No wallet available");
 		}
-		const keyStore = idb({
-			db: wallet.account.address,
-			store: "fs-keystore",
-		});
-
-		const keySeed = await keyStore.secret.get("key-seed");
+		const keySeed = getSessionSeed(wallet.account.address);
 		if (!keySeed)
 			throw new Error(
-				"No key seed found in keystore, most probably not logged in",
+				"No unlocked key seed found, most probably not logged in",
 			);
-
 		return fn(new Uint8Array(keySeed));
 	}
 

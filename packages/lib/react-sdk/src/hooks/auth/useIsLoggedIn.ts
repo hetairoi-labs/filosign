@@ -1,8 +1,9 @@
 import { seedKeyGen } from "@filosign/crypto-utils";
 import { useQuery } from "@tanstack/react-query";
-import { idb } from "../../../utils/idb";
 import { DAY } from "../../constants";
 import { useFilosignContext } from "../../context/FilosignProvider";
+import { loadEnvelope } from "./pin-storage";
+import { getSessionSeed } from "./session-seed";
 import { useIsRegistered } from "./useIsRegistered";
 import { useStoredKeygenData } from "./useStoredKeygenData";
 
@@ -17,11 +18,10 @@ export function useIsLoggedIn() {
 			if (!wallet || !contracts || !wasm.dilithium) return false;
 			if (!isRegistered || !storedKeygenData) return false;
 
-			const keyStore = idb({
-				db: wallet.account.address,
-				store: "fs-keystore",
-			});
-			const keySeed = await keyStore.secret.get("key-seed");
+			const envelope = await loadEnvelope({ wallet: wallet.account.address });
+			if (!envelope) return false;
+
+			const keySeed = getSessionSeed(wallet.account.address);
 			if (!keySeed) return false;
 
 			const keygenData = await seedKeyGen(keySeed, { dl: wasm.dilithium });
@@ -32,7 +32,6 @@ export function useIsLoggedIn() {
 				commitmentKem !== keygenData.commitmentKem ||
 				commitmentSig !== keygenData.commitmentSig
 			) {
-				keyStore.del("key-seed");
 				return false;
 			}
 

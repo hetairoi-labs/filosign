@@ -4,4 +4,6 @@ export { useIsLoggedIn } from "./useIsLoggedIn";
 export { useIsRegistered } from "./useIsRegistered";
 export { useLogin } from "./useLogin";
 export { useLogout } from "./useLogout";
+export { useRecoverWithPhrase } from "./useRecoverWithPhrase";
+export { useRotatePin } from "./useRotatePin";
 export { useStoredKeygenData } from "./useStoredKeygenData";

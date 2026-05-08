@@ -1,8 +1,20 @@
 import { eip712signature } from "@filosign/contracts";
-import { toHex, walletKeyGen } from "@filosign/crypto-utils";
+import { seedKeyGen, toHex, walletKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { idb } from "../../../utils/idb";
 import { useFilosignContext } from "../../context/FilosignProvider";
+import {
+	assertAttemptAllowed,
+	decryptSeedWithPin,
+	encryptSeedWithPin,
+	loadAttempts,
+	loadEnvelope,
+	recoveryPhraseFromSeed,
+	registerFailedAttempt,
+	resetAttempts,
+	saveEnvelope,
+	validatePin,
+} from "./pin-storage";
+import { setSessionSeed } from "./session-seed";
 import { useIsLoggedIn } from "./useIsLoggedIn";
 import { useIsRegistered } from "./useIsRegistered";
 
@@ -15,7 +27,7 @@ export function useLogin() {
 
 	return useMutation({
 		mutationFn: async (params: { pin: string }) => {
-			if (isLoggedIn) return true;
+			if (isLoggedIn) return { success: true };
 
 			const { pin } = params;
 
@@ -23,16 +35,14 @@ export function useLogin() {
 				throw new Error("unreachable");
 			}
 
-			const keyStore = idb({
-				db: wallet.account.address,
-				store: "fs-keystore",
-			});
+			if (!validatePin(pin)) {
+				throw new Error("PIN must be 6-10 digits");
+			}
 
 			if (!isRegistered) {
 				console.log("registering..");
 
 				const keygenData = await walletKeyGen(wallet, {
-					pin,
 					dl: wasm.dilithium,
 				});
 
@@ -71,33 +81,71 @@ export function useLogin() {
 				await api.rpc.postSafe({}, "/users/profile", requestPayload);
 				console.log("keygen data registered");
 
-				await keyStore.secret.put("key-seed", new Uint8Array(keygenData.seed));
+				const envelope = await encryptSeedWithPin(pin, keygenData.seed);
+				await saveEnvelope({ wallet: wallet.account.address, envelope });
+				await resetAttempts({ wallet: wallet.account.address });
+				setSessionSeed(wallet.account.address, keygenData.seed);
+				const recoveryPhrase = recoveryPhraseFromSeed(keygenData.seedCore32);
+
+				queryClient
+					.refetchQueries({
+						queryKey: ["fsQ-is-registered", wallet?.account.address],
+					})
+					.then(() =>
+						queryClient
+							.refetchQueries({
+								queryKey: ["fsQ-stored-keygen-data", wallet?.account.address],
+							})
+							.then(() =>
+								queryClient.refetchQueries({
+									queryKey: ["fsQ-is-logged-in", wallet?.account.address],
+								}),
+							),
+					);
+				return {
+					success: true,
+					recoveryPhrase,
+				};
 			} else {
 				console.log("logging in..");
+				const attempts = await loadAttempts({ wallet: wallet.account.address });
+				assertAttemptAllowed(attempts);
 
 				const [saltPin, saltSeed, saltChallenge, commitmentKem, commitmentSig] =
 					await contracts.FSKeyRegistry.read.keygenData([
 						wallet.account.address,
 					]);
 
-				const keygenData = await walletKeyGen(wallet, {
-					pin,
-					salts: {
-						challenge: saltChallenge,
-						seed: saltSeed,
-						pin: saltPin,
-					},
-					dl: wasm.dilithium,
-				});
-
-				if (
-					commitmentKem !== keygenData.commitmentKem ||
-					commitmentSig !== keygenData.commitmentSig
-				) {
-					throw new Error("Invalid PIN");
+				const envelope = await loadEnvelope({ wallet: wallet.account.address });
+				if (!envelope) {
+					throw new Error("Unable to unlock");
 				}
+				let decryptedSeed: Uint8Array;
+				try {
+					decryptedSeed = await decryptSeedWithPin(pin, envelope);
+					const keygenData = await seedKeyGen(
+						new Uint8Array(Array.from(decryptedSeed)),
+						{
+							dl: wasm.dilithium,
+						},
+					);
+					if (
+						commitmentKem !== keygenData.commitmentKem ||
+						commitmentSig !== keygenData.commitmentSig
+					) {
+						throw new Error("Unable to unlock");
+					}
+				} catch (_error) {
+					await registerFailedAttempt({ wallet: wallet.account.address });
+					throw new Error("Unable to unlock");
+				}
+				await resetAttempts({ wallet: wallet.account.address });
+				setSessionSeed(wallet.account.address, decryptedSeed);
 
-				await keyStore.secret.put("key-seed", new Uint8Array(keygenData.seed));
+				// keep chain salts active through v1 registry schema
+				void saltPin;
+				void saltSeed;
+				void saltChallenge;
 			}
 
 			queryClient
@@ -115,7 +163,7 @@ export function useLogin() {
 							}),
 						),
 				);
-			return true;
+			return { success: true };
 		},
 	});
 }
