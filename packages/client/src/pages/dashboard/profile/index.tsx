@@ -1,14 +1,23 @@
-import { useUserProfile } from "@filosign/react/hooks";
+import { useRotatePin, useUserProfile } from "@filosign/react/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CaretLeftIcon } from "@phosphor-icons/react";
 import { useLinkAccount, usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
+import {
+	Card,
+	CardContent,
+	CardDescription,
+	CardHeader,
+	CardTitle,
+} from "@/src/lib/components/ui/card";
 import { Form } from "@/src/lib/components/ui/form";
+import { Input } from "@/src/lib/components/ui/input";
+import { Label } from "@/src/lib/components/ui/label";
 import { useFileUpload } from "./hooks/use-file-upload";
 import { useSectionState } from "./hooks/use-section-state";
 import { PersonalInfoSection } from "./PersonalInfoSection";
@@ -66,6 +75,11 @@ export default function ProfilePage() {
 		form,
 		baseValues,
 	);
+	const rotatePin = useRotatePin();
+	const [currentPin, setCurrentPin] = useState("");
+	const [newPin, setNewPin] = useState("");
+	const [confirmPin, setConfirmPin] = useState("");
+	const [pinMessage, setPinMessage] = useState<string | null>(null);
 	useFileUpload(form);
 
 	useLinkAccount();
@@ -79,6 +93,28 @@ export default function ProfilePage() {
 
 	const _linkedAccounts = ((user as { linkedAccounts?: LinkedAccount[] } | null)
 		?.linkedAccounts ?? []) as LinkedAccount[];
+
+	const canRotatePin =
+		currentPin.length >= 6 &&
+		currentPin.length <= 10 &&
+		newPin.length >= 6 &&
+		newPin.length <= 10 &&
+		newPin === confirmPin;
+
+	const handleRotatePin = async () => {
+		setPinMessage(null);
+		try {
+			await rotatePin.mutateAsync({ currentPin, newPin });
+			setCurrentPin("");
+			setNewPin("");
+			setConfirmPin("");
+			setPinMessage("PIN updated successfully.");
+		} catch (error) {
+			setPinMessage(
+				error instanceof Error ? error.message : "Unable to unlock",
+			);
+		}
+	};
 
 	return (
 		<div className="min-h-screen">
@@ -142,6 +178,68 @@ export default function ProfilePage() {
 
 							{/* Personal Information */}
 							<PersonalInfoSection form={form} sectionState={personalSection} />
+							<Card>
+								<CardHeader>
+									<CardTitle>Change PIN</CardTitle>
+									<CardDescription>
+										Update your account PIN without re-registering.
+									</CardDescription>
+								</CardHeader>
+								<CardContent className="space-y-4">
+									<div className="space-y-2">
+										<Label htmlFor="current-pin">Current PIN</Label>
+										<Input
+											id="current-pin"
+											value={currentPin}
+											onChange={(event) =>
+												setCurrentPin(event.target.value.replace(/\D/g, ""))
+											}
+											maxLength={10}
+											inputMode="numeric"
+											placeholder="Current PIN"
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="new-pin">New PIN</Label>
+										<Input
+											id="new-pin"
+											value={newPin}
+											onChange={(event) =>
+												setNewPin(event.target.value.replace(/\D/g, ""))
+											}
+											maxLength={10}
+											inputMode="numeric"
+											placeholder="New PIN (6-10 digits)"
+										/>
+									</div>
+									<div className="space-y-2">
+										<Label htmlFor="confirm-pin">Confirm New PIN</Label>
+										<Input
+											id="confirm-pin"
+											value={confirmPin}
+											onChange={(event) =>
+												setConfirmPin(event.target.value.replace(/\D/g, ""))
+											}
+											maxLength={10}
+											inputMode="numeric"
+											placeholder="Confirm new PIN"
+										/>
+									</div>
+									{pinMessage && (
+										<p className="text-sm text-muted-foreground">
+											{pinMessage}
+										</p>
+									)}
+									<Button
+										type="button"
+										onClick={handleRotatePin}
+										disabled={!canRotatePin || rotatePin.isPending}
+										variant="primary"
+									>
+										{rotatePin.isPending ? "Updating..." : "Update PIN"}
+									</Button>
+								</CardContent>
+							</Card>
 							{/* Privy linked accounts */}
 						</motion.div>
 					</main>

@@ -13,6 +13,14 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/src/lib/components/ui/card";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/src/lib/components/ui/dialog";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { handleError } from "@/src/lib/utils";
 import OnboardingProtector from "./_components/OnboardingProtector";
@@ -21,6 +29,7 @@ import OtpInput from "./_components/OtpInput";
 export default function OnboardingSetPinPage() {
 	const [pin, setPin] = useState("");
 	const [confirmPin, setConfirmPin] = useState("");
+	const [recoveryPhrase, setRecoveryPhrase] = useState<string | null>(null);
 	const [step, setStep] = useState<"enter" | "confirm">("enter");
 	const navigate = useNavigate();
 	const { onboardingForm, setOnboardingForm: _setOnboardingForm } =
@@ -49,7 +58,7 @@ export default function OnboardingSetPinPage() {
 	};
 
 	const handlePinSubmit = () => {
-		if (step === "enter" && pin.length === 6) {
+		if (step === "enter" && pin.length >= 6 && pin.length <= 10) {
 			setStep("confirm");
 			setConfirmPin("");
 		}
@@ -65,10 +74,15 @@ export default function OnboardingSetPinPage() {
 	};
 
 	const currentPin = step === "enter" ? pin : confirmPin;
-	const isComplete = currentPin.length === 6;
-	const pinsMatch = step === "confirm" && pin === confirmPin && isComplete;
+	const isComplete = currentPin.length >= 6 && currentPin.length <= 10;
+	const pinsMatch =
+		step === "confirm" &&
+		pin === confirmPin &&
+		pin.length >= 6 &&
+		pin.length <= 10 &&
+		isComplete;
 	const isPinMismatch =
-		step === "confirm" && confirmPin.length === 6 && pin !== confirmPin;
+		step === "confirm" && confirmPin.length >= 6 && pin !== confirmPin;
 
 	return (
 		<OnboardingProtector>
@@ -96,7 +110,7 @@ export default function OnboardingSetPinPage() {
 								</CardTitle>
 								<CardDescription>
 									{step === "enter"
-										? "Choose a 6-digit PIN for your account"
+										? "Choose a 6-10 digit PIN for your account"
 										: "Re-enter your PIN to confirm"}
 								</CardDescription>
 							</CardHeader>
@@ -109,7 +123,7 @@ export default function OnboardingSetPinPage() {
 												? (value) => setPin(value)
 												: (value) => setConfirmPin(value)
 										}
-										length={6}
+										length={10}
 										autoFocus={true}
 										onSubmit={handlePinSubmit}
 									/>
@@ -132,11 +146,15 @@ export default function OnboardingSetPinPage() {
 
 									{pinsMatch ? (
 										<Button
-											onClick={() =>
-												void login
-													.mutateAsync({ pin })
-													.then(handleRegistrationComplete)
-											}
+											onClick={() => {
+												void login.mutateAsync({ pin }).then((result) => {
+													if (result?.recoveryPhrase) {
+														setRecoveryPhrase(result.recoveryPhrase);
+														return;
+													}
+													void handleRegistrationComplete();
+												});
+											}}
 											disabled={login.isPending}
 											className="flex-1 group"
 											variant="primary"
@@ -167,6 +185,34 @@ export default function OnboardingSetPinPage() {
 					</motion.div>
 				</motion.div>
 			</div>
+			<Dialog open={!!recoveryPhrase}>
+				<DialogContent
+					onEscapeKeyDown={(event) => event.preventDefault()}
+					onPointerDownOutside={(event) => event.preventDefault()}
+				>
+					<DialogHeader>
+						<DialogTitle>Save your recovery phrase</DialogTitle>
+						<DialogDescription>
+							This 24-word phrase is shown only once. If you lose it and forget
+							your PIN, your account cannot be recovered.
+						</DialogDescription>
+					</DialogHeader>
+					<div className="rounded-md border bg-muted p-3 text-sm leading-6">
+						{recoveryPhrase}
+					</div>
+					<DialogFooter>
+						<Button
+							onClick={() => {
+								setRecoveryPhrase(null);
+								void handleRegistrationComplete();
+							}}
+							variant="primary"
+						>
+							I saved it
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</OnboardingProtector>
 	);
 }

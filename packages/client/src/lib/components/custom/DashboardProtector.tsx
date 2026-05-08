@@ -3,6 +3,7 @@ import {
 	useIsLoggedIn,
 	useIsRegistered,
 	useLogin,
+	useRecoverWithPhrase,
 } from "@filosign/react/hooks";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
@@ -19,6 +20,8 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/src/lib/components/ui/card";
+import { Input } from "@/src/lib/components/ui/input";
+import { Label } from "@/src/lib/components/ui/label";
 import { Loader } from "@/src/lib/components/ui/loader";
 import OtpInput from "@/src/pages/onboarding/_components/OtpInput";
 import Logo from "./Logo";
@@ -35,12 +38,16 @@ export default function DashboardProtector({
 	const isRegistered = useIsRegistered();
 	const isLoggedIn = useIsLoggedIn();
 	const login = useLogin();
+	const recoverWithPhrase = useRecoverWithPhrase();
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 
 	const [showPinAuth, setShowPinAuth] = useState(false);
 	const [pin, setPin] = useState("");
 	const [error, setError] = useState("");
+	const [forgotMode, setForgotMode] = useState(false);
+	const [recoveryPhrase, setRecoveryPhrase] = useState("");
+	const [newPin, setNewPin] = useState("");
 
 	useEffect(() => {
 		if (
@@ -70,7 +77,7 @@ export default function DashboardProtector({
 	]);
 
 	const handlePinSubmit = async () => {
-		if (pin.length !== 6) return;
+		if (pin.length < 6 || pin.length > 10) return;
 
 		try {
 			setError("");
@@ -86,15 +93,37 @@ export default function DashboardProtector({
 			setPin("");
 		} catch (error) {
 			console.error("PIN authentication failed:", error);
-			setError("Invalid PIN. Please try again.");
+			setError("Unable to unlock");
 			setPin("");
-			toast.error("Invalid PIN. Please try again.");
+			toast.error("Unable to unlock");
+		}
+	};
+
+	const handleRecover = async () => {
+		if (newPin.length < 6 || newPin.length > 10) return;
+		try {
+			setError("");
+			await recoverWithPhrase.mutateAsync({
+				phrase: recoveryPhrase,
+				newPin,
+			});
+			setForgotMode(false);
+			setRecoveryPhrase("");
+			setNewPin("");
+			setShowPinAuth(false);
+			toast.success("PIN has been reset");
+		} catch {
+			setError("Unable to unlock");
+			toast.error("Unable to unlock");
 		}
 	};
 
 	const handleCancel = () => {
 		setPin("");
 		setError("");
+		setForgotMode(false);
+		setRecoveryPhrase("");
+		setNewPin("");
 		navigate({ to: "/" });
 	};
 
@@ -128,22 +157,55 @@ export default function DashboardProtector({
 					>
 						<Card className="w-full">
 							<CardHeader>
-								<CardTitle>Enter your PIN</CardTitle>
+								<CardTitle>
+									{forgotMode ? "Recover with phrase" : "Enter your PIN"}
+								</CardTitle>
 								<CardDescription>
-									Please enter your 6-digit PIN to access your account.
+									{forgotMode
+										? "Enter your 24-word recovery phrase and set a new PIN."
+										: "Please enter your PIN to access your account."}
 								</CardDescription>
 							</CardHeader>
 							<CardContent className="space-y-4">
-								<div className="flex flex-col gap-2">
-									<OtpInput
-										value={pin}
-										onChange={setPin}
-										length={6}
-										autoFocus={true}
-										onSubmit={handlePinSubmit}
-										disabled={login.isPending}
-									/>
-								</div>
+								{forgotMode ? (
+									<div className="space-y-3">
+										<div className="space-y-2">
+											<Label htmlFor="recovery-phrase">Recovery phrase</Label>
+											<Input
+												id="recovery-phrase"
+												value={recoveryPhrase}
+												onChange={(event) =>
+													setRecoveryPhrase(event.target.value)
+												}
+												placeholder="24-word recovery phrase"
+											/>
+										</div>
+										<div className="space-y-2">
+											<Label htmlFor="new-pin">New PIN (6-10 digits)</Label>
+											<Input
+												id="new-pin"
+												value={newPin}
+												onChange={(event) =>
+													setNewPin(event.target.value.replace(/\D/g, ""))
+												}
+												maxLength={10}
+												inputMode="numeric"
+												placeholder="Enter new PIN"
+											/>
+										</div>
+									</div>
+								) : (
+									<div className="flex flex-col gap-2">
+										<OtpInput
+											value={pin}
+											onChange={setPin}
+											length={10}
+											autoFocus={true}
+											onSubmit={handlePinSubmit}
+											disabled={login.isPending}
+										/>
+									</div>
+								)}
 
 								{error && <p className="text-destructive text-sm">{error}</p>}
 
@@ -157,26 +219,56 @@ export default function DashboardProtector({
 										Cancel
 									</Button>
 
-									<Button
-										onClick={handlePinSubmit}
-										onKeyDown={(e) => {
-											if (e.key === "Enter" && pin.length === 6) {
-												handlePinSubmit();
+									{forgotMode ? (
+										<Button
+											onClick={handleRecover}
+											disabled={
+												!recoveryPhrase ||
+												newPin.length < 6 ||
+												newPin.length > 10 ||
+												recoverWithPhrase.isPending
 											}
-										}}
-										disabled={pin.length !== 6 || login.isPending}
-										className="flex-1 group"
-										variant="default"
-									>
-										{login.isPending ? "Authenticating..." : "Continue"}
-										{!login.isPending && (
-											<CaretRightIcon
-												className="transition-transform duration-200 size-4 group-hover:translate-x-1"
-												weight="bold"
-											/>
-										)}
-									</Button>
+											className="flex-1 group"
+											variant="default"
+										>
+											{recoverWithPhrase.isPending
+												? "Recovering..."
+												: "Reset PIN"}
+										</Button>
+									) : (
+										<Button
+											onClick={handlePinSubmit}
+											onKeyDown={(e) => {
+												if (e.key === "Enter" && pin.length >= 6) {
+													handlePinSubmit();
+												}
+											}}
+											disabled={
+												pin.length < 6 || pin.length > 10 || login.isPending
+											}
+											className="flex-1 group"
+											variant="default"
+										>
+											{login.isPending ? "Authenticating..." : "Continue"}
+											{!login.isPending && (
+												<CaretRightIcon
+													className="transition-transform duration-200 size-4 group-hover:translate-x-1"
+													weight="bold"
+												/>
+											)}
+										</Button>
+									)}
 								</div>
+								<Button
+									variant="link"
+									className="px-0 h-auto"
+									onClick={() => {
+										setError("");
+										setForgotMode((value) => !value);
+									}}
+								>
+									{forgotMode ? "Back to PIN login" : "Forgot PIN?"}
+								</Button>
 							</CardContent>
 						</Card>
 					</motion.div>
