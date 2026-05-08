@@ -21,9 +21,8 @@ describe("FSKeyRegistry", () => {
 	it("stores relevant information for the user to be able to regenerate encryption keys", async () => {
 		const dl = await signatures.dilithiumInstance();
 		const { keyRegistry, user } = await loadFixture(setupFixture);
-		const pin = "1234";
 		const { saltPin, saltSeed, saltChallenge, commitmentKem, commitmentSig } =
-			await walletKeyGen(user, { dl, pin });
+			await walletKeyGen(user, { dl });
 
 		expect(
 			await keyRegistry.read.isRegistered([user.account.address]),
@@ -50,7 +49,6 @@ describe("FSKeyRegistry", () => {
 
 		const reconstructed = await walletKeyGen(user, {
 			dl,
-			pin,
 			salts: {
 				pin: storedData[0],
 				seed: storedData[1],
