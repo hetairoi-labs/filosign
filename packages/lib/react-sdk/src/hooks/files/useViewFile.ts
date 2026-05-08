@@ -2,8 +2,8 @@ import { encryption, KEM, toBytes } from "@filosign/crypto-utils";
 import { decodeFileData } from "@filosign/shared";
 import { useMutation } from "@tanstack/react-query";
 import z from "zod";
-import { idb } from "../../../utils/idb";
 import { useFilosignContext } from "../../context/FilosignProvider";
+import { getSessionSeed } from "../auth/session-seed";
 
 export type ViewFileArgs = {
 	pieceCid: string;
@@ -87,15 +87,12 @@ export function useViewFile() {
 				);
 			}
 
-			const keyStore = idb({
-				db: wallet.account.address,
-				store: "fs-keystore",
+			const keySeed = getSessionSeed(wallet.account.address);
+			if (!keySeed) throw new Error("No unlocked key seed found");
+
+			const { privateKey } = await KEM.keyGen({
+				seed: new Uint8Array(Array.from(keySeed)),
 			});
-			const keySeed = await keyStore.secret.get("key-seed");
-
-			if (!keySeed) throw new Error("No key seed found in keystore");
-
-			const { privateKey } = await KEM.keyGen({ seed: keySeed });
 
 			const { sharedSecret: ssE } = await KEM.decapsulate({
 				ciphertext: toBytes(kemCiphertext),
