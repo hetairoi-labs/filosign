@@ -181,11 +181,16 @@ export default function CreateNewSignaturePage({
 
 			{/* Main Content */}
 			<main className="p-8 mx-auto max-w-6xl space-y-8 flex flex-col items-center justify-center min-h-[calc(100dvh-4rem)]">
-				<Button variant="ghost" size="lg" className="self-start mb-4" asChild>
-					<Link to={onboarding ? "/onboarding/set-pin" : "/dashboard"}>
-						<CaretLeftIcon className="size-5" weight="bold" />
-						<p>Back</p>
-					</Link>
+				<Button
+					variant="ghost"
+					size="lg"
+					className="self-start mb-4"
+					render={
+						<Link to={onboarding ? "/onboarding/set-pin" : "/dashboard"} />
+					}
+				>
+					<CaretLeftIcon className="size-5" weight="bold" />
+					<p>Back</p>
 				</Button>
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
@@ -198,7 +203,7 @@ export default function CreateNewSignaturePage({
 					}}
 				>
 					<Image
-						src="/static/sign-bg.webp"
+						src="/sign-bg.webp"
 						alt="Signature Background"
 						className="w-full h-full rounded-xl"
 					/>
