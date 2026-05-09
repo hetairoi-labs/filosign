@@ -18,7 +18,8 @@
 			"recommended": true,
 			"suspicious": {
 				"noUnknownAtRules": "off",
-				"noExplicitAny": "error"
+				"noExplicitAny": "error",
+				"noArrayIndexKey": "off"
 			},
 			"correctness": {
 				"useUniqueElementIds": "off"
