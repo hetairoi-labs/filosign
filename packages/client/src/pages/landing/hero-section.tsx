@@ -95,17 +95,17 @@ export default function HeroSection() {
 						<Button
 							variant="primary"
 							size="lg"
-							asChild
 							className="w-full sm:w-auto"
-						>
-							<Link
-								to={primaryCta.to}
-								className="flex items-center justify-center gap-2 group"
-							>
-								Get Started
-								<CaretRightIcon className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
-							</Link>
-						</Button>
+							render={
+								<Link
+									to={primaryCta.to}
+									className="flex items-center justify-center gap-2 group"
+								>
+									Get Started
+									<CaretRightIcon className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-1" />
+								</Link>
+							}
+						/>
 					) : (
 						<Button
 							variant="primary"
@@ -122,19 +122,19 @@ export default function HeroSection() {
 					<Button
 						variant="ghost"
 						size="lg"
-						asChild
 						className="w-full sm:w-auto"
-					>
-						<a
-							href="https://github.com/hetairoi-labs/filosign"
-							target="_blank"
-							rel="noreferrer"
-							className="flex items-center justify-center gap-2 group"
-						>
-							<GithubLogoIcon className="size-4" weight="fill" />
-							Source code
-						</a>
-					</Button>
+						render={
+							<a
+								href="https://github.com/hetairoi-labs/filosign"
+								target="_blank"
+								rel="noreferrer"
+								className="flex items-center justify-center gap-2 group"
+							>
+								<GithubLogoIcon className="size-4" weight="fill" />
+								Source code
+							</a>
+						}
+					/>
 				</motion.div>
 			</motion.div>
 
@@ -163,7 +163,7 @@ export default function HeroSection() {
 					height={600}
 					className="w-full h-auto aspect-video rounded-large relative z-10 shadow-sm object-cover"
 				>
-					<source src="static/demo.webm" type="video/webm" />
+					<source src="demo.webm" type="video/webm" />
 				</video>
 			</motion.div>
 

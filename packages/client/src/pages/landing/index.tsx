@@ -9,7 +9,7 @@ import LandingNavbar from "./landing-nav";
 
 export default function LandingPage() {
 	return (
-		<div className="[--section-gap:4rem]">
+		<div className="[--section-gap:4rem] bg-background">
 			<LandingNavbar />
 			<div className="h-[var(--section-gap)]" />
 			<HeroSection />

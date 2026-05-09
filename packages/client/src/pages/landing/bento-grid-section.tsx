@@ -87,7 +87,7 @@ export default function BentoGridSection() {
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 				{/* Card 1: Compliance */}
 				<BentoCard
-					imageSrc="/static/images/stock_1.webp"
+					imageSrc="/images/stock_1.webp"
 					imageAlt="Legal Compliance"
 					badgeIcon={<GlobeIcon className="size-5 text-black" weight="fill" />}
 					badgeText="Global"
@@ -101,7 +101,7 @@ export default function BentoGridSection() {
 
 				{/* Card 2: Storage */}
 				<BentoCard
-					imageSrc="/static/images/stock_3.webp"
+					imageSrc="/images/stock_3.webp"
 					imageAlt="Perpetual Storage"
 					badgeIcon={
 						<HardDrivesIcon className="size-5 text-black" weight="fill" />
@@ -117,7 +117,7 @@ export default function BentoGridSection() {
 
 				{/* Card 3: Workflow */}
 				<BentoCard
-					imageSrc="/static/images/stock_5.webp"
+					imageSrc="/images/stock_5.webp"
 					imageAlt="Accelerated Workflow"
 					badgeIcon={
 						<LightningIcon className="size-4 text-black" weight="fill" />
