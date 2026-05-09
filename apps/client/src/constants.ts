@@ -1,12 +1,13 @@
 import { base, baseSepolia, hardhat } from "viem/chains";
+import env from "./env";
 
 const chains = [hardhat, baseSepolia, base] as const;
 export const privyChains = [...chains];
 export const wagmiChains = chains;
 export const defaultChain =
-	import.meta.env.VITE_CHAIN === "local"
+	env.VITE_CHAIN === "local"
 		? hardhat
-		: import.meta.env.VITE_CHAIN === "testnet"
+		: env.VITE_CHAIN === "testnet"
 			? baseSepolia
 			: base;
 

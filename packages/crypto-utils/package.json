@@ -26,7 +26,7 @@
 		"crystals-kyber-js": "2.5.0",
 		"dilithium-crystals-js": "catalog:",
 		"fast-json-stable-stringify": "catalog:",
-		"mlkem": "2.5.0"
+		"mlkem": "catalog:"
 	},
 	"peerDependencies": {
 		"viem": "catalog:"

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useWalletClient } from "wagmi";
 import { Loader } from "../components/ui/loader";
 import { logger } from "../utils/logger";
+import env from "@/src/env";
 
 type DilithiumModule = {
 	generateKeys?: unknown;
@@ -67,7 +68,7 @@ export function FilosignProvider({ children }: { children: React.ReactNode }) {
 
 	return (
 		<FilosignProviderBase
-			apiBaseUrl={import.meta.env.VITE_PLATFORM_URL || "localhost:30011"}
+			apiBaseUrl={env.VITE_PLATFORM_URL}
 			wasm={{
 				dilithium: dilithium as never,
 			}}

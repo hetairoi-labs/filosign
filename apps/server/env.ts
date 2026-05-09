@@ -1,34 +1,27 @@
-const envKeys = [
-	"TG_ANALYTICS_BOT_GROUP_ID",
-	"TG_ANALYTICS_BOT_TOKEN",
-	"S3_SECRET_ACCESS_KEY",
-	"S3_ACCESS_KEY_ID",
-	"S3_BUCKET",
-	"S3_ENDPOINT",
-	"EVM_PRIVATE_KEY_SYNAPSE",
-	"EVM_PRIVATE_KEY_SERVER",
-	"PG_URI",
-	"DB_NAME",
-	"FRONTEND_URL",
-	"RESEND_API_KEY",
-	"RESEND_FROM_EMAIL",
-	"CHAIN",
-	"SUPER_PASS",
-] as const;
+import { createEnv } from "@t3-oss/env-core";
+import { z } from "zod";
 
-type ENV = Record<(typeof envKeys)[number], string>;
-
-let env: ENV = {} as ENV;
-
-export function ensureEnv() {
-	for (const key of envKeys) {
-		if (!Bun.env[key]) {
-			throw new Error(`Environment variable ${key} is not set`);
-		}
-	}
-
-	env = Object.fromEntries(envKeys.map((key) => [key, Bun.env[key]])) as ENV;
-}
-ensureEnv();
+export const env = createEnv({
+	server: {
+		TG_ANALYTICS_BOT_GROUP_ID: z.string().min(1),
+		TG_ANALYTICS_BOT_TOKEN: z.string().min(1),
+		S3_SECRET_ACCESS_KEY: z.string().min(1),
+		S3_ACCESS_KEY_ID: z.string().min(1),
+		S3_BUCKET: z.string().min(1),
+		S3_ENDPOINT: z.string().min(1).url(),
+		EVM_PRIVATE_KEY_SYNAPSE: z.string().min(1),
+		EVM_PRIVATE_KEY_SERVER: z.string().min(1),
+		PG_URI: z.string().min(1),
+		DB_NAME: z.string().min(1),
+		FRONTEND_URL: z.string().min(1).url(),
+		RESEND_API_KEY: z.string().min(1),
+		RESEND_FROM_EMAIL: z.string().min(1).email(),
+		CHAIN: z.enum(["local", "testnet", "mainnet"]),
+		SUPER_PASS: z.string().min(1),
+		PORT: z.string().transform((v) => parseInt(v, 10)).optional(),
+	},
+	runtimeEnv: Bun.env,
+	emptyStringAsUndefined: true,
+});
 
 export default env;

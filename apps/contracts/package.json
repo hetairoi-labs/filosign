@@ -13,9 +13,8 @@
 		}
 	},
 	"scripts": {
-		"localnode": "hardhat node",
+		"node": "bunx --bun hardhat node",
 		"compile": "bun gen:interfaces; bun --bun hardhat compile",
-		"pretest": "bun compile",
 		"tests": "bun compile; bunx --bun hardhat test",
 		"gen:interfaces": "bun run scripts/generateInterfaces.ts",
 		"migrate": "bun compile; bunx --bun hardhat run scripts/deploy.ts",
@@ -31,13 +30,14 @@
 		"@nomicfoundation/hardhat-verify": "^2.1.1",
 		"@nomicfoundation/hardhat-viem": "^2.1.1",
 		"@openzeppelin/contracts": "^5.4.0",
-		"@types/bun": "^1.2.21",
+		"@t3-oss/env-core": "catalog:",
+		"@types/bun": "catalog:",
 		"@types/chai": "^4.3.20",
 		"@types/chai-as-promised": "^7.1.8",
 		"@types/mocha": "^10.0.10",
-		"@types/node": "^24.5.2",
+		"@types/node": "catalog:",
 		"chai": "^4.5.0",
-		"ethers": "^6.15.0",
+		"ethers": "catalog:",
 		"glob": "^11.0.3",
 		"hardhat": "^2.26.3",
 		"hardhat-gas-reporter": "^2.3.0",
@@ -45,12 +45,13 @@
 		"solidity-coverage": "^0.8.16",
 		"@solidity-parser/parser": "^0.18.0",
 		"ts-node": "^10.9.2",
-		"typescript": "^5.9.2"
+		"typescript": "catalog:",
+		"zod": "catalog:"
 	},
 	"dependencies": {
-		"multiformats": "^13.4.1"
+		"multiformats": "catalog:"
 	},
 	"peerDependencies": {
-		"viem": "^2.38.5"
+		"viem": "catalog:"
 	}
 }

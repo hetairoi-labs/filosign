@@ -1,3 +1,0 @@
-# bun fmt-lint --staged
-# git update-index --again
-# if git diff --cached --name-only | grep -q '^packages/contracts/'; then cd packages/contracts; bun tests; fi
