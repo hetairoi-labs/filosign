@@ -1,0 +1,215 @@
+---
+import Footer from "../components/Footer.astro";
+import Navbar from "../components/Navbar.astro";
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const heroImages = [
+	"/images/stock_1.webp",
+	"/images/stock_2.webp",
+	"/images/stock_3.webp",
+	"/images/stock_4.webp",
+	"/images/stock_5.webp",
+	"/images/stock_6.webp",
+	"/images/stock_7.webp",
+	"/images/stock_8.webp",
+];
+
+const values = [
+	{
+		type: "text",
+		title: "Trustless Security",
+		description:
+			"Building on decentralized networks to ensure your documents are verifiable and tamper-proof, removing the need for blind trust.",
+		icon: "shield",
+	},
+	{
+		type: "image",
+		src: "/images/stock_2.webp",
+		alt: "Team member working",
+	},
+	{
+		type: "text",
+		title: "User Sovereignty",
+		description:
+			"You own your data. Our non-custodial architecture means we never hold your private keys or document contents.",
+		icon: "lock",
+	},
+	{
+		type: "image",
+		src: "/images/stock_1.webp",
+		alt: "Team collaboration",
+	},
+	{
+		type: "image",
+		src: "/images/stock_4.webp",
+		alt: "Office environment",
+	},
+	{
+		type: "text",
+		title: "Seamless Experience",
+		description:
+			"Complex cryptography under the hood, simple interface on the surface. We make Web3 signing accessible to everyone.",
+		icon: "users",
+	},
+	{
+		type: "image",
+		src: "/images/stock_6.webp",
+		alt: "Discussion",
+	},
+	{
+		type: "text",
+		title: "Built for Forever",
+		description:
+			"Storage on Filecoin ensures your documents are preserved permanently and reliably, independent of any single entity.",
+		icon: "infinity",
+	},
+];
+---
+
+<BaseLayout
+	title="About Filosign — Transforming document signing"
+	description="Filosign is on a mission to transform document signing with secure, decentralized, and efficient solutions for the modern web."
+	canonicalUrl="https://filosign.io/about/"
+>
+	<div class="min-h-screen bg-background font-manrope selection:bg-primary/10 selection:text-primary">
+		<Navbar />
+		<main>
+			{/* About Hero Section */}
+			<section class="relative pt-32 pb-24 overflow-hidden">
+				<div class="container mx-auto px-4">
+					<div class="max-w-4xl mx-auto text-center mb-16" data-aos="fade-up">
+						<h1 class="text-4xl md:text-5xl lg:text-6xl font-medium font-manrope tracking-tight text-foreground mb-6">
+							Filosign is on a mission to transform document signing.
+						</h1>
+						<p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+							Empowering users with secure, decentralized, and efficient document
+							signing solutions for the modern web.
+						</p>
+					</div>
+				</div>
+
+				{/* Simple Image Grid (replacing carousel for simplicity) */}
+				<div class="relative w-full px-4" data-aos="fade-up" data-aos-delay="200">
+					<div class="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory hide-scrollbar">
+						{heroImages.map((src, index) => (
+							<div class="snap-center shrink-0 w-[85%] md:w-[70%] lg:w-[60%]">
+								<div class="relative w-full h-[50vh] md:h-[60vh] min-h-[400px] overflow-hidden rounded-3xl">
+									<img
+										src={src}
+										alt={`Filosign scene ${index + 1}`}
+										class="object-cover w-full h-full"
+										loading={index < 2 ? "eager" : "lazy"}
+									/>
+								</div>
+							</div>
+						))}
+					</div>
+				</div>
+			</section>
+
+			{/* Quote Section */}
+			<section class="py-24 my-20 px-4 md:px-8 bg-card">
+				<div class="max-w-4xl mx-auto text-center flex flex-col items-center justify-center space-y-12">
+					<div class="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-1.5 text-sm font-medium text-card-foreground border border-border" data-aos="fade-up">
+						<span class="flex h-5 w-5 items-center justify-center rounded-sm bg-secondary text-secondary-foreground">
+							<svg class="h-3.5 w-3.5" viewBox="0 0 256 256" fill="currentColor">
+								<path d="M213.3 108a8 8 0 0 0-6.57-5.37l-52.64-7.68-23.52-47.68a8 8 0 0 0-14.34 0L92.91 94.95l-52.64 7.68A8 8 0 0 0 36.1 116l38.09 37.12-9 52.44a8 8 0 0 0 11.62 8.44L128 189.14l46.82 24.64a8 8 0 0 0 11.62-8.44l-9-52.44 38.09-37.12a8 8 0 0 0 2.17-8.18Z"/>
+							</svg>
+						</span>
+						<span class="text-primary-foreground">filosign</span>
+					</div>
+
+					<h2 class="text-3xl sm:text-4xl md:text-5xl font-medium leading-tight tracking-tight font-manrope text-foreground" data-aos="fade-up" data-aos-delay="100">
+						<blockquote>
+							"We started Filosign with one mission: To revolutionize the
+							traditional centralized document signing infrastructure and replace
+							the trust with trustless, modern, privacy-centric, and
+							mathematically verified foundation."
+						</blockquote>
+					</h2>
+
+					<div class="flex flex-col items-center space-y-4" data-aos="fade-up" data-aos-delay="200">
+						<img
+							src="/kartik.jpeg"
+							alt="Kartikay"
+							width={100}
+							height={100}
+							class="rounded-full"
+						/>
+						<div class="text-center">
+							<span class="text-sm font-semibold text-foreground uppercase tracking-wide block">Kartik</span>
+							<span class="text-sm text-muted-foreground">Co-Founder & CEO, Filosign</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			{/* Values Section */}
+			<section class="py-24 px-4 md:px-8 lg:px-page bg-background">
+				<div class="max-w-7xl mx-auto">
+					<div class="flex flex-col items-center text-center mb-16 space-y-4" data-aos="fade-up">
+						<div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-secondary/50 text-sm font-medium text-secondary-foreground">
+							<svg class="mr-1 size-3" viewBox="0 0 256 256" fill="currentColor">
+								<path d="M234.4 97.2a108.7 108.7 0 0 1 0 61.6 8 8 0 1 1-15.2-5 92.5 92.5 0 0 0 0-51.6 8 8 0 1 1 15.2-5ZM232.4 66.7a140 140 0 0 1 0 122.6 8 8 0 1 1-14.5-6.7 124 124 0 0 0 0-109.2 8 8 0 0 1 14.5-6.7ZM216 40a8 8 0 0 1 8 8 152 152 0 0 1 0 160 8 8 0 0 1-16 0 136 136 0 0 0 0-144 8 8 0 0 1 8-8Zm-71.8 57.6-61.6 21.2a40.1 40.1 0 1 0 37.6 68.4l61.6-21.2a8 8 0 1 0-5.2-15.2l-61.6 21.2a24 24 0 0 0-12.8-12.8l61.6-21.2a8 8 0 1 0-5.2-15.2Z"/>
+							</svg>
+							Our values
+						</div>
+
+						<h2 class="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight max-w-3xl mx-auto font-manrope">
+							We're founders who think privacy should be a fundamental right!
+						</h2>
+					</div>
+
+					<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+						{values.map((item, index) => (
+							<div class:list={[
+								"relative overflow-hidden rounded-3xl h-[360px] md:h-[420px] group",
+								item.type === "text" ? "bg-muted/30 p-8 flex flex-col justify-between" : ""
+							]} data-aos="fade-up" data-aos-delay={index * 100}>
+								{item.type === "text" ? (
+									<>
+										<div class="space-y-4">
+											<div class="w-12 h-12 rounded-full bg-background flex items-center justify-center shadow-sm text-foreground">
+												{item.icon === "shield" && (
+													<svg class="size-6" viewBox="0 0 256 256" fill="currentColor">
+														<path d="M208 40V32a8 8 0 0 0-8-8H56a8 8 0 0 0-8 8v8a16 16 0 0 0 16 16v128a16 16 0 0 1-16 16 8 8 0 0 0 0 16h144a8 8 0 0 0 0-16 16 16 0 0 1-16-16V56a16 16 0 0 0 16-16ZM128 200a8 8 0 0 1-16 0V88a8 8 0 0 1 16 0ZM80 56V40h96v16Z"/>
+													</svg>
+												)}
+												{item.icon === "lock" && (
+													<svg class="size-6" viewBox="0 0 256 256" fill="currentColor">
+														<path d="M208 112h-16V76a48 48 0 0 0-96 0v36H80a16 16 0 0 0-16 16v64a16 16 0 0 0 16 16h128a16 16 0 0 0 16-16v-64a16 16 0 0 0-16-16Zm-72 76.8V168h16v20.8a24 24 0 1 1-16 0ZM112 76a32 32 0 0 1 64 0v36h-64Z"/>
+													</svg>
+												)}
+												{item.icon === "users" && (
+													<svg class="size-6" viewBox="0 0 256 256" fill="currentColor">
+														<path d="M112 80a32 32 0 1 1 32 32 32 32 0 0 1-32-32Zm8 48a48 48 0 1 0 48 48 48 48 0 0 0-48-48Zm88-48a24 24 0 1 0 24 24 24 24 0 0 0-24-24Zm-16 96a40 40 0 1 0 40 40 40 40 0 0 0-40-40ZM64 80a24 24 0 1 0 24 24 24 24 0 0 0-24-24ZM40 176a40 40 0 1 0 40 40 40 40 0 0 0-40-40Z"/>
+													</svg>
+												)}
+												{item.icon === "infinity" && (
+													<svg class="size-6" viewBox="0 0 256 256" fill="currentColor">
+														<path d="M240 128a56 56 0 0 1-95.6 39.6l-33.4-36.7-33.4 36.7a56 56 0 1 1-17.2-16.4l26.1-28.7-26.1-28.7a56 56 0 1 1 17.2-16.4l33.4 36.7 33.4-36.7a56 56 0 1 1 17.2 16.4l-26.1 28.7 26.1 28.7A56 56 0 0 1 240 128Z"/>
+													</svg>
+												)}
+											</div>
+											<h3 class="text-xl font-semibold font-manrope">{item.title}</h3>
+										</div>
+										<p class="text-muted-foreground leading-relaxed">{item.description}</p>
+									</>
+								) : (
+									<img
+										src={item.src}
+										alt={item.alt}
+										width={400}
+										height={500}
+										class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+									/>
+								)}
+							</div>
+						))}
+					</div>
+				</div>
+			</section>
+		</main>
+		<Footer />
+	</div>
+</BaseLayout>

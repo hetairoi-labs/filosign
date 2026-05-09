@@ -8,7 +8,7 @@
 		"packages/*"
 	],
 	"scripts": {
-		"web:dev:local": "bun run --parallel serloc client:dev:local",
+		"web:dev:local": "bun run --parallel serloc client:dev:local astro:dev",
 		"web:dev:testnet": "bun run --parallel client:dev:testnet server:dev:testnet",
 		"client:dev:local": "bun run --cwd apps/client dev:local",
 		"client:dev:testnet": "bun run --cwd apps/client dev:testnet",

@@ -1,0 +1,41 @@
+---
+interface Props {
+	iconOnly?: boolean;
+	textOnly?: boolean;
+	className?: string;
+	textClassName?: string;
+	iconClassName?: string;
+	redirectTo?: string;
+}
+
+const {
+	iconOnly = false,
+	textOnly = false,
+	className = "",
+	textClassName = "",
+	iconClassName = "",
+	redirectTo = "/",
+} = Astro.props;
+---
+
+<a
+	href={redirectTo}
+	class:list={["flex items-center group/logo py-2 gap-3 transition-all", !className.includes("px-0") && "px-4 -ml-1", className]}
+>
+	{!textOnly && (
+		<div class="p-1.5 rounded-sm bg-secondary transition-colors duration-200 group-hover/logo:bg-secondary/80">
+			<img
+				src="/logo.webp"
+				alt="Filosign Logo"
+				width="32"
+				height="32"
+				class:list={["size-8 text-foreground transition-all duration-150 group-hover/logo:rotate-180", iconClassName]}
+			/>
+		</div>
+	)}
+	{!iconOnly && (
+		<h3 class:list={["text-secondary font-manrope transition-colors duration-200", textClassName]}>
+			filosign
+		</h3>
+	)}
+</a>

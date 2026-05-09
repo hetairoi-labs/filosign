@@ -1,0 +1,115 @@
+---
+import Logo from "./Logo.astro";
+import { env } from "../env";
+
+const appUrl = env.PUBLIC_APP_URL;
+
+const footerSections = [
+	{
+		title: "Product",
+		links: [
+			{ label: "Why Filosign", href: "/about" },
+			{ label: "What's new", href: "/changelog" },
+			{ label: "Pricing", href: "/pricing" },
+		],
+	},
+	{
+		title: "Company",
+		links: [
+			{ label: "About us", href: "https://hetairoi.xyz" },
+			{ label: "Contact", href: "#" },
+			{ label: "Newsroom", href: "#" },
+			{ label: "Privacy", href: "#" },
+		],
+	},
+	{
+		title: "Resources",
+		links: [
+			{ label: "Blog", href: "/blog/introduction" },
+			{ label: "Customer center", href: "#" },
+			{ label: "API", href: "#" },
+		],
+	},
+];
+---
+
+<footer class="bg-card rounded-t-[3rem] py-24 min-h-[80dvh] flex flex-col justify-between">
+	<div class="max-w-7xl mx-auto px-8 md:px-page w-full flex-1 flex flex-col justify-between">
+		<div>
+			<div class="flex flex-col lg:flex-row justify-between mb-4">
+				<div class="max-w-xl">
+					<h2 class="text-4xl md:text-5xl font-semibold tracking-tight mb-8 font-manrope">
+						Get started with filosign
+					</h2>
+				</div>
+				<div>
+					<a
+					href={appUrl}
+					class="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium transition-all duration-200 hover:bg-primary/90 hover:scale-105"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor">
+							<path d="M208 32H48a16 16 0 0 0-16 16v160a16 16 0 0 0 16 16h160a16 16 0 0 0 16-16V48a16 16 0 0 0-16-16Zm0 176H48V48h160v160Zm-44.7-86.3a8.1 8.1 0 0 1 0 11.4l-40 40a8.2 8.2 0 0 1-11.4 0 8.1 8.1 0 0 1 0-11.4L143.3 128l-31.6-31.7a8.1 8.1 0 0 1 11.4-11.4l40 40Z"/>
+						</svg>
+						Try Filosign today
+					</a>
+				</div>
+			</div>
+
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-12 mb-4 border-t border-border/50 pt-16">
+				{footerSections.map((section) => (
+					<div class="flex flex-col gap-6">
+						<h4 class="text-sm font-medium text-muted-foreground font-manrope">
+							{section.title}
+						</h4>
+						<ul class="flex flex-col gap-4">
+							{section.links.map((link) => (
+								<li>
+									<a
+										href={link.href}
+										class="text-sm font-medium hover:text-primary transition-colors font-manrope flex items-center gap-2 group"
+									>
+										{link.label}
+									</a>
+								</li>
+							))}
+						</ul>
+					</div>
+				))}
+			</div>
+		</div>
+
+		<div class="flex flex-col md:flex-row justify-between items-end md:items-center gap-8 border-t border-border/50 pt-4">
+			<div class="space-y-2">
+				<Logo className="px-0" textClassName="text-4xl text-foreground" redirectTo="/" />
+				<p class="text-xs text-muted-foreground font-manrope">
+					© 2025 Filosign. All rights reserved.
+				</p>
+			</div>
+
+			<div class="flex items-center gap-4">
+				<a
+					href="https://x.com/filosign"
+					target="_blank"
+					rel="noreferrer"
+					class="p-2 rounded-full bg-background hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground"
+					aria-label="Twitter"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+					</svg>
+				</a>
+				<a
+					href="https://github.com/hetairoi-labs/filosign"
+					target="_blank"
+					rel="noreferrer"
+					class="p-2 rounded-full bg-background hover:bg-secondary/50 transition-colors text-muted-foreground hover:text-foreground"
+					aria-label="GitHub"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+					</svg>
+				</a>
+			</div>
+		</div>
+	</div>
+</footer>

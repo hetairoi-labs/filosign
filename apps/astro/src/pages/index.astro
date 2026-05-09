@@ -1,12 +1,24 @@
 ---
+import BentoGridSection from "../components/BentoGridSection.astro";
+import FeaturesBento from "../components/FeaturesBento.astro";
+import Footer from "../components/Footer.astro";
+import HeroSection from "../components/HeroSection.astro";
+import Navbar from "../components/Navbar.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<BaseLayout title="Filosign">
-	<main class="flex min-h-dvh flex-col items-center justify-center gap-4 p-8">
-		<h1 class="text-3xl font-semibold tracking-tight">Filosign marketing</h1>
-		<p class="max-w-md text-center text-neutral-600">
-			Astro + Tailwind — migrate landing and marketing pages here for better SEO.
-		</p>
-	</main>
+<BaseLayout
+	title="Filosign — Trustless standard for permanent agreements"
+	description="Send, sign, and verify sensitive documents with encrypted workflows. Private document signing on the blockchain with self-sovereign identity and end-to-end encryption."
+	canonicalUrl="https://filosign.io/"
+>
+	<div class="[--section-gap:4rem] bg-background">
+		<Navbar />
+		<div class="h-[var(--section-gap)]"></div>
+		<HeroSection />
+		<FeaturesBento />
+		<BentoGridSection />
+		<div class="h-[var(--section-gap)]"></div>
+		<Footer />
+	</div>
 </BaseLayout>

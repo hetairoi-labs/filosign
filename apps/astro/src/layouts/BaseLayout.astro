@@ -3,21 +3,101 @@ import "../styles/global.css";
 
 interface Props {
 	title?: string;
+	description?: string;
+	image?: string;
+	canonicalUrl?: string;
+	noIndex?: boolean;
 }
 
-const { title = "Filosign" } = Astro.props;
+const {
+	title = "Filosign — Trustless standard for permanent agreements",
+	description = "Send, sign, and verify sensitive documents with encrypted workflows. Private document signing on the blockchain.",
+	image = "/og-image.png",
+	canonicalUrl,
+	noIndex = false,
+} = Astro.props;
+
+const siteUrl = "https://filosign.io";
+const ogImage = new URL(image, siteUrl).toString();
+const canonical =
+	canonicalUrl || new URL(Astro.url.pathname, siteUrl).toString();
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
+
+		<!-- Primary Meta Tags -->
 		<title>{title}</title>
+		<meta name="description" content={description} />
+		{noIndex && <meta name="robots" content="noindex, nofollow" />}
+
+		<!-- Canonical URL -->
+		<link rel="canonical" href={canonical} />
+
+		<!-- Favicon -->
+		<link rel="icon" type="image/webp" href="/logo.webp" />
+		<link rel="apple-touch-icon" href="/logo.webp" />
+
+		<!-- Open Graph / Facebook -->
+		<meta property="og:type" content="website" />
+		<meta property="og:url" content={canonical} />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:image" content={ogImage} />
+		<meta property="og:site_name" content="Filosign" />
+
+		<!-- Twitter -->
+		<meta property="twitter:card" content="summary_large_image" />
+		<meta property="twitter:url" content={canonical} />
+		<meta property="twitter:title" content={title} />
+		<meta property="twitter:description" content={description} />
+		<meta property="twitter:image" content={ogImage} />
+
+		<!-- Structured Data / JSON-LD -->
+		<script type="application/ld+json" set:html={JSON.stringify({
+			"@context": "https://schema.org",
+			"@type": "SoftwareApplication",
+			"name": "Filosign",
+			"description": description,
+			"applicationCategory": "BusinessApplication",
+			"operatingSystem": "Web",
+			"url": siteUrl,
+			"offers": {
+				"@type": "Offer",
+				"price": "0",
+				"priceCurrency": "USD",
+			},
+			"creator": {
+				"@type": "Organization",
+				"name": "Hetairoi Labs",
+				"url": "https://hetairoi.xyz",
+			},
+		})} />
+
+		<!-- Preconnect to external domains -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+		<!-- AOS Animation CSS -->
+		<link href="https://unpkg.com/aos@2.3.4/dist/aos.css" rel="stylesheet" />
 	</head>
-	<body class="min-h-dvh antialiased">
+	<body class="min-h-dvh antialiased bg-background text-foreground">
 		<slot />
+
+		<!-- AOS Animation JS -->
+		<script is:inline src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+		<script is:inline>
+			AOS.init({
+				duration: 800,
+				easing: 'ease-out-cubic',
+				once: true,
+				offset: 100,
+				delay: 0,
+			});
+		</script>
 	</body>
 </html>

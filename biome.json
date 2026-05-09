@@ -52,9 +52,7 @@
 	},
 	"overrides": [
 		{
-			"includes": [
-				"apps/astro/**/*.astro"
-			],
+			"includes": ["apps/astro/**/*.astro"],
 			"linter": {
 				"rules": {
 					"correctness": {

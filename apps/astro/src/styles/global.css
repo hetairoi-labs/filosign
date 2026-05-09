@@ -1,1 +1,191 @@
 @import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/manrope";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+	--background: hsl(0, 0%, 100%);
+	--foreground: hsl(210, 6%, 13%);
+	--card: hsl(240, 11%, 96%);
+	--card-foreground: hsl(210, 6%, 13%);
+	--border: hsl(240, 11%, 85%);
+	--input: hsl(0, 0%, 100%);
+
+	--popover: hsl(75, 20%, 99%);
+	--popover-foreground: hsl(210, 6%, 13%);
+	--primary: #202223;
+	--primary-foreground: hsl(60, 100%, 99%);
+	--secondary: hsl(90, 84%, 84%);
+	--secondary-foreground: hsl(210, 6%, 13%);
+	--muted: hsl(240, 11%, 76%);
+	--muted-foreground: hsl(0, 1%, 44%);
+	--accent: hsla(90, 67%, 83%);
+	--accent-foreground: hsl(210, 6%, 13%);
+	--destructive: hsl(0, 84%, 58%);
+	--destructive-foreground: hsl(0, 0%, 100%);
+	--ring: hsl(90, 50%, 38%);
+
+	--primary-light: hsl(90, 67%, 83%);
+	--primary-medium: hsl(90, 50%, 38%);
+	--primary-dark: hsl(75, 67%, 13%);
+	--secondary-light: hsl(38, 100%, 83%);
+	--secondary-medium: hsl(33, 67%, 62%);
+	--secondary-dark: hsl(28, 58%, 37%);
+
+	--white: hsl(0, 0%, 100%);
+	--off-white: hsl(90, 55%, 98%);
+
+	--radius: 0.65rem;
+}
+
+@theme inline {
+	--font-inter: "Inter Variable", sans-serif;
+	--font-manrope: "Manrope Variable", sans-serif;
+
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-destructive: var(--destructive);
+	--color-destructive-foreground: var(--destructive-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.4);
+	--radius-2xl: calc(var(--radius) * 1.8);
+	--radius-3xl: calc(var(--radius) * 2.2);
+	--radius-4xl: calc(var(--radius) * 2.6);
+}
+
+@layer base {
+	::selection {
+		background-color: var(--secondary);
+		color: var(--secondary-foreground);
+	}
+
+	::-moz-selection {
+		background-color: var(--secondary);
+		color: var(--secondary-foreground);
+	}
+
+	* {
+		border-color: var(--border);
+		font-family: var(--font-manrope);
+	}
+
+	html {
+		overflow-y: scroll;
+		scrollbar-width: none;
+	}
+
+	html::-webkit-scrollbar {
+		display: none;
+	}
+
+	body {
+		background-color: var(--background);
+		color: var(--foreground);
+	}
+
+	h1 {
+		font-size: 2.25rem;
+		font-weight: 500;
+		line-height: 1.25;
+		letter-spacing: -0.025em;
+		font-family: var(--font-inter);
+	}
+
+	h2 {
+		font-size: 1.875rem;
+		font-weight: 500;
+		line-height: 1.25;
+		letter-spacing: -0.025em;
+		font-family: var(--font-inter);
+	}
+
+	h3 {
+		font-size: 1.5rem;
+		font-weight: 500;
+		line-height: 1.25;
+		letter-spacing: -0.025em;
+		font-family: var(--font-inter);
+	}
+
+	h4 {
+		font-size: 1.25rem;
+		font-weight: 500;
+		line-height: 1.25;
+		letter-spacing: -0.025em;
+		font-family: var(--font-inter);
+	}
+
+	p,
+	span,
+	div,
+	a,
+	button {
+		font-family: var(--font-inter);
+	}
+
+	button {
+		cursor: pointer;
+	}
+}
+
+@utility glass {
+	background-color: color-mix(in hsl, var(--foreground) 80%, transparent);
+	backdrop-filter: blur(4px);
+	border-color: color-mix(in hsl, var(--foreground) 10%, transparent);
+}
+
+@utility rounded-main {
+	border-radius: var(--radius-md);
+}
+
+@utility rounded-large {
+	border-radius: var(--radius-xl);
+}
+
+@utility p-square {
+	padding: 1rem 1.5rem;
+}
+
+@utility p-rect {
+	padding: 1rem 1.5rem;
+}
+
+@utility p-page {
+	padding-left: 2rem;
+	padding-right: 2rem;
+}
+
+@utility m-square {
+	margin: 1rem 1.5rem;
+}
+
+@utility m-rect {
+	margin: 1rem 1.5rem;
+}
+
+@utility hide-scrollbar {
+	scrollbar-width: none;
+
+	&::-webkit-scrollbar {
+		display: none;
+	}
+}
