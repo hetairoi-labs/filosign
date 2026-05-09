@@ -34,7 +34,8 @@ export const MARKETING_OG_PAGES = {
 			"Six months ago, we started working on Filosign; an idea focused on creating a completely private and end-to-end encrypted document signing standard.",
 	},
 	"blog-future-of-digital-agreements": {
-		title: "The future of digital agreements: Why we built Filosign — Filosign Blog",
+		title:
+			"The future of digital agreements: Why we built Filosign — Filosign Blog",
 		description:
 			"Long-form perspective on platform risk in e-sign, Filosign's architecture on FVM, and post-quantum signing.",
 	},

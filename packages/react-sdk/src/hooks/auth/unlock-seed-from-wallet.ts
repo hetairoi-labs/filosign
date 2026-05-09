@@ -26,9 +26,7 @@ export async function unlockSeedFromWallet(args: {
 
 	try {
 		const [, saltSeed, saltChallenge, commitmentKem, commitmentSig] =
-			await contracts.FSKeyRegistry.read.keygenData([
-				wallet.account.address,
-			]);
+			await contracts.FSKeyRegistry.read.keygenData([wallet.account.address]);
 
 		if (!saltSeed || !saltChallenge || !commitmentKem || !commitmentSig) {
 			return null;

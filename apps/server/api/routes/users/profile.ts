@@ -8,6 +8,7 @@ import db from "@/lib/db";
 import { fsContracts } from "@/lib/evm";
 import { processTransaction } from "@/lib/indexer/process";
 import { bucket } from "@/lib/s3/client";
+import { verifyPrivyTokenWithWallet } from "@/lib/utils/privy";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
 
@@ -62,10 +63,10 @@ export default new Hono()
 				commitmentKem: zHexString(),
 				commitmentSig: zHexString(),
 				signature: zHexString(),
-
 				encryptionPublicKey: zHexString(),
 				signaturePublicKey: zHexString(),
 				walletAddress: zEvmAddress(),
+				idToken: z.string().min(1),
 			})
 			.safeParse(rawBody);
 
@@ -83,7 +84,30 @@ export default new Hono()
 			encryptionPublicKey,
 			signaturePublicKey,
 			walletAddress,
+			idToken,
 		} = parsedBody.data;
+
+		const privyResult = await tryCatch(
+			Promise.resolve(verifyPrivyTokenWithWallet(idToken, walletAddress)),
+		);
+
+		if (privyResult.error) {
+			return respond.err(
+				ctx,
+				`Privy verification failed: ${privyResult.error.message}`,
+				401,
+			);
+		}
+
+		const { email, privyDid } = privyResult.data;
+
+		if (!email) {
+			return respond.err(
+				ctx,
+				"Email is required for registration. Please log in with email or Google.",
+				400,
+			);
+		}
 
 		const valid = await tryCatch(
 			FSKeyRegistry.read.validateKeygenDataRegistrationSignature([
@@ -131,6 +155,8 @@ export default new Hono()
 		await processTransaction(txHash.data, {
 			encryptionPublicKey,
 			signaturePublicKey,
+			email,
+			privyDid,
 		});
 
 		return respond.ok(ctx, {}, "Keygen data registered successfully", 200);

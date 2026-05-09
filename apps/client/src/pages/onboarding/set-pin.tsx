@@ -4,6 +4,7 @@ import {
 	CopySimpleIcon,
 	DownloadSimpleIcon,
 } from "@phosphor-icons/react";
+import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -39,6 +40,7 @@ export default function OnboardingSetPinPage() {
 	const navigate = useNavigate();
 	const { onboardingForm, setOnboardingForm: _setOnboardingForm } =
 		useStorePersist();
+	const { getAccessToken } = usePrivy();
 
 	const logout = useLogout();
 	const login = useLogin();
@@ -62,9 +64,18 @@ export default function OnboardingSetPinPage() {
 		}
 	};
 
-	const handleCreateAccount = () => {
+	const handleCreateAccount = async () => {
 		if (login.isPending) return;
-		void login.mutateAsync({ pin }).then((result) => {
+
+		const idToken = await getAccessToken();
+		if (!idToken) {
+			toast.error(
+				"Authentication token not available. Please try logging in again.",
+			);
+			return;
+		}
+
+		void login.mutateAsync({ pin, idToken }).then((result) => {
 			if (result?.recoveryPhrase) {
 				setRecoveryPhrase(result.recoveryPhrase);
 				return;

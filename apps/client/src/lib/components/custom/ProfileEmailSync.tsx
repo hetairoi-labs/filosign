@@ -12,7 +12,15 @@ export default function ProfileEmailSync() {
 	const profileEmail = userProfile.data?.email;
 
 	useEffect(() => {
-		if (!authenticated || !privyEmail || profileEmail || !userProfile.data) {
+		if (!authenticated || !privyEmail || !userProfile.data) {
+			return;
+		}
+
+		const normalizedPrivy = privyEmail.toLowerCase();
+		const normalizedProfile = profileEmail?.toLowerCase();
+
+		if (normalizedPrivy === normalizedProfile) {
+			syncedEmailRef.current = privyEmail;
 			return;
 		}
 

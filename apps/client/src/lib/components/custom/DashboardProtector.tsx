@@ -104,10 +104,7 @@ export default function DashboardProtector({
 		void login
 			.mutateAsync({})
 			.catch((err: unknown) => {
-				if (
-					err instanceof Error &&
-					err.message === LOGIN_PIN_REQUIRED
-				) {
+				if (err instanceof Error && err.message === LOGIN_PIN_REQUIRED) {
 					setShowPinAuth(true);
 					return;
 				}

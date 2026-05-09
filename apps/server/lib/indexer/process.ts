@@ -5,9 +5,17 @@ import { evmClient, fsContracts } from "../evm";
 
 const { users, shareApprovals, shareRequests } = db.schema;
 const { FSKeyRegistry, FSManager } = fsContracts;
+
+type RegistrationData = {
+	encryptionPublicKey: string;
+	signaturePublicKey: string;
+	email?: string;
+	privyDid?: string;
+};
+
 export async function processTransaction(
 	txHash: Hash,
-	data: Record<string, unknown>,
+	data: RegistrationData | Record<string, unknown>,
 ) {
 	const receipt = await evmClient.waitForTransactionReceipt({ hash: txHash });
 
@@ -28,7 +36,8 @@ export async function processTransaction(
 				data: encodedLog.data,
 			});
 			if (log.eventName === "KeygenDataRegistered") {
-				const { encryptionPublicKey, signaturePublicKey } = data;
+				const { encryptionPublicKey, signaturePublicKey, email, privyDid } =
+					data as RegistrationData;
 
 				if (
 					typeof encryptionPublicKey !== "string" ||
@@ -56,7 +65,8 @@ export async function processTransaction(
 						walletAddress: log.args.user,
 						encryptionPublicKey,
 						signaturePublicKey,
-
+						email: email || null,
+						privyDid: privyDid || null,
 						lastActiveAt: new Date(),
 						keygenDataJson: {
 							saltPin: keygenData[0],

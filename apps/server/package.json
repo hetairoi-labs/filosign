@@ -3,14 +3,11 @@
 	"scripts": {
 		"dev:local": "bun run --env-file=.env.local --hot index.ts",
 		"dev:testnet": "bun run --env-file=.env.testnet --hot index.ts",
-
 		"db:purge:local": "bun run --env-file=.env.local scripts/clear-db.ts",
 		"db:purge:testnet": "bun run --env-file=.env.testnet scripts/clear-db.ts",
 		"db:push:local": "bunx --bun --env-file=.env.local drizzle-kit push",
 		"db:push:testnet": "bunx --bun .env-file=.env.testnet drizzle-kit push",
-
 		"compile": "bun build --compile --minify --sourcemap --bytecode ./index.ts --outfile out/server",
-
 		"check": "bunx --bun biome check --write",
 		"check-types": "tsc --noEmit"
 	},
@@ -21,6 +18,8 @@
 		"@filoz/synapse-sdk": "^0.40.3",
 		"@hono/zod-validator": "catalog:",
 		"@libsql/client": "0.14.0",
+		"@privy-io/node": "0.18.0",
+		"dotenv": "17.4.2",
 		"drizzle-orm": "0.44.7",
 		"drizzle-zod": "0.8.3",
 		"ethers": "catalog:",
@@ -31,8 +30,7 @@
 		"resend": "6.4.0",
 		"viem": "catalog:",
 		"wagmi": "catalog:",
-		"zod": "catalog:",
-		"dotenv": "17.4.2"
+		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@t3-oss/env-core": "catalog:",

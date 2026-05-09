@@ -9,7 +9,7 @@ export function PrivyProvider({ children }: { children: React.ReactNode }) {
 			config={{
 				defaultChain,
 				supportedChains: privyChains,
-				loginMethods: ["email", "wallet", "google"],
+				loginMethods: ["email", "google"],
 				appearance: {
 					theme: "light",
 				},

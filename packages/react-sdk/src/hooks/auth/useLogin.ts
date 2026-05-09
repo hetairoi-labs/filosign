@@ -22,6 +22,11 @@ import { useIsRegistered } from "./useIsRegistered";
 /** Thrown when wallet-based unlock failed and a PIN must be supplied. */
 export const LOGIN_PIN_REQUIRED = "PIN_REQUIRED";
 
+export interface LoginParams {
+	pin?: string;
+	idToken?: string;
+}
+
 export function useLogin() {
 	const { api, contracts, wallet, wasm } = useFilosignContext();
 	const queryClient = useQueryClient();
@@ -30,7 +35,7 @@ export function useLogin() {
 	const { data: isLoggedIn } = useIsLoggedIn();
 
 	return useMutation({
-		mutationFn: async (params: { pin?: string }) => {
+		mutationFn: async (params: LoginParams) => {
 			if (isLoggedIn) return { success: true };
 
 			if (!contracts || !wallet || !wasm.dilithium) {
@@ -40,9 +45,14 @@ export function useLogin() {
 			let recoveryPhrase: string | undefined;
 
 			if (!isRegistered) {
-				const { pin } = params;
+				const { pin, idToken } = params;
 				if (!pin || !validatePin(pin)) {
 					throw new Error("PIN must be 6-10 digits");
+				}
+				if (!idToken) {
+					throw new Error(
+						"Authentication token required. Please ensure you are logged in with Privy.",
+					);
 				}
 
 				const keygenData = await walletKeyGen(wallet, {
@@ -79,6 +89,7 @@ export function useLogin() {
 					encryptionPublicKey: toHex(keygenData.kemKeypair.publicKey),
 					signaturePublicKey: toHex(keygenData.sigKeypair.publicKey),
 					walletAddress: wallet.account.address,
+					idToken,
 				};
 
 				await api.rpc.postSafe({}, "/users/profile", requestPayload);
@@ -120,7 +131,9 @@ export function useLogin() {
 						throw new Error(LOGIN_PIN_REQUIRED);
 					}
 
-					const attempts = await loadAttempts({ wallet: wallet.account.address });
+					const attempts = await loadAttempts({
+						wallet: wallet.account.address,
+					});
 					assertAttemptAllowed(attempts);
 
 					const [
@@ -133,7 +146,9 @@ export function useLogin() {
 						wallet.account.address,
 					]);
 
-					const envelope = await loadEnvelope({ wallet: wallet.account.address });
+					const envelope = await loadEnvelope({
+						wallet: wallet.account.address,
+					});
 					if (!envelope) {
 						throw new Error("Unable to unlock");
 					}
@@ -179,7 +194,7 @@ export function useLogin() {
 								queryKey: ["fsQ-is-logged-in", wallet?.account.address],
 							}),
 						),
-					);
+				);
 			return recoveryPhrase
 				? { success: true, recoveryPhrase }
 				: { success: true };

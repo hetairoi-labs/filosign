@@ -22,8 +22,10 @@ export const env = createEnv({
 			.string()
 			.transform((v) => parseInt(v, 10))
 			.optional(),
-		/** HS512 signing secret; must be independent of EVM private keys */
 		JWT_SECRET: z.string().min(32),
+		PRIVY_APP_ID: z.string().min(1),
+		PRIVY_APP_SECRET: z.string().min(1),
+		PRIVY_VERIFICATION_KEY: z.string().min(1),
 	},
 	runtimeEnv: Bun.env,
 	emptyStringAsUndefined: true,

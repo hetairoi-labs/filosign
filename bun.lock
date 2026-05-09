@@ -157,6 +157,7 @@
         "@filoz/synapse-sdk": "^0.40.3",
         "@hono/zod-validator": "catalog:",
         "@libsql/client": "0.14.0",
+        "@privy-io/node": "0.18.0",
         "dotenv": "17.4.2",
         "drizzle-orm": "0.44.7",
         "drizzle-zod": "0.8.3",
@@ -669,6 +670,12 @@
 
     "@hookform/resolvers": ["@hookform/resolvers@5.2.1", "", { "dependencies": { "@standard-schema/utils": "^0.3.0" }, "peerDependencies": { "react-hook-form": "^7.55.0" } }, "sha512-u0+6X58gkjMcxur1wRWokA7XsiiBJ6aK17aPZxhkoYiK5J+HcTx0Vhu9ovXe6H+dVpO6cjrn2FkJTryXEMlryQ=="],
 
+    "@hpke/chacha20poly1305": ["@hpke/chacha20poly1305@1.8.0", "", { "dependencies": { "@hpke/common": "^1.10.0" } }, "sha512-FcBfAQ+Y99vMNJP2yrZ9wpL8V0GOwp1+zMyzvc6alasrBygfFjFm1yeUtyADJCu/27C3Lm5mJzx6u7pwg+cX5w=="],
+
+    "@hpke/common": ["@hpke/common@1.10.1", "", {}, "sha512-moJwhmtLtuxiUzzNp1jpfBfx8yefKoO9D/RCR9dmwrnc7qjJqId1rEtQz+lSlU5cabX8daToMSx/7HayXOiaFw=="],
+
+    "@hpke/core": ["@hpke/core@1.9.0", "", { "dependencies": { "@hpke/common": "^1.10.0" } }, "sha512-pFxWl1nNJeQCSUFs7+GAblHvXBCjn9EPN65vdKlYQil2aURaRxfGMO6vBKGqm1YHTKwiAxJQNEI70PbSowMP9Q=="],
+
     "@humanfs/core": ["@humanfs/core@0.19.2", "", { "dependencies": { "@humanfs/types": "^0.15.0" } }, "sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA=="],
 
     "@humanfs/node": ["@humanfs/node@0.16.8", "", { "dependencies": { "@humanfs/core": "^0.19.2", "@humanfs/types": "^0.15.0", "@humanwhocodes/retry": "^0.4.0" } }, "sha512-gE1eQNZ3R++kTzFUpdGlpmy8kDZD/MLyHqDwqjkVQI0JMdI1D51sy1H958PNXYkM2rAac7e5/CnIKZrHtPh3BQ=="],
@@ -956,6 +963,8 @@
     "@privy-io/ethereum": ["@privy-io/ethereum@0.0.2", "", { "peerDependencies": { "viem": "^2.21.36" } }, "sha512-FnJ1dzgg/tij4jLeKHLlZM9uNk4WN+iIOkc8CG0FZKUQxqXH60Fs/dMF6Xbndd5CQkUO8LUU7FLom/405VKXpQ=="],
 
     "@privy-io/js-sdk-core": ["@privy-io/js-sdk-core@0.55.2", "", { "dependencies": { "@ethersproject/abstract-signer": "^5.7.0", "@ethersproject/bignumber": "^5.7.0", "@ethersproject/contracts": "^5.7.0", "@ethersproject/providers": "^5.7.2", "@ethersproject/transactions": "^5.7.0", "@ethersproject/units": "^5.7.0", "@privy-io/api-base": "1.7.0", "@privy-io/chains": "0.0.2", "@privy-io/public-api": "2.45.2", "canonicalize": "^2.0.0", "eventemitter3": "^5.0.1", "fetch-retry": "^6.0.0", "jose": "^4.15.5", "js-cookie": "^3.0.5", "libphonenumber-js": "^1.10.44", "set-cookie-parser": "^2.6.0", "uuid": ">=8 <10" }, "peerDependencies": { "permissionless": "^0.2.47", "viem": "^2.30.6" }, "optionalPeers": ["permissionless", "viem"] }, "sha512-ex7GFG0/j0vjt4ZCHn9yiHfmNfN1EMc/UNwz7r+CH1UMtl4PIooWEyE9QcdXqAbnFXjAaGZdiPYkCd27b7j40Q=="],
+
+    "@privy-io/node": ["@privy-io/node@0.18.0", "", { "dependencies": { "@hpke/chacha20poly1305": "^1.7.1", "@hpke/core": "^1.7.5", "@noble/curves": "^1.9.7", "@noble/hashes": "^1.8.0", "@scure/base": "^1.2.5", "canonicalize": "^2.1.0", "jose": "^6.1.0", "lru-cache": "^11.1.0", "svix": ">=1.29.0 <= 1.37.0 || ^1.40.0" }, "peerDependencies": { "@solana/kit": "^5.1.0", "@x402/evm": "^2.3.0", "@x402/fetch": "^2.3.0", "@x402/svm": "^2.3.0", "viem": "^2.24.1" }, "optionalPeers": ["@solana/kit", "@x402/evm", "@x402/fetch", "@x402/svm", "viem"] }, "sha512-DA+/f+nqJGB3lJ6b2qpan0OWIyAhoSXd/Cfo40Ww9fSXC3KKQ6eVHnOKiEO6KQ1DpVdswkkuBoG9uK9YHUST9w=="],
 
     "@privy-io/public-api": ["@privy-io/public-api@2.45.2", "", { "dependencies": { "@privy-io/api-base": "1.7.0", "bs58": "^5.0.0", "libphonenumber-js": "^1.10.31", "viem": "^2", "zod": "^3.24.3" } }, "sha512-TSuaFq65PPInb0CBJ9dO/vLh4u4oWXVpv5KxShbVsuaArZ8lig+Orl/HUR1Hri6643zXoBqWlWx9wDt4MQvz9A=="],
 
@@ -4198,6 +4207,10 @@
     "@nomicfoundation/ignition-core/lodash": ["lodash@4.17.21", "", {}, "sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg=="],
 
     "@privy-io/api-base/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
+
+    "@privy-io/node/@noble/curves": ["@noble/curves@1.9.7", "", { "dependencies": { "@noble/hashes": "1.8.0" } }, "sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw=="],
+
+    "@privy-io/node/jose": ["jose@6.2.3", "", {}, "sha512-YYVDInQKFJfR/xa3ojUTl8c2KoTwiL1R5Wg9YCydwH0x0B9grbzlg5HC7mMjCtUJjbQ/YnGEZIhI5tCgfTb4Hw=="],
 
     "@privy-io/public-api/zod": ["zod@3.25.76", "", {}, "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="],
 
