@@ -178,9 +178,9 @@ export default function CreateEnvelopePage() {
 						variant="ghost"
 						size="lg"
 						className="gap-2"
-						asChild
+						render={<Link to="/dashboard" />}
 					>
-						<Link to="/dashboard">Back</Link>
+						Back
 					</Button>
 					<Button
 						type="submit"

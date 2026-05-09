@@ -146,24 +146,26 @@ export default function RecipientsSection({
 			onBlur={onBlur}
 		>
 			<Collapsible open={isRecipientsOpen} onOpenChange={setIsRecipientsOpen}>
-				<CollapsibleTrigger asChild>
-					<div className="flex items-center justify-between cursor-pointer hover:bg-accent/50 transition-colors p-2 -m-2 rounded-md group/add-recipients">
-						<h4 className="flex items-center gap-3">
-							<UsersIcon
-								className={cn(
-									"size-5 text-muted-foreground transition-colors duration-200",
-								)}
-							/>
-							Add Recipients
-						</h4>
-						<CaretDownIcon
+				<CollapsibleTrigger
+					render={
+						<div className="flex items-center justify-between cursor-pointer hover:bg-accent/50 transition-colors p-2 -m-2 rounded-md group/add-recipients" />
+					}
+				>
+					<h4 className="flex items-center gap-3">
+						<UsersIcon
 							className={cn(
-								"size-4 text-muted-foreground transition-transform duration-200",
-								isRecipientsOpen && "rotate-180",
+								"size-5 text-muted-foreground transition-colors duration-200",
 							)}
-							weight="bold"
 						/>
-					</div>
+						Add Recipients
+					</h4>
+					<CaretDownIcon
+						className={cn(
+							"size-4 text-muted-foreground transition-transform duration-200",
+							isRecipientsOpen && "rotate-180",
+						)}
+						weight="bold"
+					/>
 				</CollapsibleTrigger>
 
 				<CollapsibleContent className="mt-6">
@@ -194,11 +196,11 @@ export default function RecipientsSection({
 											open={selectPopoverOpen}
 											onOpenChange={setSelectPopoverOpen}
 										>
-											<PopoverTrigger asChild>
-												<Button type="button" variant="outline">
-													<UserIcon className="size-4" />
-													<p className="hidden md:block">Your Contacts</p>
-												</Button>
+											<PopoverTrigger
+												render={<Button type="button" variant="outline" />}
+											>
+												<UserIcon className="size-4" />
+												<p className="hidden md:block">Your Contacts</p>
 											</PopoverTrigger>
 											<PopoverContent className="w-80 p-0 mt-2" align="end">
 												<Command>

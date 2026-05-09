@@ -43,24 +43,26 @@ export default function MessageSection({
 			}}
 		>
 			<Collapsible open={isMessageOpen} onOpenChange={setIsMessageOpen}>
-				<CollapsibleTrigger asChild>
-					<div className="flex items-center justify-between cursor-pointer hover:bg-accent/50 transition-colors p-2 -m-2 rounded-md group/add-message">
-						<h4 className="flex items-center gap-3">
-							<EnvelopeIcon
-								className={cn(
-									"size-5 text-muted-foreground transition-transform duration-200",
-								)}
-							/>
-							Add message (optional)
-						</h4>
-						<CaretDownIcon
+				<CollapsibleTrigger
+					render={
+						<div className="flex items-center justify-between cursor-pointer hover:bg-accent/50 transition-colors p-2 -m-2 rounded-md group/add-message" />
+					}
+				>
+					<h4 className="flex items-center gap-3">
+						<EnvelopeIcon
 							className={cn(
-								"size-4 text-muted-foreground transition-transform duration-200",
-								isMessageOpen && "rotate-180",
+								"size-5 text-muted-foreground transition-transform duration-200",
 							)}
-							weight="bold"
 						/>
-					</div>
+						Add message (optional)
+					</h4>
+					<CaretDownIcon
+						className={cn(
+							"size-4 text-muted-foreground transition-transform duration-200",
+							isMessageOpen && "rotate-180",
+						)}
+						weight="bold"
+					/>
 				</CollapsibleTrigger>
 
 				<CollapsibleContent className="mt-6 space-y-6">

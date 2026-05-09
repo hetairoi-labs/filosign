@@ -147,25 +147,27 @@ export default function DocumentsSection({
 			}}
 		>
 			<Collapsible open={isDocumentsOpen} onOpenChange={setIsDocumentsOpen}>
-				<CollapsibleTrigger asChild>
-					<div className="flex items-center justify-between cursor-pointer hover:bg-accent/50 transition-colors p-2 -m-2 rounded-md group/add-docs">
-						<h4 className="flex items-center gap-3">
-							<PaperPlaneTiltIcon
-								className={cn(
-									"size-5 text-muted-foreground group-hover/add-docs:rotate-45 transition-transform duration-200",
-									isDocumentsOpen && "rotate-45",
-								)}
-							/>
-							Add files
-						</h4>
-						<CaretDownIcon
+				<CollapsibleTrigger
+					render={
+						<div className="flex items-center justify-between cursor-pointer hover:bg-accent/50 transition-colors p-2 -m-2 rounded-md group/add-docs" />
+					}
+				>
+					<h4 className="flex items-center gap-3">
+						<PaperPlaneTiltIcon
 							className={cn(
-								"size-4 text-muted-foreground transition-transform duration-200",
-								isDocumentsOpen && "rotate-180",
+								"size-5 text-muted-foreground group-hover/add-docs:rotate-45 transition-transform duration-200",
+								isDocumentsOpen && "rotate-45",
 							)}
-							weight="bold"
 						/>
-					</div>
+						Add files
+					</h4>
+					<CaretDownIcon
+						className={cn(
+							"size-4 text-muted-foreground transition-transform duration-200",
+							isDocumentsOpen && "rotate-180",
+						)}
+						weight="bold"
+					/>
 				</CollapsibleTrigger>
 
 				<CollapsibleContent className="mt-6">
