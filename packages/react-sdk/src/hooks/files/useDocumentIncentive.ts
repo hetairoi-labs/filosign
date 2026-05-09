@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Address } from "viem";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 
 export function useDocumentIncentive(args: {
 	pieceCid: string | undefined;

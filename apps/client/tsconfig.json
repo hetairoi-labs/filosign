@@ -10,23 +10,13 @@
 		"verbatimModuleSyntax": true,
 		"noEmit": true,
 		"paths": {
-			"@/*": [
-				"./*"
-			]
+			"@/*": ["./*"]
 		},
 		"target": "ESNext",
 		"skipLibCheck": true,
 		"forceConsistentCasingInFileNames": true,
-		"types": [
-			"vite/client"
-		]
+		"types": ["vite/client"]
 	},
-	"include": [
-		"**/*.ts",
-		"**/*.tsx"
-	],
-	"exclude": [
-		"dist",
-		"node_modules"
-	]
+	"include": ["**/*.ts", "**/*.tsx"],
+	"exclude": ["dist", "node_modules"]
 }

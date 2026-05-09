@@ -1,4 +1,8 @@
-import { useRotatePin, useUserProfile } from "@filosign/react/hooks";
+import {
+	useRecoverWithPhrase,
+	useRotatePin,
+	useUserProfile,
+} from "@filosign/react/hooks";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useLinkAccount, usePrivy } from "@privy-io/react-auth";
 import { useEffect, useMemo, useState } from "react";
@@ -61,10 +65,16 @@ export function useProfileSettings() {
 	const fileUpload = useFileUpload(form);
 
 	const rotatePin = useRotatePin();
+	const recoverWithPhrase = useRecoverWithPhrase();
 	const [currentPin, setCurrentPin] = useState("");
 	const [newPin, setNewPin] = useState("");
 	const [confirmPin, setConfirmPin] = useState("");
 	const [pinMessage, setPinMessage] = useState<string | null>(null);
+
+	const [recoveryPhrase, setRecoveryPhrase] = useState("");
+	const [phraseNewPin, setPhraseNewPin] = useState("");
+	const [phraseConfirmPin, setPhraseConfirmPin] = useState("");
+	const [phraseMessage, setPhraseMessage] = useState<string | null>(null);
 
 	useLinkAccount();
 
@@ -75,12 +85,19 @@ export function useProfileSettings() {
 		newPin.length <= 10 &&
 		newPin === confirmPin;
 
+	const canRecoverWithPhrase =
+		recoveryPhrase.trim().length > 0 &&
+		phraseNewPin.length >= 6 &&
+		phraseNewPin.length <= 10 &&
+		phraseNewPin === phraseConfirmPin;
+
 	return {
 		form,
 		personalSection,
 		profilePictureSection,
 		fileUpload,
 		rotatePin,
+		recoverWithPhrase,
 		currentPin,
 		newPin,
 		confirmPin,
@@ -90,5 +107,14 @@ export function useProfileSettings() {
 		setConfirmPin,
 		setPinMessage,
 		canRotatePin,
+		recoveryPhrase,
+		phraseNewPin,
+		phraseConfirmPin,
+		phraseMessage,
+		setRecoveryPhrase,
+		setPhraseNewPin,
+		setPhraseConfirmPin,
+		setPhraseMessage,
+		canRecoverWithPhrase,
 	};
 }

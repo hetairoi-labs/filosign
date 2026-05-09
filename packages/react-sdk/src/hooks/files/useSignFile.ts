@@ -7,7 +7,7 @@ import {
 } from "@filosign/crypto-utils";
 import { useMutation } from "@tanstack/react-query";
 import z from "zod";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import { useCryptoSeed } from "../auth";
 
 export function useSignFile() {

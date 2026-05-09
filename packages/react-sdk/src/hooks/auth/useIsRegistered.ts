@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { MINUTE } from "../../constants";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 
 export function useIsRegistered() {
 	const { contracts, wallet } = useFilosignContext();

@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 
 export function useSentRequests() {
 	const { api } = useFilosignContext();

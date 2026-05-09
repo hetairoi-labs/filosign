@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Address } from "viem";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 
 export function useRevokeSender() {
 	const { contracts, wallet, api } = useFilosignContext();

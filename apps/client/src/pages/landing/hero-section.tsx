@@ -5,7 +5,7 @@ import {
 } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { useConnectButtonLogic } from "@/src/lib/components/custom/ConnectButton";
+import { useConnectButtonLogic } from "@/src/lib/components/custom/useConnectButtonLogic";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
 // import TrustedCompanies from "./trusted-companies";

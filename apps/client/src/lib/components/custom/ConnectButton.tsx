@@ -1,48 +1,8 @@
-import { useIsRegistered } from "@filosign/react/hooks";
 import { SignOutIcon } from "@phosphor-icons/react";
-import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
+import { useConnectButtonLogic } from "@/src/lib/components/custom/useConnectButtonLogic";
 import { Button } from "@/src/lib/components/ui/button";
-
-export type ConnectButtonState =
-	| "loading"
-	| "signin"
-	| "get-started"
-	| "dashboard";
-
-export function useConnectButtonLogic() {
-	const { ready, authenticated, login: loginPrivy, logout } = usePrivy();
-	const isRegistered = useIsRegistered();
-
-	// Determine button state for smooth transitions.
-	const getButtonState = (): ConnectButtonState => {
-		if (!ready) return "loading";
-		if (!authenticated || isRegistered.isPending) return "signin";
-		if (!isRegistered.data) return "get-started";
-		return "dashboard";
-	};
-
-	const buttonState = getButtonState();
-	const isLoading = buttonState === "loading";
-
-	const primaryCta =
-		buttonState === "dashboard"
-			? { label: "Dashboard", to: "/dashboard" }
-			: buttonState === "get-started"
-				? { label: "Get started", to: "/onboarding" }
-				: null;
-
-	return {
-		ready,
-		authenticated,
-		isLoading,
-		buttonState,
-		primaryCta,
-		signIn: () => loginPrivy(),
-		logout: () => logout(),
-	} as const;
-}
 
 export default function ConnectButton() {
 	const { authenticated, isLoading, buttonState, primaryCta, signIn, logout } =

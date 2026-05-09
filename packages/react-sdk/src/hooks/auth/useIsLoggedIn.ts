@@ -1,7 +1,7 @@
 import { seedKeyGen } from "@filosign/crypto-utils";
 import { useQuery } from "@tanstack/react-query";
 import { DAY } from "../../constants";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import { loadEnvelope } from "./pin-storage";
 import { getSessionSeed } from "./session-seed";
 import { useIsRegistered } from "./useIsRegistered";

@@ -7,21 +7,10 @@
 		"esModuleInterop": true,
 		"skipLibCheck": true,
 		"paths": {
-			"@/*": [
-				"./*"
-			]
+			"@/*": ["./*"]
 		},
-		"types": [
-			"bun"
-		]
+		"types": ["bun"]
 	},
-	"include": [
-		"./**/*.ts"
-	],
-	"exclude": [
-		"./**/*.test.ts",
-		"./**/*.spec.ts",
-		"./**/test.ts",
-		"./scripts/*"
-	]
+	"include": ["./**/*.ts"],
+	"exclude": ["./**/*.test.ts", "./**/*.spec.ts", "./**/test.ts", "./scripts/*"]
 }

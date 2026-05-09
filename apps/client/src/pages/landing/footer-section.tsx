@@ -5,8 +5,8 @@ import {
 } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { useConnectButtonLogic } from "@/src/lib/components/custom/ConnectButton";
 import Logo from "@/src/lib/components/custom/Logo";
+import { useConnectButtonLogic } from "@/src/lib/components/custom/useConnectButtonLogic";
 import { Button } from "@/src/lib/components/ui/button";
 
 const footerSections = [

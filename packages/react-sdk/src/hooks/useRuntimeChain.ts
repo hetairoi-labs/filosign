@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useFilosignContext } from "../context/FilosignProvider";
+import { useFilosignContext } from "../context/useFilosignContext";
 
 export function useRuntimeChain() {
 	const { contracts, ready } = useFilosignContext();

@@ -1,6 +1,6 @@
 import { seedKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import {
 	encryptSeedWithPin,
 	resetAttempts,

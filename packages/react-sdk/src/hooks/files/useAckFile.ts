@@ -1,7 +1,7 @@
 import { computeCidIdentifier, eip712signature } from "@filosign/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import z from "zod";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import { useAuthedApi } from "../auth/useAuthedApi";
 
 export function useAckFile() {

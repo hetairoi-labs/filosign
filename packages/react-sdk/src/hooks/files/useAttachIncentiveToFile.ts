@@ -6,7 +6,7 @@ import {
 	hexToSignature,
 	http,
 } from "viem";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 
 const PERMIT_DEADLINE_BUFFER = 20 * 60; // seconds
 

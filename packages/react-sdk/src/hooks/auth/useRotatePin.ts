@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import {
 	decryptSeedWithPin,
 	encryptSeedWithPin,

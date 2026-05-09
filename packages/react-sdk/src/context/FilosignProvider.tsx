@@ -1,47 +1,18 @@
-import {
-	type ChainKey,
-	type FilosignContracts,
-	getContracts,
-} from "@filosign/contracts";
+import { type FilosignContracts, getContracts } from "@filosign/contracts";
 import type { signatures } from "@filosign/crypto-utils";
 import { useQuery } from "@tanstack/react-query";
-import {
-	createContext,
-	type ReactNode,
-	useContext,
-	useEffect,
-	useMemo,
-	useState,
-} from "react";
-import type { Chain } from "viem";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import type { UseWalletClientReturnType } from "wagmi";
 import ApiClient from "../ApiClient";
 import { MINUTE } from "../constants";
+import {
+	FilosignContext,
+	type FilosignContextValue,
+	type Runtime,
+} from "./FilosignContext";
 
 type Wallet = UseWalletClientReturnType["data"];
 type DilithiumInstance = Parameters<typeof signatures.keyGen>[0]["dl"];
-
-type FilosignContext = {
-	ready: boolean;
-	api: ApiClient;
-	wallet: Wallet;
-	contracts: FilosignContracts | null;
-	runtime: Runtime;
-	wasm: {
-		dilithium: DilithiumInstance;
-	};
-};
-
-const FilosignContext = createContext<FilosignContext>({
-	ready: false,
-	api: {} as ApiClient,
-	wallet: undefined,
-	contracts: null,
-	runtime: {} as Runtime,
-	wasm: {
-		dilithium: {} as DilithiumInstance,
-	},
-});
 
 type FilosignConfig = {
 	children: ReactNode;
@@ -86,7 +57,7 @@ export function FilosignProvider(props: FilosignConfig) {
 		setContracts(fsContracts);
 	}, [runtime.data, wallet]);
 
-	const value: FilosignContext = useMemo(
+	const value: FilosignContextValue = useMemo(
 		() => ({
 			ready: !!api && !!runtime.data,
 			wallet: wallet,
@@ -119,14 +90,3 @@ export function FilosignProvider(props: FilosignConfig) {
 		</FilosignContext.Provider>
 	);
 }
-
-export function useFilosignContext() {
-	return useContext(FilosignContext);
-}
-
-type Runtime = {
-	uptime: number;
-	chain: Chain;
-	chainKey: ChainKey;
-	serverAddressSynapse: string;
-};

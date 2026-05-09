@@ -1,0 +1,40 @@
+import { useIsRegistered } from "@filosign/react/hooks";
+import { usePrivy } from "@privy-io/react-auth";
+
+export type ConnectButtonState =
+	| "loading"
+	| "signin"
+	| "get-started"
+	| "dashboard";
+
+export function useConnectButtonLogic() {
+	const { ready, authenticated, login: loginPrivy, logout } = usePrivy();
+	const isRegistered = useIsRegistered();
+
+	const getButtonState = (): ConnectButtonState => {
+		if (!ready) return "loading";
+		if (!authenticated || isRegistered.isPending) return "signin";
+		if (!isRegistered.data) return "get-started";
+		return "dashboard";
+	};
+
+	const buttonState = getButtonState();
+	const isLoading = buttonState === "loading";
+
+	const primaryCta =
+		buttonState === "dashboard"
+			? { label: "Dashboard", to: "/dashboard" }
+			: buttonState === "get-started"
+				? { label: "Get started", to: "/onboarding" }
+				: null;
+
+	return {
+		ready,
+		authenticated,
+		isLoading,
+		buttonState,
+		primaryCta,
+		signIn: () => loginPrivy(),
+		logout: () => logout(),
+	} as const;
+}

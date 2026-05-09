@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Address } from "viem";
 import z from "zod";
 import { MINUTE } from "../../constants";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 
 export function useCanSendTo(args: { recipient: Address }) {
 	const { recipient } = args;

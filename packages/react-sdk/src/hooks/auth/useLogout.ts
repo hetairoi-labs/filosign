@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import { clearSessionSeed } from "./session-seed";
 import { clearSessionToken } from "./useSessionRestore";
 

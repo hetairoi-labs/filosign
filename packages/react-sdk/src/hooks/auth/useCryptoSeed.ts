@@ -1,4 +1,4 @@
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import { getSessionSeed } from "./session-seed";
 
 export function useCryptoSeed() {

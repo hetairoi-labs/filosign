@@ -2,7 +2,7 @@ import { signatures, toBytes, toHex } from "@filosign/crypto-utils";
 import { zHexString } from "@filosign/shared/zod";
 import { useQuery } from "@tanstack/react-query";
 import z from "zod";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import { useCryptoSeed } from "./useCryptoSeed";
 
 export function useAuthedApi() {

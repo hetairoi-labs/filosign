@@ -2,7 +2,7 @@ import { encryption, KEM, toBytes } from "@filosign/crypto-utils";
 import { decodeFileData } from "@filosign/shared";
 import { useMutation } from "@tanstack/react-query";
 import z from "zod";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import { getSessionSeed } from "../auth/session-seed";
 
 export type ViewFileArgs = {

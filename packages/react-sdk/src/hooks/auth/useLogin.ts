@@ -9,7 +9,7 @@ import {
 import { zHexString } from "@filosign/shared/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import z from "zod";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import {
 	assertAttemptAllowed,
 	decryptSeedWithPin,

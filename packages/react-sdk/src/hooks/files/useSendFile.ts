@@ -14,7 +14,7 @@ import type { Address, Hex } from "viem";
 import { getAddress } from "viem";
 import z from "zod";
 import { calculatePieceCid } from "../../../utils/piece";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 import { useUserProfile } from "../users";
 
 type FileData = z.infer<ReturnType<typeof zFileData>>;

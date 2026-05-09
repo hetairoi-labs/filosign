@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { DAY } from "../../constants";
-import { useFilosignContext } from "../../context/FilosignProvider";
+import { useFilosignContext } from "../../context/useFilosignContext";
 
 export function useStoredKeygenData() {
 	const { wallet, contracts } = useFilosignContext();
