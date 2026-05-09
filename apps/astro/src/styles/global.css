@@ -189,3 +189,7 @@
 		display: none;
 	}
 }
+
+@utility font-inter {
+	font-family: var(--font-inter);
+}

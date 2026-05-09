@@ -24,7 +24,11 @@
 		"aos": "2.3.4",
 		"astro": "^6.3.1",
 		"clsx": "2.1.1",
+		"embla-carousel-react": "8.6.0",
 		"motion": "^12.15.0",
+		"react-markdown": "10.1.0",
+		"react-syntax-highlighter": "16.1.0",
+		"remark-gfm": "4.0.0",
 		"postcss": "^8.5.6",
 		"react": "catalog:",
 		"react-dom": "catalog:",
@@ -36,6 +40,7 @@
 		"@astrojs/check": "0.9.9",
 		"@types/react": "catalog:",
 		"@types/react-dom": "catalog:",
+		"@types/react-syntax-highlighter": "15.5.13",
 		"typescript": "catalog:"
 	}
 }

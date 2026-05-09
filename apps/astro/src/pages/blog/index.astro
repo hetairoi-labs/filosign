@@ -1,19 +1,8 @@
 ---
 import Footer from "../../components/Footer.astro";
+import BlogHeroIsland from "../../components/islands/BlogHeroIsland";
 import Navbar from "../../components/Navbar.astro";
 import BaseLayout from "../../layouts/BaseLayout.astro";
-
-const posts = [
-	{
-		slug: "introduction",
-		title: "Introducing Filosign",
-		date: "Jan 6, 2025",
-		excerpt:
-			"Six months ago, we started working on Filosign to build a completely private and end-to-end encrypted document signing standard. Today, we're launching it to the public.",
-		image: "/images/stock_4.webp",
-		featured: true,
-	},
-];
 ---
 
 <BaseLayout
@@ -24,59 +13,7 @@ const posts = [
 	<div class="min-h-screen bg-background font-manrope selection:bg-primary/10 selection:text-primary">
 		<Navbar />
 		<main>
-			{/* Blog Hero / Featured Post */}
-			<section class="pt-32 pb-20 px-4 md:px-8 lg:px-page bg-background">
-				<div class="max-w-7xl mx-auto">
-					<div class="grid lg:grid-cols-2 gap-12 lg:gap-24 items-center">
-						{/* Text Content */}
-						<div class="space-y-6" data-aos="fade-right">
-							<div class="text-sm font-medium text-muted-foreground">
-								{posts[0].date}
-							</div>
-							<h1 class="text-4xl md:text-5xl lg:text-6xl font-medium font-manrope tracking-tight text-foreground leading-[1.1]">
-								{posts[0].title}
-							</h1>
-							<p class="text-lg text-muted-foreground">
-								{posts[0].excerpt}
-							</p>
-							<div class="pt-4">
-								<a
-									href={`/blog/${posts[0].slug}`}
-									class="inline-flex items-center justify-center px-8 py-3 bg-primary text-primary-foreground rounded-full font-medium transition-all duration-200 hover:bg-primary/90 hover:scale-105"
-								>
-									Read article
-								</a>
-							</div>
-						</div>
-
-						{/* Featured Image */}
-						<div class="relative rounded-3xl overflow-hidden aspect-[4/3] lg:aspect-[5/4] group" data-aos="fade-left">
-							<img
-								src={posts[0].image}
-								alt="Woman working on laptop"
-								width={1280}
-								height={720}
-								class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-							/>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			{/* More Posts Grid (when there are more posts) */}
-			<section class="py-20 px-4 md:px-8 lg:px-page bg-background border-t border-border/50">
-				<div class="max-w-7xl mx-auto">
-					<h2 class="text-2xl font-medium font-manrope mb-8" data-aos="fade-up">More articles</h2>
-					<div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-						{/* Placeholder for future posts */}
-						<div class="p-6 rounded-2xl bg-muted/30 border border-transparent hover:border-border/50 transition-all" data-aos="fade-up" data-aos-delay="100">
-							<div class="text-sm text-muted-foreground mb-2">Coming soon</div>
-							<h3 class="text-lg font-medium font-manrope mb-2">More posts coming</h3>
-							<p class="text-sm text-muted-foreground">Stay tuned for more updates and insights from the Filosign team.</p>
-						</div>
-					</div>
-				</div>
-			</section>
+			<BlogHeroIsland client:load />
 		</main>
 		<Footer />
 	</div>
