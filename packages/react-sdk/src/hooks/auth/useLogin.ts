@@ -1,6 +1,14 @@
 import { eip712signature } from "@filosign/contracts";
-import { seedKeyGen, toHex, walletKeyGen } from "@filosign/crypto-utils";
+import {
+	seedKeyGen,
+	signatures,
+	toBytes,
+	toHex,
+	walletKeyGen,
+} from "@filosign/crypto-utils";
+import { zHexString } from "@filosign/shared/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import z from "zod";
 import { useFilosignContext } from "../../context/FilosignProvider";
 import {
 	assertAttemptAllowed,
@@ -17,19 +25,21 @@ import {
 import { setSessionSeed } from "./session-seed";
 import { useIsLoggedIn } from "./useIsLoggedIn";
 import { useIsRegistered } from "./useIsRegistered";
+import { useSessionStore } from "./useSessionStore";
 
 export function useLogin() {
 	const { api, contracts, wallet, wasm } = useFilosignContext();
 	const queryClient = useQueryClient();
+	const sessionStore = useSessionStore();
 
 	const { data: isRegistered } = useIsRegistered();
 	const { data: isLoggedIn } = useIsLoggedIn();
 
 	return useMutation({
-		mutationFn: async (params: { pin: string }) => {
+		mutationFn: async (params: { pin: string; rememberMe?: boolean }) => {
 			if (isLoggedIn) return { success: true };
 
-			const { pin } = params;
+			const { pin, rememberMe = false } = params;
 
 			if (!contracts || !wallet || !wasm.dilithium) {
 				throw new Error("unreachable");
@@ -39,9 +49,49 @@ export function useLogin() {
 				throw new Error("PIN must be 6-10 digits");
 			}
 
-			if (!isRegistered) {
-				console.log("registering..");
+			let seedToStore: Uint8Array | undefined;
+			let recoveryPhrase: string | undefined;
 
+			const ensureJwtForSession = async (seed: Uint8Array) => {
+				if (api.jwtExists) return;
+
+				const {
+					data: { nonce },
+				} = await api.rpc.getSafe(
+					{
+						nonce: zHexString(),
+					},
+					`/auth/nonce?address=${wallet.account.address}`,
+				);
+
+				const dl3Keypair = await signatures.keyGen({
+					dl: wasm.dilithium,
+					seed,
+				});
+
+				const signature = await signatures.sign({
+					dl: wasm.dilithium,
+					privateKey: dl3Keypair.privateKey,
+					message: toBytes(nonce),
+				});
+
+				const {
+					data: { token },
+				} = await api.rpc.postSafe(
+					{
+						token: z.string(),
+					},
+					"/auth/verify",
+					{
+						address: wallet.account.address,
+						signature: toHex(signature),
+					},
+				);
+
+				api.setJwt(token);
+			};
+
+			if (!isRegistered) {
 				const keygenData = await walletKeyGen(wallet, {
 					dl: wasm.dilithium,
 				});
@@ -79,13 +129,13 @@ export function useLogin() {
 				};
 
 				await api.rpc.postSafe({}, "/users/profile", requestPayload);
-				console.log("keygen data registered");
 
 				const envelope = await encryptSeedWithPin(pin, keygenData.seed);
 				await saveEnvelope({ wallet: wallet.account.address, envelope });
 				await resetAttempts({ wallet: wallet.account.address });
 				setSessionSeed(wallet.account.address, keygenData.seed);
-				const recoveryPhrase = recoveryPhraseFromSeed(keygenData.seedCore32);
+				seedToStore = keygenData.seed;
+				recoveryPhrase = recoveryPhraseFromSeed(keygenData.seedCore32);
 
 				queryClient
 					.refetchQueries({
@@ -102,12 +152,7 @@ export function useLogin() {
 								}),
 							),
 					);
-				return {
-					success: true,
-					recoveryPhrase,
-				};
 			} else {
-				console.log("logging in..");
 				const attempts = await loadAttempts({ wallet: wallet.account.address });
 				assertAttemptAllowed(attempts);
 
@@ -141,11 +186,25 @@ export function useLogin() {
 				}
 				await resetAttempts({ wallet: wallet.account.address });
 				setSessionSeed(wallet.account.address, decryptedSeed);
+				seedToStore = decryptedSeed;
 
 				// keep chain salts active through v1 registry schema
 				void saltPin;
 				void saltSeed;
 				void saltChallenge;
+			}
+
+			// Store session server-side if rememberMe is enabled
+			if (rememberMe && seedToStore) {
+				try {
+					await ensureJwtForSession(seedToStore);
+					await sessionStore.mutateAsync({
+						seed: seedToStore,
+						expiresInHours: 24,
+					});
+				} catch {
+					// Don't fail login if session storage fails
+				}
 			}
 
 			queryClient
@@ -163,7 +222,9 @@ export function useLogin() {
 							}),
 						),
 				);
-			return { success: true };
+			return recoveryPhrase
+				? { success: true, recoveryPhrase }
+				: { success: true };
 		},
 	});
 }

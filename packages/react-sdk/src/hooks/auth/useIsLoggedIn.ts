@@ -15,27 +15,34 @@ export function useIsLoggedIn() {
 	return useQuery({
 		queryKey: ["fsQ-is-logged-in", wallet?.account.address],
 		queryFn: async () => {
-			if (!wallet || !contracts || !wasm.dilithium) return false;
-			if (!isRegistered || !storedKeygenData) return false;
-
-			const envelope = await loadEnvelope({ wallet: wallet.account.address });
-			if (!envelope) return false;
-
-			const keySeed = getSessionSeed(wallet.account.address);
-			if (!keySeed) return false;
-
-			const keygenData = await seedKeyGen(keySeed, { dl: wasm.dilithium });
-
-			const { commitmentKem, commitmentSig } = storedKeygenData;
-
-			if (
-				commitmentKem !== keygenData.commitmentKem ||
-				commitmentSig !== keygenData.commitmentSig
-			) {
+			if (!wallet || !contracts || !wasm.dilithium) {
+				return false;
+			}
+			if (!isRegistered || !storedKeygenData) {
 				return false;
 			}
 
-			return true;
+			const keySeed = getSessionSeed(wallet.account.address);
+
+			// If we have a session seed (from server-side session restore), validate it
+			if (keySeed) {
+				const keygenData = await seedKeyGen(keySeed, { dl: wasm.dilithium });
+				const { commitmentKem, commitmentSig } = storedKeygenData;
+
+				const kemMatch = commitmentKem === keygenData.commitmentKem;
+				const sigMatch = commitmentSig === keygenData.commitmentSig;
+
+				if (!kemMatch || !sigMatch) {
+					return false;
+				}
+				return true;
+			}
+
+			// Otherwise, check if we can unlock with PIN (envelope exists)
+			const envelope = await loadEnvelope({ wallet: wallet.account.address });
+			if (!envelope) return false;
+
+			return false; // Have envelope but no seed yet - need PIN login
 		},
 		staleTime: 1 * DAY,
 		enabled:
