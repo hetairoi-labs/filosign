@@ -1,5 +1,9 @@
-import { useIsRegistered, useLogin, useLogout } from "@filosign/react/hooks";
-import { CaretRightIcon } from "@phosphor-icons/react";
+import { useLogin, useLogout } from "@filosign/react/hooks";
+import {
+	CaretRightIcon,
+	CopySimpleIcon,
+	DownloadSimpleIcon,
+} from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
@@ -36,19 +40,12 @@ export default function OnboardingSetPinPage() {
 		useStorePersist();
 
 	const logout = useLogout();
-	const isRegistered = useIsRegistered();
 	const login = useLogin();
 
 	const handleRegistrationComplete = async () => {
 		if (!onboardingForm) return;
 
 		try {
-			if (isRegistered.data) {
-				toast.success("You are already registered!");
-				navigate({ to: "/dashboard" });
-				return;
-			}
-
 			navigate({ to: "/onboarding/welcome" });
 		} catch (error) {
 			handleError(error, async () => {
@@ -62,6 +59,17 @@ export default function OnboardingSetPinPage() {
 			setStep("confirm");
 			setConfirmPin("");
 		}
+	};
+
+	const handleCreateAccount = () => {
+		if (login.isPending) return;
+		void login.mutateAsync({ pin, rememberMe: true }).then((result) => {
+			if (result?.recoveryPhrase) {
+				setRecoveryPhrase(result.recoveryPhrase);
+				return;
+			}
+			void handleRegistrationComplete();
+		});
 	};
 
 	const handleBack = () => {
@@ -84,8 +92,34 @@ export default function OnboardingSetPinPage() {
 	const isPinMismatch =
 		step === "confirm" && confirmPin.length >= 6 && pin !== confirmPin;
 
+	const handleCopyRecoveryPhrase = async () => {
+		if (!recoveryPhrase) return;
+		try {
+			await navigator.clipboard.writeText(recoveryPhrase);
+			toast.success("Recovery phrase copied");
+		} catch {
+			toast.error("Unable to copy recovery phrase");
+		}
+	};
+
+	const handleDownloadRecoveryPhrase = () => {
+		if (!recoveryPhrase) return;
+		const fileName = `filosign-recovery-phrase-${Date.now()}.txt`;
+		const content = `Filosign Recovery Phrase\n\n${recoveryPhrase}\n`;
+		const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+		const url = URL.createObjectURL(blob);
+		const anchor = document.createElement("a");
+		anchor.href = url;
+		anchor.download = fileName;
+		document.body.appendChild(anchor);
+		anchor.click();
+		anchor.remove();
+		URL.revokeObjectURL(url);
+		toast.success("Recovery phrase downloaded");
+	};
+
 	return (
-		<OnboardingProtector>
+		<OnboardingProtector allowRegistered>
 			<div className="flex justify-center items-center min-h-screen bg-background">
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
@@ -125,7 +159,13 @@ export default function OnboardingSetPinPage() {
 										}
 										length={10}
 										autoFocus={true}
-										onSubmit={handlePinSubmit}
+										onSubmit={() => {
+											if (pinsMatch) {
+												handleCreateAccount();
+												return;
+											}
+											handlePinSubmit();
+										}}
 									/>
 								</div>
 
@@ -146,15 +186,7 @@ export default function OnboardingSetPinPage() {
 
 									{pinsMatch ? (
 										<Button
-											onClick={() => {
-												void login.mutateAsync({ pin }).then((result) => {
-													if (result?.recoveryPhrase) {
-														setRecoveryPhrase(result.recoveryPhrase);
-														return;
-													}
-													void handleRegistrationComplete();
-												});
-											}}
+											onClick={handleCreateAccount}
 											disabled={login.isPending}
 											className="flex-1 group"
 											variant="primary"
@@ -194,6 +226,26 @@ export default function OnboardingSetPinPage() {
 							your PIN, your account cannot be recovered.
 						</DialogDescription>
 					</DialogHeader>
+					<div className="flex items-center justify-end gap-2">
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={handleCopyRecoveryPhrase}
+							aria-label="Copy recovery phrase"
+							title="Copy recovery phrase"
+						>
+							<CopySimpleIcon className="size-4" />
+						</Button>
+						<Button
+							variant="outline"
+							size="icon"
+							onClick={handleDownloadRecoveryPhrase}
+							aria-label="Download recovery phrase as text file"
+							title="Download recovery phrase as text file"
+						>
+							<DownloadSimpleIcon className="size-4" />
+						</Button>
+					</div>
 					<div className="rounded-md border bg-muted p-3 text-sm leading-6">
 						{recoveryPhrase}
 					</div>

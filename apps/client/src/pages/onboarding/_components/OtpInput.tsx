@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
-import { cn } from "@/src/lib/utils";
 import { Input } from "@/src/lib/components/ui/input";
+import { cn } from "@/src/lib/utils";
 
 interface OtpInputProps {
 	value: string;
@@ -57,7 +57,7 @@ export default function OtpInput({
 				onKeyDown={handleKeyDown}
 				disabled={disabled}
 				className={cn(
-					"w-full h-14 text-center text-lg md:text-xl font-mono tracking-[0.3em] border-2 rounded-2xl transition-all duration-300",
+					"w-full h-14 text-center text-lg md:text-xl font-mono tracking-[0.3em] border-2 transition-all",
 					value && "border-primary/50 bg-primary/2",
 					disabled && "opacity-50 cursor-not-allowed",
 				)}

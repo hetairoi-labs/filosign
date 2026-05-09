@@ -1,10 +1,10 @@
 import { useFilosignContext } from "@filosign/react";
-import { useIsLoggedIn, useUpdateUserProfile } from "@filosign/react/hooks";
+import { useIsRegistered, useUpdateUserProfile } from "@filosign/react/hooks";
 import { CaretRightIcon } from "@phosphor-icons/react";
+import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
-import { toast } from "sonner";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 import {
@@ -20,7 +20,8 @@ import { logger } from "@/src/lib/utils/logger";
 export default function OnboardingWelcomeCompletePage() {
 	const [userName, setUserName] = useState("");
 	const { onboardingForm, setOnboardingForm } = useStorePersist();
-	const isLoggedIn = useIsLoggedIn();
+	const { ready } = usePrivy();
+	const isRegistered = useIsRegistered();
 	const updateUserProfile = useUpdateUserProfile();
 	const { api } = useFilosignContext();
 	const navigate = useNavigate();
@@ -31,14 +32,15 @@ export default function OnboardingWelcomeCompletePage() {
 		}
 	}, [onboardingForm]);
 
-	async function handleSubmit() {
-		if (!isLoggedIn.data) {
-			toast.error("Preparing your account...");
-			return;
+	useEffect(() => {
+		if (ready && !isRegistered.data && !isRegistered.isPending) {
+			navigate({ to: "/onboarding" });
 		}
+	}, [ready, isRegistered.data, isRegistered.isPending, navigate]);
 
+	async function handleSubmit() {
 		if (onboardingForm?.firstName) {
-			await updateUserProfile.mutateAsync({
+			void updateUserProfile.mutateAsync({
 				firstName: onboardingForm.firstName,
 				lastName: onboardingForm.lastName ? onboardingForm.lastName : undefined,
 			});
@@ -55,20 +57,14 @@ export default function OnboardingWelcomeCompletePage() {
 		const pendingInviteId = sessionStorage.getItem("pendingInviteId");
 		logger.debug("Checking for pending invite:", pendingInviteId);
 		if (pendingInviteId && api) {
-			try {
-				await api.rpc.base.post(`/sharing/invite/${pendingInviteId}/claim`, {});
-				sessionStorage.removeItem("pendingInviteId");
-				navigate({ to: "/dashboard" });
-				return;
-			} catch (error) {
-				logger.error("Failed to claim invite:", error);
-				toast.error(
-					error instanceof Error
-						? error.message
-						: "Failed to accept invite. Please ask the sender to add you again.",
-				);
-				// Continue to dashboard even if claim fails
-			}
+			void api.rpc.base
+				.post(`/sharing/invite/${pendingInviteId}/claim`, {})
+				.then(() => {
+					sessionStorage.removeItem("pendingInviteId");
+				})
+				.catch((error) => {
+					logger.error("Failed to claim invite:", error);
+				});
 		}
 
 		navigate({ to: "/dashboard" });

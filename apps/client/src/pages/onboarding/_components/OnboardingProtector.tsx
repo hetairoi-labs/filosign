@@ -4,13 +4,15 @@ import { Navigate } from "@tanstack/react-router";
 
 export default function OnboardingProtector({
 	children,
+	allowRegistered = false,
 }: {
 	children: React.ReactNode;
+	allowRegistered?: boolean;
 }) {
 	const { ready } = usePrivy();
 	const isRegistered = useIsRegistered();
 
-	if (ready && isRegistered.data) {
+	if (!allowRegistered && ready && isRegistered.data) {
 		return <Navigate to="/dashboard" replace />;
 	}
 
