@@ -17,7 +17,6 @@ export const evmClient = createWalletClient({
 }).extend(publicActions);
 
 export const fsContracts = getContracts({
-	//@ts-expect-error
 	client: evmClient,
 	chainKey: config.chainKey,
 });

@@ -15,7 +15,7 @@ export const app = new Hono()
 	.use(
 		cors({
 			origin: env.FRONTEND_URL,
-			allowHeaders: ["Content-Type", "Authorization"],
+			allowHeaders: ["Content-Type", "Authorization", "x-session-token"],
 			allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 			credentials: true,
 		}),

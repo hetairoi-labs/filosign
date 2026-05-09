@@ -18,7 +18,11 @@ export const env = createEnv({
 		RESEND_FROM_EMAIL: z.string().min(1).email(),
 		CHAIN: z.enum(["local", "testnet", "mainnet"]),
 		SUPER_PASS: z.string().min(1),
-		PORT: z.string().transform((v) => parseInt(v, 10)).optional(),
+		PORT: z
+			.string()
+			.transform((v) => parseInt(v, 10))
+			.optional(),
+		SESSION_MASTER_KEY: z.string().min(32),
 	},
 	runtimeEnv: Bun.env,
 	emptyStringAsUndefined: true,
