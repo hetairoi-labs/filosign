@@ -1,7 +1,7 @@
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
-import { isAddress, recoverTypedDataAddress } from "viem";
+import { isAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
@@ -70,7 +70,6 @@ export default new Hono()
 			.safeParse(rawBody);
 
 		if (parsedBody.error) {
-			console.log(parsedBody.error);
 			return respond.err(ctx, parsedBody.error.message, 400);
 		}
 
@@ -86,42 +85,6 @@ export default new Hono()
 			walletAddress,
 		} = parsedBody.data;
 
-		const recoveredAddress = await tryCatch(
-			recoverTypedDataAddress({
-				domain: {
-					name: "FSKeyRegistry",
-					version: "1",
-					chainId: fsContracts.$client.chain.id,
-					verifyingContract: FSKeyRegistry.address,
-				},
-				types: {
-					RegisterKeygenData: [
-						{ name: "salt_pin", type: "bytes16" },
-						{ name: "salt_seed", type: "bytes16" },
-						{ name: "salt_challenge", type: "bytes16" },
-						{ name: "commitment_kyber_pk", type: "bytes20" },
-						{ name: "commitment_dilithium_pk", type: "bytes20" },
-					],
-				},
-				primaryType: "RegisterKeygenData",
-				message: {
-					salt_pin: saltPin,
-					salt_seed: saltSeed,
-					salt_challenge: saltChallenge,
-					commitment_kyber_pk: commitmentKem,
-					commitment_dilithium_pk: commitmentSig,
-				},
-				signature,
-			}),
-		);
-		console.log("registerKeygenData signature debug", {
-			walletAddress,
-			recoveredAddress: recoveredAddress.data ?? null,
-			recoverError: recoveredAddress.error?.message ?? null,
-			chainId: fsContracts.$client.chain.id,
-			verifyingContract: FSKeyRegistry.address,
-		});
-
 		const valid = await tryCatch(
 			FSKeyRegistry.read.validateKeygenDataRegistrationSignature([
 				saltPin,
@@ -135,7 +98,6 @@ export default new Hono()
 		);
 
 		if (valid.error || !valid.data) {
-			console.log(valid.error || "Invalid signature");
 			return respond.err(ctx, `Error validating signature ${valid.error}`, 500);
 		}
 
