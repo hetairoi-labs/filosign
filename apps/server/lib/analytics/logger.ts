@@ -6,6 +6,8 @@ const BOT_TOKEN = env.TG_ANALYTICS_BOT_TOKEN;
 const GROUP_ID = env.TG_ANALYTICS_BOT_GROUP_ID;
 
 function log(message?: unknown, ...optionalParams: unknown[]) {
+	if (!BOT_TOKEN || !GROUP_ID) return;
+
 	const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
 	const text = `${os.hostname()}:${process.pid}@${Date.now()}\n${[

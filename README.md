@@ -53,11 +53,11 @@ FiloSign has five main layers:
 
 ### `@filosign/client`
 
-The main web application: landing pages, onboarding, dashboard, document creation, signing, permissions, connections, profile settings, and waitlist UI.
+The main web application: landing pages, onboarding, dashboard, document creation, signing, permissions, connections, and profile settings.
 
 ### `@filosign/server`
 
-The API service: wallet authentication, user registration, file upload and retrieval, document registration, signing, sharing permissions, waitlist, and transaction indexing.
+The API service: wallet authentication, user registration, file upload and retrieval, document registration, signing, sharing permissions, and transaction indexing.
 
 ### `@filosign/contracts`
 
@@ -134,8 +134,6 @@ Server configuration is defined in `apps/server/env.ts`. The main required value
 - `S3_SECRET_ACCESS_KEY`
 - `S3_BUCKET`
 - `S3_ENDPOINT`
-- `SUPER_PASS`
-
 - `TG_ANALYTICS_BOT_GROUP_ID`
 - `TG_ANALYTICS_BOT_TOKEN`
 

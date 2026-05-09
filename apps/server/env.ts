@@ -3,8 +3,8 @@ import { z } from "zod";
 
 export const env = createEnv({
 	server: {
-		TG_ANALYTICS_BOT_GROUP_ID: z.string().min(1),
-		TG_ANALYTICS_BOT_TOKEN: z.string().min(1),
+		TG_ANALYTICS_BOT_GROUP_ID: z.string().min(1).optional(),
+		TG_ANALYTICS_BOT_TOKEN: z.string().min(1).optional(),
 		S3_SECRET_ACCESS_KEY: z.string().min(1),
 		S3_ACCESS_KEY_ID: z.string().min(1),
 		S3_BUCKET: z.string().min(1),
@@ -17,7 +17,6 @@ export const env = createEnv({
 		RESEND_API_KEY: z.string().min(1),
 		RESEND_FROM_EMAIL: z.string().min(1).email(),
 		CHAIN: z.enum(["local", "testnet", "mainnet"]),
-		SUPER_PASS: z.string().min(1),
 		PORT: z
 			.string()
 			.transform((v) => parseInt(v, 10))
