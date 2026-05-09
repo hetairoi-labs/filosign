@@ -1,9 +1,12 @@
 import { useFilosignContext } from "@filosign/react";
 import {
+	clearSessionToken,
+	hasSessionToken,
 	useIsLoggedIn,
 	useIsRegistered,
 	useLogin,
 	useRecoverWithPhrase,
+	useSessionRestore,
 } from "@filosign/react/hooks";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
@@ -20,6 +23,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/src/lib/components/ui/card";
+import { Checkbox } from "@/src/lib/components/ui/checkbox";
 import { Label } from "@/src/lib/components/ui/label";
 import { Loader } from "@/src/lib/components/ui/loader";
 import { Textarea } from "@/src/lib/components/ui/textarea";
@@ -39,6 +43,7 @@ export default function DashboardProtector({
 	const isLoggedIn = useIsLoggedIn();
 	const login = useLogin();
 	const recoverWithPhrase = useRecoverWithPhrase();
+	const sessionRestore = useSessionRestore();
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 
@@ -48,15 +53,70 @@ export default function DashboardProtector({
 	const [forgotMode, setForgotMode] = useState(false);
 	const [recoveryPhrase, setRecoveryPhrase] = useState("");
 	const [newPin, setNewPin] = useState("");
+	const [isRestoringSession, setIsRestoringSession] = useState(false);
+	const [rememberMe, setRememberMe] = useState(true);
+
+	// Try to restore server-side session on mount
+	useEffect(() => {
+		const attemptSessionRestore = async () => {
+			if (
+				ready &&
+				authenticated &&
+				isRegistered.data &&
+				!isRegistered.isPending &&
+				!isLoggedIn.data &&
+				!isLoggedIn.isPending &&
+				hasSessionToken() &&
+				!isRestoringSession
+			) {
+				setIsRestoringSession(true);
+				try {
+					await sessionRestore.refetch({ throwOnError: true });
+					// Invalidate queries to trigger re-render with logged-in state
+					await queryClient.invalidateQueries({
+						queryKey: ["fsQ-is-logged-in", wallet?.account.address],
+					});
+				} catch {
+					// Session restore failed, will show PIN dialog
+					// Clear invalid session token to prevent repeated failed attempts
+					clearSessionToken();
+				} finally {
+					setIsRestoringSession(false);
+				}
+			}
+		};
+
+		void attemptSessionRestore();
+	}, [
+		ready,
+		authenticated,
+		isRegistered.data,
+		isLoggedIn.data,
+		isLoggedIn.isPending,
+		isRegistered.isPending,
+		wallet?.account.address,
+		queryClient,
+		sessionRestore,
+		isRestoringSession,
+	]);
 
 	useEffect(() => {
+		if (isLoggedIn.data) {
+			setShowPinAuth(false);
+			setPin("");
+			setError("");
+			return;
+		}
+
 		if (
 			ready &&
 			authenticated &&
 			isRegistered.data &&
 			!isRegistered.isPending &&
 			!isLoggedIn.data &&
-			!isLoggedIn.isPending
+			!isLoggedIn.isPending &&
+			!isRestoringSession &&
+			!hasSessionToken()
 		) {
 			setShowPinAuth(true);
 		} else if (
@@ -74,6 +134,7 @@ export default function DashboardProtector({
 		navigate,
 		isLoggedIn.isPending,
 		isRegistered.isPending,
+		isRestoringSession,
 	]);
 
 	const handlePinSubmit = async () => {
@@ -81,7 +142,7 @@ export default function DashboardProtector({
 
 		try {
 			setError("");
-			await login.mutateAsync({ pin });
+			await login.mutateAsync({ pin, rememberMe });
 			await queryClient.invalidateQueries({
 				queryKey: ["fsQ-is-registered", wallet?.account.address],
 			});
@@ -92,10 +153,20 @@ export default function DashboardProtector({
 			setShowPinAuth(false);
 			setPin("");
 		} catch (error) {
-			console.error("PIN authentication failed:", error);
-			setError("Unable to unlock");
+			const errorMessage =
+				error instanceof Error
+					? error.message.includes("unlock") || error.message.includes("PIN")
+						? "Wrong PIN"
+						: error.message.includes("network") ||
+								error.message.includes("fetch")
+							? "Network error - please try again"
+							: error.message.includes("server") ||
+									error.message.includes("500")
+								? "Server error - please try again later"
+								: error.message
+					: "Something went wrong";
+			setError(errorMessage);
 			setPin("");
-			toast.error("Unable to unlock");
 		}
 	};
 
@@ -112,9 +183,21 @@ export default function DashboardProtector({
 			setNewPin("");
 			setShowPinAuth(false);
 			toast.success("PIN has been reset");
-		} catch {
-			setError("Unable to unlock");
-			toast.error("Unable to unlock");
+		} catch (error) {
+			const errorMessage =
+				error instanceof Error
+					? error.message.includes("phrase") ||
+						error.message.includes("recovery")
+						? "Invalid recovery phrase"
+						: error.message.includes("network") ||
+								error.message.includes("fetch")
+							? "Network error - please try again"
+							: error.message.includes("server") ||
+									error.message.includes("500")
+								? "Server error - please try again later"
+								: error.message
+					: "Recovery failed";
+			setError(errorMessage);
 		}
 	};
 
@@ -130,6 +213,7 @@ export default function DashboardProtector({
 	const shouldShowLoader =
 		!ready ||
 		isRegistered.isPending ||
+		isRestoringSession ||
 		(!isLoggedIn.data && isLoggedIn.isPending && !isLoggedIn.isError);
 
 	if (shouldShowLoader) {
@@ -168,7 +252,7 @@ export default function DashboardProtector({
 							</CardHeader>
 							<CardContent className="space-y-4">
 								{forgotMode ? (
-									<div className="space-y-3 w-full min-w-sm">
+									<div className="space-y-3 w-full min-w-sm max-w-sm">
 										<div className="space-y-2">
 											<Label htmlFor="recovery-phrase">Recovery phrase</Label>
 											<Textarea
@@ -193,7 +277,7 @@ export default function DashboardProtector({
 										</div>
 									</div>
 								) : (
-									<div className="flex flex-col gap-2">
+									<div className="flex flex-col gap-3">
 										<OtpInput
 											value={pin}
 											onChange={setPin}
@@ -202,6 +286,21 @@ export default function DashboardProtector({
 											onSubmit={handlePinSubmit}
 											disabled={login.isPending}
 										/>
+										<div className="flex items-center justify-center gap-2">
+											<Checkbox
+												id="remember-me"
+												checked={rememberMe}
+												onCheckedChange={(checked) =>
+													setRememberMe(checked === true)
+												}
+											/>
+											<Label
+												htmlFor="remember-me"
+												className="text-sm text-muted-foreground cursor-pointer"
+											>
+												Remember me for 24 hours
+											</Label>
+										</div>
 									</div>
 								)}
 

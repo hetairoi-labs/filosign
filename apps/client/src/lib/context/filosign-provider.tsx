@@ -1,9 +1,9 @@
 import { FilosignProvider as FilosignProviderBase } from "@filosign/react";
 import { useEffect, useState } from "react";
 import { useWalletClient } from "wagmi";
+import env from "@/src/env";
 import { Loader } from "../components/ui/loader";
 import { logger } from "../utils/logger";
-import env from "@/src/env";
 
 type DilithiumModule = {
 	generateKeys?: unknown;
