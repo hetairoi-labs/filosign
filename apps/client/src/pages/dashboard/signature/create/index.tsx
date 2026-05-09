@@ -16,6 +16,7 @@ import {
 	TabsTrigger,
 } from "@/src/lib/components/ui/tabs";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
+import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
 import SignatureDialog from "./_components/SignatureDialog";
 import SignatureDraw from "./_components/SignatureDraw";
 import SignatureUpload from "./_components/SignatureUpload";
@@ -310,6 +311,7 @@ export default function CreateNewSignaturePage({
 						</TabsContent>
 					</Tabs>
 				</motion.div>
+				{onboarding ? <OnboardingSwitchAccountLink className="pb-8" /> : null}
 			</main>
 
 			{/* Signature Dialog */}

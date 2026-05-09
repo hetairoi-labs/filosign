@@ -14,6 +14,7 @@ import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 import { Loader } from "@/src/lib/components/ui/loader";
 import { logger } from "@/src/lib/utils/logger";
+import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
 
 export default function InvitePage() {
 	const { inviteId } = useParams({ from: "/invite/$inviteId" });
@@ -60,13 +61,6 @@ export default function InvitePage() {
 
 		fetchInvite();
 	}, [api, inviteId]);
-
-	// Redirect to onboarding if just logged in (not registered yet)
-	useEffect(() => {
-		if (ready && authenticated && isRegistered.data === false) {
-			navigate({ to: "/onboarding" });
-		}
-	}, [ready, authenticated, isRegistered.data, navigate]);
 
 	// Auto-claim if already logged in and registered
 	useEffect(() => {
@@ -155,12 +149,62 @@ export default function InvitePage() {
 							<Loader />
 							<p className="text-muted-foreground">Accepting invite...</p>
 						</div>
-					) : authenticated ? (
+					) : authenticated && isRegistered.isPending ? (
 						<div className="space-y-4">
 							<Loader />
-							<p className="text-muted-foreground">
-								Setting up your account...
-							</p>
+							<p className="text-muted-foreground">Checking your account…</p>
+						</div>
+					) : authenticated && isRegistered.data === false ? (
+						<div className="space-y-6">
+							<div className="bg-card border rounded-2xl p-6 space-y-4">
+								<div className="flex items-center gap-3">
+									<div className="size-12 bg-primary/10 rounded-full flex items-center justify-center">
+										<UserCircleIcon className="size-6 text-primary" />
+									</div>
+									<div className="text-left">
+										<p className="font-medium">
+											{inviteData?.senderName || "Someone"}
+										</p>
+										<p className="text-sm text-muted-foreground">
+											wants to send you documents
+										</p>
+									</div>
+								</div>
+								{inviteData?.message && (
+									<div className="bg-muted p-3 rounded-lg">
+										<p className="text-sm italic">
+											&quot;{inviteData.message}&quot;
+										</p>
+									</div>
+								)}
+								<div className="flex items-center gap-2 text-sm text-muted-foreground">
+									<EnvelopeIcon className="size-4" />
+									<span>Sent to {inviteData?.inviteeEmail}</span>
+								</div>
+							</div>
+							<div className="space-y-4 text-center">
+								<h1 className="text-2xl font-semibold">
+									Finish creating your account
+								</h1>
+								<p className="text-muted-foreground">
+									You&apos;re signed in. Continue setup to accept this
+									invitation, or switch accounts if you logged in with the wrong
+									one.
+								</p>
+								<Button
+									onClick={() => navigate({ to: "/onboarding" })}
+									variant="primary"
+									className="w-full"
+								>
+									Continue account setup
+								</Button>
+							</div>
+							<OnboardingSwitchAccountLink />
+						</div>
+					) : authenticated && isRegistered.data === true && !claimSuccess ? (
+						<div className="space-y-4">
+							<Loader />
+							<p className="text-muted-foreground">Accepting invite...</p>
 						</div>
 					) : (
 						<div className="space-y-6">

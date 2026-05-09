@@ -15,6 +15,7 @@ import { Input } from "@/src/lib/components/ui/input";
 import { Label } from "@/src/lib/components/ui/label";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import OnboardingProtector from "./_components/OnboardingProtector";
+import { OnboardingSwitchAccountLink } from "./_components/OnboardingSwitchAccountLink";
 
 export default function OnboardingWelcomePage() {
 	const [firstName, setFirstName] = useState("");
@@ -94,6 +95,7 @@ export default function OnboardingWelcomePage() {
 							</Button>
 						</CardContent>
 					</Card>
+					<OnboardingSwitchAccountLink />
 				</motion.div>
 			</div>
 		</OnboardingProtector>

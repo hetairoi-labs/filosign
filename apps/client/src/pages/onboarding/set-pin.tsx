@@ -28,6 +28,7 @@ import {
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { handleError } from "@/src/lib/utils";
 import OnboardingProtector from "./_components/OnboardingProtector";
+import { OnboardingSwitchAccountLink } from "./_components/OnboardingSwitchAccountLink";
 import OtpInput from "./_components/OtpInput";
 
 export default function OnboardingSetPinPage() {
@@ -214,6 +215,7 @@ export default function OnboardingSetPinPage() {
 								</div>
 							</CardContent>
 						</Card>
+						<OnboardingSwitchAccountLink />
 					</motion.div>
 				</motion.div>
 			</div>
@@ -249,13 +251,14 @@ export default function OnboardingSetPinPage() {
 					<div className="rounded-md border bg-muted p-3 text-sm leading-6">
 						{recoveryPhrase}
 					</div>
-					<DialogFooter>
+					<DialogFooter className="flex-col gap-2 sm:flex-col">
 						<Button
 							onClick={() => {
 								setRecoveryPhrase(null);
 								void handleRegistrationComplete();
 							}}
 							variant="primary"
+							className="w-full"
 						>
 							I saved it
 						</Button>

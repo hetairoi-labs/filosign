@@ -7,6 +7,7 @@ import { useWalletClient } from "wagmi";
 import env from "@/src/env";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
+import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
 
 export default function SignInPage() {
 	const { ready, authenticated, login } = usePrivy();
@@ -19,8 +20,6 @@ export default function SignInPage() {
 		if (isRegistered.isPending) return;
 		if (isRegistered.data === true) {
 			void navigate({ to: "/dashboard" });
-		} else if (isRegistered.data === false) {
-			void navigate({ to: "/onboarding" });
 		}
 	}, [
 		ready,
@@ -30,8 +29,14 @@ export default function SignInPage() {
 		navigate,
 	]);
 
-	const signingIn =
-		authenticated && (!walletClient?.account.address || isRegistered.isPending);
+	const walletReady = Boolean(walletClient?.account.address);
+	const needsAccountSetup =
+		authenticated &&
+		walletReady &&
+		isRegistered.data === false &&
+		!isRegistered.isPending;
+
+	const signingIn = authenticated && (!walletReady || isRegistered.isPending);
 	const buttonLoading = !ready;
 
 	return (
@@ -87,6 +92,30 @@ export default function SignInPage() {
 									Preparing your workspace
 								</p>
 							</div>
+						</div>
+					) : needsAccountSetup ? (
+						<div className="">
+							<div className="space-y-2">
+								<h1 className="font-manrope text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+									Finish setting up
+								</h1>
+								<p className="text-muted-foreground">
+									You&apos;re signed in. Continue to create your Filosign
+									account.
+								</p>
+							</div>
+							<div className="rounded-2xl border bg-card p-6 shadow-xs mt-8">
+								<Button
+									type="button"
+									variant="default"
+									size="lg"
+									className="w-full"
+									onClick={() => void navigate({ to: "/onboarding" })}
+								>
+									Continue account setup
+								</Button>
+							</div>
+							<OnboardingSwitchAccountLink />
 						</div>
 					) : (
 						<div className="space-y-8">
