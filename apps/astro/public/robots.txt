@@ -1,0 +1,5 @@
+# Update Sitemap URL if the site is deployed under a different origin than filosign.io
+User-agent: *
+Allow: /
+
+Sitemap: https://filosign.io/sitemap-index.xml

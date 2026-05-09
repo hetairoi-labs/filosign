@@ -5,10 +5,12 @@ import { z } from "zod";
 export const env = createEnv({
 	clientPrefix: "PUBLIC_",
 	client: {
+		PUBLIC_SITE_URL: z.string().url().default("https://filosign.io"),
 		PUBLIC_APP_URL: z.string().url().default("http://localhost:5173"),
 		PUBLIC_SERVER_URL: z.string().url().default("http://localhost:3000"),
 	},
 	runtimeEnv: {
+		PUBLIC_SITE_URL: import.meta.env.PUBLIC_SITE_URL,
 		PUBLIC_APP_URL: import.meta.env.PUBLIC_APP_URL,
 		PUBLIC_SERVER_URL: import.meta.env.PUBLIC_SERVER_URL,
 	},

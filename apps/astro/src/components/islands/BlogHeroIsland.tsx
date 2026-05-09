@@ -3,7 +3,19 @@ import { motion } from "motion/react";
 const primaryLgRounded =
 	"group/button inline-flex shrink-0 items-center justify-center rounded-full border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none h-10 gap-1.5 px-8 bg-primary text-primary-foreground hover:bg-primary/80";
 
-export default function BlogHeroIsland() {
+interface BlogHeroIslandProps {
+	title: string;
+	description: string;
+	dateDisplay: string;
+	readHref: string;
+}
+
+export default function BlogHeroIsland({
+	title,
+	description,
+	dateDisplay,
+	readHref,
+}: BlogHeroIslandProps) {
 	return (
 		<section className="pt-32 pb-20 px-4 md:px-8 lg:px-page bg-background">
 			<div className="max-w-7xl mx-auto">
@@ -15,18 +27,14 @@ export default function BlogHeroIsland() {
 						className="space-y-6"
 					>
 						<div className="text-sm font-medium text-muted-foreground">
-							Jan 6, 2025
+							{dateDisplay}
 						</div>
 						<h1 className="text-4xl md:text-5xl lg:text-6xl font-medium font-manrope tracking-tight text-foreground leading-[1.1]">
-							Introducing Filosign
+							{title}
 						</h1>
-						<p className="text-lg text-muted-foreground">
-							Six months ago, we started working on Filosign to build a
-							completely private and end-to-end encrypted document signing
-							standard. Today, we're launching it to the public.
-						</p>
+						<p className="text-lg text-muted-foreground">{description}</p>
 						<div className="pt-4">
-							<a href="/blog/introduction" className={primaryLgRounded}>
+							<a href={readHref} className={primaryLgRounded}>
 								Read article
 							</a>
 						</div>
@@ -40,7 +48,7 @@ export default function BlogHeroIsland() {
 					>
 						<img
 							src="/images/stock_4.webp"
-							alt="Woman working on laptop"
+							alt=""
 							width={1280}
 							height={720}
 							className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105"

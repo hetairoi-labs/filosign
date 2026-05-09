@@ -1,10 +1,26 @@
 // @ts-check
+import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
+import sitemap from "@astrojs/sitemap";
 import { defineConfig } from "astro/config";
+import remarkGfm from "remark-gfm";
+
+const site =
+	(typeof process !== "undefined" && process.env.PUBLIC_SITE_URL) ||
+	"https://filosign.io";
 
 // https://astro.build/config
 export default defineConfig({
-	integrations: [react()],
+	site,
+	integrations: [
+		react(),
+		mdx({
+			remarkPlugins: [remarkGfm],
+		}),
+		sitemap({
+			filter: (page) => !page.includes("/open-graph/"),
+		}),
+	],
 	vite: {
 		resolve: {
 			dedupe: ["react", "react-dom"],
@@ -15,10 +31,5 @@ export default defineConfig({
 	},
 	server: {
 		port: 3001,
-	},
-	redirects: {
-		// Redirect old routes if needed
-		"/app": "http://localhost:3000",
-		"/dashboard": "http://localhost:3000/dashboard",
 	},
 });

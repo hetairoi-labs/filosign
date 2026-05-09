@@ -5,7 +5,7 @@ import MarketingLogo from "./MarketingLogo";
 
 const navLinks = [
 	{ label: "About", href: "/about" },
-	{ label: "Blog", href: "/blog/introduction" },
+	{ label: "Blog", href: "/blog" },
 	{ label: "Changelog", href: "/changelog" },
 ];
 

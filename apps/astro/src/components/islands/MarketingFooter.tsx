@@ -6,33 +6,37 @@ import {
 import { motion } from "motion/react";
 import MarketingLogo from "./MarketingLogo";
 
-const footerSections = [
-	{
-		title: "Product",
-		links: [
-			{ label: "Why Filosign", href: "/about" },
-			{ label: "What's new", href: "/changelog" },
-			{ label: "Pricing", href: "/pricing" },
-		],
-	},
-	{
-		title: "Company",
-		links: [
-			{ label: "About us", href: "https://hetairoi.xyz" },
-			{ label: "Contact", href: "#" },
-			{ label: "Newsroom", href: "#" },
-			{ label: "Privacy", href: "#" },
-		],
-	},
-	{
-		title: "Resources",
-		links: [
-			{ label: "Blog", href: "#" },
-			{ label: "Customer center", href: "#" },
-			{ label: "API", href: "#" },
-		],
-	},
-];
+function getFooterSections(appUrl: string) {
+	return [
+		{
+			title: "Product",
+			links: [
+				{ label: "Why Filosign", href: "/about" },
+				{ label: "What's new", href: "/changelog" },
+				{ label: "Pricing", href: "/pricing" },
+			],
+		},
+		{
+			title: "Company",
+			links: [
+				{ label: "About us", href: "https://hetairoi.xyz" },
+				{ label: "Contact", href: "https://x.com/filosign" },
+				{ label: "Newsroom", href: "/blog" },
+			],
+		},
+		{
+			title: "Resources",
+			links: [
+				{ label: "Blog", href: "/blog" },
+				{ label: "Customer center", href: appUrl },
+				{
+					label: "Open source",
+					href: "https://github.com/hetairoi-labs/filosign",
+				},
+			],
+		},
+	];
+}
 
 const primaryCtaClass =
 	"group inline-flex shrink-0 items-center justify-center rounded-xl border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none h-12 px-6 gap-2 bg-primary text-primary-foreground hover:bg-primary/80";
@@ -42,6 +46,8 @@ interface MarketingFooterProps {
 }
 
 export default function MarketingFooter({ appUrl }: MarketingFooterProps) {
+	const footerSections = getFooterSections(appUrl);
+
 	return (
 		<footer className="bg-card rounded-t-[3rem] py-24 min-h-[80dvh] flex flex-col justify-between">
 			<div className="max-w-7xl mx-auto px-8 md:px-page w-full flex-1 flex flex-col justify-between">
@@ -82,16 +88,25 @@ export default function MarketingFooter({ appUrl }: MarketingFooterProps) {
 									{section.title}
 								</h4>
 								<ul className="flex flex-col gap-4">
-									{section.links.map((link) => (
-										<li key={link.label}>
-											<a
-												href={link.href}
-												className="text-sm font-medium hover:text-primary transition-colors font-manrope flex items-center gap-2 group"
-											>
-												{link.label}
-											</a>
-										</li>
-									))}
+									{section.links.map((link) => {
+										const external = link.href.startsWith("http");
+										return (
+											<li key={link.label}>
+												<a
+													href={link.href}
+													className="text-sm font-medium hover:text-primary transition-colors font-manrope flex items-center gap-2 group"
+													{...(external
+														? {
+																target: "_blank",
+																rel: "noopener noreferrer",
+															}
+														: {})}
+												>
+													{link.label}
+												</a>
+											</li>
+										);
+									})}
 								</ul>
 							</div>
 						))}
@@ -106,7 +121,7 @@ export default function MarketingFooter({ appUrl }: MarketingFooterProps) {
 							redirectTo="/"
 						/>
 						<p className="text-xs text-muted-foreground font-manrope">
-							© 2025 Filosign. All rights reserved.
+							© 2026 Filosign. All rights reserved.
 						</p>
 					</div>
 

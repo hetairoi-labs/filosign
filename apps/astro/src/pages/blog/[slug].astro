@@ -1,0 +1,58 @@
+---
+import {
+	getCollection,
+	render,
+	type CollectionEntry,
+} from "astro:content";
+import Footer from "../../components/Footer.astro";
+import BlogPostIsland from "../../components/islands/BlogPostIsland";
+import Navbar from "../../components/Navbar.astro";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import "../../styles/blog-content.css";
+
+export async function getStaticPaths() {
+	const posts = await getCollection("blog", ({ data }) => !data.draft);
+	return posts.map((post) => ({
+		params: { slug: post.id },
+		props: { post },
+	}));
+}
+
+interface Props {
+	post: CollectionEntry<"blog">;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+
+const pageTitle = `${post.data.title} — Filosign Blog`;
+---
+
+<BaseLayout
+	title={pageTitle}
+	description={post.data.description}
+	schemaVariant="article"
+	article={{
+		headline: post.data.title,
+		datePublished: post.data.publishedISO,
+		authorName: post.data.author.name,
+	}}
+>
+	<div class="min-h-screen bg-background font-manrope selection:bg-primary/10 selection:text-primary">
+		<Navbar />
+		<main>
+			<BlogPostIsland
+				client:load
+				title={post.data.title}
+				readingTime={post.data.readingTime}
+				dateDisplay={post.data.dateDisplay}
+				heroImage={post.data.heroImage}
+				heroVideo={post.data.heroVideo}
+			/>
+			<div class="blog-mdx pb-24">
+				<Content />
+			</div>
+		</main>
+		<Footer />
+	</div>
+</BaseLayout>
