@@ -8,10 +8,6 @@ import type { ComponentType } from "react";
 import { z } from "zod";
 import DashboardProtector from "../lib/components/custom/DashboardProtector";
 import { NotFound } from "../lib/components/custom/NotFound";
-import AboutPage from "./about";
-import BlogPage from "./blog";
-import BlogPostPage from "./blog/post";
-import ChangelogPage from "./changelog";
 import ConnectionsPage from "./dashboard/connections";
 import DocumentAllPage from "./dashboard/document/all";
 import SignDocumentPage from "./dashboard/document/sign";
@@ -22,15 +18,11 @@ import PermissionsPage from "./dashboard/permissions";
 import ProfilePage from "./dashboard/profile";
 import CreateNewSignaturePage from "./dashboard/signature/create";
 import InvitePage from "./invite";
-import LandingPage from "./landing";
-import LogoPage from "./logo";
 import OnboardingWelcomePage from "./onboarding";
 import OnboardingCreateSignaturePage from "./onboarding/create-signature";
 import OnboardingSetPinPage from "./onboarding/set-pin";
 import OnboardingWelcomeCompletePage from "./onboarding/welcome";
-import PitchPage from "./pitch";
-import PricingPage from "./pricing";
-import TestPage from "./test";
+import SignInPage from "./sign-in";
 
 const rootRoute = createRootRoute({
 	component: () => <Outlet />,
@@ -51,43 +43,7 @@ function withDashboardGuard<TProps extends object>(
 const indexRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/",
-	component: LandingPage,
-});
-
-const aboutRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/about",
-	component: AboutPage,
-});
-
-const pricingRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/pricing",
-	component: PricingPage,
-});
-
-const blogRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/blog",
-	component: BlogPage,
-});
-
-const blogPostRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/blog/$postId",
-	component: BlogPostPage,
-});
-
-const changelogRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/changelog",
-	component: ChangelogPage,
-});
-
-const pitchRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/pitch",
-	component: PitchPage,
+	component: SignInPage,
 });
 
 const dashboardRoute = createRoute({
@@ -186,18 +142,6 @@ const notFoundRoute = createRoute({
 	},
 });
 
-const testRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/test",
-	component: TestPage,
-});
-
-const logoRoute = createRoute({
-	getParentRoute: () => rootRoute,
-	path: "/logo",
-	component: LogoPage,
-});
-
 const inviteRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/invite/$inviteId",
@@ -206,12 +150,6 @@ const inviteRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
 	indexRoute,
-	aboutRoute,
-	pricingRoute,
-	blogRoute,
-	blogPostRoute,
-	changelogRoute,
-	pitchRoute,
 	dashboardRoute,
 	profileRoute,
 	permissionsRoute,
@@ -227,8 +165,6 @@ const routeTree = rootRoute.addChildren([
 	onboardingCreateSignatureRoute,
 	onboardingWelcomeCompleteRoute,
 	notFoundRoute,
-	testRoute,
-	logoRoute,
 	inviteRoute,
 ]);
 const router = createRouter({

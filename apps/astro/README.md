@@ -17,23 +17,21 @@ From this package:
 
 This project uses `@t3-oss/env-core` for type-safe environment variables.
 
-Copy `.env.example` to `.env` and configure:
+Copy `.env.example` to `.env` and set:
 
 ```bash
-# Client-side (Public) - Exposed to browser
-PUBLIC_APP_URL=http://localhost:5173     # React app URL for CTAs
-PUBLIC_SITE_URL=https://filosign.io       # Canonical site URL for SEO
-
-# Server-side (Private) - Build/SSR only
-APP_URL=http://localhost:5173
+PUBLIC_APP_URL=http://localhost:5173    # React client — CTAs / redirects
+PUBLIC_SERVER_URL=http://localhost:3000 # API / backend — health, integrations
 ```
 
-### Required Variables
+### Variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `PUBLIC_APP_URL` | `http://localhost:5173` | Where "Connect"/"Get Started" buttons redirect |
-| `PUBLIC_SITE_URL` | `https://filosign.io` | Canonical URL for SEO/meta tags |
+| `PUBLIC_APP_URL` | `http://localhost:5173` | Client app URL for nav CTAs and links off the marketing site |
+| `PUBLIC_SERVER_URL` | `http://localhost:3000` | Backend base URL (health checks, API calls from islands if you add them) |
+
+Canonical URLs in meta tags still come from each page’s `canonicalUrl` / `BaseLayout` today, not from env.
 
 ## Pages
 
@@ -64,7 +62,7 @@ Every page includes:
 - Meta title & description
 - OpenGraph tags (title, description, image, URL)
 - Twitter Card tags
-- Canonical URL (uses `PUBLIC_SITE_URL`)
+- Canonical URL (from each page’s `canonicalUrl` prop / `BaseLayout`)
 - JSON-LD structured data (SoftwareApplication schema)
 - Preconnect hints for external fonts
 
