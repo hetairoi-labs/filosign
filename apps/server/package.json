@@ -1,14 +1,18 @@
 {
 	"name": "@filosign/server",
 	"scripts": {
+		"dev:local": "bun run --env-file=.env.local --hot index.ts",
+		"dev:testnet": "bun run --env-file=.env.testnet --hot index.ts",
+
+		"db:purge:local": "bun run --env-file=.env.local scripts/clear-db.ts",
+		"db:purge:testnet": "bun run --env-file=.env.testnet scripts/clear-db.ts",
+		"db:push:local": "bunx --bun --env-file=.env.local drizzle-kit push",
+		"db:push:testnet": "bunx --bun .env-file=.env.testnet drizzle-kit push",
+
+		"compile": "bun build --compile --minify --sourcemap --bytecode ./index.ts --outfile out/server",
+
 		"check": "bunx --bun biome check --write",
-		"dev": "bun --hot index.ts",
-		"start": "bun run index.ts",
-		"push": "bunx --bun drizzle-kit push",
-		"tsc": "tsc --noEmit",
-		"db:purge": "bun run scripts/clear-db.ts",
-		"db:push": "bunx --bun drizzle-kit push",
-		"compile": "bun build --compile --minify --sourcemap --bytecode ./index.ts --outfile out/server"
+		"check-types": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@filosign/contracts": "workspace:*",

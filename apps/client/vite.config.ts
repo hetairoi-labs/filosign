@@ -19,7 +19,6 @@ export default defineConfig({
 	},
 	envPrefix: "VITE_",
 	optimizeDeps: {
-		exclude: ["argon2-browser"],
 		include: ["buffer"],
 	},
 	build: {

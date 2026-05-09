@@ -5,9 +5,8 @@ const client = new Client({
 	connectionString: env.PG_URI.replace(":dbname", env.DB_NAME),
 });
 
-await client.connect();
-
 try {
+	await client.connect();
 	await client.query("BEGIN");
 	await client.query("DROP SCHEMA IF EXISTS public CASCADE");
 	await client.query("CREATE SCHEMA public");

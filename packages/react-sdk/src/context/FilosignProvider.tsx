@@ -11,7 +11,6 @@ import {
 	useContext,
 	useEffect,
 	useMemo,
-	useRef,
 	useState,
 } from "react";
 import type { Chain } from "viem";
@@ -74,17 +73,17 @@ export function FilosignProvider(props: FilosignConfig) {
 		enabled: !!api,
 	});
 
-	const flag = useRef(false);
-
 	useEffect(() => {
-		if (!flag.current && wallet && runtime.data) {
-			flag.current = true;
-			const fsContracts = getContracts({
-				client: wallet,
-				chainKey: runtime.data.chainKey,
-			});
-			setContracts(fsContracts);
+		if (!wallet || !runtime.data) {
+			setContracts(null);
+			return;
 		}
+
+		const fsContracts = getContracts({
+			client: wallet,
+			chainKey: runtime.data.chainKey,
+		});
+		setContracts(fsContracts);
 	}, [runtime.data, wallet]);
 
 	const value: FilosignContext = useMemo(

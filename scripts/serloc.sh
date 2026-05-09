@@ -4,6 +4,8 @@ cd "$ROOT_DIR"
 
 clear
 
+LOCAL_PVT_KEY="0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e"
+
 while true; do
 cd "$ROOT_DIR/apps/contracts"
 
@@ -19,17 +21,17 @@ else
 fi
 
 bun run compile
-FC_PVT_KEY="0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e" bunx --bun hardhat run --network localhost scripts/deploy.ts
-FC_PVT_KEY="0xdf57089febbacf7ba0bc227dafbffa9fc08a93fdc68e1e42411a14efcf23656e" bunx --bun hardhat run --network localhost scripts/localfund.ts
+FC_PVT_KEY="$LOCAL_PVT_KEY" bunx --bun hardhat run --network localhost scripts/deploy.ts
+FC_PVT_KEY="$LOCAL_PVT_KEY" bunx --bun hardhat run --network localhost scripts/localfund.ts
 cd "$ROOT_DIR/apps/server"
 DB_NAME="test" bun run scripts/drop-test.ts
-DB_NAME="test" bun run db:push
+DB_NAME="test" bun run db:push:local
 
 pkill -f "bun run index.ts" 2>/dev/null || true
 lsof -ti:30011 | xargs kill -9 2>/dev/null || true
 sleep 1
 
-CHAIN="local" DB_NAME="test" bun run --hot index.ts &
+CHAIN="local" DB_NAME="test" EVM_PRIVATE_KEY_SERVER="$LOCAL_PVT_KEY" EVM_PRIVATE_KEY_SYNAPSE="$LOCAL_PVT_KEY" bun run --hot index.ts &
 SERVER_PID=$!
 
 echo "Server started with PID $SERVER_PID"
@@ -42,7 +44,7 @@ while true; do
         pkill -f "bun run index.ts"
         lsof -ti:30011 | xargs kill -9 2>/dev/null || true
         sleep 1
-        CHAIN="local" DB_NAME="test" bun run index.ts &
+        CHAIN="local" DB_NAME="test" EVM_PRIVATE_KEY_SERVER="$LOCAL_PVT_KEY" EVM_PRIVATE_KEY_SYNAPSE="$LOCAL_PVT_KEY" bun run index.ts &
         SERVER_PID=$!
         echo "Server restarted with PID $SERVER_PID"
     elif [[ $key == "R" ]]; then

@@ -8,13 +8,17 @@
 		"packages/*"
 	],
 	"scripts": {
-		"web:dev": "bun run --parallel client:dev server:dev",
-		"client:dev": "bun run --cwd apps/client dev",
+		"web:dev:local": "bun run --parallel serloc client:dev:local",
+		"web:dev:testnet": "bun run --parallel client:dev:testnet server:dev:testnet",
+		"client:dev:local": "bun run --cwd apps/client dev:local",
+		"client:dev:testnet": "bun run --cwd apps/client dev:testnet",
 		"client:build": "bun run --cwd apps/client build",
-		"client:start": "bun run --cwd apps/client start",
-		"server:dev": "bun run --cwd apps/server dev",
-		"server:start": "bun run --cwd apps/server start",
+		"server:dev:local": "bun run --cwd apps/server dev:local",
+		"server:dev:testnet": "bun run --cwd apps/server dev:testnet",
 		"server:compile": "bun run --cwd apps/server compile",
+		"server:start": "bun run --cwd apps/server start",
+		"contracts:node": "bun run --cwd apps/contracts node",
+		"contracts:migrate": "./scripts/migrate.sh",
 		"test:dev": "bun run --cwd packages/test dev",
 		"check": "bunx biome check --write",
 		"check:ci": "bunx biome check .",
@@ -23,7 +27,6 @@
 		"serloc": "./scripts/serloc.sh",
 		"db:purge": "bun run --cwd apps/server db:purge",
 		"db:push": "bun run --cwd apps/server db:push",
-		"migrate": "./scripts/migrate.sh",
 		"purge:modules": "./scripts/purge.sh"
 	},
 	"engines": {

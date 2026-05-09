@@ -1,6 +1,7 @@
 import { $ } from "bun";
 import hre from "hardhat";
 import { getAddress, toHex } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import type { ChainKey } from "../definitions/index.js";
 
 const DEFINITIONS_FILE_PREFIX = "export const definitions = ";
@@ -21,6 +22,7 @@ function chainName(chainId: number): ChainKey {
 
 async function main() {
 	const chainId = hre.network.config.chainId;
+	const deployerPrivateKey = Bun.env.FC_PVT_KEY as `0x${string}` | undefined;
 
 	if (!chainId) {
 		console.error(
@@ -29,17 +31,21 @@ async function main() {
 		process.exit(1);
 	}
 
-	const [deployer] = await hre.viem.getWalletClients();
-	if (!deployer) {
-		console.error("No deployer wallet found");
+	if (!deployerPrivateKey) {
+		console.error("FC_PVT_KEY is required for deployment");
 		process.exit(1);
 	}
+
+	const deployerAddress = privateKeyToAccount(deployerPrivateKey).address;
+	const deployer = await hre.viem.getWalletClient(deployerAddress);
 
 	console.log("Deploying contracts as", {
 		address: deployer.account.address,
 	});
 
-	const manager = await hre.viem.deployContract("FSManager");
+	const manager = await hre.viem.deployContract("FSManager", [], {
+		client: { wallet: deployer },
+	});
 	console.log("FSManager deployed at:", manager.address);
 
 	// Wait for deployment to be confirmed

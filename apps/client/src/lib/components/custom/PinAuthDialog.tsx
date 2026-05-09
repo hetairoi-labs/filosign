@@ -28,7 +28,7 @@ export default function PinAuthDialog({
 	const [error, setError] = useState("");
 
 	const handleSubmit = async () => {
-		if (pin.length !== 6) return;
+		if (pin.length < 6 || pin.length > 10) return;
 
 		try {
 			setError("");
@@ -66,7 +66,7 @@ export default function PinAuthDialog({
 						<OtpInput
 							value={pin}
 							onChange={setPin}
-							length={6}
+							length={10}
 							autoFocus={true}
 							onSubmit={handleSubmit}
 							disabled={isLoading}
@@ -89,7 +89,7 @@ export default function PinAuthDialog({
 
 						<Button
 							onClick={handleSubmit}
-							disabled={pin.length !== 6 || isLoading}
+							disabled={pin.length < 6 || pin.length > 10 || isLoading}
 							className="flex-1 group"
 							variant="primary"
 						>
