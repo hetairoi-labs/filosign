@@ -40,10 +40,10 @@ function Header({ onSearch, onSort, onViewChange, currentView }: HeaderProps) {
 			</div>
 			<div className="flex items-center gap-2">
 				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="outline" className="gap-2">
-							Sort By <CaretDown />
-						</Button>
+					<DropdownMenuTrigger
+						render={<Button variant="outline" className="gap-2" />}
+					>
+						Sort By <CaretDown />
 					</DropdownMenuTrigger>
 					<DropdownMenuContent>
 						<DropdownMenuItem onClick={() => onSort("name")}>

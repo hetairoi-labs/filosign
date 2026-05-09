@@ -106,7 +106,15 @@ export default function DashboardPage() {
 			<FileViewer
 				open={viewerOpen}
 				onOpenChange={setViewerOpen}
-				fileId={selectedFileId || ""}
+				file={
+					selectedFileId
+						? {
+								pieceCid: selectedFileId,
+								sender: "",
+								status: "s3",
+							}
+						: null
+				}
 			/>
 		</DashboardLayout>
 	);

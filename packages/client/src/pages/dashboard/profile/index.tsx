@@ -149,12 +149,10 @@ export default function ProfilePage() {
 							variant="ghost"
 							size="lg"
 							className="self-start mb-4"
-							asChild
+							render={<Link to="/dashboard" />}
 						>
-							<Link to="/dashboard">
-								<CaretLeftIcon className="size-5" weight="bold" />
-								<p>Back</p>
-							</Link>
+							<CaretLeftIcon className="size-5" weight="bold" />
+							<p>Back</p>
 						</Button>
 
 						<motion.div

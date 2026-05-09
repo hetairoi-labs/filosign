@@ -184,11 +184,14 @@ export default function PermissionsPage() {
 
 			{/* Main Content */}
 			<main className="p-8 mx-auto max-w-6xl space-y-8">
-				<Button variant="ghost" size="lg" className="self-start mb-4" asChild>
-					<Link to="/dashboard">
-						<CaretLeftIcon className="size-5" weight="bold" />
-						<p>Back to Dashboard</p>
-					</Link>
+				<Button
+					variant="ghost"
+					size="lg"
+					className="self-start mb-4"
+					render={<Link to="/dashboard" />}
+				>
+					<CaretLeftIcon className="size-5" weight="bold" />
+					<p>Back to Dashboard</p>
 				</Button>
 
 				<motion.div
