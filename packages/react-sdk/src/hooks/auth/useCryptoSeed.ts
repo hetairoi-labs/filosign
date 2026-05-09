@@ -1,5 +1,5 @@
 import { useFilosignContext } from "../../context/useFilosignContext";
-import { getSessionSeed, tryHydrateSessionSeedFromTabStorage } from "./session-seed";
+import { getSessionSeed } from "./session-seed";
 
 export function useCryptoSeed() {
 	const { wallet, wasm } = useFilosignContext();
@@ -11,7 +11,6 @@ export function useCryptoSeed() {
 		if (!wallet) {
 			throw new Error("No wallet available");
 		}
-		tryHydrateSessionSeedFromTabStorage(wallet.account.address);
 		const keySeed = getSessionSeed(wallet.account.address);
 		if (!keySeed)
 			throw new Error(

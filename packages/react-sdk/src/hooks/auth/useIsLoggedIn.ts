@@ -3,10 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DAY } from "../../constants";
 import { useFilosignContext } from "../../context/useFilosignContext";
 import { loadEnvelope } from "./pin-storage";
-import {
-	getSessionSeed,
-	tryHydrateSessionSeedFromTabStorage,
-} from "./session-seed";
+import { getSessionSeed } from "./session-seed";
 import { useIsRegistered } from "./useIsRegistered";
 import { useStoredKeygenData } from "./useStoredKeygenData";
 
@@ -24,8 +21,6 @@ export function useIsLoggedIn() {
 			if (!isRegistered || !storedKeygenData) {
 				return false;
 			}
-
-			tryHydrateSessionSeedFromTabStorage(wallet.account.address);
 
 			const keySeed = getSessionSeed(wallet.account.address);
 

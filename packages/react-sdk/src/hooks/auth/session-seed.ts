@@ -1,58 +1,29 @@
-const sessionSeedByWallet = new Map<string, Uint8Array<ArrayBufferLike>>();
-
-function tabSeedStorageKey(wallet: string) {
-	return `fs_tab_seed:${wallet.toLowerCase()}`;
-}
-
-function writeTabSeed(wallet: string, seed: Uint8Array) {
-	if (typeof window === "undefined") return;
-	try {
-		window.sessionStorage.setItem(
-			tabSeedStorageKey(wallet),
-			JSON.stringify(Array.from(seed)),
-		);
-	} catch {
-		// private mode, quota exceeded
-	}
-}
-
-function removeTabSeed(wallet: string) {
-	if (typeof window === "undefined") return;
-	try {
-		window.sessionStorage.removeItem(tabSeedStorageKey(wallet));
-	} catch {
-		/* ignore */
-	}
-}
-
 /**
- * Loads seed from `sessionStorage` into memory if present (same browser tab).
- * Survives full page refresh; cleared when the tab is closed.
+ * In-memory session seed only (JavaScript `Map`).
+ *
+ * We intentionally do **not** persist the decrypted seed to `sessionStorage`:
+ * same-origin XSS could read it there across navigations. After a full page
+ * reload the seed is gone and the user must unlock again (PIN / recovery flow).
  */
-export function tryHydrateSessionSeedFromTabStorage(wallet: string): void {
+const LEGACY_TAB_SEED_PREFIX = "fs_tab_seed:";
+
+function clearLegacyTabSeedFromSessionStorage(): void {
 	if (typeof window === "undefined") return;
-	const key = wallet.toLowerCase();
-	if (sessionSeedByWallet.has(key)) return;
-
-	let raw: string | null;
 	try {
-		raw = window.sessionStorage.getItem(tabSeedStorageKey(wallet));
-	} catch {
-		return;
-	}
-	if (!raw) return;
-
-	try {
-		const arr = JSON.parse(raw) as unknown;
-		if (!Array.isArray(arr) || arr.some((n) => typeof n !== "number")) {
-			throw new Error("invalid seed shape");
+		const keys: string[] = [];
+		for (let i = 0; i < window.sessionStorage.length; i++) {
+			const k = window.sessionStorage.key(i);
+			if (k?.startsWith(LEGACY_TAB_SEED_PREFIX)) keys.push(k);
 		}
-		const seed = new Uint8Array(arr);
-		sessionSeedByWallet.set(key, seed);
+		for (const k of keys) window.sessionStorage.removeItem(k);
 	} catch {
-		removeTabSeed(wallet);
+		/* quota / private mode */
 	}
 }
+
+clearLegacyTabSeedFromSessionStorage();
+
+const sessionSeedByWallet = new Map<string, Uint8Array<ArrayBufferLike>>();
 
 export function setSessionSeed(
 	wallet: string,
@@ -60,7 +31,6 @@ export function setSessionSeed(
 ) {
 	const key = wallet.toLowerCase();
 	sessionSeedByWallet.set(key, new Uint8Array(seed));
-	writeTabSeed(wallet, new Uint8Array(seed));
 }
 
 export function getSessionSeed(wallet: string) {
@@ -70,5 +40,4 @@ export function getSessionSeed(wallet: string) {
 
 export function clearSessionSeed(wallet: string) {
 	sessionSeedByWallet.delete(wallet.toLowerCase());
-	removeTabSeed(wallet);
 }

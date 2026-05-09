@@ -3,10 +3,7 @@ import { decodeFileData } from "@filosign/shared";
 import { useMutation } from "@tanstack/react-query";
 import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
-import {
-	getSessionSeed,
-	tryHydrateSessionSeedFromTabStorage,
-} from "../auth/session-seed";
+import { getSessionSeed } from "../auth/session-seed";
 
 export type ViewFileArgs = {
 	pieceCid: string;
@@ -90,7 +87,6 @@ export function useViewFile() {
 				);
 			}
 
-			tryHydrateSessionSeedFromTabStorage(wallet.account.address);
 			const keySeed = getSessionSeed(wallet.account.address);
 			if (!keySeed) throw new Error("No unlocked key seed found");
 
