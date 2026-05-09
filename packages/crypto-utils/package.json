@@ -16,19 +16,19 @@
 	"devDependencies": {
 		"@types/argon2": "^0.15.4",
 		"@types/argon2-browser": "^1.18.4",
-		"@types/bun": "1.3.1",
+		"@types/bun": "catalog:",
 		"@types/libsodium-wrappers-sumo": "^0.7.8",
-		"@types/node": "24.9.1"
+		"@types/node": "catalog:"
 	},
 	"dependencies": {
 		"argon2": "^0.44.0",
-		"argon2-browser": "^1.18.0",
+		"argon2-browser": "catalog:",
 		"crystals-kyber-js": "2.5.0",
-		"dilithium-crystals-js": "1.1.3",
-		"fast-json-stable-stringify": "2.1.0",
+		"dilithium-crystals-js": "catalog:",
+		"fast-json-stable-stringify": "catalog:",
 		"mlkem": "2.5.0"
 	},
 	"peerDependencies": {
-		"viem": "^2.38.5"
+		"viem": "catalog:"
 	}
 }

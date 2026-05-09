@@ -114,7 +114,7 @@ export default function SignDocumentPage() {
 
 	// Memoize the handleViewFile function
 	const handleViewFile = useCallback(async () => {
-		if (!file || !file.kemCiphertext || !file.encryptedEncryptionKey) {
+		if (!file?.kemCiphertext || !file?.encryptedEncryptionKey) {
 			setViewError("Missing decryption keys. Acknowledge the file first.");
 			return;
 		}

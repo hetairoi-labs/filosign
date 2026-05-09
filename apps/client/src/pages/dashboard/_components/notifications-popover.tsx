@@ -322,7 +322,7 @@ function ReceivedFileNotification({
 	};
 
 	const handleViewFile = async () => {
-		if (!file || !file.kemCiphertext || !file.encryptedEncryptionKey) return;
+		if (!file?.kemCiphertext || !file?.encryptedEncryptionKey) return;
 
 		try {
 			const fileData = await viewFile.mutateAsync({

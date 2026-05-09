@@ -14,7 +14,7 @@ export const authenticated = createMiddleware<{
 }>(async (ctx, next) => {
 	const authHeader = ctx.req.header("Authorization");
 
-	if (!authHeader || !authHeader.startsWith("Bearer ")) {
+	if (!authHeader?.startsWith("Bearer ")) {
 		return respond.err(ctx, "Missing or invalid authorization header", 401);
 	}
 
@@ -35,7 +35,7 @@ export const authenticated = createMiddleware<{
 	}
 
 	const payload = result.data;
-	if (!payload || !payload.sub) {
+	if (!payload?.sub) {
 		console.error("JWT verification returned invalid payload:", { payload });
 		return respond.err(ctx, "Invalid or expired token", 401);
 	}

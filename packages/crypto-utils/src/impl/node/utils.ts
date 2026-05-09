@@ -16,7 +16,7 @@ import {
 import * as KEM from "./KEM";
 import * as signatures from "./signatures";
 
-export { toHex, toBytes };
+export { toBytes, toHex };
 
 export function randomBytes(n = 32) {
 	return crypto.getRandomValues(new Uint8Array(n));

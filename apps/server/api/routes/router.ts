@@ -9,7 +9,6 @@ import tx from "./tx";
 import users from "./users";
 import waitlist from "./waitlist";
 
-
 type Runtime = {
 	uptime: number;
 	serverAddressSynapse: string;

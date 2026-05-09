@@ -15,23 +15,23 @@
 		"@filosign/contracts": "workspace:*",
 		"@filosign/crypto-utils": "workspace:*",
 		"@filosign/shared": "workspace:*",
-		"@web3-storage/data-segment": "5.3.0",
-		"argon2-browser": "^1.18.0",
-		"axios": "^1.12.2",
+		"@web3-storage/data-segment": "catalog:",
+		"argon2-browser": "catalog:",
+		"axios": "catalog:",
 		"bip39": "^3.1.0",
-		"browser-image-compression": "2.0.2",
-		"hono": "^4.9.8",
-		"idb": "8.0.3",
-		"multiformats": "13.4.1",
-		"zod": "4.3.6"
+		"browser-image-compression": "catalog:",
+		"hono": "catalog:",
+		"idb": "catalog:",
+		"multiformats": "catalog:",
+		"zod": "catalog:"
 	},
 	"peerDependencies": {
-		"viem": "2.48.4",
-		"wagmi": "2.19.1",
-		"react": "^19.0.0",
-		"@tanstack/react-query": "^5.90.2"
+		"viem": "catalog:",
+		"wagmi": "catalog:",
+		"react": "catalog:",
+		"@tanstack/react-query": "catalog:"
 	},
 	"devDependencies": {
-		"@types/react": "^19.0.0"
+		"@types/react": "catalog:"
 	}
 }

@@ -16,7 +16,7 @@ export async function keyGen(args: { dl: DL; seed: Uint8Array }) {
 
 	const pair = dl.generateKeys(dilithiumKind, seed);
 
-	if (!pair || !pair.publicKey || !pair.privateKey) {
+	if (!pair?.publicKey || !pair?.privateKey) {
 		throw new Error("Key generation failed");
 	}
 

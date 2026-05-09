@@ -136,7 +136,7 @@ export default function AddSignaturePage() {
 			return;
 		}
 
-		if (!createForm || !createForm.documents.length) {
+		if (!createForm?.documents.length) {
 			toast.error("No documents to send");
 			setSendStatus("error");
 			setTimeout(() => setSendStatus("idle"), 3000);
