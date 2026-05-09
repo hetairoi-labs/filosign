@@ -33,7 +33,7 @@ export function FlowSlide() {
 				transition={{ duration: 0.5, delay: 0.2 }}
 			>
 				<Image
-					src="/static/image_1.webp"
+					src="/image_1.webp"
 					alt="Complete document flow"
 					width={1200}
 					height={600}

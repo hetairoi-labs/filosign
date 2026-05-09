@@ -92,7 +92,7 @@ export default function InvitePage() {
 
 				// Redirect after a short delay
 				setTimeout(() => {
-					navigate({ to: "/dashboard/permissions" });
+					navigate({ to: "/dashboard/settings/permissions" });
 				}, 2000);
 			} catch (error) {
 				console.error("Failed to claim invite:", error);

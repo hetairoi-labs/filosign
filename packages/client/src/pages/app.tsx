@@ -4,61 +4,31 @@ import {
 	createRouter,
 	Outlet,
 } from "@tanstack/react-router";
-import { type ComponentType, lazy, Suspense } from "react";
-import { withPageErrorBoundary } from "@/src/lib/components/errors/PageErrorBoundary";
 import DashboardProtector from "../lib/components/custom/DashboardProtector";
 import { NotFound } from "../lib/components/custom/NotFound";
-
-const LandingPage = lazy(() => import("./landing"));
-const AboutPage = lazy(() => import("./about"));
-const PricingPage = lazy(() => import("./pricing"));
-const BlogPage = lazy(() => import("./blog"));
-const BlogPostPage = lazy(() => import("./blog/post"));
-const ChangelogPage = lazy(() => import("./changelog"));
-const PitchPage = lazy(() => import("./pitch"));
-const DocumentAllPage = lazy(() => import("./dashboard/document/all"));
-const ProfilePage = lazy(() => import("./dashboard/profile"));
-const PermissionsPage = lazy(() => import("./dashboard/permissions"));
-const ConnectionsPage = lazy(() => import("./dashboard/connections"));
-const SignDocumentPage = lazy(() => import("./dashboard/document/sign"));
-const CreateEnvelopePage = lazy(
-	() => import("./dashboard/envelope/create/create"),
-);
-const AddSignaturePage = lazy(
-	() => import("./dashboard/envelope/create/add-sign"),
-);
-const CreateNewSignaturePage = lazy(
-	() => import("./dashboard/signature/create"),
-);
-const FilesPage = lazy(() => import("./dashboard/files"));
-const OnboardingWelcomePage = lazy(() => import("./onboarding"));
-const OnboardingSetPinPage = lazy(() => import("./onboarding/set-pin"));
-const OnboardingCreateSignaturePage = lazy(
-	() => import("./onboarding/create-signature"),
-);
-const OnboardingWelcomeCompletePage = lazy(
-	() => import("./onboarding/welcome"),
-);
-const TestPage = lazy(() => import("./test"));
-const LogoPage = lazy(() => import("./logo"));
-const InvitePage = lazy(() => import("./invite"));
-
-function PageFallback() {
-	return (
-		<div className="min-h-screen bg-background flex items-center justify-center">
-			<div className="text-sm text-muted-foreground">Loading…</div>
-		</div>
-	);
-}
-
-function suspensePage(Component: ComponentType) {
-	const Wrapped = () => (
-		<Suspense fallback={<PageFallback />}>
-			<Component />
-		</Suspense>
-	);
-	return withPageErrorBoundary(Wrapped)({});
-}
+import AboutPage from "./about";
+import BlogPage from "./blog";
+import BlogPostPage from "./blog/post";
+import ChangelogPage from "./changelog";
+import ConnectionsPage from "./dashboard/connections";
+import DocumentAllPage from "./dashboard/document/all";
+import SignDocumentPage from "./dashboard/document/sign";
+import AddSignaturePage from "./dashboard/envelope/create/add-sign";
+import CreateEnvelopePage from "./dashboard/envelope/create/create";
+import FilesPage from "./dashboard/files";
+import PermissionsPage from "./dashboard/permissions";
+import ProfilePage from "./dashboard/profile";
+import CreateNewSignaturePage from "./dashboard/signature/create";
+import InvitePage from "./invite";
+import LandingPage from "./landing";
+import LogoPage from "./logo";
+import OnboardingWelcomePage from "./onboarding";
+import OnboardingCreateSignaturePage from "./onboarding/create-signature";
+import OnboardingSetPinPage from "./onboarding/set-pin";
+import OnboardingWelcomeCompletePage from "./onboarding/welcome";
+import PitchPage from "./pitch";
+import PricingPage from "./pricing";
+import TestPage from "./test";
 
 const rootRoute = createRootRoute({
 	component: () => <Outlet />,
@@ -67,57 +37,43 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/",
-	component: function Index() {
-		return suspensePage(LandingPage);
-	},
+	component: LandingPage,
 });
 
 const aboutRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/about",
-	component: function About() {
-		return suspensePage(AboutPage);
-	},
+	component: AboutPage,
 });
 
 const pricingRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/pricing",
-	component: function Pricing() {
-		return suspensePage(PricingPage);
-	},
+	component: PricingPage,
 });
 
 const blogRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/blog",
-	component: function Blog() {
-		return suspensePage(BlogPage);
-	},
+	component: BlogPage,
 });
 
 const blogPostRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/blog/$postId",
-	component: function BlogPost() {
-		return suspensePage(BlogPostPage);
-	},
+	component: BlogPostPage,
 });
 
 const changelogRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/changelog",
-	component: function Changelog() {
-		return suspensePage(ChangelogPage);
-	},
+	component: ChangelogPage,
 });
 
 const pitchRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/pitch",
-	component: function Pitch() {
-		return suspensePage(PitchPage);
-	},
+	component: PitchPage,
 });
 
 const dashboardRoute = createRoute({
@@ -125,7 +81,9 @@ const dashboardRoute = createRoute({
 	path: "/dashboard",
 	component: function Dashboard() {
 		return (
-			<DashboardProtector>{suspensePage(DocumentAllPage)}</DashboardProtector>
+			<DashboardProtector>
+				<DocumentAllPage />
+			</DashboardProtector>
 		);
 	},
 });
@@ -134,7 +92,11 @@ const profileRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/dashboard/settings/profile",
 	component: function Profile() {
-		return <DashboardProtector>{suspensePage(ProfilePage)}</DashboardProtector>;
+		return (
+			<DashboardProtector>
+				<ProfilePage />
+			</DashboardProtector>
+		);
 	},
 });
 
@@ -143,7 +105,9 @@ const permissionsRoute = createRoute({
 	path: "/dashboard/settings/permissions",
 	component: function Permissions() {
 		return (
-			<DashboardProtector>{suspensePage(PermissionsPage)}</DashboardProtector>
+			<DashboardProtector>
+				<PermissionsPage />
+			</DashboardProtector>
 		);
 	},
 });
@@ -153,7 +117,9 @@ const connectionsRoute = createRoute({
 	path: "/dashboard/connections",
 	component: function Connections() {
 		return (
-			<DashboardProtector>{suspensePage(ConnectionsPage)}</DashboardProtector>
+			<DashboardProtector>
+				<ConnectionsPage />
+			</DashboardProtector>
 		);
 	},
 });
@@ -163,7 +129,9 @@ const dashboardDocumentAllRoute = createRoute({
 	path: "/dashboard/document/all",
 	component: function DocumentAll() {
 		return (
-			<DashboardProtector>{suspensePage(DocumentAllPage)}</DashboardProtector>
+			<DashboardProtector>
+				<DocumentAllPage />
+			</DashboardProtector>
 		);
 	},
 });
@@ -178,7 +146,9 @@ const signDocumentRoute = createRoute({
 	},
 	component: function SignDocument() {
 		return (
-			<DashboardProtector>{suspensePage(SignDocumentPage)}</DashboardProtector>
+			<DashboardProtector>
+				<SignDocumentPage />
+			</DashboardProtector>
 		);
 	},
 });
@@ -189,7 +159,7 @@ const createSignatureRoute = createRoute({
 	component: function CreateSignature() {
 		return (
 			<DashboardProtector>
-				{suspensePage(CreateNewSignaturePage)}
+				<CreateNewSignaturePage />
 			</DashboardProtector>
 		);
 	},
@@ -201,7 +171,7 @@ const createEnvelopeRoute = createRoute({
 	component: function Create() {
 		return (
 			<DashboardProtector>
-				{suspensePage(CreateEnvelopePage)}
+				<CreateEnvelopePage />
 			</DashboardProtector>
 		);
 	},
@@ -212,7 +182,9 @@ const addSignatureRoute = createRoute({
 	path: "/dashboard/envelope/create/add-sign",
 	component: function AddSignature() {
 		return (
-			<DashboardProtector>{suspensePage(AddSignaturePage)}</DashboardProtector>
+			<DashboardProtector>
+				<AddSignaturePage />
+			</DashboardProtector>
 		);
 	},
 });
@@ -221,7 +193,11 @@ const allDocsRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/dashboard/files",
 	component: function Files() {
-		return <DashboardProtector>{suspensePage(FilesPage)}</DashboardProtector>;
+		return (
+			<DashboardProtector>
+				<FilesPage />
+			</DashboardProtector>
+		);
 	},
 });
 
@@ -229,33 +205,25 @@ const allDocsRoute = createRoute({
 const onboardingWelcomeRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/onboarding",
-	component: function OnboardingWelcome() {
-		return suspensePage(OnboardingWelcomePage);
-	},
+	component: OnboardingWelcomePage,
 });
 
 const onboardingSetPinRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/onboarding/set-pin",
-	component: function OnboardingSetPin() {
-		return suspensePage(OnboardingSetPinPage);
-	},
+	component: OnboardingSetPinPage,
 });
 
 const onboardingCreateSignatureRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/onboarding/create-signature",
-	component: function OnboardingCreateSignature() {
-		return suspensePage(OnboardingCreateSignaturePage);
-	},
+	component: OnboardingCreateSignaturePage,
 });
 
 const onboardingWelcomeCompleteRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/onboarding/welcome",
-	component: function OnboardingWelcomeComplete() {
-		return suspensePage(OnboardingWelcomeCompletePage);
-	},
+	component: OnboardingWelcomeCompletePage,
 });
 
 const notFoundRoute = createRoute({
@@ -269,25 +237,19 @@ const notFoundRoute = createRoute({
 const testRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/test",
-	component: function Test() {
-		return suspensePage(TestPage);
-	},
+	component: TestPage,
 });
 
 const logoRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/logo",
-	component: function Logo() {
-		return suspensePage(LogoPage);
-	},
+	component: LogoPage,
 });
 
 const inviteRoute = createRoute({
 	getParentRoute: () => rootRoute,
 	path: "/invite/$inviteId",
-	component: function Invite() {
-		return suspensePage(InvitePage);
-	},
+	component: InvitePage,
 });
 
 const routeTree = rootRoute.addChildren([

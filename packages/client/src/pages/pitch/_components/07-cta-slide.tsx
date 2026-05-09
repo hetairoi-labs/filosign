@@ -32,17 +32,21 @@ export function CtaSlide() {
 					animate={inView ? { opacity: 1, y: 0 } : {}}
 					transition={{ duration: 0.4, delay: 0.2 }}
 				>
-					<Button variant="primary" asChild className="mt-8">
-						<a
-							href="https://www.notion.so/Filosign-26192d4e656980598eecee819b543c97?source=copy_link"
-							target="_blank"
-							className="flex items-center gap-2 group text-2xl p-8 rounded-large"
-							rel="noopener"
-						>
-							Learn More
-							<CaretRightIcon className="w-6 h-6 transition-transform duration-200 group-hover:translate-x-1" />
-						</a>
-					</Button>
+					<Button
+						variant="primary"
+						className="mt-8"
+						render={
+							<a
+								href="https://www.notion.so/Filosign-26192d4e656980598eecee819b543c97?source=copy_link"
+								target="_blank"
+								className="flex items-center gap-2 group text-2xl p-8 rounded-large"
+								rel="noopener"
+							>
+								Learn More
+								<CaretRightIcon className="w-6 h-6 transition-transform duration-200 group-hover:translate-x-1" />
+							</a>
+						}
+					/>
 				</motion.div>
 			</motion.div>
 		</div>

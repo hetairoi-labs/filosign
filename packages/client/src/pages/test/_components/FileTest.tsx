@@ -59,12 +59,9 @@ export function FileTest() {
 	// File data state
 	const [downloadedFile, setDownloadedFile] = useState<{
 		fileBytes: Uint8Array;
-		fileName: string;
-		fileMIME: string;
-		fileTags: string[] | null;
+		metadata: { name: string; mimeType?: string };
 		sender: string;
 		timestamp: number;
-		signaturePositionOffset: { top: number; left: number };
 	} | null>(null);
 
 	const handleFileUpload = async () => {
@@ -79,15 +76,21 @@ export function FileTest() {
 			const fileData = new Uint8Array(await fileToUpload.arrayBuffer());
 
 			const pieceCID = await sendFile.mutateAsync({
-				recipient: {
-					address: recipientAddress as `0x${string}`,
-					encryptionPublicKey: recipientEncryptionKey,
-				},
+				signers: [
+					{
+						address: recipientAddress as `0x${string}`,
+						encryptionPublicKey: recipientEncryptionKey as `0x${string}`,
+						signaturePosition: [
+							signaturePosition.left,
+							signaturePosition.top,
+							0,
+							0,
+						],
+					},
+				],
+				viewers: [],
 				bytes: fileData,
-				signaturePositionOffset: signaturePosition,
-				// fileName: fileToUpload.name,
-				// fileMIME: fileToUpload.type || 'application/octet-stream',
-				// fileTags: fileTags.trim() ? fileTags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
+				metadata: { name: fileToUpload.name },
 			});
 
 			console.log("File uploaded successfully!");
@@ -112,8 +115,8 @@ export function FileTest() {
 	React.useEffect(() => {
 		if (fileInfo.data) {
 			console.log("File info retrieved:", fileInfo.data);
-			setKemCiphertext(fileInfo.data.kemCiphertext);
-			setEncryptedEncryptionKey(fileInfo.data.encryptedEncryptionKey);
+			setKemCiphertext(fileInfo.data.kemCiphertext ?? "");
+			setEncryptedEncryptionKey(fileInfo.data.encryptedEncryptionKey ?? "");
 			// Set file status based on the status field ("foc" = Filecoin, "s3" = S3)
 			if (fileInfo.data.status === "foc") {
 				setFileStatus("foc");
@@ -164,14 +167,10 @@ export function FileTest() {
 
 		try {
 			// Convert hex string to Uint8Array for signing
-			const signatureBytesArray = new Uint8Array(
-				signatureBytes.match(/.{1,2}/g)?.map((byte) => parseInt(byte, 16)) ||
-					[],
-			);
+			// (If signature verification needs it later)
 
 			await signFile.mutateAsync({
 				pieceCid: pieceCidToSign,
-				signatureBytes: signatureBytesArray,
 			});
 			console.log("File signed successfully");
 			setPieceCidToSign("");
@@ -522,13 +521,13 @@ export function FileTest() {
 								<div>
 									<Label className="text-sm font-medium">File Name</Label>
 									<p className="text-sm text-muted-foreground">
-										{downloadedFile.fileName}
+										{downloadedFile.metadata.name}
 									</p>
 								</div>
 								<div>
 									<Label className="text-sm font-medium">MIME Type</Label>
 									<p className="text-sm text-muted-foreground">
-										{downloadedFile.fileMIME}
+										{downloadedFile.metadata.mimeType}
 									</p>
 								</div>
 								<div>
@@ -539,12 +538,7 @@ export function FileTest() {
 								</div>
 								<div>
 									<Label className="text-sm font-medium">Tags</Label>
-									<p className="text-sm text-muted-foreground">
-										{downloadedFile.fileTags &&
-										downloadedFile.fileTags.length > 0
-											? downloadedFile.fileTags.join(", ")
-											: "No tags"}
-									</p>
+									<p className="text-sm text-muted-foreground">No tags</p>
 								</div>
 							</div>
 							<div className="pt-2">
@@ -555,12 +549,12 @@ export function FileTest() {
 										);
 										new Uint8Array(arrayBuffer).set(downloadedFile.fileBytes);
 										const blob = new Blob([arrayBuffer], {
-											type: downloadedFile.fileMIME,
+											type: downloadedFile.metadata.mimeType,
 										});
 										const url = URL.createObjectURL(blob);
 										const a = document.createElement("a");
 										a.href = url;
-										a.download = downloadedFile.fileName;
+										a.download = downloadedFile.metadata.name;
 										document.body.appendChild(a);
 										a.click();
 										document.body.removeChild(a);

@@ -17,13 +17,15 @@ export function ShareSenderTest() {
 	const [checkAddress, setCheckAddress] = useState("");
 	const [approveAddress, setApproveAddress] = useState("");
 
-	const canSendTo = useCanSendTo(checkAddress as `0x${string}`);
+	const canSendTo = useCanSendTo({ recipient: checkAddress as `0x${string}` });
 	const approveSender = useApproveSender();
 
 	async function handleApproveSender() {
 		if (!approveAddress.trim()) return;
 		try {
-			await approveSender.mutateAsync(approveAddress as `0x${string}`);
+			await approveSender.mutateAsync({
+				sender: approveAddress as `0x${string}`,
+			});
 			console.log("Approved sender");
 			setApproveAddress("");
 		} catch (error) {

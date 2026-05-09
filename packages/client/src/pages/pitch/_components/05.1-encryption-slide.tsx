@@ -32,7 +32,7 @@ export function EncryptionSlide() {
 				transition={{ duration: 0.5, delay: 0.2 }}
 			>
 				<Image
-					src="/static/image_2.webp"
+					src="/image_2.webp"
 					alt="Encryption Architecture"
 					width={1000}
 					height={600}
