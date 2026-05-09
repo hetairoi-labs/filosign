@@ -23,9 +23,9 @@ export const blogPosts: Record<string, BlogPost> = {
 		author: {
 			name: "Kartikay Tiwari",
 			role: "Article written by",
-			avatar: "/static/banner.webp",
+			avatar: "/banner.webp",
 		},
-		heroImage: "/static/banner.webp",
+		heroImage: "/banner.webp",
 		quote:
 			'"We needed a way to sign documents that didn\'t rely on a central authority holding the keys," says Sarah Chen, CTO of OpenDocs.',
 		content: `
@@ -130,10 +130,10 @@ Ready to take control of your documents? [Start for free](/onboarding) today.
 		author: {
 			name: "Kartik",
 			role: "Written by",
-			avatar: "/static/kartik.jpeg",
+			avatar: "/kartik.jpeg",
 		},
-		heroImage: "/static/banner.webp",
-		heroVideo: "/static/demo.webm",
+		heroImage: "/banner.webp",
+		heroVideo: "/demo.webm",
 		content: `
 Six months ago, we started working on Filosign; an idea focused on creating a completely private and end-to-end encrypted document signing standard.
 

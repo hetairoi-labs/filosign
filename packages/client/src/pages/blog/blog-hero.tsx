@@ -28,19 +28,19 @@ export default function BlogHero() {
 						</p>
 						<div className="pt-4">
 							<Button
-								asChild
 								variant="primary"
 								size="lg"
 								className="rounded-full px-8"
+								render={
+									<Link
+										to="/blog/$postId"
+										params={{
+											postId: "introduction",
+										}}
+									/>
+								}
 							>
-								<Link
-									to="/blog/$postId"
-									params={{
-										postId: "introduction",
-									}}
-								>
-									Read article
-								</Link>
+								Read article
 							</Button>
 						</div>
 					</motion.div>
@@ -53,7 +53,7 @@ export default function BlogHero() {
 						className="relative rounded-3xl overflow-hidden aspect-[4/3] lg:aspect-[5/4]"
 					>
 						<Image
-							src="/static/images/stock_4.webp"
+							src="/images/stock_4.webp"
 							alt="Woman working on laptop"
 							width={1280}
 							height={720}

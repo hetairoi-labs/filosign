@@ -18,7 +18,7 @@ const posts: BlogPost[] = [
 		title:
 			"The hidden costs of traditional signing: What every business needs to know",
 		category: "Articles",
-		image: "/static/images/stock_3.webp",
+		image: "/images/stock_3.webp",
 		slug: "/blog/post-6",
 	},
 	{
@@ -26,14 +26,14 @@ const posts: BlogPost[] = [
 		title:
 			"Filosign launches new ZK-powered verification engine for private agreements",
 		category: "Filosign News",
-		image: "/static/images/stock_6.webp",
+		image: "/images/stock_6.webp",
 		slug: "/blog/post-7",
 	},
 	{
 		id: "recent-3",
 		title: "How Quantum Leap DAO doubled their governance speed with Filosign",
 		category: "Customer Story",
-		image: "/static/images/stock_5.webp",
+		image: "/images/stock_5.webp",
 		slug: "/blog/post-8",
 	},
 ];

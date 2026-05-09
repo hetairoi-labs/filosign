@@ -47,7 +47,6 @@ export default function ChangelogList() {
 								</h2>
 								<div className="space-y-4 text-muted-foreground leading-relaxed text-lg">
 									{entry.description.map((paragraph, i) => (
-										// biome-ignore lint/suspicious/noArrayIndexKey: static content
 										<p key={i}>{paragraph}</p>
 									))}
 								</div>

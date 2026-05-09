@@ -32,7 +32,7 @@ const featuredPost: BlogPost = {
 	category: "Filosign News",
 	excerpt:
 		"Six months ago, we started working on Filosign to build a completely private and end-to-end encrypted document signing standard.",
-	image: "/static/images/stock_1.webp",
+	image: "/images/stock_1.webp",
 	slug: "/blog/introducing-filosign",
 };
 
@@ -43,7 +43,7 @@ const recentPosts: BlogPost[] = [
 			"The rise of cryptographic signatures: A founder's guide to modern agreement",
 		date: "Jan 11, 2025",
 		category: "Customer Stories",
-		image: "/static/images/stock_5.webp",
+		image: "/images/stock_5.webp",
 		slug: "/blog/post-2",
 	},
 	{
@@ -52,7 +52,7 @@ const recentPosts: BlogPost[] = [
 			"Filosign expands to Asian markets, appoints former Polygon exec as Regional Director",
 		date: "Jan 10, 2025",
 		category: "Filosign News",
-		image: "/static/images/stock_7.webp",
+		image: "/images/stock_7.webp",
 		slug: "/blog/post-3",
 	},
 	{
@@ -61,7 +61,7 @@ const recentPosts: BlogPost[] = [
 			"From bootstrapped to market leader: How GreenChain scaled sustainable supply chains with Filosign",
 		date: "Jan 10, 2025",
 		category: "Customer Stories",
-		image: "/static/images/stock_8.webp",
+		image: "/images/stock_8.webp",
 		slug: "/blog/post-4",
 	},
 	{
@@ -70,7 +70,7 @@ const recentPosts: BlogPost[] = [
 			"Understanding Zero-Knowledge Proofs in Document Verification: A Technical Deep Dive",
 		date: "Jan 09, 2025",
 		category: "Articles",
-		image: "/static/images/stock_2.webp",
+		image: "/images/stock_2.webp",
 		slug: "/blog/post-5",
 	},
 ];
@@ -204,9 +204,9 @@ export default function EditorsPicks() {
 							<Button
 								variant="outline"
 								className="w-full h-12 text-base font-medium border-border/50 hover:bg-muted/30"
-								asChild
+								render={<Link to="/blog" />}
 							>
-								<Link to="/blog">View all</Link>
+								View all
 							</Button>
 						</motion.div>
 					</div>
