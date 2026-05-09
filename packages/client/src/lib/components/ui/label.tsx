@@ -1,21 +1,27 @@
-import * as LabelPrimitive from "@radix-ui/react-label";
+"use client";
+
 import type * as React from "react";
 
-import { cn } from "../../utils";
+import { cn } from "@/src/lib/utils/index";
 
 function Label({
 	className,
+	htmlFor,
+	children,
 	...props
-}: React.ComponentProps<typeof LabelPrimitive.Root>) {
+}: React.ComponentProps<"label">) {
 	return (
-		<LabelPrimitive.Root
+		<label
 			data-slot="label"
+			htmlFor={htmlFor}
 			className={cn(
-				"text-sm text-foreground/90 leading-none font-semibold select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
+				"flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
 				className,
 			)}
 			{...props}
-		/>
+		>
+			{children}
+		</label>
 	);
 }
 
