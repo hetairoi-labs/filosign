@@ -43,8 +43,7 @@ const config: HardhatUserConfig = {
 		},
 	},
 	etherscan: {
-		apiKey:
-			env.BLOCKSCOUT_API_KEY ?? env.ETHERSCAN_API_KEY ?? "no-api-key",
+		apiKey: env.BLOCKSCOUT_API_KEY ?? env.ETHERSCAN_API_KEY ?? "no-api-key",
 		customChains: [
 			{
 				network: "baseSepolia",
