@@ -4,13 +4,13 @@
 	"description": "Private Document Signing",
 	"private": true,
 	"workspaces": [
-		"test",
 		"apps/client",
 		"apps/server",
 		"apps/contracts",
 		"packages/react-sdk",
 		"packages/crypto-utils",
-		"packages/shared"
+		"packages/shared",
+		"packages/test"
 	],
 	"scripts": {
 		"web:dev": "bun run --parallel client:dev server:dev",
@@ -20,7 +20,7 @@
 		"server:dev": "bun run --cwd apps/server dev",
 		"server:start": "bun run --cwd apps/server start",
 		"server:compile": "bun run --cwd apps/server compile",
-		"test:dev": "bun run --cwd test dev",
+		"test:dev": "bun run --cwd packages/test dev",
 		"check": "bunx biome check --write",
 		"check:ci": "bunx biome check .",
 		"client:typecheck": "bunx tsc -p apps/client/tsconfig.json --noEmit",

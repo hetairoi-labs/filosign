@@ -25,7 +25,7 @@ packages/
   react-sdk/          React provider, API client, and hooks
   crypto-utils/       Encryption, KEM, signatures, hashing, encoding
   shared/             Shared schemas and helpers
-test/                 Local SDK/protocol test harness
+  test/               Local SDK/protocol test harness
 docs/                 Product and marketing notes
 ```
 
@@ -57,7 +57,7 @@ The main web application: landing pages, onboarding, dashboard, document creatio
 
 ### `@filosign/server`
 
-The API service: wallet authentication, user registration, file upload and retrieval, document registration, signing, sharing permissions, waitlist, World ID context, and transaction indexing.
+The API service: wallet authentication, user registration, file upload and retrieval, document registration, signing, sharing permissions, waitlist, and transaction indexing.
 
 ### `@filosign/contracts`
 
@@ -134,8 +134,7 @@ Server configuration is defined in `apps/server/env.ts`. The main required value
 - `S3_BUCKET`
 - `S3_ENDPOINT`
 - `SUPER_PASS`
-- `WORLD_ID_RP_ID`
-- `WORLD_ID_SIGNING_KEY`
+
 - `TG_ANALYTICS_BOT_GROUP_ID`
 - `TG_ANALYTICS_BOT_TOKEN`
 

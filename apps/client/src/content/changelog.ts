@@ -38,7 +38,7 @@ export const ChangelogEntries: ChangelogEntry[] = [
 		type: "Enhancement",
 		title: "Mobile-First Design & Compliance Reporting",
 		description: [
-			"Complete architectural overhaul to ensure a flawless mobile-first experience within webviews and the World App ecosystem.",
+			"Complete architectural overhaul to ensure a flawless mobile-first experience within webviews.",
 			"New automated Compliance Report generation that produces human-readable PDFs with embedded cryptographic proofs of all on-chain actions.",
 			"Optimized WASM performance and reduced load times by 50% through improved edge deployment and library optimizations.",
 		],

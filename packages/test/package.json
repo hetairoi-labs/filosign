@@ -13,9 +13,9 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
-		"@filosign/contracts": "workspace:^",
-		"@filosign/crypto-utils": "workspace:^",
-		"@filosign/react": "workspace:^",
+		"@filosign/contracts": "workspace:*",
+		"@filosign/crypto-utils": "workspace:*",
+		"@filosign/react": "workspace:*",
 		"@tanstack/react-query": "5.90.6",
 		"dilithium-crystals-js": "1.1.3",
 		"react": "^19.1.1",

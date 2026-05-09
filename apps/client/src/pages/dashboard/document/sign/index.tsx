@@ -30,7 +30,7 @@ import { formatUnits } from "viem";
 import {
 	defaultChain,
 	erc20DisplayForChain,
-	WORLD_CHAIN_SEPOLIA_TOKENS,
+	SUPPORTED_TOKENS,
 } from "@/src/constants";
 import { CopyButton } from "@/src/lib/components/custom/CopyButton";
 import { Badge } from "@/src/lib/components/ui/badge";
@@ -69,7 +69,7 @@ export default function SignDocumentPage() {
 	const tokenInfo = useMemo(() => {
 		if (!incentive?.token) return null;
 		return (
-			WORLD_CHAIN_SEPOLIA_TOKENS.find(
+			SUPPORTED_TOKENS.find(
 				(t) => t.address.toLowerCase() === incentive.token.toLowerCase(),
 			) || null
 		);
@@ -100,9 +100,7 @@ export default function SignDocumentPage() {
 			signerAddress.toLowerCase() === file.sender.toLowerCase(),
 	);
 
-	const showWorldIdSign = Boolean(
-		signerAddress && file && !alreadySigned && !isSender,
-	);
+	const canSign = Boolean(signerAddress && file && !alreadySigned && !isSender);
 
 	const viewFile = useViewFile();
 	const signFile = useSignFile();
@@ -618,7 +616,7 @@ export default function SignDocumentPage() {
 								<DownloadIcon className="size-5" />
 							</Button>
 
-							{showWorldIdSign && signerAddress && (
+							{canSign && signerAddress && (
 								<Button
 									variant="primary"
 									size="sm"
@@ -789,7 +787,7 @@ export default function SignDocumentPage() {
 							</Button>
 						</div>
 
-						{showWorldIdSign && signerAddress && (
+						{canSign && signerAddress && (
 							<>
 								<div className="w-px h-6 bg-border mx-2" />
 								<Button

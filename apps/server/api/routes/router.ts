@@ -8,7 +8,7 @@ import sharing from "./sharing";
 import tx from "./tx";
 import users from "./users";
 import waitlist from "./waitlist";
-import worldId from "./world-id";
+
 
 type Runtime = {
 	uptime: number;
@@ -32,5 +32,4 @@ export const apiRouter = new Hono()
 	.route("/sharing", sharing)
 	.route("/users", users)
 	.route("/tx", tx)
-	.route("/waitlist", waitlist)
-	.route("/world-id", worldId);
+	.route("/waitlist", waitlist);

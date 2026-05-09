@@ -18,7 +18,7 @@ import {
 	isAddress,
 } from "viem";
 import { useAccount, useReadContract } from "wagmi";
-import { WORLD_CHAIN_SEPOLIA_TOKENS } from "@/src/constants";
+import { SUPPORTED_TOKENS } from "@/src/constants";
 import AddRecipientDialog from "@/src/lib/components/custom/AddRecipientDialog";
 import {
 	Avatar,
@@ -401,7 +401,7 @@ function CompactRecipientCard({
 	// Get token symbol if set
 	const tokenSymbol = useMemo(() => {
 		if (!recipient.incentive?.token) return null;
-		const token = WORLD_CHAIN_SEPOLIA_TOKENS.find(
+		const token = SUPPORTED_TOKENS.find(
 			(t) =>
 				t.address.toLowerCase() === recipient.incentive?.token?.toLowerCase(),
 		);
@@ -573,7 +573,7 @@ function IncentiveSection({
 					</SelectTrigger>
 					<SelectContent>
 						<SelectItem value="none">None</SelectItem>
-						{WORLD_CHAIN_SEPOLIA_TOKENS.map((token) => (
+						{SUPPORTED_TOKENS.map((token) => (
 							<SelectItem key={token.address} value={token.address}>
 								<div className="flex items-center gap-2">
 									<img src={token.icon} alt={token.name} className="size-4" />
@@ -607,7 +607,7 @@ function IncentiveSection({
 						You must hold enough tokens. They will be locked when sending.
 					</p>
 					{(() => {
-						const currentToken = WORLD_CHAIN_SEPOLIA_TOKENS.find(
+						const currentToken = SUPPORTED_TOKENS.find(
 							(t) =>
 								t.address.toLowerCase() ===
 								recipient.incentive?.token?.toLowerCase(),

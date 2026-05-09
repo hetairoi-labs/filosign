@@ -8,7 +8,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { type Address, parseUnits } from "viem";
 
-import { WORLD_CHAIN_SEPOLIA_TOKENS } from "@/src/constants";
+import { SUPPORTED_TOKENS } from "@/src/constants";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { cn } from "@/src/lib/utils/utils";
 import DocumentViewer, {
@@ -203,7 +203,7 @@ export default function AddSignaturePage() {
 					for (const recipient of createForm.recipients) {
 						if (recipient.incentive?.token && recipient.incentive?.amount) {
 							const tokenAddress = recipient.incentive.token.toLowerCase();
-							const tokenData = WORLD_CHAIN_SEPOLIA_TOKENS.find(
+							const tokenData = SUPPORTED_TOKENS.find(
 								(t) => t.address.toLowerCase() === tokenAddress,
 							);
 							const decimals = tokenData?.decimals ?? 18;

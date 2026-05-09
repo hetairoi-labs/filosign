@@ -14,8 +14,6 @@ const envKeys = [
 	"RESEND_FROM_EMAIL",
 	"CHAIN",
 	"SUPER_PASS",
-	"WORLD_ID_RP_ID",
-	"WORLD_ID_SIGNING_KEY",
 ] as const;
 
 type ENV = Record<(typeof envKeys)[number], string>;

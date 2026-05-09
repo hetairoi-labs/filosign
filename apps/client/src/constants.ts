@@ -10,7 +10,7 @@ export const defaultChain =
 			? baseSepolia
 			: base;
 
-export const WORLD_CHAIN_SEPOLIA_TOKENS = [
+export const SUPPORTED_TOKENS = [
 	{
 		name: "USD Coin",
 		symbol: "USDC",
@@ -22,47 +22,6 @@ export const WORLD_CHAIN_SEPOLIA_TOKENS = [
 		decimals: 6,
 		faucets: [{ name: "Circle Faucet", url: "https://faucet.circle.com" }],
 	},
-	// {
-	// 	name: "Wrapped Ether",
-	// 	symbol: "WETH",
-	// 	address: "0x4200000000000000000000000000000000000006",
-	// 	decimals: 18,
-	// 	faucets: [
-	// 		{
-	// 			name: "Alchemy",
-	// 			url: "https://www.alchemy.com/faucets/world-chain-sepolia",
-	// 		},
-	// 		{
-	// 			name: "ETHGlobal",
-	// 			url: "https://ethglobal.com/faucet/world-chain-sepolia-4801",
-	// 		},
-	// 		{
-	// 			name: "Google Cloud",
-	// 			url: "https://cloud.google.com/application/web3/faucet/ethereum/sepolia",
-	// 		},
-	// 	],
-	// },
-	// {
-	// 	name: "Worldcoin",
-	// 	symbol: "WLD",
-	// 	address: "0x2cFc85d8E48F8EAB294be644d9E25C3030863003",
-	// 	icon: "https://cryptologos.cc/logos/worldcoin-org-wld-logo.svg?v=040",
-	// 	decimals: 18,
-	// 	faucets: [
-	// 		{
-	// 			name: "Worldcoin",
-	// 			url: "https://docs.world.org/mini-apps/quick-start/testing",
-	// 		},
-	// 	],
-	// },
-	// {
-	// 	name: "Chainlink",
-	// 	symbol: "LINK",
-	// 	address: "0xC82Efc286047746404801314B959088562B24801",
-	// 	decimals: 18,
-	// 	icon: "https://cryptologos.cc/logos/chainlink-link-logo.svg?v=040",
-	// 	faucets: [{ name: "Chainlink", url: "https://faucets.chain.link/" }],
-	// },
 ] as const;
 
 /** Token symbol + decimals for PDF / UI when address is in the known list. */
@@ -70,7 +29,7 @@ export function erc20DisplayForChain(token: `0x${string}`): {
 	label: string;
 	decimals: number;
 } {
-	const t = WORLD_CHAIN_SEPOLIA_TOKENS.find(
+	const t = SUPPORTED_TOKENS.find(
 		(x) => x.address.toLowerCase() === token.toLowerCase(),
 	);
 	if (t) return { label: t.symbol, decimals: t.decimals };
