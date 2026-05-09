@@ -1,8 +1,8 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
+import { formatUnits } from "viem";
 import { useBalance } from "wagmi";
-import { formatBalance } from "@/api/lib/utils/utils";
 import { Image } from "@/src/lib/components/custom/Image";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
@@ -75,8 +75,12 @@ export default function DashboardPage() {
 							Check out your profile and update your information
 						</p>
 					</div>
-					<Button variant="primary" asChild className="group">
-						<Link to="/dashboard/settings/profile">Update Profile</Link>
+					<Button
+						variant="primary"
+						className="group"
+						render={<Link to="/dashboard/settings/profile" />}
+					>
+						Update Profile
 					</Button>
 				</div>
 
@@ -213,7 +217,12 @@ export default function DashboardPage() {
 											</Badge>
 										</div>
 										<div className="text-lg font-semibold">
-											{formatBalance(balance?.value, 6)} FIL
+											{balance?.value
+												? Number(
+														formatUnits(balance.value, balance.decimals),
+													).toFixed(4)
+												: "0.0000"}{" "}
+											FIL
 										</div>
 										<div className="text-xs text-muted-foreground">
 											For transaction fees

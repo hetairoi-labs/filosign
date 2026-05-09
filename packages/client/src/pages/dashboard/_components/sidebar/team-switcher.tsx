@@ -44,22 +44,24 @@ export function TeamSwitcher({
 		<SidebarMenu>
 			<SidebarMenuItem>
 				<DropdownMenu onOpenChange={setIsDropdownOpen}>
-					<DropdownMenuTrigger asChild>
-						<SidebarMenuButton
-							size="lg"
-							className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer transition-all duration-150 hover:bg-accent/50"
-							onClick={handleIconClick}
-						>
-							<div className=" text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center bg-muted/10 p-1 rounded-full">
-								<activeOrganization.logo className="size-6" />
-							</div>
-							<div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
-								<p className="truncate">{activeOrganization.name}</p>
-							</div>
-							<CaretDownIcon
-								className={`ml-auto size-6 group-data-[collapsible=icon]:hidden transition-transform duration-150 ${isDropdownOpen ? "rotate-180" : ""}`}
+					<DropdownMenuTrigger
+						render={
+							<SidebarMenuButton
+								size="lg"
+								className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground cursor-pointer transition-all duration-150 hover:bg-accent/50"
+								onClick={handleIconClick}
 							/>
-						</SidebarMenuButton>
+						}
+					>
+						<div className=" text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center bg-muted/10 p-1 rounded-full">
+							<activeOrganization.logo className="size-6" />
+						</div>
+						<div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+							<p className="truncate">{activeOrganization.name}</p>
+						</div>
+						<CaretDownIcon
+							className={`ml-auto size-6 group-data-[collapsible=icon]:hidden transition-transform duration-150 ${isDropdownOpen ? "rotate-180" : ""}`}
+						/>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent
 						className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"

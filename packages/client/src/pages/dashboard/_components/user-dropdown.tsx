@@ -49,15 +49,17 @@ export function UserDropdown() {
 
 	return (
 		<DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-			<DropdownMenuTrigger asChild>
-				<Button
-					variant="ghost"
-					className="relative h-10 w-10 rounded-full transition-all duration-150 hover:bg-accent/50"
-				>
-					<div className="flex aspect-square size-8 items-center justify-center bg-muted/10 rounded-full">
-						<UserIcon className="size-5 text-muted-foreground" weight="bold" />
-					</div>
-				</Button>
+			<DropdownMenuTrigger
+				render={
+					<Button
+						variant="ghost"
+						className="relative h-10 w-10 rounded-full transition-all duration-150 hover:bg-accent/50"
+					/>
+				}
+			>
+				<div className="flex aspect-square size-8 items-center justify-center bg-muted/10 rounded-full">
+					<UserIcon className="size-5 text-muted-foreground" weight="bold" />
+				</div>
 			</DropdownMenuTrigger>
 			<DropdownMenuContent
 				className="w-64 rounded-lg mt-1"

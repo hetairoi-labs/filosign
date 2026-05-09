@@ -45,24 +45,24 @@ export function NavProjects({
 			<SidebarMenu>
 				{projects.map((item) => (
 					<SidebarMenuItem key={item.name}>
-						<SidebarMenuButton asChild>
-							<a
-								href={item.url}
-								onClick={handleIconClick}
-								className="cursor-pointer"
-							>
-								<item.icon className="size-6 group-data-[collapsible=icon]:size-9 group-data-[collapsible=offcanvas]:size-7.5" />
-								<span className="group-data-[collapsible=icon]:hidden">
-									{item.name}
-								</span>
-							</a>
-						</SidebarMenuButton>
+						<SidebarMenuButton
+							render={
+								<a
+									href={item.url}
+									onClick={handleIconClick}
+									className="cursor-pointer"
+								>
+									<item.icon className="size-6 group-data-[collapsible=icon]:size-9 group-data-[collapsible=offcanvas]:size-7.5" />
+									<span className="group-data-[collapsible=icon]:hidden">
+										{item.name}
+									</span>
+								</a>
+							}
+						/>
 						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<SidebarMenuAction showOnHover>
-									<DotsThreeIcon className="size-6" />
-									<span className="sr-only">More</span>
-								</SidebarMenuAction>
+							<DropdownMenuTrigger render={<SidebarMenuAction showOnHover />}>
+								<DotsThreeIcon className="size-6" />
+								<span className="sr-only">More</span>
 							</DropdownMenuTrigger>
 							<DropdownMenuContent
 								className="w-48 rounded-lg"

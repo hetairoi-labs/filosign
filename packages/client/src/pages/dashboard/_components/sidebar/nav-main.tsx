@@ -119,17 +119,19 @@ export function NavMain({
 												{item.items.map((subItem) => (
 													<SidebarMenuSubItem key={subItem.title}>
 														<SidebarMenuSubButton
-															asChild
 															className="text-sm font-medium transition-all duration-100 hover:bg-accent/50 hover:text-accent-foreground data-[active=true]:bg-accent/50 data-[active=true]:text-accent-foreground data-[active=true]:font-semibold px-5 py-2"
+															render={
+																<Link
+																	to={subItem.url}
+																	onClick={() =>
+																		setSidebar({
+																			lastClickedMenu: subItem.title,
+																		})
+																	}
+																/>
+															}
 														>
-															<Link
-																to={subItem.url}
-																onClick={() =>
-																	setSidebar({ lastClickedMenu: subItem.title })
-																}
-															>
-																<span>{subItem.title}</span>
-															</Link>
+															<span>{subItem.title}</span>
 														</SidebarMenuSubButton>
 													</SidebarMenuSubItem>
 												))}

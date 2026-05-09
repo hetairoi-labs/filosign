@@ -129,23 +129,25 @@ export function NotificationsPopover() {
 
 	return (
 		<Popover open={open} onOpenChange={setOpen}>
-			<PopoverTrigger asChild>
-				<Button
-					variant="ghost"
-					className="relative h-10 w-10 rounded-full transition-all duration-150 hover:bg-accent/50"
-				>
-					<div className="flex aspect-square size-8 items-center justify-center bg-muted/10 rounded-full">
-						<BellIcon className="size-5 text-muted-foreground" weight="bold" />
-					</div>
-					{notificationCount > 0 && (
-						<Badge
-							variant="destructive"
-							className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-						>
-							{notificationCount > 9 ? "9+" : notificationCount}
-						</Badge>
-					)}
-				</Button>
+			<PopoverTrigger
+				render={
+					<Button
+						variant="ghost"
+						className="relative h-10 w-10 rounded-full transition-all duration-150 hover:bg-accent/50"
+					/>
+				}
+			>
+				<div className="flex aspect-square size-8 items-center justify-center bg-muted/10 rounded-full">
+					<BellIcon className="size-5 text-muted-foreground" weight="bold" />
+				</div>
+				{notificationCount > 0 && (
+					<Badge
+						variant="destructive"
+						className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+					>
+						{notificationCount > 9 ? "9+" : notificationCount}
+					</Badge>
+				)}
 			</PopoverTrigger>
 
 			<PopoverContent className="w-96 mt-2 p-0" align="end">
