@@ -8,14 +8,14 @@ import {
 } from "@/src/lib/components/ui/carousel";
 
 const heroImages = [
-	"/static/images/stock_1.webp",
-	"/static/images/stock_2.webp",
-	"/static/images/stock_3.webp",
-	"/static/images/stock_4.webp",
-	"/static/images/stock_5.webp",
-	"/static/images/stock_6.webp",
-	"/static/images/stock_7.webp",
-	"/static/images/stock_8.webp",
+	"/images/stock_1.webp",
+	"/images/stock_2.webp",
+	"/images/stock_3.webp",
+	"/images/stock_4.webp",
+	"/images/stock_5.webp",
+	"/images/stock_6.webp",
+	"/images/stock_7.webp",
+	"/images/stock_8.webp",
 ];
 
 export default function AboutHero() {

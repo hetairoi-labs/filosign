@@ -35,7 +35,7 @@ const values: ValueItem[] = [
 	},
 	{
 		type: "image",
-		src: "/static/images/stock_2.webp",
+		src: "/images/stock_2.webp",
 		alt: "Team member working",
 	},
 	{
@@ -47,12 +47,12 @@ const values: ValueItem[] = [
 	},
 	{
 		type: "image",
-		src: "/static/images/stock_1.webp",
+		src: "/images/stock_1.webp",
 		alt: "Team collaboration",
 	},
 	{
 		type: "image",
-		src: "/static/images/stock_4.webp",
+		src: "/images/stock_4.webp",
 		alt: "Office environment",
 	},
 	{
@@ -64,7 +64,7 @@ const values: ValueItem[] = [
 	},
 	{
 		type: "image",
-		src: "/static/images/stock_6.webp",
+		src: "/images/stock_6.webp",
 		alt: "Discussion",
 	},
 	{

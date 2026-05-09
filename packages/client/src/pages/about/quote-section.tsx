@@ -42,7 +42,7 @@ export default function QuoteSection() {
 				>
 					<div className="flex flex-col items-center">
 						<Image
-							src="/static/kartik.jpeg"
+							src="/kartik.jpeg"
 							alt="Kartikay"
 							width={100}
 							height={100}
