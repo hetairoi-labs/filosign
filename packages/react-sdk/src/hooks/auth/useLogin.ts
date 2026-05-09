@@ -15,8 +15,12 @@ import {
 	validatePin,
 } from "./pin-storage";
 import { setSessionSeed } from "./session-seed";
+import { unlockSeedFromWallet } from "./unlock-seed-from-wallet";
 import { useIsLoggedIn } from "./useIsLoggedIn";
 import { useIsRegistered } from "./useIsRegistered";
+
+/** Thrown when wallet-based unlock failed and a PIN must be supplied. */
+export const LOGIN_PIN_REQUIRED = "PIN_REQUIRED";
 
 export function useLogin() {
 	const { api, contracts, wallet, wasm } = useFilosignContext();
@@ -26,22 +30,21 @@ export function useLogin() {
 	const { data: isLoggedIn } = useIsLoggedIn();
 
 	return useMutation({
-		mutationFn: async (params: { pin: string }) => {
+		mutationFn: async (params: { pin?: string }) => {
 			if (isLoggedIn) return { success: true };
-
-			const { pin } = params;
 
 			if (!contracts || !wallet || !wasm.dilithium) {
 				throw new Error("unreachable");
 			}
 
-			if (!validatePin(pin)) {
-				throw new Error("PIN must be 6-10 digits");
-			}
-
 			let recoveryPhrase: string | undefined;
 
 			if (!isRegistered) {
+				const { pin } = params;
+				if (!pin || !validatePin(pin)) {
+					throw new Error("PIN must be 6-10 digits");
+				}
+
 				const keygenData = await walletKeyGen(wallet, {
 					dl: wasm.dilithium,
 				});
@@ -102,44 +105,64 @@ export function useLogin() {
 							),
 					);
 			} else {
-				const attempts = await loadAttempts({ wallet: wallet.account.address });
-				assertAttemptAllowed(attempts);
+				const seedFromWallet = await unlockSeedFromWallet({
+					wallet,
+					contracts,
+					wasm,
+				});
 
-				const [saltPin, saltSeed, saltChallenge, commitmentKem, commitmentSig] =
-					await contracts.FSKeyRegistry.read.keygenData([
+				if (seedFromWallet) {
+					await resetAttempts({ wallet: wallet.account.address });
+					setSessionSeed(wallet.account.address, seedFromWallet);
+				} else {
+					const { pin } = params;
+					if (!pin || !validatePin(pin)) {
+						throw new Error(LOGIN_PIN_REQUIRED);
+					}
+
+					const attempts = await loadAttempts({ wallet: wallet.account.address });
+					assertAttemptAllowed(attempts);
+
+					const [
+						saltPin,
+						saltSeed,
+						saltChallenge,
+						commitmentKem,
+						commitmentSig,
+					] = await contracts.FSKeyRegistry.read.keygenData([
 						wallet.account.address,
 					]);
 
-				const envelope = await loadEnvelope({ wallet: wallet.account.address });
-				if (!envelope) {
-					throw new Error("Unable to unlock");
-				}
-				let decryptedSeed: Uint8Array;
-				try {
-					decryptedSeed = await decryptSeedWithPin(pin, envelope);
-					const keygenData = await seedKeyGen(
-						new Uint8Array(Array.from(decryptedSeed)),
-						{
-							dl: wasm.dilithium,
-						},
-					);
-					if (
-						commitmentKem !== keygenData.commitmentKem ||
-						commitmentSig !== keygenData.commitmentSig
-					) {
+					const envelope = await loadEnvelope({ wallet: wallet.account.address });
+					if (!envelope) {
 						throw new Error("Unable to unlock");
 					}
-				} catch (_error) {
-					await registerFailedAttempt({ wallet: wallet.account.address });
-					throw new Error("Unable to unlock");
-				}
-				await resetAttempts({ wallet: wallet.account.address });
-				setSessionSeed(wallet.account.address, decryptedSeed);
+					let decryptedSeed: Uint8Array;
+					try {
+						decryptedSeed = await decryptSeedWithPin(pin, envelope);
+						const keygenData = await seedKeyGen(
+							new Uint8Array(Array.from(decryptedSeed)),
+							{
+								dl: wasm.dilithium,
+							},
+						);
+						if (
+							commitmentKem !== keygenData.commitmentKem ||
+							commitmentSig !== keygenData.commitmentSig
+						) {
+							throw new Error("Unable to unlock");
+						}
+					} catch (_error) {
+						await registerFailedAttempt({ wallet: wallet.account.address });
+						throw new Error("Unable to unlock");
+					}
+					await resetAttempts({ wallet: wallet.account.address });
+					setSessionSeed(wallet.account.address, decryptedSeed);
 
-				// keep chain salts active through v1 registry schema
-				void saltPin;
-				void saltSeed;
-				void saltChallenge;
+					void saltPin;
+					void saltSeed;
+					void saltChallenge;
+				}
 			}
 
 			queryClient
@@ -156,7 +179,7 @@ export function useLogin() {
 								queryKey: ["fsQ-is-logged-in", wallet?.account.address],
 							}),
 						),
-				);
+					);
 			return recoveryPhrase
 				? { success: true, recoveryPhrase }
 				: { success: true };

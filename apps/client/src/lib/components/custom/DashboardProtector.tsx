@@ -1,5 +1,6 @@
 import { useFilosignContext } from "@filosign/react";
 import {
+	LOGIN_PIN_REQUIRED,
 	useIsLoggedIn,
 	useIsRegistered,
 	useLogin,
@@ -10,7 +11,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/src/lib/components/ui/button";
 import {
@@ -48,25 +49,19 @@ export default function DashboardProtector({
 	const [forgotMode, setForgotMode] = useState(false);
 	const [recoveryPhrase, setRecoveryPhrase] = useState("");
 	const [newPin, setNewPin] = useState("");
+	const [tryingWalletUnlock, setTryingWalletUnlock] = useState(false);
+	const walletUnlockStartedRef = useRef(false);
 
 	useEffect(() => {
 		if (isLoggedIn.data) {
 			setShowPinAuth(false);
 			setPin("");
 			setError("");
+			walletUnlockStartedRef.current = false;
 			return;
 		}
 
 		if (
-			ready &&
-			authenticated &&
-			isRegistered.data &&
-			!isRegistered.isPending &&
-			!isLoggedIn.data &&
-			!isLoggedIn.isPending
-		) {
-			setShowPinAuth(true);
-		} else if (
 			ready &&
 			(!authenticated || !isRegistered.data) &&
 			!isRegistered.isPending
@@ -79,8 +74,59 @@ export default function DashboardProtector({
 		isRegistered.data,
 		isLoggedIn.data,
 		navigate,
-		isLoggedIn.isPending,
 		isRegistered.isPending,
+	]);
+
+	useEffect(() => {
+		if (isLoggedIn.data) {
+			return;
+		}
+
+		const canTryWallet =
+			ready &&
+			authenticated &&
+			isRegistered.data &&
+			!isRegistered.isPending &&
+			!isLoggedIn.data &&
+			!isLoggedIn.isPending;
+
+		if (!canTryWallet) {
+			walletUnlockStartedRef.current = false;
+			return;
+		}
+
+		if (walletUnlockStartedRef.current) {
+			return;
+		}
+		walletUnlockStartedRef.current = true;
+		setTryingWalletUnlock(true);
+
+		void login
+			.mutateAsync({})
+			.catch((err: unknown) => {
+				if (
+					err instanceof Error &&
+					err.message === LOGIN_PIN_REQUIRED
+				) {
+					setShowPinAuth(true);
+					return;
+				}
+				toast.error(
+					err instanceof Error ? err.message : "Could not unlock session",
+				);
+				setShowPinAuth(true);
+			})
+			.finally(() => {
+				setTryingWalletUnlock(false);
+			});
+	}, [
+		ready,
+		authenticated,
+		isRegistered.data,
+		isRegistered.isPending,
+		isLoggedIn.data,
+		isLoggedIn.isPending,
+		login,
 	]);
 
 	const handlePinSubmit = async () => {
@@ -153,12 +199,14 @@ export default function DashboardProtector({
 		setForgotMode(false);
 		setRecoveryPhrase("");
 		setNewPin("");
+		walletUnlockStartedRef.current = false;
 		navigate({ to: "/" });
 	};
 
 	const shouldShowLoader =
 		!ready ||
 		isRegistered.isPending ||
+		tryingWalletUnlock ||
 		(!isLoggedIn.data && isLoggedIn.isPending && !isLoggedIn.isError);
 
 	if (shouldShowLoader) {
