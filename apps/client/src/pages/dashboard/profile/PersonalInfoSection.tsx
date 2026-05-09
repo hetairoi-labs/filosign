@@ -93,7 +93,16 @@ export function PersonalInfoSection({
 							<FormItem>
 								<FormLabel>First Name</FormLabel>
 								<FormControl>
-									<Input placeholder="Enter your first name" {...field} />
+									<Input
+										placeholder="Enter your first name"
+										{...field}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") {
+												e.preventDefault();
+												sectionState.save();
+											}
+										}}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
@@ -107,7 +116,16 @@ export function PersonalInfoSection({
 							<FormItem>
 								<FormLabel>Last Name</FormLabel>
 								<FormControl>
-									<Input placeholder="Enter your last name" {...field} />
+									<Input
+										placeholder="Enter your last name"
+										{...field}
+										onKeyDown={(e) => {
+											if (e.key === "Enter") {
+												e.preventDefault();
+												sectionState.save();
+											}
+										}}
+									/>
 								</FormControl>
 								<FormMessage />
 							</FormItem>
