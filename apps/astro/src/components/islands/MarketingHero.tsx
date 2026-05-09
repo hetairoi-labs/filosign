@@ -94,6 +94,8 @@ export default function MarketingHero({ appUrl }: MarketingHeroProps) {
 				>
 					<a
 						href={appUrl}
+						target="_blank"
+						rel="noopener noreferrer"
 						className={cn(
 							primaryLgClass,
 							"flex items-center justify-center gap-2 group",

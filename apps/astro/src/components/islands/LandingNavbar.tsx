@@ -10,7 +10,7 @@ const navLinks = [
 ];
 
 const secondaryButtonClass =
-	"group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none h-9 gap-1.5 px-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 min-w-28";
+	"group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none h-9 gap-1.5 px-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 min-w-28 font-semibold";
 
 interface LandingNavbarProps {
 	appUrl: string;
@@ -114,8 +114,13 @@ export default function LandingNavbar({ appUrl }: LandingNavbarProps) {
 						delay: 0.78,
 					}}
 				>
-					<a href={appUrl} className={cn(secondaryButtonClass)}>
-						Sign in
+					<a
+						href={appUrl}
+						target="_blank"
+						rel="noopener noreferrer"
+						className={cn(secondaryButtonClass)}
+					>
+						Get Started
 					</a>
 				</motion.div>
 			</motion.nav>

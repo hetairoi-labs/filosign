@@ -65,6 +65,8 @@ export default function MarketingFooter({ appUrl }: MarketingFooterProps) {
 						>
 							<a
 								href={appUrl}
+								target="_blank"
+								rel="noopener noreferrer"
 								className={`${primaryCtaClass} flex items-center justify-center gap-2`}
 							>
 								<SparkleIcon className="size-4" weight="fill" />

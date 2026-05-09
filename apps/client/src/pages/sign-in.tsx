@@ -1,23 +1,137 @@
-import ConnectButton from "@/src/lib/components/custom/ConnectButton";
+import { useIsRegistered } from "@filosign/react/hooks";
+import { SpinnerBallIcon } from "@phosphor-icons/react";
+import { usePrivy } from "@privy-io/react-auth";
+import { useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { useWalletClient } from "wagmi";
+import env from "@/src/env";
 import Logo from "@/src/lib/components/custom/Logo";
+import { Button } from "@/src/lib/components/ui/button";
 
 export default function SignInPage() {
+	const { ready, authenticated, login } = usePrivy();
+	const { data: walletClient } = useWalletClient();
+	const isRegistered = useIsRegistered();
+	const navigate = useNavigate();
+
+	useEffect(() => {
+		if (!ready || !authenticated) return;
+		if (isRegistered.isPending) return;
+		if (isRegistered.data === true) {
+			void navigate({ to: "/dashboard" });
+		} else if (isRegistered.data === false) {
+			void navigate({ to: "/onboarding" });
+		}
+	}, [
+		ready,
+		authenticated,
+		isRegistered.isPending,
+		isRegistered.data,
+		navigate,
+	]);
+
+	const signingIn =
+		authenticated && (!walletClient?.account.address || isRegistered.isPending);
+	const buttonLoading = !ready;
+
 	return (
-		<div className="min-h-dvh bg-background flex flex-col items-center justify-center p-8">
-			<div className="w-full max-w-sm flex flex-col items-center gap-10">
-				<Logo redirectTo="/" className="px-0" textDelay={0} iconDelay={0} />
-				<div className="text-center space-y-2">
-					<h1 className="text-2xl font-medium font-manrope text-foreground tracking-tight">
-						Welcome back
-					</h1>
-					<p className="text-sm text-muted-foreground">
-						Sign in to continue to Filosign
-					</p>
-				</div>
-				<div className="flex justify-center">
-					<ConnectButton />
+		<main className="min-h-dvh grid lg:grid-cols-2 bg-background">
+			<div className="relative hidden overflow-hidden lg:block">
+				<img
+					src="/images/stock_1.webp"
+					alt=""
+					className="absolute inset-0 size-full object-cover"
+					width={1920}
+					height={1080}
+				/>
+				<div className="relative z-10 flex h-full flex-col justify-between p-10">
+					<Logo
+						redirectTo="/"
+						className="px-0"
+						textClassName="text-foreground"
+						textDelay={0}
+						iconDelay={0}
+					/>
+					<blockquote className="max-w-md space-y-3 text-pretty">
+						<p className="font-manrope text-xl font-medium leading-snug text-foreground md:text-2xl">
+							Sign documents you can trust—with cryptography built for how teams
+							work today.
+						</p>
+						<footer className="text-sm text-muted-foreground">
+							Secure envelopes, verifiable signatures, one place to manage it
+							all.
+						</footer>
+					</blockquote>
 				</div>
 			</div>
-		</div>
+
+			<div className="flex flex-col justify-center px-6 py-12 sm:px-10 lg:px-14">
+				<div className="mx-auto w-full max-w-md space-y-10">
+					<Logo
+						redirectTo="/"
+						className="px-0"
+						textClassName="text-foreground"
+						textDelay={0}
+						iconDelay={0}
+					/>
+
+					{signingIn ? (
+						<div className="flex flex-col items-center gap-4 py-8 text-center">
+							<SpinnerBallIcon
+								className="size-10 animate-spin text-muted-foreground"
+								aria-hidden
+							/>
+							<div className="space-y-1">
+								<p className="font-medium text-foreground">Signing you in…</p>
+								<p className="text-sm text-muted-foreground">
+									Preparing your workspace
+								</p>
+							</div>
+						</div>
+					) : (
+						<div className="space-y-8">
+							<div className="space-y-2">
+								<h1 className="font-manrope text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
+									Welcome back
+								</h1>
+								<p className="text-muted-foreground">
+									Sign in with your preferred wallet or email to continue.
+								</p>
+							</div>
+
+							<div className="rounded-2xl border bg-card p-6 shadow-xs">
+								<Button
+									type="button"
+									variant="default"
+									size="lg"
+									className="w-full"
+									disabled={buttonLoading}
+									isLoading={buttonLoading}
+									onClick={() => login()}
+								>
+									Continue with Privy
+								</Button>
+								<p className="mt-4 text-center text-xs text-muted-foreground">
+									By continuing you agree to Filosign&apos;s terms and privacy
+									practices.
+								</p>
+							</div>
+
+							<p className="text-center text-sm text-muted-foreground">
+								New to Filosign?{" "}
+								<a
+									href={env.VITE_MARKETING_SITE_URL}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="font-medium text-primary underline-offset-4 hover:underline"
+								>
+									Learn more on our site
+								</a>
+							</p>
+						</div>
+					)}
+				</div>
+			</div>
+		</main>
 	);
 }
