@@ -21,7 +21,7 @@
 		"contracts:migrate": "./scripts/migrate.sh",
 		"test:dev": "bun run --cwd packages/test dev",
 		"check": "bunx biome check --write",
-		"check:ci": "bunx biome check .",
+		"check-types": "bun -F @filosign/server check-types && bun -F @filosign/client check-types",
 		"client:typecheck": "bunx tsc -p apps/client/tsconfig.json --noEmit",
 		"client:verify": "bun run client:typecheck && bun run client:build && bun run --cwd apps/client lint",
 		"serloc": "./scripts/serloc.sh",
