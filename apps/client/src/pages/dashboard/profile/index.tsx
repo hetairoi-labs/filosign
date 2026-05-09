@@ -11,8 +11,7 @@ import {
 	CardTitle,
 } from "@/src/lib/components/ui/card";
 import { Form } from "@/src/lib/components/ui/form";
-import { Input } from "@/src/lib/components/ui/input";
-import { Label } from "@/src/lib/components/ui/label";
+import OtpInput from "@/src/pages/onboarding/_components/OtpInput";
 import { useProfileSettings } from "./hooks/use-profile-settings";
 import { PersonalInfoSection } from "./PersonalInfoSection";
 
@@ -116,43 +115,16 @@ export default function ProfilePage() {
 								</CardHeader>
 								<CardContent className="space-y-4">
 									<div className="space-y-2">
-										<Label htmlFor="current-pin">Current PIN</Label>
-										<Input
-											id="current-pin"
-											value={currentPin}
-											onChange={(event) =>
-												setCurrentPin(event.target.value.replace(/\D/g, ""))
-											}
-											maxLength={10}
-											inputMode="numeric"
-											placeholder="Current PIN"
-										/>
+										<p className="text-sm font-medium">Current PIN</p>
+										<OtpInput value={currentPin} onChange={setCurrentPin} />
 									</div>
 									<div className="space-y-2">
-										<Label htmlFor="new-pin">New PIN</Label>
-										<Input
-											id="new-pin"
-											value={newPin}
-											onChange={(event) =>
-												setNewPin(event.target.value.replace(/\D/g, ""))
-											}
-											maxLength={10}
-											inputMode="numeric"
-											placeholder="New PIN (6-10 digits)"
-										/>
+										<p className="text-sm font-medium">New PIN</p>
+										<OtpInput value={newPin} onChange={setNewPin} />
 									</div>
 									<div className="space-y-2">
-										<Label htmlFor="confirm-pin">Confirm New PIN</Label>
-										<Input
-											id="confirm-pin"
-											value={confirmPin}
-											onChange={(event) =>
-												setConfirmPin(event.target.value.replace(/\D/g, ""))
-											}
-											maxLength={10}
-											inputMode="numeric"
-											placeholder="Confirm new PIN"
-										/>
+										<p className="text-sm font-medium">Confirm New PIN</p>
+										<OtpInput value={confirmPin} onChange={setConfirmPin} />
 									</div>
 									{pinMessage && (
 										<p className="text-sm text-muted-foreground">

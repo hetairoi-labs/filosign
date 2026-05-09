@@ -20,9 +20,9 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/src/lib/components/ui/card";
-import { Input } from "@/src/lib/components/ui/input";
 import { Label } from "@/src/lib/components/ui/label";
 import { Loader } from "@/src/lib/components/ui/loader";
+import { Textarea } from "@/src/lib/components/ui/textarea";
 import OtpInput from "@/src/pages/onboarding/_components/OtpInput";
 import Logo from "./Logo";
 
@@ -138,12 +138,12 @@ export default function DashboardProtector({
 
 	if (showPinAuth) {
 		return (
-			<div className="flex justify-center items-center min-h-screen">
+			<div className="flex justify-center items-center min-h-screen bg-background">
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.3, delay: 0.2 }}
-					className="flex flex-col justify-center items-center px-8 mx-auto w-full max-w-lg"
+					className="flex flex-col justify-center items-center px-8 mx-auto"
 				>
 					<Logo
 						className="mb-4"
@@ -153,7 +153,7 @@ export default function DashboardProtector({
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.3, delay: 0.2 }}
-						className="flex flex-col justify-center items-center px-8 mx-auto w-full max-w-lg"
+						className="flex flex-col justify-center items-center mx-auto w-full"
 					>
 						<Card className="w-full">
 							<CardHeader>
@@ -168,29 +168,27 @@ export default function DashboardProtector({
 							</CardHeader>
 							<CardContent className="space-y-4">
 								{forgotMode ? (
-									<div className="space-y-3">
+									<div className="space-y-3 w-full min-w-sm">
 										<div className="space-y-2">
 											<Label htmlFor="recovery-phrase">Recovery phrase</Label>
-											<Input
+											<Textarea
 												id="recovery-phrase"
 												value={recoveryPhrase}
 												onChange={(event) =>
 													setRecoveryPhrase(event.target.value)
 												}
 												placeholder="24-word recovery phrase"
+												rows={6}
 											/>
 										</div>
 										<div className="space-y-2">
-											<Label htmlFor="new-pin">New PIN (6-10 digits)</Label>
-											<Input
-												id="new-pin"
+											<p className="text-sm font-medium">
+												New PIN (6-10 digits)
+											</p>
+											<OtpInput
 												value={newPin}
-												onChange={(event) =>
-													setNewPin(event.target.value.replace(/\D/g, ""))
-												}
-												maxLength={10}
-												inputMode="numeric"
-												placeholder="Enter new PIN"
+												onChange={setNewPin}
+												length={10}
 											/>
 										</div>
 									</div>
@@ -207,7 +205,11 @@ export default function DashboardProtector({
 									</div>
 								)}
 
-								{error && <p className="text-destructive text-sm">{error}</p>}
+								{error && (
+									<p className="text-destructive text-sm text-center">
+										{error}
+									</p>
+								)}
 
 								<div className="flex gap-3">
 									<Button
@@ -229,7 +231,7 @@ export default function DashboardProtector({
 												recoverWithPhrase.isPending
 											}
 											className="flex-1 group"
-											variant="default"
+											variant="primary"
 										>
 											{recoverWithPhrase.isPending
 												? "Recovering..."
@@ -247,7 +249,7 @@ export default function DashboardProtector({
 												pin.length < 6 || pin.length > 10 || login.isPending
 											}
 											className="flex-1 group"
-											variant="default"
+											variant="primary"
 										>
 											{login.isPending ? "Authenticating..." : "Continue"}
 											{!login.isPending && (
@@ -261,7 +263,7 @@ export default function DashboardProtector({
 								</div>
 								<Button
 									variant="link"
-									className="px-0 h-auto"
+									className="px-0 h-auto w-full mt-2"
 									onClick={() => {
 										setError("");
 										setForgotMode((value) => !value);

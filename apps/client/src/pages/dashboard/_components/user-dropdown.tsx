@@ -9,6 +9,7 @@ import { Button } from "@/src/lib/components/ui/button";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
+	DropdownMenuGroup,
 	DropdownMenuItem,
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
@@ -67,87 +68,91 @@ export function UserDropdown() {
 				side="bottom"
 			>
 				{/* Profile Section */}
-				<DropdownMenuLabel className="text-muted-foreground text-xs">
-					Profile
-				</DropdownMenuLabel>
-				<motion.div
-					initial={{ opacity: 0, y: -5 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{
-						type: "spring",
-						stiffness: 500,
-						damping: 20,
-						delay: 0.05,
-					}}
-				>
-					<DropdownMenuItem className="gap-3 p-3 cursor-default">
-						<Image
-							src={avatarUrl}
-							alt="Profile"
-							className="aspect-square size-10 rounded-full object-cover"
-						>
-							<div className="flex aspect-square size-10 items-center justify-center bg-muted/10 rounded-full">
-								<UserIcon className="size-6 text-muted-foreground" />
-							</div>
-						</Image>
-						<div className="flex flex-col">
-							<p className="font-medium text-sm">{displayName}</p>
-							<div className="flex items-center gap-1">
-								<p className="text-xs text-muted-foreground">
-									{walletAddress ? formatAddress(walletAddress) : "No wallet"}
-								</p>
-								{walletAddress && (
-									<Button
-										variant="ghost"
-										size="sm"
-										className="h-4 w-4 p-0 hover:bg-accent/50"
-										onClick={() => copyToClipboard(walletAddress)}
-									>
-										<CopySimpleIcon className="h-3 w-3" />
-									</Button>
-								)}
-							</div>
-						</div>
-					</DropdownMenuItem>
-				</motion.div>
-
-				<DropdownMenuSeparator />
-
-				{/* Actions Section */}
-				<DropdownMenuLabel className="text-muted-foreground text-xs">
-					Actions
-				</DropdownMenuLabel>
-				{[
-					{
-						icon: UserIcon,
-						label: "Manage Profile",
-						action: () => {
-							navigate({ to: "/dashboard/settings/profile" });
-						},
-					},
-				].map((item, index) => (
+				<DropdownMenuGroup>
+					<DropdownMenuLabel className="text-muted-foreground text-xs">
+						Profile
+					</DropdownMenuLabel>
 					<motion.div
-						key={item.label}
 						initial={{ opacity: 0, y: -5 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{
 							type: "spring",
 							stiffness: 500,
 							damping: 20,
-							delay: 0.1 + index * 0.03,
+							delay: 0.05,
 						}}
 					>
-						<DropdownMenuItem
-							onClick={item.action}
-							className="gap-2 p-2 cursor-pointer"
-						>
-							<div className="flex size-6 items-center justify-center rounded-md">
-								<item.icon className="size-5 shrink-0" />
+						<DropdownMenuItem className="gap-3 p-3 cursor-default">
+							<Image
+								src={avatarUrl}
+								alt="Profile"
+								className="aspect-square size-10 rounded-full object-cover"
+							>
+								<div className="flex aspect-square size-10 items-center justify-center bg-muted/10 rounded-full">
+									<UserIcon className="size-6 text-muted-foreground" />
+								</div>
+							</Image>
+							<div className="flex flex-col">
+								<p className="font-medium text-sm">{displayName}</p>
+								<div className="flex items-center gap-1">
+									<p className="text-xs text-muted-foreground">
+										{walletAddress ? formatAddress(walletAddress) : "No wallet"}
+									</p>
+									{walletAddress && (
+										<Button
+											variant="ghost"
+											size="sm"
+											className="h-4 w-4 p-0 hover:bg-accent/50"
+											onClick={() => copyToClipboard(walletAddress)}
+										>
+											<CopySimpleIcon className="h-3 w-3" />
+										</Button>
+									)}
+								</div>
 							</div>
-							{item.label}
 						</DropdownMenuItem>
 					</motion.div>
-				))}
+				</DropdownMenuGroup>
+
+				<DropdownMenuSeparator />
+
+				{/* Actions Section */}
+				<DropdownMenuGroup>
+					<DropdownMenuLabel className="text-muted-foreground text-xs">
+						Actions
+					</DropdownMenuLabel>
+					{[
+						{
+							icon: UserIcon,
+							label: "Manage Profile",
+							action: () => {
+								navigate({ to: "/dashboard/settings/profile" });
+							},
+						},
+					].map((item, index) => (
+						<motion.div
+							key={item.label}
+							initial={{ opacity: 0, y: -5 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{
+								type: "spring",
+								stiffness: 500,
+								damping: 20,
+								delay: 0.1 + index * 0.03,
+							}}
+						>
+							<DropdownMenuItem
+								onClick={item.action}
+								className="gap-2 p-2 cursor-pointer"
+							>
+								<div className="flex size-6 items-center justify-center rounded-md">
+									<item.icon className="size-5 shrink-0" />
+								</div>
+								{item.label}
+							</DropdownMenuItem>
+						</motion.div>
+					))}
+				</DropdownMenuGroup>
 
 				<DropdownMenuSeparator />
 
