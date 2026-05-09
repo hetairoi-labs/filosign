@@ -21,7 +21,7 @@ export default function TestimonialSection() {
 				<div className="flex items-center justify-center gap-4">
 					<div className="relative size-14 rounded-full overflow-hidden bg-secondary">
 						<Image
-							src="/static/images/stock_1.webp"
+							src="/images/stock_1.webp"
 							alt="Ken"
 							width={64}
 							height={64}

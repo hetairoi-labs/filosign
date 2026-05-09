@@ -66,15 +66,15 @@ export default function FooterSection() {
 								<Button
 									variant={"primary"}
 									className="group bg-primary text-primary-foreground h-12 rounded-xl"
-									asChild
+									render={
+										<Link
+											to={primaryCta.to}
+											className="flex items-center justify-center gap-2"
+										/>
+									}
 								>
-									<Link
-										to={primaryCta.to}
-										className="flex items-center justify-center gap-2"
-									>
-										<SparkleIcon className="size-4" weight="fill" />
-										Try Filosign today
-									</Link>
+									<SparkleIcon className="size-4" weight="fill" />
+									Try Filosign today
 								</Button>
 							) : (
 								<Button
