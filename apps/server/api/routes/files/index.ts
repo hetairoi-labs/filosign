@@ -571,7 +571,6 @@ export default new Hono()
 				registerSignatureArgs,
 				{
 					// viem simulates via the public client; `account` sets `msg.sender` for `onlyServer`.
-					//@ts-expect-error
 					account: evmClient.account,
 				},
 			);
