@@ -31,7 +31,7 @@ pkill -f "bun run index.ts" 2>/dev/null || true
 lsof -ti:30011 | xargs kill -9 2>/dev/null || true
 sleep 1
 
-CHAIN="local" DB_NAME="test" EVM_PRIVATE_KEY_SERVER="$LOCAL_PVT_KEY" EVM_PRIVATE_KEY_SYNAPSE="$LOCAL_PVT_KEY" bun run --hot index.ts &
+CHAIN="local" DB_NAME="test" JWT_SECRET="filosign-serloc-local-jwt-secret-32b" EVM_PRIVATE_KEY_SERVER="$LOCAL_PVT_KEY" EVM_PRIVATE_KEY_SYNAPSE="$LOCAL_PVT_KEY" bun run --hot index.ts &
 SERVER_PID=$!
 
 echo "Server started with PID $SERVER_PID"
@@ -44,7 +44,7 @@ while true; do
         pkill -f "bun run index.ts"
         lsof -ti:30011 | xargs kill -9 2>/dev/null || true
         sleep 1
-        CHAIN="local" DB_NAME="test" EVM_PRIVATE_KEY_SERVER="$LOCAL_PVT_KEY" EVM_PRIVATE_KEY_SYNAPSE="$LOCAL_PVT_KEY" bun run index.ts &
+        CHAIN="local" DB_NAME="test" JWT_SECRET="filosign-serloc-local-jwt-secret-32b" EVM_PRIVATE_KEY_SERVER="$LOCAL_PVT_KEY" EVM_PRIVATE_KEY_SYNAPSE="$LOCAL_PVT_KEY" bun run index.ts &
         SERVER_PID=$!
         echo "Server restarted with PID $SERVER_PID"
     elif [[ $key == "R" ]]; then

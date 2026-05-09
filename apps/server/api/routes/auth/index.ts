@@ -68,19 +68,15 @@ export default new Hono()
 				.limit(1),
 		);
 
-		// Dev resilience: if the DB is temporarily unreachable (e.g. DNS flake),
-		// don't hard-fail auth — allow the UI to function (files, etc.) using JWT.
-		// This is intentionally best-effort and should be tightened for production.
 		if (userRecordResult.error) {
-			console.error("[auth.verify] user lookup failed; allowing dev login", {
+			console.error("[auth.verify] user lookup failed", {
 				address,
 				error:
 					userRecordResult.error instanceof Error
 						? userRecordResult.error.message
 						: String(userRecordResult.error),
 			});
-			const token = issueJwtToken(address);
-			return respond.ok(ctx, { valid: true, token }, "Signature verified", 200);
+			return respond.err(ctx, "Authentication temporarily unavailable", 503);
 		}
 
 		const [userRecord] = userRecordResult.data;

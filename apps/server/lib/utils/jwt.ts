@@ -1,7 +1,12 @@
 import jwt from "jsonwebtoken";
 import { type Address, isAddress } from "viem";
 import { z } from "zod";
-import { JWTalgorithm, JWTexpiration, JWTKeypair } from "../../constants";
+import {
+	JWTalgorithm,
+	JWTexpiration,
+	JWTissuer,
+	JWTsigningSecret,
+} from "../../constants";
 
 const zEvmAddress = z
 	.string()
@@ -25,7 +30,7 @@ export function createJwtPayload(walletAddress: Address): JwtPayload {
 	const now = Math.floor(Date.now() / 1000);
 
 	return {
-		iss: JWTKeypair.public,
+		iss: JWTissuer,
 		sub: walletAddress,
 		iat: now - 2,
 		exp: now + JWTexpiration,
@@ -34,13 +39,13 @@ export function createJwtPayload(walletAddress: Address): JwtPayload {
 }
 
 export function signJwt(payload: JwtPayload): string {
-	return jwt.sign(payload, JWTKeypair.private, {
+	return jwt.sign(payload, JWTsigningSecret, {
 		algorithm: JWTalgorithm,
 	});
 }
 
 export function verifyJwt(token: string): JwtPayload {
-	const decoded = jwt.verify(token, JWTKeypair.private, {
+	const decoded = jwt.verify(token, JWTsigningSecret, {
 		algorithms: [JWTalgorithm],
 	});
 

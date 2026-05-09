@@ -129,6 +129,7 @@ Server configuration is defined in `apps/server/env.ts`. The main required value
 - `DB_NAME`
 - `EVM_PRIVATE_KEY_SERVER`
 - `EVM_PRIVATE_KEY_SYNAPSE`
+- `JWT_SECRET`
 - `S3_ACCESS_KEY_ID`
 - `S3_SECRET_ACCESS_KEY`
 - `S3_BUCKET`
