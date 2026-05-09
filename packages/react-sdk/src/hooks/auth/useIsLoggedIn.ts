@@ -3,7 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import { DAY } from "../../constants";
 import { useFilosignContext } from "../../context/useFilosignContext";
 import { loadEnvelope } from "./pin-storage";
-import { getSessionSeed } from "./session-seed";
+import {
+	getSessionSeed,
+	tryHydrateSessionSeedFromTabStorage,
+} from "./session-seed";
 import { useIsRegistered } from "./useIsRegistered";
 import { useStoredKeygenData } from "./useStoredKeygenData";
 
@@ -22,9 +25,11 @@ export function useIsLoggedIn() {
 				return false;
 			}
 
+			tryHydrateSessionSeedFromTabStorage(wallet.account.address);
+
 			const keySeed = getSessionSeed(wallet.account.address);
 
-			// If we have a session seed (from server-side session restore), validate it
+			// If we have a session seed (in-memory or hydrated from this tab), validate it
 			if (keySeed) {
 				const keygenData = await seedKeyGen(keySeed, { dl: wasm.dilithium });
 				const { commitmentKem, commitmentSig } = storedKeygenData;

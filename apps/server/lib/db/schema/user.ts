@@ -73,36 +73,3 @@ export const userSignatures = t.pgTable("user_signatures", {
 
 	...timestamps,
 });
-
-// Sessions table for secure server-side seed storage
-export const sessions = t.pgTable("sessions", {
-	id: t.uuid().primaryKey().defaultRandom(),
-	walletAddress: tEvmAddress()
-		.references(() => users.walletAddress, { onDelete: "cascade" })
-		.notNull(),
-	// AES-256-GCM encrypted seed stored server-side (bytea = binary data)
-	encryptedSeed: t
-		.customType<{ data: Buffer; driverParam: Buffer }>({
-			dataType() {
-				return "bytea";
-			},
-		})()
-		.notNull(),
-	nonce: t
-		.customType<{ data: Buffer; driverParam: Buffer }>({
-			dataType() {
-				return "bytea";
-			},
-		})()
-		.notNull(),
-	// SHA-256 hash of session token for lookup
-	tokenHash: t.text().notNull(),
-	// Session expiration
-	expiresAt: t.timestamp({ withTimezone: true }).notNull(),
-	// For device/session info
-	userAgent: t.text(),
-	ipAddress: t.text(),
-	revoked: t.boolean().notNull().default(false),
-
-	...timestamps,
-});

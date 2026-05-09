@@ -1,14 +1,6 @@
 import { eip712signature } from "@filosign/contracts";
-import {
-	seedKeyGen,
-	signatures,
-	toBytes,
-	toHex,
-	walletKeyGen,
-} from "@filosign/crypto-utils";
-import { zHexString } from "@filosign/shared/zod";
+import { seedKeyGen, toHex, walletKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
 import {
 	assertAttemptAllowed,
@@ -25,21 +17,19 @@ import {
 import { setSessionSeed } from "./session-seed";
 import { useIsLoggedIn } from "./useIsLoggedIn";
 import { useIsRegistered } from "./useIsRegistered";
-import { useSessionStore } from "./useSessionStore";
 
 export function useLogin() {
 	const { api, contracts, wallet, wasm } = useFilosignContext();
 	const queryClient = useQueryClient();
-	const sessionStore = useSessionStore();
 
 	const { data: isRegistered } = useIsRegistered();
 	const { data: isLoggedIn } = useIsLoggedIn();
 
 	return useMutation({
-		mutationFn: async (params: { pin: string; rememberMe?: boolean }) => {
+		mutationFn: async (params: { pin: string }) => {
 			if (isLoggedIn) return { success: true };
 
-			const { pin, rememberMe = false } = params;
+			const { pin } = params;
 
 			if (!contracts || !wallet || !wasm.dilithium) {
 				throw new Error("unreachable");
@@ -49,47 +39,7 @@ export function useLogin() {
 				throw new Error("PIN must be 6-10 digits");
 			}
 
-			let seedToStore: Uint8Array | undefined;
 			let recoveryPhrase: string | undefined;
-
-			const ensureJwtForSession = async (seed: Uint8Array) => {
-				if (api.jwtExists) return;
-
-				const {
-					data: { nonce },
-				} = await api.rpc.getSafe(
-					{
-						nonce: zHexString(),
-					},
-					`/auth/nonce?address=${wallet.account.address}`,
-				);
-
-				const dl3Keypair = await signatures.keyGen({
-					dl: wasm.dilithium,
-					seed,
-				});
-
-				const signature = await signatures.sign({
-					dl: wasm.dilithium,
-					privateKey: dl3Keypair.privateKey,
-					message: toBytes(nonce),
-				});
-
-				const {
-					data: { token },
-				} = await api.rpc.postSafe(
-					{
-						token: z.string(),
-					},
-					"/auth/verify",
-					{
-						address: wallet.account.address,
-						signature: toHex(signature),
-					},
-				);
-
-				api.setJwt(token);
-			};
 
 			if (!isRegistered) {
 				const keygenData = await walletKeyGen(wallet, {
@@ -134,7 +84,6 @@ export function useLogin() {
 				await saveEnvelope({ wallet: wallet.account.address, envelope });
 				await resetAttempts({ wallet: wallet.account.address });
 				setSessionSeed(wallet.account.address, keygenData.seed);
-				seedToStore = keygenData.seed;
 				recoveryPhrase = recoveryPhraseFromSeed(keygenData.seedCore32);
 
 				queryClient
@@ -186,25 +135,11 @@ export function useLogin() {
 				}
 				await resetAttempts({ wallet: wallet.account.address });
 				setSessionSeed(wallet.account.address, decryptedSeed);
-				seedToStore = decryptedSeed;
 
 				// keep chain salts active through v1 registry schema
 				void saltPin;
 				void saltSeed;
 				void saltChallenge;
-			}
-
-			// Store session server-side if rememberMe is enabled
-			if (rememberMe && seedToStore) {
-				try {
-					await ensureJwtForSession(seedToStore);
-					await sessionStore.mutateAsync({
-						seed: seedToStore,
-						expiresInHours: 24,
-					});
-				} catch {
-					// Don't fail login if session storage fails
-				}
 			}
 
 			queryClient

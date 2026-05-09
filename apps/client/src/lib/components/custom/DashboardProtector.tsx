@@ -1,12 +1,9 @@
 import { useFilosignContext } from "@filosign/react";
 import {
-	clearSessionToken,
-	hasSessionToken,
 	useIsLoggedIn,
 	useIsRegistered,
 	useLogin,
 	useRecoverWithPhrase,
-	useSessionRestore,
 } from "@filosign/react/hooks";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
@@ -23,7 +20,6 @@ import {
 	CardHeader,
 	CardTitle,
 } from "@/src/lib/components/ui/card";
-import { Checkbox } from "@/src/lib/components/ui/checkbox";
 import { Label } from "@/src/lib/components/ui/label";
 import { Loader } from "@/src/lib/components/ui/loader";
 import { Textarea } from "@/src/lib/components/ui/textarea";
@@ -43,7 +39,6 @@ export default function DashboardProtector({
 	const isLoggedIn = useIsLoggedIn();
 	const login = useLogin();
 	const recoverWithPhrase = useRecoverWithPhrase();
-	const sessionRestore = useSessionRestore();
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 
@@ -53,52 +48,6 @@ export default function DashboardProtector({
 	const [forgotMode, setForgotMode] = useState(false);
 	const [recoveryPhrase, setRecoveryPhrase] = useState("");
 	const [newPin, setNewPin] = useState("");
-	const [isRestoringSession, setIsRestoringSession] = useState(false);
-	const [rememberMe, setRememberMe] = useState(true);
-
-	// Try to restore server-side session on mount
-	useEffect(() => {
-		const attemptSessionRestore = async () => {
-			if (
-				ready &&
-				authenticated &&
-				isRegistered.data &&
-				!isRegistered.isPending &&
-				!isLoggedIn.data &&
-				!isLoggedIn.isPending &&
-				hasSessionToken() &&
-				!isRestoringSession
-			) {
-				setIsRestoringSession(true);
-				try {
-					await sessionRestore.refetch({ throwOnError: true });
-					// Invalidate queries to trigger re-render with logged-in state
-					await queryClient.invalidateQueries({
-						queryKey: ["fsQ-is-logged-in", wallet?.account.address],
-					});
-				} catch {
-					// Session restore failed, will show PIN dialog
-					// Clear invalid session token to prevent repeated failed attempts
-					clearSessionToken();
-				} finally {
-					setIsRestoringSession(false);
-				}
-			}
-		};
-
-		void attemptSessionRestore();
-	}, [
-		ready,
-		authenticated,
-		isRegistered.data,
-		isLoggedIn.data,
-		isLoggedIn.isPending,
-		isRegistered.isPending,
-		wallet?.account.address,
-		queryClient,
-		sessionRestore,
-		isRestoringSession,
-	]);
 
 	useEffect(() => {
 		if (isLoggedIn.data) {
@@ -114,9 +63,7 @@ export default function DashboardProtector({
 			isRegistered.data &&
 			!isRegistered.isPending &&
 			!isLoggedIn.data &&
-			!isLoggedIn.isPending &&
-			!isRestoringSession &&
-			!hasSessionToken()
+			!isLoggedIn.isPending
 		) {
 			setShowPinAuth(true);
 		} else if (
@@ -134,7 +81,6 @@ export default function DashboardProtector({
 		navigate,
 		isLoggedIn.isPending,
 		isRegistered.isPending,
-		isRestoringSession,
 	]);
 
 	const handlePinSubmit = async () => {
@@ -142,7 +88,7 @@ export default function DashboardProtector({
 
 		try {
 			setError("");
-			await login.mutateAsync({ pin, rememberMe });
+			await login.mutateAsync({ pin });
 			await queryClient.invalidateQueries({
 				queryKey: ["fsQ-is-registered", wallet?.account.address],
 			});
@@ -213,7 +159,6 @@ export default function DashboardProtector({
 	const shouldShowLoader =
 		!ready ||
 		isRegistered.isPending ||
-		isRestoringSession ||
 		(!isLoggedIn.data && isLoggedIn.isPending && !isLoggedIn.isError);
 
 	if (shouldShowLoader) {
@@ -286,21 +231,6 @@ export default function DashboardProtector({
 											onSubmit={handlePinSubmit}
 											disabled={login.isPending}
 										/>
-										<div className="flex items-center justify-center gap-2">
-											<Checkbox
-												id="remember-me"
-												checked={rememberMe}
-												onCheckedChange={(checked) =>
-													setRememberMe(checked === true)
-												}
-											/>
-											<Label
-												htmlFor="remember-me"
-												className="text-sm text-muted-foreground cursor-pointer"
-											>
-												Remember me for 24 hours
-											</Label>
-										</div>
 									</div>
 								)}
 

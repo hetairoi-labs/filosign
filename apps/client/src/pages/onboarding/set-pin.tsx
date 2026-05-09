@@ -64,7 +64,7 @@ export default function OnboardingSetPinPage() {
 
 	const handleCreateAccount = () => {
 		if (login.isPending) return;
-		void login.mutateAsync({ pin, rememberMe: true }).then((result) => {
+		void login.mutateAsync({ pin }).then((result) => {
 			if (result?.recoveryPhrase) {
 				setRecoveryPhrase(result.recoveryPhrase);
 				return;

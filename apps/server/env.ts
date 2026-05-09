@@ -22,7 +22,6 @@ export const env = createEnv({
 			.string()
 			.transform((v) => parseInt(v, 10))
 			.optional(),
-		SESSION_MASTER_KEY: z.string().min(32),
 		/** HS512 signing secret; must be independent of EVM private keys */
 		JWT_SECRET: z.string().min(32),
 	},
