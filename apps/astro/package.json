@@ -1,0 +1,26 @@
+{
+	"name": "@filosign/astro",
+	"type": "module",
+	"version": "0.0.1",
+	"engines": {
+		"node": ">=24"
+	},
+	"scripts": {
+		"dev": "astro dev",
+		"build": "astro build",
+		"preview": "astro preview",
+		"astro": "astro",
+		"check": "bunx biome check --write",
+		"check-types": "astro check"
+	},
+	"dependencies": {
+		"@tailwindcss/postcss": "^4.1.16",
+		"astro": "^6.3.1",
+		"postcss": "^8.5.6",
+		"tailwindcss": "catalog:"
+	},
+	"devDependencies": {
+		"@astrojs/check": "0.9.9",
+		"typescript": "catalog:"
+	}
+}

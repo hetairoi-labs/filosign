@@ -2,7 +2,6 @@ import { CaretLeftIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import Logo from "@/src/lib/components/custom/Logo";
-import { cn } from "@/src/lib/utils/index";
 import { Button } from "@/src/lib/components/ui/button";
 import {
 	Card,
@@ -13,8 +12,14 @@ import {
 } from "@/src/lib/components/ui/card";
 import { Form } from "@/src/lib/components/ui/form";
 import { Label } from "@/src/lib/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/src/lib/components/ui/tabs";
+import {
+	Tabs,
+	TabsContent,
+	TabsList,
+	TabsTrigger,
+} from "@/src/lib/components/ui/tabs";
 import { Textarea } from "@/src/lib/components/ui/textarea";
+import { cn } from "@/src/lib/utils/index";
 import OtpInput from "@/src/pages/onboarding/_components/OtpInput";
 import { useProfileSettings } from "./hooks/use-profile-settings";
 import { PersonalInfoSection } from "./PersonalInfoSection";
@@ -170,10 +175,7 @@ export default function ProfilePage() {
 											</div>
 											<div className="space-y-2">
 												<p className="text-sm font-medium">Confirm new PIN</p>
-												<OtpInput
-													value={confirmPin}
-													onChange={setConfirmPin}
-												/>
+												<OtpInput value={confirmPin} onChange={setConfirmPin} />
 											</div>
 											{pinMessage && (
 												<p className="text-sm text-muted-foreground">
