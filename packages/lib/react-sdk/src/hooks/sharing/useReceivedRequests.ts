@@ -8,6 +8,7 @@ export function useReceivedRequests() {
 	return useQuery({
 		queryKey: ["received-requests"],
 		queryFn: async () => {
+			if (!api) throw new Error("API is unreachable");
 			const response = await api.rpc.getSafe(
 				{
 					requests: z.array(

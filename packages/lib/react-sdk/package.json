@@ -23,10 +23,10 @@
 		"hono": "^4.9.8",
 		"idb": "8.0.3",
 		"multiformats": "13.4.1",
-		"zod": "^4.1.11"
+		"zod": "4.3.6"
 	},
 	"peerDependencies": {
-		"viem": "^2.38.5",
+		"viem": "2.48.4",
 		"wagmi": "2.19.1",
 		"react": "^19.0.0",
 		"@tanstack/react-query": "^5.90.2"

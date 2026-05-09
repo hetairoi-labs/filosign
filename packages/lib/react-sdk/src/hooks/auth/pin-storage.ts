@@ -73,6 +73,7 @@ async function derivePinWrapKey(
 	argonSalt: Uint8Array,
 	argonParams: PinEnvelope["argonParams"],
 ) {
+	// @ts-expect-error
 	const argon2Module = (await import("argon2-browser")) as {
 		default: {
 			hash: (args: {

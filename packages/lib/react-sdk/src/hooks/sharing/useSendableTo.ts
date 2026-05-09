@@ -8,6 +8,7 @@ export function useSendableTo() {
 	return useQuery({
 		queryKey: ["sendable-to"],
 		queryFn: async () => {
+			if (!api) throw new Error("API is unreachable");
 			const response = await api.rpc.getSafe(
 				{
 					approvals: z.array(
@@ -33,6 +34,7 @@ export function useAcceptedRecipients() {
 	return useQuery({
 		queryKey: ["accepted-recipients"],
 		queryFn: async () => {
+			if (!api) throw new Error("API is unreachable");
 			const response = await api.rpc.getSafe(
 				{
 					requests: z.array(

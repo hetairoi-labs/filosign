@@ -8,6 +8,7 @@ export function useReceivableFrom() {
 	return useQuery({
 		queryKey: ["receivable-from"],
 		queryFn: async () => {
+			if (!api) throw new Error("API is unreachable");
 			const response = await api.rpc.getSafe(
 				{
 					approvals: z.array(

@@ -9,6 +9,7 @@ export function useReceivedFiles() {
 	return useQuery({
 		queryKey: ["received-files"],
 		queryFn: async () => {
+			if (!api) throw new Error("API is unreachable");
 			const response = await api.rpc.getSafe(
 				{
 					files: z.array(
