@@ -2,8 +2,8 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 
-const TARGET_DIR = "packages/client/public";
-const SOURCE_DIR = "packages/client/src";
+const TARGET_DIR = "apps/client/public";
+const SOURCE_DIR = "apps/client/src";
 
 async function getFiles(dir: string): Promise<string[]> {
 	const dirents = await fs.readdir(dir, { withFileTypes: true });

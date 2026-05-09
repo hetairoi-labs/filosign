@@ -11,21 +11,21 @@ ENVIRONMENT="${1:-}"
 case "$ENVIRONMENT" in
   "")
     echo "Deploying contracts to local network..."
-    bun run --cwd packages/contracts migrate
+    bun run --cwd apps/contracts migrate
     ;;
   testnet)
     echo "Deploying contracts to testnet..."
-    bun run --cwd packages/contracts migrate:testnet
+    bun run --cwd apps/contracts migrate:testnet
 
     echo "Purging database..."
-    bun run --cwd packages/server db:purge
+    bun run --cwd apps/server db:purge
 
     echo "Pushing database schema..."
-    bun run --cwd packages/server db:push
+    bun run --cwd apps/server db:push
     ;;
   mainnet)
     echo "Deploying contracts to mainnet..."
-    bun run --cwd packages/contracts migrate:mainnet
+    bun run --cwd apps/contracts migrate:mainnet
     ;;
   *)
     echo "Unknown environment: '$ENVIRONMENT'" >&2

@@ -17,13 +17,14 @@ It lets users send documents, invite recipients, collect signatures, and export 
 ## Repository Structure
 
 ```text
-packages/
+apps/
   client/             React web app
   server/             Hono API server
   contracts/          Solidity contracts and deployment helpers
-  lib/react-sdk/      React provider, API client, and hooks
-  lib/crypto-utils/   Encryption, KEM, signatures, hashing, encoding
-  lib/shared/         Shared schemas and helpers
+packages/
+  react-sdk/          React provider, API client, and hooks
+  crypto-utils/       Encryption, KEM, signatures, hashing, encoding
+  shared/             Shared schemas and helpers
 test/                 Local SDK/protocol test harness
 docs/                 Product and marketing notes
 ```
@@ -118,7 +119,7 @@ bun run test:dev
 
 ## Environment
 
-Server configuration is defined in `packages/server/env.ts`. The main required values are:
+Server configuration is defined in `apps/server/env.ts`. The main required values are:
 
 - `CHAIN`
 - `FRONTEND_URL`
@@ -164,26 +165,26 @@ Client configuration includes:
 Run a local Hardhat node:
 
 ```bash
-bun run --cwd packages/contracts localnode
+bun run --cwd apps/contracts localnode
 ```
 
 Compile contracts:
 
 ```bash
-bun run --cwd packages/contracts compile
+bun run --cwd apps/contracts compile
 ```
 
 Deploy contracts:
 
 ```bash
-bun run --cwd packages/contracts migrate
+bun run --cwd apps/contracts migrate
 ```
 
 Deploy to Base Sepolia or Base:
 
 ```bash
-bun run --cwd packages/contracts migrate:testnet
-bun run --cwd packages/contracts migrate:mainnet
+bun run --cwd apps/contracts migrate:testnet
+bun run --cwd apps/contracts migrate:mainnet
 ```
 
 ## Security Model

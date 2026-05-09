@@ -6,7 +6,7 @@ WORKDIR /app
 # Caching bun install dependencies
 COPY package.json bun.lock ./
 COPY patches ./patches
-COPY --parents packages/*/package.json packages/*/*/package.json ./
+COPY --parents apps/*/package.json packages/*/package.json ./
 
 # Remove the test workspace so bun install won't look for its folder
 RUN sed -i '/"test",/d' package.json
@@ -22,9 +22,9 @@ RUN bun run server:compile
 FROM debian:bookworm-slim AS release
 WORKDIR /app
 
-COPY --from=builder /app/packages/server/out/server .
+COPY --from=builder /app/apps/server/out/server .
 # Copy the WASM asset directly adjacent to the server binary for the runtime signed signature
-COPY --from=builder /app/packages/client/public/dilithium.wasm ./assets/dilithium.wasm
+COPY --from=builder /app/apps/client/public/dilithium.wasm ./assets/dilithium.wasm
 
 ENV NODE_ENV=production
 EXPOSE 3000

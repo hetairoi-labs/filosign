@@ -1,30 +1,33 @@
 {
 	"name": "filosign",
 	"version": "1.0.0",
-	"description": "Filosign monorepo",
+	"description": "Private Document Signing",
 	"private": true,
 	"workspaces": [
 		"test",
-		"packages/client",
-		"packages/server",
-		"packages/contracts",
-		"packages/lib/react-sdk",
-		"packages/lib/crypto-utils",
-		"packages/lib/shared"
+		"apps/client",
+		"apps/server",
+		"apps/contracts",
+		"packages/react-sdk",
+		"packages/crypto-utils",
+		"packages/shared"
 	],
 	"scripts": {
 		"web:dev": "bun run --parallel client:dev server:dev",
-		"client:dev": "bun run --cwd packages/client dev",
-		"client:build": "bun run --cwd packages/client build",
-		"client:start": "bun run --cwd packages/client start",
-		"server:dev": "bun run --cwd packages/server dev",
-		"server:start": "bun run --cwd packages/server start",
-		"server:compile": "bun run --cwd packages/server compile",
+		"client:dev": "bun run --cwd apps/client dev",
+		"client:build": "bun run --cwd apps/client build",
+		"client:start": "bun run --cwd apps/client start",
+		"server:dev": "bun run --cwd apps/server dev",
+		"server:start": "bun run --cwd apps/server start",
+		"server:compile": "bun run --cwd apps/server compile",
 		"test:dev": "bun run --cwd test dev",
 		"check": "bunx biome check --write",
+		"check:ci": "bunx biome check .",
+		"client:typecheck": "bunx tsc -p apps/client/tsconfig.json --noEmit",
+		"client:verify": "bun run client:typecheck && bun run client:build && bun run --cwd apps/client lint",
 		"serloc": "./scripts/serloc.sh",
-		"db:purge": "bun run --cwd packages/server db:purge",
-		"db:push": "bun run --cwd packages/server db:push",
+		"db:purge": "bun run --cwd apps/server db:purge",
+		"db:push": "bun run --cwd apps/server db:push",
 		"migrate": "./scripts/migrate.sh",
 		"purge:modules": "./scripts/purge.sh"
 	},
@@ -46,10 +49,11 @@
 		"@privy-io/wagmi": "2.0.2",
 		"dotenv": "17.2.4",
 		"ipaddr.js": "2.2.0",
-		"viem": "2.38.5"
+		"viem": "2.48.4"
 	},
 	"overrides": {
-		"@tanstack/react-query": "^5.90.2"
+		"@tanstack/react-query": "^5.90.2",
+		"viem": "2.48.4"
 	},
 	"patchedDependencies": {
 		"dilithium-crystals-js@1.1.3": "patches/dilithium-crystals-js@1.1.3.patch"
