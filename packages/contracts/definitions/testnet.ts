@@ -1,7 +1,7 @@
 export const definitions = {
 	"0x14a34": {
 		FSManager: {
-			address: "0x3f9c240949920ee35D752B4248883e95940057eF",
+			address: "0xE0064141f886fEc9C38c885D5deF8439fa47825E",
 			abi: [
 				{
 					inputs: [],
@@ -572,7 +572,7 @@ export const definitions = {
 			],
 		},
 		FSFileRegistry: {
-			address: "0x1E0820F063Bac2a5a44BC822a98BD4e36f2aBbd0",
+			address: "0x53505c653189BEEeC8Fc540a5b6Ac8481500D564",
 			abi: [
 				{
 					inputs: [],
@@ -1292,7 +1292,7 @@ export const definitions = {
 			],
 		},
 		FSKeyRegistry: {
-			address: "0x9267a36041bdB8F855a65875DD4274c94042Cd4C",
+			address: "0x711f5689f2a71D6a097171a9A11b5Ecfe46d1d47",
 			abi: [
 				{
 					inputs: [],
@@ -1624,7 +1624,7 @@ export const definitions = {
 			],
 		},
 		FSEscrow: {
-			address: "0x1c865cF78fbe1949102F2f6BD8Dd866228d9A9f7",
+			address: "0x011bB6C569E0502F01E8A7b632A2224987A6f7dD",
 			abi: [
 				{
 					inputs: [],

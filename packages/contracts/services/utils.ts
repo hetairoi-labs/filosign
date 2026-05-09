@@ -1,10 +1,10 @@
-import { encodePacked, type Hex, keccak256, pad } from "viem";
+import { encodePacked, fromHex, type Hex, keccak256, pad, toHex } from "viem";
 import type { SignTypedDataParameters } from "viem/accounts";
 import type { FilosignContracts } from "./contracts";
 
 export function parsePieceCid(pieceCid: string) {
 	const bytes = new TextEncoder().encode(pieceCid);
-	const hex = `0x${bytes.toHex()}` as const;
+	const hex = toHex(bytes);
 
 	const p1_bytes32 = `0x${hex.slice(2, 2 + 32 * 2)}` as const;
 
@@ -29,9 +29,10 @@ export function rebuildPieceCid(options: {
 	digestTail: Hex;
 }) {
 	const tailHex = options.digestTail.slice(2).replace(/^0+/, "");
-	const reconstructedHex = `0x${options.digestPrefix.slice(2)}${options.digestBuffer.slice(2)}${tailHex}`;
+	const reconstructedHex =
+		`0x${options.digestPrefix.slice(2)}${options.digestBuffer.slice(2)}${tailHex}` as Hex;
 
-	const reconstruct = Uint8Array.fromHex(reconstructedHex.slice(2));
+	const reconstruct = fromHex(reconstructedHex, "bytes");
 	const reconstructedString = new TextDecoder().decode(reconstruct);
 
 	return reconstructedString;
