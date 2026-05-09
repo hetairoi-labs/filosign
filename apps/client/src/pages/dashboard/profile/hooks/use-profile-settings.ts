@@ -3,7 +3,7 @@ import {
 	useRotatePin,
 	useUserProfile,
 } from "@filosign/react/hooks";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { useLinkAccount, usePrivy } from "@privy-io/react-auth";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -18,7 +18,7 @@ export function useProfileSettings() {
 	const userProfileQuery = useUserProfile();
 
 	const form = useForm<ProfileForm>({
-		resolver: zodResolver(profileSchema),
+		resolver: standardSchemaResolver(profileSchema),
 		defaultValues: {
 			personal: {
 				firstName: "",

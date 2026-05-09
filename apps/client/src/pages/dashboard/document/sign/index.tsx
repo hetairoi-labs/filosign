@@ -46,7 +46,7 @@ import {
 
 export default function SignDocumentPage() {
 	const navigate = useNavigate();
-	const search = useSearch({ from: "/dashboard/document/sign" });
+	const search = useSearch({ from: "/dashboard/document/sign/" });
 	const pieceCid = search.pieceCid;
 
 	const { user } = usePrivy();

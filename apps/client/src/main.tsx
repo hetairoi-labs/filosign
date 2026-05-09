@@ -6,7 +6,7 @@ import ProfileEmailSync from "./lib/components/custom/ProfileEmailSync";
 import { ErrorBoundary } from "./lib/components/errors/ErrorBoundary";
 import { QueryClientProvider } from "./lib/context/query-client";
 import { ThemeProvider } from "./lib/context/theme-provider";
-import router from "./pages/app";
+import router from "./router";
 import "./globals.css";
 import { IconContext } from "@phosphor-icons/react";
 import { Buffer as BufferI } from "buffer";
