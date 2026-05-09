@@ -59,21 +59,23 @@ export function UserDropdownButton() {
 			}}
 		>
 			<DropdownMenu open={isDropdownOpen} onOpenChange={setIsDropdownOpen}>
-				<DropdownMenuTrigger asChild>
-					<Button
-						variant="secondary"
-						className="relative h-10 w-10 rounded-full transition-all duration-150 hover:bg-accent/50"
+				<DropdownMenuTrigger
+					render={
+						<Button
+							variant="secondary"
+							className="relative h-10 w-10 rounded-full transition-all duration-150 hover:bg-accent/50"
+						/>
+					}
+				>
+					<Image
+						src={avatarUrl}
+						alt="Profile"
+						className="aspect-square size-8 rounded-full object-cover"
 					>
-						<Image
-							src={avatarUrl}
-							alt="Profile"
-							className="aspect-square size-8 rounded-full object-cover"
-						>
-							<div className="flex aspect-square size-8 items-center justify-center rounded-full">
-								<UserIcon className="size-4 text-primary" weight="bold" />
-							</div>
-						</Image>
-					</Button>
+						<div className="flex aspect-square size-8 items-center justify-center rounded-full">
+							<UserIcon className="size-4 text-primary" weight="bold" />
+						</div>
+					</Image>
 				</DropdownMenuTrigger>
 				<DropdownMenuContent
 					className="w-64 rounded-lg mt-1 z-[60]"

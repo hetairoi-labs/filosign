@@ -7,7 +7,6 @@ import {
 } from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";
-import { safeAsync } from "@/lib/utils/safe";
 import { Button } from "@/src/lib/components/ui/button";
 import {
 	Dialog,
@@ -20,9 +19,10 @@ import {
 import { Input } from "@/src/lib/components/ui/input";
 import { Label } from "@/src/lib/components/ui/label";
 import { Textarea } from "@/src/lib/components/ui/textarea";
+import { safeAsync } from "@/src/lib/utils/safe";
 
 interface AddRecipientDialogProps {
-	trigger?: React.ReactNode;
+	trigger?: React.ReactElement;
 	onSuccess?: () => void;
 }
 
@@ -92,12 +92,12 @@ export default function AddRecipientDialog({
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger asChild>
-				{trigger || (
-					<Button variant="primary">
+			<DialogTrigger render={trigger || <Button variant="primary" />}>
+				{!trigger && (
+					<>
 						<PlusIcon className="w-4 h-4" />
 						Add Recipient
-					</Button>
+					</>
 				)}
 			</DialogTrigger>
 
