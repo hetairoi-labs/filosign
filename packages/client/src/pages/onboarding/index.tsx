@@ -40,7 +40,7 @@ export default function OnboardingWelcomePage() {
 
 	return (
 		<OnboardingProtector>
-			<div className="flex justify-center items-center min-h-screen">
+			<div className="flex justify-center items-center min-h-screen bg-background">
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}

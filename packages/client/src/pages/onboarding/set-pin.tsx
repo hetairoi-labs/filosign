@@ -86,12 +86,12 @@ export default function OnboardingSetPinPage() {
 
 	return (
 		<OnboardingProtector>
-			<div className="flex justify-center items-center min-h-screen">
+			<div className="flex justify-center items-center min-h-screen bg-background">
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
 					animate={{ opacity: 1, y: 0 }}
 					transition={{ duration: 0.3, delay: 0.2 }}
-					className="flex flex-col justify-center items-center px-8 mx-auto w-full max-w-lg"
+					className="flex flex-col justify-center items-center px-8 mx-auto"
 				>
 					<Logo
 						className="mb-4"
@@ -101,7 +101,7 @@ export default function OnboardingSetPinPage() {
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.3, delay: 0.2 }}
-						className="flex flex-col justify-center items-center mx-auto w-full max-w-lg"
+						className="flex flex-col justify-center items-center mx-auto w-full"
 					>
 						<Card className="w-full">
 							<CardHeader>
@@ -186,10 +186,7 @@ export default function OnboardingSetPinPage() {
 				</motion.div>
 			</div>
 			<Dialog open={!!recoveryPhrase}>
-				<DialogContent
-					onEscapeKeyDown={(event) => event.preventDefault()}
-					onPointerDownOutside={(event) => event.preventDefault()}
-				>
+				<DialogContent>
 					<DialogHeader>
 						<DialogTitle>Save your recovery phrase</DialogTitle>
 						<DialogDescription>

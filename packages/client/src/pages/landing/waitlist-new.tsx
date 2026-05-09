@@ -36,7 +36,7 @@ export default function WaitlistNewSection() {
 		<section className="px-8 py-24 md:px-12">
 			<div
 				className="mx-auto max-w-6xl overflow-hidden rounded-3xl bg-cover bg-center bg-no-repeat p-8 text-center sm:p-16 md:p-24 relative"
-				style={{ backgroundImage: "url('/static/images/stock_1.webp')" }}
+				style={{ backgroundImage: "url('/images/stock_1.webp')" }}
 			>
 				{/* Background Overlay */}
 				<div className="absolute inset-0 bg-foreground/80" />
