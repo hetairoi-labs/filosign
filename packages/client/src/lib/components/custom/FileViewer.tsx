@@ -136,8 +136,15 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 				metadata: result?.metadata,
 			});
 
-			// Store the decrypted file data in state
-			setFileData(result);
+			if (result) {
+				setFileData({
+					...result,
+					metadata: {
+						name: result.metadata.name,
+						mimeType: result.metadata.mimeType ?? "application/octet-stream",
+					},
+				});
+			}
 		} catch (error) {
 			console.error("Failed to load file:", error);
 			const errorMessage =

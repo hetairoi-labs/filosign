@@ -304,11 +304,10 @@ export default function Crop({
 									Aspect Ratio
 								</label>
 								<ToggleGroup
-									id="aspect-ratio-toggle"
-									type="single"
-									value={aspectRatio}
-									onValueChange={(value) => {
-										if (value) setAspectRatio(value as AspectRatio);
+									value={aspectRatio ? [aspectRatio] : []}
+									onValueChange={(values: readonly string[]) => {
+										if (values && values.length > 0)
+											setAspectRatio(values[0] as AspectRatio);
 									}}
 									className="justify-start flex-wrap"
 								>
