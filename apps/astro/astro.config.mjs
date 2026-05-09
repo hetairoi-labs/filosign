@@ -5,6 +5,14 @@ import { defineConfig } from "astro/config";
 // https://astro.build/config
 export default defineConfig({
 	integrations: [react()],
+	vite: {
+		resolve: {
+			dedupe: ["react", "react-dom"],
+		},
+		optimizeDeps: {
+			include: ["react", "react-dom", "react-dom/client", "react/jsx-runtime"],
+		},
+	},
 	server: {
 		port: 3001,
 	},
