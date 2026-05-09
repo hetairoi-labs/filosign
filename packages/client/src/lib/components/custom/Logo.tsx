@@ -61,7 +61,7 @@ export default function Logo({
 					}}
 				>
 					<Image
-						src="/static/logo.webp"
+						src="/logo.webp"
 						alt="Filosign Logo"
 						width={64}
 						height={64}

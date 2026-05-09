@@ -92,25 +92,27 @@ export default function ConnectButton() {
 
 			{/* Get started / Dashboard buttons */}
 			{primaryCta ? (
-				<Button variant="secondary" asChild className="min-w-28 mr-2">
-					<Link to={primaryCta.to}>
-						<AnimatePresence mode="wait">
-							<motion.span
-								key={primaryCta.to}
-								initial={{ opacity: 0, y: 10 }}
-								animate={{ opacity: 1, y: 0 }}
-								exit={{ opacity: 0, y: -10 }}
-								transition={{
-									duration: 0.2,
-									ease: "easeInOut",
-									layout: { duration: 0.3 },
-								}}
-								layout
-							>
-								{primaryCta.label}
-							</motion.span>
-						</AnimatePresence>
-					</Link>
+				<Button
+					variant="secondary"
+					className="min-w-28 mr-2"
+					render={<Link to={primaryCta.to} />}
+				>
+					<AnimatePresence mode="wait">
+						<motion.span
+							key={primaryCta.to}
+							initial={{ opacity: 0, y: 10 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: -10 }}
+							transition={{
+								duration: 0.2,
+								ease: "easeInOut",
+								layout: { duration: 0.3 },
+							}}
+							layout
+						>
+							{primaryCta.label}
+						</motion.span>
+					</AnimatePresence>
 				</Button>
 			) : null}
 
