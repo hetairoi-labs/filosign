@@ -1,3 +1,4 @@
+import type { PlacementManifest } from "@filosign/shared";
 import * as t from "drizzle-orm/pg-core";
 import { tBytes32, tEvmAddress, tHex, timestamps } from "../helpers";
 import { userSignatures, users } from "./user";
@@ -12,6 +13,9 @@ export const files = t.pgTable(
 
 		status: t.text({ enum: ["s3", "foc", "unpaid_for", "invalid"] }).notNull(),
 		onchainTxHash: tBytes32().unique().notNull(),
+
+		placementCommitment: tBytes32().notNull(),
+		placementManifestJson: t.jsonb().$type<PlacementManifest>().notNull(),
 
 		...timestamps,
 	},
@@ -67,6 +71,29 @@ export const fileAcknowledgements = t.pgTable(
 		}),
 		t.index("idx_acknowledgements_file").on(table.filePieceCid),
 		t.index("idx_acknowledgements_wallet").on(table.wallet),
+	],
+);
+
+/** Per-signer completed field ids for draft/resume (Merkle leaf set before final sign). */
+export const fileSignerDrafts = t.pgTable(
+	"file_signer_drafts",
+	{
+		filePieceCid: t
+			.text()
+			.notNull()
+			.references(() => files.pieceCid, { onDelete: "cascade" }),
+		wallet: tEvmAddress()
+			.notNull()
+			.references(() => users.walletAddress),
+		completedFieldIds: t.jsonb().$type<string[]>().notNull(),
+		...timestamps,
+	},
+	(table) => [
+		t.primaryKey({
+			columns: [table.filePieceCid, table.wallet],
+			name: "pk_file_signer_drafts",
+		}),
+		t.index("idx_signer_drafts_wallet").on(table.wallet),
 	],
 );
 
