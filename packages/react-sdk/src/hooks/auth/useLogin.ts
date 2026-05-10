@@ -195,6 +195,7 @@ export function useLogin() {
 							}),
 						),
 				);
+			void queryClient.invalidateQueries({ queryKey: ["user"] });
 			return recoveryPhrase
 				? { success: true, recoveryPhrase }
 				: { success: true };

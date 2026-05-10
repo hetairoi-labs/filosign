@@ -48,6 +48,8 @@ export function UserDropdownButton() {
 
 	const walletAddress = user?.wallet?.address;
 	const avatarUrl = userProfile?.avatarUrl as string | undefined;
+	const contactEmail =
+		userProfile?.email?.trim() || user?.email?.address || null;
 
 	return (
 		<motion.div
@@ -96,8 +98,16 @@ export function UserDropdownButton() {
 								<UserIcon className="size-6 text-muted-foreground" />
 							</div>
 						</Image>
-						<div className="flex flex-col">
-							<p className="font-medium text-sm">{displayName}</p>
+						<div className="flex flex-col min-w-0 gap-0.5">
+							<p className="font-medium text-sm truncate">{displayName}</p>
+							{contactEmail ? (
+								<p
+									className="text-xs text-muted-foreground truncate"
+									title={contactEmail}
+								>
+									{contactEmail}
+								</p>
+							) : null}
 							<div className="flex items-center gap-1">
 								<p className="text-xs text-muted-foreground">
 									{walletAddress ? formatAddress(walletAddress) : "No wallet"}

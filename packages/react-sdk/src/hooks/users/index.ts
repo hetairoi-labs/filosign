@@ -1,5 +1,5 @@
-export { useSyncPrivyEmail } from "./useSyncPrivyEmail";
 export { useProfilesByAddresses } from "./useProfilesByAddresses";
+export { useSyncPrivyEmail } from "./useSyncPrivyEmail";
 export { useUpdateUserAvatar } from "./useUpdateUserAvatar";
 export { useUpdateUserProfile } from "./useUpdateUserProfile";
 export { useUpdateUserProfilePrevalidate } from "./useUpdateUserProfilePrevalidate";

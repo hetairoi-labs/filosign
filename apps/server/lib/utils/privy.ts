@@ -59,7 +59,10 @@ async function verifiedPrivyUserForWallet(
 	identityToken: string,
 	expectedWalletAddress: string,
 ): Promise<User> {
-	const user = await privyClient.utils().auth().verifyIdentityToken(identityToken);
+	const user = await privyClient
+		.utils()
+		.auth()
+		.verifyIdentityToken(identityToken);
 
 	const linked = linkedWalletAddresses(user);
 	const normalizedExpected = expectedWalletAddress.toLowerCase();

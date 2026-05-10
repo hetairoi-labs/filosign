@@ -9,8 +9,8 @@ import { fsContracts } from "@/lib/evm";
 import { processTransaction } from "@/lib/indexer/process";
 import { bucket } from "@/lib/s3/client";
 import {
-	verifyPrivyTokenWithWallet,
 	verifiedPrivyEmailForWallet,
+	verifyPrivyTokenWithWallet,
 } from "@/lib/utils/privy";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
