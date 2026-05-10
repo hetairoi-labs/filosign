@@ -2,6 +2,7 @@ import {
 	useAcceptedPeople,
 	useAcceptRequest,
 	useCancelRequest,
+	useProfilesByAddresses,
 	useReceivableFrom,
 	useReceivedRequests,
 	useRejectRequest,
@@ -11,6 +12,7 @@ import {
 import { MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { type Address, getAddress } from "viem";
 
 import AddRecipientDialog from "@/src/lib/components/custom/AddRecipientDialog";
 import { Image } from "@/src/lib/components/custom/Image";
@@ -55,6 +57,7 @@ function buildContacts(
 ): UnifiedContact[] {
 	const map = new Map<string, UnifiedContact>();
 
+	/* Accepted recipients = they accepted your share request → you can send unless chain says revoked */
 	for (const p of accepted?.people ?? []) {
 		if (!p.walletAddress) continue;
 		const k = p.walletAddress.toLowerCase();
@@ -62,18 +65,17 @@ function buildContacts(
 			wallet: p.walletAddress,
 			displayName: p.displayName,
 			avatarUrl: p.avatarUrl,
-			canSendTo: false,
+			canSendTo: true,
 			canReceiveFrom: false,
 		});
 	}
 
 	for (const a of sendable ?? []) {
-		if (!a.active) continue;
 		const k = a.recipientWallet.toLowerCase();
 		const prev = map.get(k);
 		if (prev) {
-			prev.canSendTo = true;
-		} else {
+			prev.canSendTo = a.active;
+		} else if (a.active) {
 			map.set(k, {
 				wallet: a.recipientWallet,
 				displayName: null,
@@ -85,12 +87,11 @@ function buildContacts(
 	}
 
 	for (const a of receivable ?? []) {
-		if (!a.active) continue;
 		const k = a.senderWallet.toLowerCase();
 		const prev = map.get(k);
 		if (prev) {
-			prev.canReceiveFrom = true;
-		} else {
+			prev.canReceiveFrom = a.active;
+		} else if (a.active) {
 			map.set(k, {
 				wallet: a.senderWallet,
 				displayName: null,
@@ -192,15 +193,28 @@ export default function ConnectionsPage() {
 		[acceptedPeople.data, sendableTo.data, receivableFrom.data],
 	);
 
+	const recipientAddresses = useMemo(
+		() => contacts.map((c) => getAddress(c.wallet as Address)),
+		[contacts],
+	);
+
+	const profileByWallet = useProfilesByAddresses(
+		recipientAddresses.length > 0 ? recipientAddresses : undefined,
+	);
+
 	const filteredContacts = useMemo(() => {
 		const q = search.trim().toLowerCase();
 		if (!q) return contacts;
 		return contacts.filter((c) => {
 			const wallet = c.wallet.toLowerCase();
 			const name = (c.displayName || "").toLowerCase();
-			return wallet.includes(q) || name.includes(q);
+			const email =
+				profileByWallet.data
+					?.get(getAddress(c.wallet as Address))
+					?.email?.toLowerCase() ?? "";
+			return wallet.includes(q) || name.includes(q) || email.includes(q);
 		});
-	}, [contacts, search]);
+	}, [contacts, search, profileByWallet.data]);
 
 	const pendingIncoming =
 		receivedRequests.data?.filter((r) => r.status === "PENDING") ?? [];
@@ -217,7 +231,8 @@ export default function ConnectionsPage() {
 	const loadingContacts =
 		acceptedPeople.isLoading ||
 		sendableTo.isLoading ||
-		receivableFrom.isLoading;
+		receivableFrom.isLoading ||
+		profileByWallet.isLoading;
 
 	const loadingRequests = receivedRequests.isLoading || sentRequests.isLoading;
 
@@ -235,7 +250,7 @@ export default function ConnectionsPage() {
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 						<div className="min-w-0 space-y-0.5">
 							<h1 className="text-base font-semibold text-foreground">
-								Contacts
+								Your Recipients
 							</h1>
 							<p className="text-sm text-muted-foreground">
 								Add someone by email or manage wallet connection requests.
@@ -245,7 +260,7 @@ export default function ConnectionsPage() {
 							trigger={
 								<Button variant="primary" size="sm" className="gap-1.5">
 									<PlusIcon className="size-4" weight="bold" />
-									Add contact
+									Add recipient
 								</Button>
 							}
 							onRequestCompleted={() => invalidateSharingQueries(queryClient)}
@@ -259,10 +274,10 @@ export default function ConnectionsPage() {
 						className="flex min-h-0 flex-1 flex-col gap-0"
 					>
 						<TabsList className="mb-5 h-9 w-fit max-w-full">
-							<TabsTrigger value="contacts" className="min-w-32">
-								Contacts
+							<TabsTrigger value="contacts" className="min-w-40">
+								Your Recipients
 							</TabsTrigger>
-							<TabsTrigger value="requests" className="min-w-32">
+							<TabsTrigger value="requests" className="min-w-40">
 								<span className="flex items-center gap-1.5">
 									Requests
 									<TabCount count={pendingWalletCount} />
@@ -274,7 +289,7 @@ export default function ConnectionsPage() {
 							<div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 								<p className="text-xs text-muted-foreground">
 									{contacts.length}{" "}
-									{contacts.length === 1 ? "contact" : "contacts"}
+									{contacts.length === 1 ? "recipient" : "recipients"}
 								</p>
 								<div className="relative w-full max-w-xs">
 									<MagnifyingGlassIcon
@@ -300,15 +315,18 @@ export default function ConnectionsPage() {
 									<EmptyHint
 										title={
 											contacts.length === 0
-												? "No contacts yet. Use Add contact to invite someone."
+												? "No recipients yet. Use Add recipient to invite someone."
 												: "No matches."
 										}
 									/>
 								) : (
-									<table className="w-full min-w-[520px] border-collapse text-sm">
+									<table className="w-full min-w-[640px] border-collapse text-sm">
 										<thead>
 											<tr>
-												<th className={th}>Contact</th>
+												<th className={th}>Recipient</th>
+												<th className={cn(th, "hidden md:table-cell")}>
+													Email
+												</th>
 												<th className={cn(th, "hidden lg:table-cell")}>
 													Wallet
 												</th>
@@ -316,70 +334,94 @@ export default function ConnectionsPage() {
 											</tr>
 										</thead>
 										<tbody>
-											{filteredContacts.map((c) => (
-												<tr key={c.wallet} className={row}>
-													<td className={td}>
-														<div className="flex items-center gap-2.5">
-															<div className="flex size-8 shrink-0 overflow-hidden rounded-full bg-muted">
-																{c.avatarUrl ? (
-																	<Image
-																		src={c.avatarUrl}
-																		alt=""
-																		className="size-8 object-cover"
-																		width={32}
-																		height={32}
-																	/>
-																) : (
-																	<span className="flex size-8 items-center justify-center text-[11px] font-medium text-muted-foreground">
-																		{initialsFromName(c.displayName, c.wallet)}
-																	</span>
-																)}
-															</div>
-															<div className="min-w-0">
-																<div className="truncate font-medium">
-																	{c.displayName || shortWallet(c.wallet)}
+											{filteredContacts.map((c) => {
+												const rowEmail =
+													profileByWallet.data?.get(
+														getAddress(c.wallet as Address),
+													)?.email ?? null;
+												return (
+													<tr key={c.wallet} className={row}>
+														<td className={td}>
+															<div className="flex items-center gap-2.5">
+																<div className="flex size-8 shrink-0 overflow-hidden rounded-full bg-muted">
+																	{c.avatarUrl ? (
+																		<Image
+																			src={c.avatarUrl}
+																			alt=""
+																			className="size-8 object-cover"
+																			width={32}
+																			height={32}
+																		/>
+																	) : (
+																		<span className="flex size-8 items-center justify-center text-[11px] font-medium text-muted-foreground">
+																			{initialsFromName(
+																				c.displayName,
+																				c.wallet,
+																			)}
+																		</span>
+																	)}
 																</div>
-																<div className="truncate font-mono text-xs text-muted-foreground lg:hidden">
-																	{shortWallet(c.wallet)}
+																<div className="min-w-0">
+																	<div className="truncate font-medium">
+																		{c.displayName || shortWallet(c.wallet)}
+																	</div>
+																	{rowEmail ? (
+																		<div className="truncate text-xs text-muted-foreground md:hidden">
+																			{rowEmail}
+																		</div>
+																	) : null}
+																	<div className="truncate font-mono text-xs text-muted-foreground lg:hidden">
+																		{shortWallet(c.wallet)}
+																	</div>
 																</div>
 															</div>
-														</div>
-													</td>
-													<td className={cn(td, "hidden lg:table-cell")}>
-														<div className="flex items-center gap-1">
-															<span className="font-mono text-xs text-muted-foreground">
-																{shortWallet(c.wallet)}
+														</td>
+														<td
+															className={cn(
+																td,
+																"hidden max-w-[220px] truncate md:table-cell",
+															)}
+														>
+															<span className="text-muted-foreground">
+																{rowEmail ?? "—"}
 															</span>
-															<WalletCopyButton address={c.wallet} />
-														</div>
-													</td>
-													<td className={td}>
-														<div className="flex flex-wrap gap-1">
-															{c.canSendTo ? (
-																<Badge
-																	variant="secondary"
-																	className="text-[10px] font-normal"
-																>
-																	You can send
-																</Badge>
-															) : null}
-															{c.canReceiveFrom ? (
-																<Badge
-																	variant="secondary"
-																	className="text-[10px] font-normal"
-																>
-																	Can send to you
-																</Badge>
-															) : null}
-															{!c.canSendTo && !c.canReceiveFrom ? (
-																<span className="text-xs text-muted-foreground">
-																	Connected
+														</td>
+														<td className={cn(td, "hidden lg:table-cell")}>
+															<div className="flex items-center gap-1">
+																<span className="font-mono text-xs text-muted-foreground">
+																	{shortWallet(c.wallet)}
 																</span>
-															) : null}
-														</div>
-													</td>
-												</tr>
-											))}
+																<WalletCopyButton address={c.wallet} />
+															</div>
+														</td>
+														<td className={td}>
+															<div className="flex flex-wrap gap-1">
+																{c.canSendTo ? (
+																	<Badge
+																		variant="secondary"
+																		className="text-[10px] font-normal"
+																	>
+																		You can send
+																	</Badge>
+																) : null}
+																{c.canReceiveFrom ? (
+																	<Badge
+																		variant="secondary"
+																		className="text-[10px] font-normal"
+																	>
+																		Can send to you
+																	</Badge>
+																) : null}
+																{!c.canSendTo && !c.canReceiveFrom ? (
+																	<span className="text-xs text-muted-foreground">
+																		—
+																	</span>
+																) : null}
+															</div>
+														</td>
+													</tr>
+												);
+											})}
 										</tbody>
 									</table>
 								)}

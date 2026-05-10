@@ -12,6 +12,8 @@ export type ProfileByAddress = {
 	firstName: string | null;
 	lastName: string | null;
 	avatarUrl: string | null;
+	/** Present when the API returns it for sharing-linked profiles. */
+	email?: string | null;
 	has: { email: boolean; mobile: boolean };
 };
 
@@ -32,6 +34,7 @@ export function useProfilesByAddresses(addresses: Address[] | undefined) {
 						firstName: z.string().nullable(),
 						lastName: z.string().nullable(),
 						avatarUrl: z.string().nullable(),
+						email: z.string().email().nullable().optional(),
 						has: z.object({
 							email: z.boolean(),
 							mobile: z.boolean(),

@@ -25,6 +25,7 @@ export function useAcceptedPeople() {
 								firstName: z.string().nullable(),
 								lastName: z.string().nullable(),
 								avatarUrl: z.string().nullable(),
+								email: z.string().email().nullable().optional(),
 							},
 							`/users/profile/${request.recipientWallet}`,
 						);
@@ -37,6 +38,7 @@ export function useAcceptedPeople() {
 								: null,
 							username: null, // This endpoint doesn't return username
 							avatarUrl: profile.avatarUrl,
+							email: profile.email ?? null,
 						};
 					} catch (error) {
 						console.error(
@@ -49,6 +51,7 @@ export function useAcceptedPeople() {
 							displayName: null,
 							username: null,
 							avatarUrl: null,
+							email: null,
 						};
 					}
 				}),

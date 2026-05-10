@@ -1,7 +1,6 @@
 import {
 	CaretRightIcon,
 	EnvelopeSimpleIcon,
-	FileTextIcon,
 	HouseIcon,
 	SealIcon,
 	ShieldCheckIcon,
@@ -83,11 +82,11 @@ const groups: { label: string; items: NavItem[] }[] = [
 		label: "People",
 		items: [
 			{
-				title: "Connections",
+				title: "Your Recipients",
 				url: "/dashboard/connections",
 				icon: UsersThreeIcon,
 				match: (p) => matchPrefix(p, "/dashboard/connections"),
-				tooltip: "Connections",
+				tooltip: "Your Recipients",
 			},
 		],
 	},

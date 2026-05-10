@@ -447,13 +447,17 @@ export default new Hono()
 			return respond.err(ctx, "User not found", 404);
 		}
 
-		const isApproved = await db.canSendTo({
+		const canSendToThem = await db.canSendTo({
 			sender: user,
 			recipient: userData.walletAddress,
 		});
+		const canReceiveFromThem = await db.canSendTo({
+			sender: userData.walletAddress,
+			recipient: user,
+		});
 
-		if (!isApproved) {
-			return respond.err(ctx, "You are not approved by this user", 401);
+		if (!canSendToThem && !canReceiveFromThem) {
+			return respond.err(ctx, "No active sharing link with this user", 401);
 		}
 
 		let avatarUrl: string | null = null;
@@ -474,6 +478,7 @@ export default new Hono()
 				firstName: userData.firstName,
 				lastName: userData.lastName,
 				avatarUrl,
+				email: userData.email ?? null,
 				has: {
 					email: !!userData.email,
 					mobile: !!userData.mobile,

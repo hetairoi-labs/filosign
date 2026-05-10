@@ -194,12 +194,12 @@ export default function RecipientsSection() {
 												render={<Button type="button" variant="outline" />}
 											>
 												<UserIcon className="size-4" />
-												<p className="hidden md:block">Your Contacts</p>
+												<p className="hidden md:block">Your Recipients</p>
 											</PopoverTrigger>
 											<PopoverContent className="w-80 p-0 mt-2" align="end">
 												<Command>
 													<CommandInput
-														placeholder="Search connections..."
+														placeholder="Search recipients..."
 														value={searchQuery}
 														onValueChange={setSearchQuery}
 													/>
@@ -207,7 +207,7 @@ export default function RecipientsSection() {
 														<CommandEmpty>
 															{acceptedPeople.isLoading
 																? "Loading..."
-																: "No connections found"}
+																: "No recipients found"}
 														</CommandEmpty>
 														{filteredConnections.map((person) => {
 															const normalized = getAddress(
