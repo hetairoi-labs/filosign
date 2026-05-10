@@ -10,6 +10,7 @@ interface IFSFileRegistry {
         bytes32 cidIdentifier;
         address sender;
         bytes20 signersCommitment;
+        bytes32 placementCommitment;
         mapping(address => bool) signers;
         uint8 signersCount;
         uint8 signaturesCount;
@@ -24,6 +25,7 @@ interface IFSFileRegistry {
         bytes32 cidIdentifier;
         address sender;
         bytes20 signersCommitment;
+        bytes32 placementCommitment;
         uint8 signersCount;
         uint8 signaturesCount;
         uint256 timestamp;
@@ -35,12 +37,12 @@ interface IFSFileRegistry {
     function manager() external view returns (address);
     function computeSignersCommitment(address[] calldata signers_) external pure returns (bytes20);
     function fileRegistrations(bytes32 cidId) external view returns (FileRegistrationView memory);
-    function registerFile(string calldata pieceCid_, address sender_, address[] calldata signers_, uint256 timestamp_, bytes calldata signature_) external;
-    function registerFileSignature(string calldata pieceCid_, address sender_, address signer_, bytes20 dl3SignatureCommitment_, uint256 timestamp_, bytes calldata signature_, address[] calldata allSigners_) external;
+    function registerFile(string calldata pieceCid_, address sender_, address[] calldata signers_, uint256 timestamp_, bytes calldata signature_, bytes32 placementCommitment_) external;
+    function registerFileSignature(string calldata pieceCid_, address sender_, address signer_, bytes20 dl3SignatureCommitment_, uint256 timestamp_, bytes calldata signature_, address[] calldata allSigners_, bytes32 completionsRoot_, uint8 leafSchemaVersion_) external;
     function isSigner(bytes32 cidId, address who) external view returns (bool);
     function hasSigned(bytes32 cidId, address who) external view returns (bool);
-    function validateFileRegistrationSignature(string calldata pieceCid_, address sender_, address[] calldata signers_, uint256 timestamp_, bytes calldata signature_) external view returns (bool);
-    function validateFileSigningSignature(string calldata pieceCid_, address sender_, address signer_, bytes20 dl3SignatureCommitment_, uint256 timestamp_, bytes calldata signature_) external view returns (bool);
+    function validateFileRegistrationSignature(string calldata pieceCid_, address sender_, address[] calldata signers_, uint256 timestamp_, bytes calldata signature_, bytes32 placementCommitment_) external view returns (bool);
+    function validateFileSigningSignature(string calldata pieceCid_, address sender_, address signer_, bytes20 dl3SignatureCommitment_, uint256 timestamp_, bytes calldata signature_, bytes32 completionsRoot_, uint8 leafSchemaVersion_) external view returns (bool);
     function validateFileAckSignature(string calldata pieceCid_, address sender_, address viewer_, uint256 timestamp_, bytes calldata signature_) external view returns (bool);
     function cidIdentifier(string calldata pieceCid_) external pure returns (bytes32);
     function setSignerIncentive(bytes32 cidId, address signer, address token, uint256 amount) external;

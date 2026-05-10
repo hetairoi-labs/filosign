@@ -18,12 +18,12 @@ contract FSFileRegistry is EIP712 {
         bytes32 cidIdentifier;
         address sender;
         bytes20 signersCommitment;
+        bytes32 placementCommitment;
         mapping(address => bool) signers;
         uint8 signersCount;
         uint8 signaturesCount;
         mapping(address => bytes) signatures;
         uint256 timestamp;
-        // per-signer incentives set by the sender before all signers have signed
         mapping(address signer => address) incentiveToken;
         mapping(address signer => uint256) incentiveAmount;
         mapping(address signer => bool) incentiveClaimed;
@@ -33,6 +33,7 @@ contract FSFileRegistry is EIP712 {
         bytes32 cidIdentifier;
         address sender;
         bytes20 signersCommitment;
+        bytes32 placementCommitment;
         uint8 signersCount;
         uint8 signaturesCount;
         uint256 timestamp;
@@ -66,12 +67,12 @@ contract FSFileRegistry is EIP712 {
     }
 
     constructor() EIP712("FSFileRegistry", "1") {
-        manager = IFSManager(msg.sender); // expect msg.sender to be fsmanager
+        manager = IFSManager(msg.sender);
     }
 
     bytes32 private constant REGISTER_FILE_TYPEHASH =
         keccak256(
-            "RegisterFile(bytes32 cidIdentifier,address sender,bytes20 signersCommitment,uint256 timestamp,uint256 nonce)"
+            "RegisterFile(bytes32 cidIdentifier,address sender,bytes20 signersCommitment,bytes32 placementCommitment,uint256 timestamp,uint256 nonce)"
         );
     bytes32 private constant ACK_FILE_TYPEHASH =
         keccak256(
@@ -79,25 +80,24 @@ contract FSFileRegistry is EIP712 {
         );
     bytes32 private constant SIGN_FILE_TYPEHASH =
         keccak256(
-            "SignFile(bytes32 cidIdentifier,address sender,address signer,bytes20 dl3SignatureCommitment,uint256 timestamp,uint256 nonce)"
+            "SignFile(bytes32 cidIdentifier,address sender,address signer,bytes20 dl3SignatureCommitment,bytes32 completionsRoot,uint8 leafSchemaVersion,uint256 timestamp,uint256 nonce)"
         );
 
     function computeSignersCommitment(
-        address[] calldata signers_ // Always expect inpu to be sorted to maintain unifrom output
+        address[] calldata signers_
     ) public pure returns (bytes20) {
         for (uint256 i = 0; i < signers_.length; ) {
             address s = signers_[i];
             if (s == address(0)) revert ZeroSigner();
             if (i > 0) {
-                if (s <= signers_[i - 1]) revert UnsortedSigners(); // also catches dup
+                if (s <= signers_[i - 1]) revert UnsortedSigners();
             }
             unchecked {
                 ++i;
             }
         }
 
-        bytes20 commitment = ripemd160(abi.encodePacked(signers_));
-        return commitment;
+        return ripemd160(abi.encodePacked(signers_));
     }
 
     function fileRegistrations(
@@ -109,6 +109,7 @@ contract FSFileRegistry is EIP712 {
                 cidIdentifier: file.cidIdentifier,
                 sender: file.sender,
                 signersCommitment: file.signersCommitment,
+                placementCommitment: file.placementCommitment,
                 signersCount: file.signersCount,
                 signaturesCount: file.signaturesCount,
                 timestamp: file.timestamp
@@ -120,7 +121,8 @@ contract FSFileRegistry is EIP712 {
         address sender_,
         address[] calldata signers_,
         uint256 timestamp_,
-        bytes calldata signature_
+        bytes calldata signature_,
+        bytes32 placementCommitment_
     ) external onlyServer {
         require(
             validateFileRegistrationSignature(
@@ -128,7 +130,8 @@ contract FSFileRegistry is EIP712 {
                 sender_,
                 signers_,
                 timestamp_,
-                signature_
+                signature_,
+                placementCommitment_
             ),
             InvalidSignature()
         );
@@ -144,6 +147,7 @@ contract FSFileRegistry is EIP712 {
         file.cidIdentifier = cidId;
         file.sender = sender_;
         file.signersCommitment = computeSignersCommitment(signers_);
+        file.placementCommitment = placementCommitment_;
         file.signersCount = uint8(signers_.length);
         file.timestamp = timestamp_;
 
@@ -162,7 +166,9 @@ contract FSFileRegistry is EIP712 {
         bytes20 dl3SignatureCommitment_,
         uint256 timestamp_,
         bytes calldata signature_,
-        address[] calldata allSigners_ // full list of signers on final sign (high gas but high reliability)
+        address[] calldata allSigners_,
+        bytes32 completionsRoot_,
+        uint8 leafSchemaVersion_
     ) external onlyServer {
         bytes32 cidId = cidIdentifier(pieceCid_);
         FileRegistration storage file = _fileRegistrations[cidId];
@@ -177,7 +183,9 @@ contract FSFileRegistry is EIP712 {
                 signer_,
                 dl3SignatureCommitment_,
                 timestamp_,
-                signature_
+                signature_,
+                completionsRoot_,
+                leafSchemaVersion_
             ),
             InvalidSignature()
         );
@@ -213,7 +221,8 @@ contract FSFileRegistry is EIP712 {
         address sender_,
         address[] calldata signers_,
         uint256 timestamp_,
-        bytes calldata signature_
+        bytes calldata signature_,
+        bytes32 placementCommitment_
     ) public view returns (bool) {
         require(
             block.timestamp <= timestamp_ + SIGNATURE_VALIDITY_PERIOD,
@@ -235,6 +244,7 @@ contract FSFileRegistry is EIP712 {
                 cidId,
                 sender_,
                 signersCommitment,
+                placementCommitment_,
                 timestamp_,
                 nonce[sender_]
             )
@@ -250,7 +260,9 @@ contract FSFileRegistry is EIP712 {
         address signer_,
         bytes20 dl3SignatureCommitment_,
         uint256 timestamp_,
-        bytes calldata signature_
+        bytes calldata signature_,
+        bytes32 completionsRoot_,
+        uint8 leafSchemaVersion_
     ) public view returns (bool) {
         require(
             block.timestamp <= timestamp_ + SIGNATURE_VALIDITY_PERIOD,
@@ -271,6 +283,8 @@ contract FSFileRegistry is EIP712 {
                 sender_,
                 signer_,
                 dl3SignatureCommitment_,
+                completionsRoot_,
+                leafSchemaVersion_,
                 timestamp_,
                 nonce[signer_]
             )
@@ -312,12 +326,6 @@ contract FSFileRegistry is EIP712 {
         return keccak256(abi.encodePacked(pieceCid_));
     }
 
-    // -------------------------------------------------------------------------
-    // Incentive management — called by FSManager only
-    // -------------------------------------------------------------------------
-
-    /// @notice Record a per-signer token incentive for a file. Tokens are held
-    ///         in the escrow; this only stores the accounting entry.
     function setSignerIncentive(
         bytes32 cidId,
         address signer,
@@ -335,7 +343,6 @@ contract FSFileRegistry is EIP712 {
         file.incentiveAmount[signer] = amount;
     }
 
-    /// @notice Read the incentive assigned to a signer for a file.
     function getSignerIncentive(
         bytes32 cidId,
         address signer
@@ -348,8 +355,6 @@ contract FSFileRegistry is EIP712 {
         );
     }
 
-    /// @notice Mark a signer's incentive as claimed. Called by FSManager after releasing
-    ///         the tokens from escrow.
     function markIncentiveClaimed(
         bytes32 cidId,
         address signer
@@ -357,7 +362,6 @@ contract FSFileRegistry is EIP712 {
         _fileRegistrations[cidId].incentiveClaimed[signer] = true;
     }
 
-    /// @notice Returns true once every signer has submitted a valid signature.
     function allSigned(bytes32 cidId) external view returns (bool) {
         FileRegistration storage file = _fileRegistrations[cidId];
         return file.timestamp != 0 && file.signaturesCount == file.signersCount;

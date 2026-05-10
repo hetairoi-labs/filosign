@@ -908,6 +908,11 @@ export const definitions = {
 									type: "bytes20",
 								},
 								{
+									internalType: "bytes32",
+									name: "placementCommitment",
+									type: "bytes32",
+								},
+								{
 									internalType: "uint8",
 									name: "signersCount",
 									type: "uint8",
@@ -1090,6 +1095,11 @@ export const definitions = {
 							name: "signature_",
 							type: "bytes",
 						},
+						{
+							internalType: "bytes32",
+							name: "placementCommitment_",
+							type: "bytes32",
+						},
 					],
 					name: "registerFile",
 					outputs: [],
@@ -1132,6 +1142,16 @@ export const definitions = {
 							internalType: "address[]",
 							name: "allSigners_",
 							type: "address[]",
+						},
+						{
+							internalType: "bytes32",
+							name: "completionsRoot_",
+							type: "bytes32",
+						},
+						{
+							internalType: "uint8",
+							name: "leafSchemaVersion_",
+							type: "uint8",
 						},
 					],
 					name: "registerFileSignature",
@@ -1233,6 +1253,11 @@ export const definitions = {
 							name: "signature_",
 							type: "bytes",
 						},
+						{
+							internalType: "bytes32",
+							name: "placementCommitment_",
+							type: "bytes32",
+						},
 					],
 					name: "validateFileRegistrationSignature",
 					outputs: [
@@ -1276,6 +1301,16 @@ export const definitions = {
 							internalType: "bytes",
 							name: "signature_",
 							type: "bytes",
+						},
+						{
+							internalType: "bytes32",
+							name: "completionsRoot_",
+							type: "bytes32",
+						},
+						{
+							internalType: "uint8",
+							name: "leafSchemaVersion_",
+							type: "uint8",
 						},
 					],
 					name: "validateFileSigningSignature",
