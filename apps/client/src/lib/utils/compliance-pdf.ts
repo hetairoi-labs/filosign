@@ -1,4 +1,5 @@
-import type { FileInfo, ViewFileResult } from "@filosign/react/hooks";
+import type { ViewFileResult } from "@filosign/react/hooks";
+import type { ComplianceBundleV1 } from "@filosign/shared";
 import {
 	breakTextIntoLines,
 	PDFDict,
@@ -27,19 +28,23 @@ export type SignerIncentiveForPdf = {
 	decimals: number;
 };
 
-export type CompliancePdfSummaryOptions = {
-	file: FileInfo;
-	fileData: ViewFileResult | null;
+export type CompliancePdfBundleOptions = {
+	bundle: ComplianceBundleV1;
+	bundleHash: `0x${string}`;
+	exportId: string;
 	chainName: string;
 	explorerBaseUrl: string | null;
-	exportedAtIso: string;
 	/** Optional mapping of wallet address → Privy User ID */
 	privyIdMap?: Record<string, string>;
-	/**
-	 * When set, signer lines include incentive amount, token label, and paid status.
-	 * Typically one entry per `file.signers` (see fetchSignerIncentivesForCompliancePdf).
-	 */
 	signerIncentives?: SignerIncentiveForPdf[];
+	/** Client-computed digest of decrypted bytes, if available (sent to export logging). */
+	documentSha256?: string;
+	/** When the document was decrypted for bundling, include basic file facts in the appendix. */
+	decryptedDocumentMeta?: {
+		name: string | null | undefined;
+		mimeType: string | null | undefined;
+		sizeBytes: number;
+	} | null;
 };
 
 export type CompliancePdfLine = {
@@ -59,7 +64,7 @@ export type CompliancePdfSummary = {
 	sections: Array<{ title: string; lines: CompliancePdfLine[] }>;
 };
 
-export type CompliancePdfOptions = CompliancePdfSummaryOptions;
+export type CompliancePdfOptions = CompliancePdfBundleOptions;
 
 type RegistryRead = {
 	cidIdentifier: (args: readonly [string]) => Promise<`0x${string}`>;
@@ -82,7 +87,7 @@ function participantWallet(p: Participant): string {
 
 /**
  * Load incentive rows for every signer (on-chain). Pass result as `signerIncentives`
- * on CompliancePdfSummaryOptions.
+ * on `CompliancePdfBundleOptions`.
  */
 export async function fetchSignerIncentivesForCompliancePdf(
 	registryRead: RegistryRead,
@@ -168,158 +173,198 @@ function incentiveSuffixForAddress(
 	return ` — Incentive: ${amt} ${inc.tokenLabel} · ${paid}`;
 }
 
-export function buildCompliancePdfSummary(
-	options: CompliancePdfSummaryOptions,
+function fieldPlacementStatus(
+	bundle: ComplianceBundleV1,
+	fieldId: string,
+	assignedWallet: string,
+): "signed" | "draft" | "pending" {
+	const row = bundle.signers.find(
+		(s) => s.wallet.toLowerCase() === assignedWallet.toLowerCase(),
+	);
+	if (!row) return "pending";
+	if (row.signed && row.completedFieldIds.includes(fieldId)) return "signed";
+	if (row.draftCompletedFieldIds.includes(fieldId)) return "draft";
+	return "pending";
+}
+
+export function buildCompliancePdfSummaryFromBundle(
+	options: CompliancePdfBundleOptions,
 ): CompliancePdfSummary {
 	const {
-		file,
-		fileData,
+		bundle,
+		bundleHash,
+		exportId,
 		chainName,
 		explorerBaseUrl,
-		exportedAtIso,
 		privyIdMap,
 		signerIncentives,
+		documentSha256,
+		decryptedDocumentMeta,
 	} = options;
 
 	const regTxLink =
-		explorerBaseUrl && file.onchainTxHash
-			? explorerTxUrl(explorerBaseUrl, file.onchainTxHash)
+		explorerBaseUrl && bundle.registration.registrationTxHash
+			? explorerTxUrl(explorerBaseUrl, bundle.registration.registrationTxHash)
 			: null;
 
+	const execPlain =
+		bundle.executionStatus === "fully_executed"
+			? "Fully executed — every required signer has an on-chain signature recorded as of this export."
+			: "Partially executed — at least one signer has not yet recorded an on-chain signature. This record reflects status at export time only.";
+
 	const fields: CompliancePdfSummary["fields"] = [
-		{ label: "Generated (UTC)", value: exportedAtIso },
+		{ label: "Export ID", value: exportId },
+		{ label: "Bundle hash (SHA-256)", value: bundleHash },
+		{ label: "Generated (UTC)", value: bundle.exportedAtIso },
+		{ label: "Chain ID", value: String(bundle.chainId) },
 		{ label: "Chain", value: chainName },
-		{ label: "Piece CID", value: file.pieceCid },
-		{ label: "Sender", value: file.sender },
-		{ label: "Created", value: file.createdAt },
+		{ label: "Piece CID", value: bundle.pieceCid },
+		{ label: "Execution (system)", value: bundle.executionStatus },
+		{ label: "Placement commitment", value: bundle.placementCommitment },
+		{ label: "Sender", value: bundle.registration.sender },
+		{ label: "Registered", value: bundle.registration.createdAtIso },
 		{
 			label: "Registration tx",
-			value: file.onchainTxHash,
+			value: bundle.registration.registrationTxHash,
 		},
 	];
 
+	if (documentSha256) {
+		fields.push({
+			label: "Document SHA-256 (this session)",
+			value: documentSha256,
+		});
+	}
+
 	if (regTxLink) {
 		fields.push({
-			label: "Explorer link",
+			label: "Registration explorer link",
 			value: regTxLink,
 			linkUri: regTxLink,
 		});
 	}
 
-	const participantLines: CompliancePdfLine[] = [
-		{ text: `Signers (${file.signers.length}):` },
-	];
-	for (const s of file.signers as Participant[]) {
-		const a = participantWallet(s);
-		const privy = privyIdMap?.[a];
-		const base = privy ? `  - ${a} (Privy: ${privy})` : `  - ${a}`;
-		participantLines.push({
-			text: `${base}${incentiveSuffixForAddress(a, signerIncentives)}`,
-		});
-	}
-	participantLines.push({ text: "" });
-	participantLines.push({ text: `Viewers (${file.viewers.length}):` });
-	for (const v of file.viewers as Participant[]) {
-		const a = participantWallet(v);
-		const privy = privyIdMap?.[a];
-		participantLines.push({
-			text: privy ? `  - ${a} (Privy: ${privy})` : `  - ${a}`,
-		});
-	}
-
-	const sigLines: CompliancePdfLine[] = [];
-	if (file.signatures.length === 0) {
-		sigLines.push({ text: "(none)" });
-	} else {
-		let sigIndex = 0;
-		for (const sig of file.signatures) {
-			const txLink =
-				explorerBaseUrl && sig.onchainTxHash
-					? explorerTxUrl(explorerBaseUrl, sig.onchainTxHash)
-					: null;
-			sigLines.push({ text: `Signature ${sigIndex + 1}` });
-			sigLines.push({
-				text: `  Signer: ${sig.signer}${incentiveSuffixForAddress(sig.signer, signerIncentives)}`,
-			});
-			sigLines.push({ text: `  Timestamp: ${sig.timestamp}` });
-			sigLines.push({
-				text: `  Transaction: ${sig.onchainTxHash}`,
-			});
-
-			if (txLink) {
-				sigLines.push({
-					text: `  Explorer: ${txLink}`,
-					linkUri: txLink,
-				});
-			}
-
-			if (sigIndex < file.signatures.length - 1) {
-				sigLines.push({ text: "" });
-			}
-			sigIndex += 1;
-		}
-	}
-
-	const cryptoLines: CompliancePdfLine[] = [
+	const plainLines: CompliancePdfLine[] = [
 		{
-			text: "KEM ciphertext and encrypted key are included so auditors can verify envelopes independently of this UI.",
+			text: "This appendix is generated from a server-stored compliance bundle. The bundle hash above identifies the exact JSON snapshot. You can verify on-chain registration and signature transactions using the links below without interpreting the technical sections.",
 		},
 		{ text: "" },
+		{ text: execPlain },
 	];
-	if (file.kemCiphertext) {
-		cryptoLines.push({
-			text: `KEM ciphertext (hex, ${file.kemCiphertext.length} chars):`,
-		});
-		cryptoLines.push({
-			text: file.kemCiphertext.replace(/\s/g, ""),
-			display: "hex-dump",
-		});
-	} else {
-		cryptoLines.push({ text: "KEM ciphertext: (null)" });
-	}
-	cryptoLines.push({ text: "" });
-	if (file.encryptedEncryptionKey) {
-		cryptoLines.push({
-			text: `Encrypted file encryption key (hex, ${file.encryptedEncryptionKey.length} chars):`,
-		});
-		cryptoLines.push({
-			text: file.encryptedEncryptionKey.replace(/\s/g, ""),
-			display: "hex-dump",
-		});
-	} else {
-		cryptoLines.push({ text: "Encrypted file encryption key: (null)" });
+
+	const signerMatrix: CompliancePdfLine[] = [
+		{ text: "Signer status (each row is one required participant):" },
+		{ text: "" },
+	];
+	for (const s of bundle.signers) {
+		const privy = privyIdMap?.[s.wallet];
+		const who =
+			s.displayName || s.email
+				? `${s.displayName ?? "—"} · ${s.email ?? "—"} · ${s.wallet}`
+				: s.wallet;
+		const line = `${privy ? `${who} (Privy: ${privy})` : who}${incentiveSuffixForAddress(s.wallet, signerIncentives)}`;
+		const status = s.signed
+			? `Signed · completions root ${s.completionsRoot ?? "—"} · tx ${s.onchainTxHash ?? "—"}`
+			: `Not signed · draft fields marked: ${s.draftCompletedFieldIds.length > 0 ? s.draftCompletedFieldIds.join(", ") : "(none)"}`;
+		signerMatrix.push({ text: `• ${line}` });
+		signerMatrix.push({ text: `  ${status}` });
+		const txLink =
+			s.signed && s.onchainTxHash && explorerBaseUrl
+				? explorerTxUrl(explorerBaseUrl, s.onchainTxHash)
+				: null;
+		if (txLink) {
+			signerMatrix.push({ text: `  ${txLink}`, linkUri: txLink });
+		}
+		signerMatrix.push({ text: "" });
 	}
 
-	const docLines: CompliancePdfLine[] = fileData
+	const docMetaLines: CompliancePdfLine[] = decryptedDocumentMeta
 		? [
+				{ text: "Decrypted document snapshot (this export only):" },
 				{
-					text: `File name: ${fileData.metadata.name ?? "(unnamed)"}`,
+					text: `  Name: ${decryptedDocumentMeta.name ?? "(unnamed)"}`,
 				},
 				{
-					text: `MIME type: ${fileData.metadata.mimeType ?? "—"}`,
+					text: `  MIME: ${decryptedDocumentMeta.mimeType ?? "—"}`,
 				},
 				{
-					text: `Decrypted size (bytes): ${String(fileData.fileBytes.length)}`,
+					text: `  Size (bytes): ${String(decryptedDocumentMeta.sizeBytes)}`,
 				},
 				{
-					text: "(Raw file bytes are not embedded in this PDF; use Download for the file.)",
+					text: "  Raw bytes are not embedded in this PDF; hashes above bind the content you viewed.",
 				},
+				{ text: "" },
 			]
 		: [
 				{
-					text: "Document was not decrypted in this session — decrypt to include full file metadata above.",
+					text: "Document bytes were not available in this session — bundle still reflects on-chain placement and signatures.",
 				},
+				{ text: "" },
 			];
+
+	const placementRef: CompliancePdfLine[] = [
+		{
+			text: "Placement fields (coordinates are normalized 0–1 relative to page width/height; pageIndex is zero-based).",
+		},
+		{ text: "" },
+	];
+	for (const f of bundle.placementManifest.fields) {
+		const st = fieldPlacementStatus(bundle, f.id, f.assignedSigner);
+		placementRef.push({
+			text: `• ${f.id} · ${f.type} · page ${f.pageIndex + 1} · required=${f.required} · status=${st} · rect x=${f.rect.x.toFixed(4)} y=${f.rect.y.toFixed(4)} w=${f.rect.width.toFixed(4)} h=${f.rect.height.toFixed(4)} · signer ${f.assignedSigner}`,
+		});
+	}
+
+	const manifestJson = JSON.stringify(bundle.placementManifest, null, 2);
+	const manifestLines: CompliancePdfLine[] = [
+		{
+			text: "Full placement manifest JSON (canonical for placement commitment):",
+		},
+		{ text: "" },
+	];
+	for (const line of manifestJson.split("\n")) {
+		manifestLines.push({ text: line || " " });
+	}
+
+	const cryptoDetail: CompliancePdfLine[] = [
+		{
+			text: "Per-signer Merkle data (leaf schema v1). Each leaf hashes field id, placement commitment, piece CID digest, and signer address. Inclusion siblings recover the completions root registered on-chain.",
+		},
+		{ text: "" },
+	];
+	for (const s of bundle.signers) {
+		cryptoDetail.push({
+			text: `Signer ${s.wallet} · signed=${s.signed} · leafSchemaVersion=${s.leafSchemaVersion ?? "—"}`,
+		});
+		if (s.completionsRoot) {
+			cryptoDetail.push({ text: `  completionsRoot: ${s.completionsRoot}` });
+		}
+		cryptoDetail.push({
+			text: `  completedFieldIds: ${s.completedFieldIds.join(", ") || "(none)"}`,
+		});
+		for (const pr of s.merkleProofs) {
+			cryptoDetail.push({
+				text: `  Proof · field ${pr.fieldId} · leafIndex ${pr.leafIndex} · leafHash ${pr.leafHash}`,
+			});
+			const sibStr = pr.siblings.length
+				? pr.siblings.join(", ")
+				: "(empty — single leaf)";
+			cryptoDetail.push({ text: `    siblings: ${sibStr}` });
+		}
+		cryptoDetail.push({ text: "" });
+	}
 
 	return {
 		explorerBaseUrl,
 		headerSubtitleLinkUri: explorerBaseUrl,
 		fields,
 		sections: [
-			{ title: "Participants", lines: participantLines },
-			{ title: "Signatures", lines: sigLines },
-			{ title: "Cryptographic material", lines: cryptoLines },
-			{ title: "Document content metadata", lines: docLines },
+			{ title: "Summary for reviewers", lines: plainLines },
+			{ title: "Signer matrix", lines: signerMatrix },
+			{ title: "Document content metadata", lines: docMetaLines },
+			{ title: "Field placements", lines: placementRef },
+			{ title: "Placement manifest (JSON)", lines: manifestLines },
+			{ title: "Technical — Merkle / completions", lines: cryptoDetail },
 		],
 	};
 }
@@ -481,9 +526,9 @@ function drawWrappedLine(
 
 async function drawComplianceReport(
 	doc: PDFDocument,
-	options: CompliancePdfSummaryOptions,
+	options: CompliancePdfBundleOptions,
 ): Promise<void> {
-	const summary = buildCompliancePdfSummary(options);
+	const summary = buildCompliancePdfSummaryFromBundle(options);
 	const font = await doc.embedFont(StandardFonts.Helvetica);
 	const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
 	const fontMono = await doc.embedFont(StandardFonts.Courier);
@@ -631,8 +676,79 @@ async function drawComplianceReport(
 
 const EMBED_MARGIN = 48;
 
+/** SHA-256 over bytes as lowercase 0x-prefixed hex (for compliance export query + appendix). */
+export async function sha256HexOfBytes(
+	bytes: Uint8Array,
+): Promise<`0x${string}`> {
+	const buf = bytes.buffer.slice(
+		bytes.byteOffset,
+		bytes.byteOffset + bytes.byteLength,
+	) as ArrayBuffer;
+	const digest = await crypto.subtle.digest("SHA-256", buf);
+	const hex = [...new Uint8Array(digest)]
+		.map((b) => b.toString(16).padStart(2, "0"))
+		.join("");
+	return `0x${hex}` as `0x${string}`;
+}
+
+function drawPlacementOverlaysOnDocumentPdf(
+	doc: PDFDocument,
+	bundle: ComplianceBundleV1,
+): void {
+	const n = doc.getPageCount();
+	for (const f of bundle.placementManifest.fields) {
+		const pi = f.pageIndex;
+		if (pi < 0 || pi >= n) continue;
+		const page = doc.getPage(pi);
+		const w = page.getWidth();
+		const h = page.getHeight();
+		const rw = f.rect.width * w;
+		const rh = f.rect.height * h;
+		const x = f.rect.x * w;
+		const yTop = f.rect.y * h;
+		const yPdf = h - yTop - rh;
+
+		const st = fieldPlacementStatus(bundle, f.id, f.assignedSigner);
+		const border =
+			st === "signed"
+				? rgb(0.1, 0.55, 0.25)
+				: st === "draft"
+					? rgb(0.85, 0.5, 0.1)
+					: rgb(0.55, 0.55, 0.55);
+		const bg =
+			st === "signed"
+				? rgb(0.75, 0.95, 0.8)
+				: st === "draft"
+					? rgb(1, 0.94, 0.85)
+					: rgb(0.94, 0.94, 0.94);
+
+		page.drawRectangle({
+			x,
+			y: yPdf,
+			width: rw,
+			height: rh,
+			borderColor: border,
+			borderWidth: 1.5,
+			color: bg,
+			opacity: 0.35,
+		});
+		const label =
+			st === "signed"
+				? `${f.type} · signed`
+				: st === "draft"
+					? `${f.type} · draft`
+					: `${f.type} · pending`;
+		page.drawText(label, {
+			x: x + 2,
+			y: yPdf + rh - 9,
+			size: 7,
+			color: rgb(0.15, 0.15, 0.15),
+		});
+	}
+}
+
 export async function buildCompliancePdfOnly(
-	options: CompliancePdfOptions,
+	options: CompliancePdfBundleOptions,
 ): Promise<Uint8Array> {
 	const doc = await PDFDocument.create();
 	await drawComplianceReport(doc, options);
@@ -796,6 +912,7 @@ export async function buildDocumentPlusCompliancePdf(
 			for (const p of copied) {
 				out.addPage(p);
 			}
+			drawPlacementOverlaysOnDocumentPdf(out, options.bundle);
 		} catch {
 			throw new Error(
 				"The PDF could not be read. Try downloading the original file separately.",
@@ -813,9 +930,17 @@ export async function buildDocumentPlusCompliancePdf(
 			);
 		}
 		await embedImagePage(out, fileData.fileBytes, resolved);
+		drawPlacementOverlaysOnDocumentPdf(out, options.bundle);
 	}
 
-	await drawComplianceReport(out, options);
+	await drawComplianceReport(out, {
+		...options,
+		decryptedDocumentMeta: {
+			name: fileData.metadata.name,
+			mimeType: fileData.metadata.mimeType,
+			sizeBytes: fileData.fileBytes.length,
+		},
+	});
 	return out.save();
 }
 
