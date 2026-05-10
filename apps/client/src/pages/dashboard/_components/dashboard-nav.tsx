@@ -1,23 +1,18 @@
-import Logo from "@/src/lib/components/custom/Logo";
+import { SidebarTrigger } from "@/src/lib/components/ui/sidebar";
 import { NotificationsPopover } from "./notifications-popover";
 import { UserDropdown } from "./user-dropdown";
 
 export default function DashboardNav() {
 	return (
-		<nav className="sticky top-0 bg-background/80 glass flex h-16 justify-between shrink-0 items-center gap-2 px-8 z-50 border-b">
-			<div className="flex gap-2 items-center">
-				<Logo
-					textDelay={0.35}
-					iconDelay={0.26}
-					className="px-0"
-					textClassName="text-foreground font-semibold"
-				/>
+		<header className="sticky top-0 z-40 flex h-20 shrink-0 items-center justify-between gap-3 border-b border-border bg-background px-4 md:px-6">
+			<div className="flex items-center gap-2">
+				<SidebarTrigger className="text-muted-foreground hover:bg-muted/50 hover:text-foreground md:hidden" />
 			</div>
 
-			<div className="flex gap-4 items-center">
+			<div className="flex shrink-0 items-center gap-2 md:gap-3">
 				<NotificationsPopover />
 				<UserDropdown />
 			</div>
-		</nav>
+		</header>
 	);
 }

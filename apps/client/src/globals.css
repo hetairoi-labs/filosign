@@ -6,23 +6,25 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-	--background: hsl(0, 0%, 100%);
-	--foreground: hsl(210, 6%, 13%);
-	--card: hsl(240, 11%, 96%);
-	--card-foreground: hsl(210, 6%, 13%);
-	--border: hsl(240, 11%, 85%);
-	--input: hsl(0, 0%, 100%);
+	/* Surfaces — light, airy greys (sidebar matches main chrome) */
+	--background: hsl(0 0% 100%);
+	--foreground: hsl(210 8% 12%);
+	--card: hsl(240 6% 98%);
+	--card-foreground: hsl(210 8% 12%);
+	--border: hsl(240 6% 91%);
+	--input: hsl(0 0% 100%);
 
-	--popover: hsl(75, 20%, 99%);
-	--popover-foreground: hsl(210, 6%, 13%);
+	--popover: hsl(0 0% 100%);
+	--popover-foreground: hsl(210 8% 12%);
 	--primary: #202223;
-	--primary-foreground: hsl(60, 100%, 99%);
-	--secondary: hsl(90, 84%, 84%);
-	--secondary-foreground: hsl(210, 6%, 13%);
-	--muted: hsl(240, 11%, 76%);
-	--muted-foreground: hsl(0, 1%, 44%);
-	--accent: hsla(90, 67%, 83%);
-	--accent-foreground: hsl(210, 6%, 13%);
+	--primary-foreground: hsl(60 100% 99%);
+	--secondary: hsl(90 84% 84%);
+	--secondary-foreground: hsl(210 8% 12%);
+	/* Was hsl(240 11% 76%) — too heavy; use a soft wash for muted fills */
+	--muted: hsl(240 5% 100%);
+	--muted-foreground: hsl(215 6% 44%);
+	--accent: hsl(240 5% 94%);
+	--accent-foreground: hsl(210 8% 12%);
 	--destructive: hsl(0, 84%, 58%);
 	--destructive-foreground: hsl(0, 0%, 100%);
 	--ring: hsl(90, 50%, 38%);
@@ -43,6 +45,16 @@
 	--off-white: hsl(90, 55%, 98%);
 
 	--radius: 0.5rem;
+
+	/* Sidebar — same base as page + header (bg-background); borders match global border */
+	--sidebar: var(--background);
+	--sidebar-foreground: hsl(210 7% 22%);
+	--sidebar-primary: hsl(210 8% 12%);
+	--sidebar-primary-foreground: hsl(0 0% 99%);
+	--sidebar-accent: hsl(240 5% 95%);
+	--sidebar-accent-foreground: hsl(210 8% 12%);
+	--sidebar-border: var(--border);
+	--sidebar-ring: hsl(90 40% 42%);
 }
 
 @theme inline {

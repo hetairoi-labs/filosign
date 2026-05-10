@@ -71,14 +71,14 @@ export default function DocumentAllPage() {
 				<div className="flex min-h-0 flex-1 flex-col">
 					{/* Header with view mode toggle */}
 					<motion.div
-						className="flex items-center justify-between px-8 py-4 border-b border-border"
+						className="flex items-center justify-between px-8 py-4"
 						initial={{ opacity: 0, y: -10 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.2, delay: 0.2 }}
 					>
 						<div className="flex items-center gap-4">
 							<h2 className="text-lg font-medium text-foreground">
-								All Documents ({allFiles.length})
+								All Documents
 							</h2>
 						</div>
 
@@ -222,7 +222,7 @@ export default function DocumentAllPage() {
 
 					{/* Content */}
 					<motion.div
-						className="flex min-h-0 flex-1 flex-col overflow-y-auto p-8 space-y-8 bg-card/50"
+						className="flex min-h-0 flex-1 flex-col overflow-y-auto p-8 space-y-8"
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.2, delay: 0.3 }}
