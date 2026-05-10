@@ -36,19 +36,3 @@ export const zJsonString = () =>
 		},
 		{ error: "Invalid JSON string" },
 	);
-
-export const zFileData = () =>
-	z.object({
-		bytesB64: z.string(),
-		sender: zEvmAddress(),
-		timestamp: z.number(),
-		signers: z.array(
-			z.object({
-				address: zEvmAddress(),
-				signaturePosition: zHexString(),
-			}),
-		),
-		metadata: z.object({
-			name: z.string(),
-		}),
-	});
