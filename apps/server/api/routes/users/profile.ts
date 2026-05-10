@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { isAddress } from "viem";
 import z from "zod";
+import { materializePendingInvitesForEmail } from "@/api/handlers/sharing";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
 import { fsContracts } from "@/lib/evm";
@@ -98,6 +99,20 @@ export default new Hono()
 			newValue: email,
 		});
 
+		if (email?.trim()) {
+			try {
+				await materializePendingInvitesForEmail({
+					walletAddress: wallet,
+					email: email,
+				});
+			} catch (e) {
+				console.error(
+					"materializePendingInvitesForEmail (sync-privy-email):",
+					e,
+				);
+			}
+		}
+
 		return respond.ok(
 			ctx,
 			{ updated: true, email },
@@ -152,6 +167,18 @@ export default new Hono()
 			fieldName: "email",
 			newValue: canonical,
 		});
+
+		try {
+			await materializePendingInvitesForEmail({
+				walletAddress: wallet,
+				email: canonical,
+			});
+		} catch (e) {
+			console.error(
+				"materializePendingInvitesForEmail (set-primary-email):",
+				e,
+			);
+		}
 
 		return respond.ok(ctx, { email: canonical }, "Primary email updated", 200);
 	})
@@ -327,6 +354,17 @@ export default new Hono()
 			fieldName: "lastName",
 			newValue: lastName,
 		});
+
+		if (email?.trim()) {
+			try {
+				await materializePendingInvitesForEmail({
+					walletAddress: wallet,
+					email: email,
+				});
+			} catch (e) {
+				console.error("materializePendingInvitesForEmail (profile PUT):", e);
+			}
+		}
 
 		return respond.ok(ctx, {}, "Profile updated successfully", 200);
 	})

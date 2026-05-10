@@ -1,5 +1,4 @@
 import {
-	useAcceptRequest,
 	useApproveSender,
 	useCancelRequest,
 	useReceivableFrom,
@@ -41,7 +40,6 @@ export default function PermissionsPage() {
 
 	// Mutations for managing permissions
 	const allowSharing = useApproveSender();
-	const acceptRequest = useAcceptRequest();
 	const rejectRequest = useRejectRequest();
 	const cancelRequest = useCancelRequest();
 
@@ -112,8 +110,9 @@ export default function PermissionsPage() {
 		try {
 			await allowSharing.mutateAsync({
 				sender: args.senderWallet as `0x${string}`,
+				establishMutualConnection: true,
+				shareRequestId: args.requestId,
 			});
-			await acceptRequest.mutateAsync({ requestId: args.requestId });
 			toast.success("Request approved");
 		} catch (_error) {
 			toast.error("Failed to approve request");
@@ -251,9 +250,7 @@ export default function PermissionsPage() {
 														})
 													}
 													disabled={
-														allowSharing.isPending ||
-														acceptRequest.isPending ||
-														rejectRequest.isPending
+														allowSharing.isPending || rejectRequest.isPending
 													}
 												>
 													Approve
@@ -264,9 +261,7 @@ export default function PermissionsPage() {
 													className="h-8"
 													onClick={() => handleRejectRequest(req.id)}
 													disabled={
-														allowSharing.isPending ||
-														acceptRequest.isPending ||
-														rejectRequest.isPending
+														allowSharing.isPending || rejectRequest.isPending
 													}
 												>
 													Reject

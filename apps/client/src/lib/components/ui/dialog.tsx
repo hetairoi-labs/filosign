@@ -1,7 +1,6 @@
 "use client";
 
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { XIcon } from "@phosphor-icons/react";
 import type * as React from "react";
 import { Button } from "@/src/lib/components/ui/button";
 import { cn } from "@/src/lib/utils/index";

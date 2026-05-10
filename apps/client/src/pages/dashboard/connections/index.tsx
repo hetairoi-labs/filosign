@@ -1,6 +1,6 @@
 import {
 	useAcceptedPeople,
-	useAcceptRequest,
+	useApproveSender,
 	useCancelRequest,
 	useProfilesByAddresses,
 	useReceivableFrom,
@@ -181,7 +181,7 @@ export default function ConnectionsPage() {
 	const sendableTo = useSendableTo();
 	const receivableFrom = useReceivableFrom();
 
-	const acceptRequest = useAcceptRequest();
+	const approveIncoming = useApproveSender();
 	const rejectRequest = useRejectRequest();
 	const cancelRequest = useCancelRequest();
 
@@ -516,10 +516,12 @@ export default function ConnectionsPage() {
 																		size="sm"
 																		variant="primary"
 																		className="h-8"
-																		disabled={acceptRequest.isPending}
+																		disabled={approveIncoming.isPending}
 																		onClick={() =>
-																			acceptRequest.mutateAsync({
-																				requestId: req.id,
+																			approveIncoming.mutateAsync({
+																				sender: req.senderWallet as Address,
+																				establishMutualConnection: true,
+																				shareRequestId: req.id,
 																			})
 																		}
 																	>

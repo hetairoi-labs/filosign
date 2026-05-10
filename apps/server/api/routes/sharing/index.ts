@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import type { Address } from "viem";
 import { getAddress, isAddress } from "viem";
 import z from "zod";
+import { ensureReciprocalShareRequest } from "@/api/handlers/sharing";
 import { authenticated } from "@/api/middleware/auth";
 import db from "@/lib/db";
 import { sendInviteEmail, sendShareRequestEmail } from "@/lib/email/invites";
@@ -568,29 +569,11 @@ export default new Hono()
 		return respond.ok(ctx, {}, "Request rejected", 200);
 	})
 	.post("/:id/accept", authenticated, async (ctx) => {
-		const id = ctx.req.param("id");
-		const userWallet = ctx.var.userWallet;
-		const [request] = await db
-			.select()
-			.from(shareRequests)
-			.where(
-				and(
-					eq(shareRequests.id, id),
-					eq(shareRequests.recipientWallet, userWallet),
-					eq(shareRequests.status, "PENDING"),
-				),
-			);
-		if (!request) {
-			return respond.err(ctx, "Request not found or cannot accept", 404);
-		}
-
-		// Update request status
-		await db
-			.update(shareRequests)
-			.set({ status: "ACCEPTED" })
-			.where(eq(shareRequests.id, id));
-
-		return respond.ok(ctx, {}, "Request accepted", 200);
+		return respond.err(
+			ctx,
+			"Share requests are accepted on-chain only. Sign ApproveSender and POST /sharing/approve (see FSManager / apps/contracts/README.md).",
+			400,
+		);
 	})
 	.post("/approve", authenticated, async (ctx) => {
 		const recipient = ctx.var.userWallet;
@@ -602,6 +585,8 @@ export default new Hono()
 				nonce: z.coerce.bigint(),
 				deadline: z.coerce.bigint(),
 				signature: zHexString(),
+				establishMutualConnection: z.boolean().optional(),
+				shareRequestId: z.string().uuid().optional(),
 			})
 			.safeParse(rawBody);
 
@@ -609,15 +594,38 @@ export default new Hono()
 			return respond.err(ctx, parsedBody.error.message, 400);
 		}
 
-		const { sender, nonce, deadline, signature } = parsedBody.data;
-
-		const args = [
-			recipient,
-			getAddress(sender),
+		const {
+			sender,
 			nonce,
 			deadline,
 			signature,
-		] as const;
+			establishMutualConnection,
+			shareRequestId,
+		} = parsedBody.data;
+
+		const senderAddr = getAddress(sender);
+
+		if (establishMutualConnection && shareRequestId) {
+			const [matchingRequest] = await db
+				.select()
+				.from(shareRequests)
+				.where(eq(shareRequests.id, shareRequestId));
+
+			if (
+				!matchingRequest ||
+				getAddress(matchingRequest.senderWallet) !== senderAddr ||
+				getAddress(matchingRequest.recipientWallet) !== recipient ||
+				matchingRequest.status !== "PENDING"
+			) {
+				return respond.err(
+					ctx,
+					"shareRequestId does not match a pending incoming request for this approval",
+					400,
+				);
+			}
+		}
+
+		const args = [recipient, senderAddr, nonce, deadline, signature] as const;
 
 		try {
 			// Use address only: avoids viem duplicate-version Account type mismatches in tooling.
@@ -631,7 +639,21 @@ export default new Hono()
 		const txHash = await FSManager.write.approveSender(args);
 		await processTransaction(txHash, {});
 
-		return respond.ok(ctx, { txHash }, "Sender approved", 201);
+		let reciprocalCreated = false;
+		if (establishMutualConnection) {
+			const out = await ensureReciprocalShareRequest({
+				approverWallet: recipient,
+				counterpartyWallet: senderAddr,
+			});
+			reciprocalCreated = out.created;
+		}
+
+		return respond.ok(
+			ctx,
+			{ txHash, reciprocalCreated },
+			"Sender approved",
+			201,
+		);
 	})
 	.get("/receivable-from", authenticated, async (ctx) => {
 		const userWallet = ctx.var.userWallet;
@@ -639,7 +661,9 @@ export default new Hono()
 		const subquery = db
 			.select({
 				senderWallet: shareApprovals.senderWallet,
-				maxCreatedAt: sql<Date>`max(${shareApprovals.createdAt})`,
+				maxCreatedAt: sql<Date>`max(${shareApprovals.createdAt})`.as(
+					"maxCreatedAt",
+				),
 			})
 			.from(shareApprovals)
 			.where(eq(shareApprovals.recipientWallet, userWallet))
@@ -669,7 +693,9 @@ export default new Hono()
 		const subquery = db
 			.select({
 				recipientWallet: shareApprovals.recipientWallet,
-				maxCreatedAt: sql<Date>`max(${shareApprovals.createdAt})`,
+				maxCreatedAt: sql<Date>`max(${shareApprovals.createdAt})`.as(
+					"maxCreatedAt",
+				),
 			})
 			.from(shareApprovals)
 			.where(eq(shareApprovals.senderWallet, userWallet))

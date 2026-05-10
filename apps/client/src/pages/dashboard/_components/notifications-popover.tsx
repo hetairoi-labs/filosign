@@ -88,25 +88,16 @@ export function NotificationsPopover() {
 	const confirmAllowSharing = async () => {
 		if (!pendingAcceptRequestId || !pendingAcceptWallet) return;
 
-		console.log(
-			"Attempting to accept sharing request:",
-			pendingAcceptRequestId,
-		);
 		try {
-			// Approve the sender on the smart contract
-			console.log("Calling allowSharing.mutateAsync with:", {
-				sender: pendingAcceptWallet,
-			});
-			const result = await allowSharing.mutateAsync({
+			await allowSharing.mutateAsync({
 				sender: pendingAcceptWallet as `0x${string}`,
+				establishMutualConnection: true,
+				shareRequestId: pendingAcceptRequestId,
 			});
-			console.log("allowSharing result:", result);
 			toast.success("Sharing request accepted!");
-			// Refresh the requests list
 			await queryClient.invalidateQueries({
 				queryKey: ["received-requests"],
 			});
-			console.log("Queries invalidated");
 			setConfirmDialogOpen(false);
 			setPendingAcceptRequestId(null);
 			setPendingAcceptWallet(null);

@@ -11,8 +11,14 @@ export function useApproveSender() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async (args: { sender: Address }) => {
-			const { sender } = args;
+		mutationFn: async (args: {
+			sender: Address;
+			/** After approving sender A, insert pending share request so A can approve you (mutual connection). */
+			establishMutualConnection?: boolean;
+			/** Validates POST body against this incoming pending request when establishing mutual connection. */
+			shareRequestId?: string;
+		}) => {
+			const { sender, establishMutualConnection, shareRequestId } = args;
 
 			if (!contracts || !wallet || !api) {
 				throw new Error("not connected");
@@ -43,6 +49,7 @@ export function useApproveSender() {
 			const resp = await api.rpc.postSafe(
 				{
 					txHash: z.string(),
+					reciprocalCreated: z.boolean().optional(),
 				},
 				"/sharing/approve",
 				{
@@ -50,6 +57,10 @@ export function useApproveSender() {
 					nonce: nonce.toString(),
 					deadline: deadline.toString(),
 					signature,
+					...(establishMutualConnection
+						? { establishMutualConnection: true }
+						: {}),
+					...(shareRequestId ? { shareRequestId } : {}),
 				},
 			);
 
@@ -59,6 +70,11 @@ export function useApproveSender() {
 				queryKey: ["fsQ-is-approved", wallet?.account.address, sender],
 			});
 			queryClient.invalidateQueries({ queryKey: ["received-requests"] });
+			queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
+			queryClient.invalidateQueries({ queryKey: ["sendable-to"] });
+			queryClient.invalidateQueries({ queryKey: ["receivable-from"] });
+			queryClient.invalidateQueries({ queryKey: ["accepted-recipients"] });
+			queryClient.invalidateQueries({ queryKey: ["accepted-people"] });
 		},
 	});
 }

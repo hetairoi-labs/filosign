@@ -1,9 +1,11 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, type InferInsertModel } from "drizzle-orm";
 import { decodeEventLog, type Hash, isHex } from "viem";
+import { materializePendingInvitesForEmail } from "@/api/handlers/sharing";
 import db from "../db";
+import { users } from "../db/schema/user";
 import { evmClient, fsContracts } from "../evm";
 
-const { users, shareApprovals, shareRequests } = db.schema;
+const { shareApprovals, shareRequests } = db.schema;
 const { FSKeyRegistry, FSManager } = fsContracts;
 
 type RegistrationData = {
@@ -75,7 +77,21 @@ export async function processTransaction(
 							commitmentKem: keygenData[3],
 							commitmentSig: keygenData[4],
 						},
-					});
+					} as InferInsertModel<typeof users>);
+
+					if (email?.trim()) {
+						try {
+							await materializePendingInvitesForEmail({
+								walletAddress: log.args.user,
+								email: email.trim(),
+							});
+						} catch (inviteError) {
+							console.error(
+								"materializePendingInvitesForEmail after registration:",
+								inviteError,
+							);
+						}
+					}
 				} catch (error) {
 					console.error(`Error inserting user: ${error}`);
 					throw error;

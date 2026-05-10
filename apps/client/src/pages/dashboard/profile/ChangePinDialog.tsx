@@ -271,9 +271,7 @@ export function ChangePinDialog({ open, onOpenChange }: ChangePinDialogProps) {
 								type="button"
 								className="w-full"
 								variant="primary"
-								disabled={
-									!canRecoverWithPhrase || recoverWithPhrase.isPending
-								}
+								disabled={!canRecoverWithPhrase || recoverWithPhrase.isPending}
 								onClick={handleRecoverWithPhrase}
 							>
 								{recoverWithPhrase.isPending ? "Updating…" : "Set new PIN"}
