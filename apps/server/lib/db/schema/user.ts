@@ -1,4 +1,5 @@
 import * as t from "drizzle-orm/pg-core";
+import { randomUuidV7 } from "@/lib/db/random-uuid-v7";
 import { tEvmAddress, timestamps } from "../helpers";
 
 export const users = t.pgTable("users", {
@@ -38,7 +39,7 @@ export const usersDatasets = t.pgTable("users_datasets", {
 });
 
 export const userInvites = t.pgTable("user_invites", {
-	id: t.uuid().primaryKey().defaultRandom(),
+	id: t.uuid().primaryKey().$defaultFn(randomUuidV7),
 	sender: tEvmAddress()
 		.references(() => users.walletAddress, {
 			onDelete: "cascade",
@@ -52,7 +53,7 @@ export const userInvites = t.pgTable("user_invites", {
 });
 
 export const userHistory = t.pgTable("user_history", {
-	id: t.uuid().primaryKey().defaultRandom(),
+	id: t.uuid().primaryKey().$defaultFn(randomUuidV7),
 	walletAddress: tEvmAddress()
 		.references(() => users.walletAddress, {
 			onDelete: "cascade",
@@ -67,7 +68,7 @@ export const userHistory = t.pgTable("user_history", {
 });
 
 export const userSignatures = t.pgTable("user_signatures", {
-	id: t.uuid().primaryKey().defaultRandom(),
+	id: t.uuid().primaryKey().$defaultFn(randomUuidV7),
 	walletAddress: tEvmAddress().notNull(),
 	data: t.text().notNull(),
 

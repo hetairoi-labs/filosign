@@ -1,5 +1,6 @@
 import type { PlacementManifest } from "@filosign/shared";
 import * as t from "drizzle-orm/pg-core";
+import { randomUuidV7 } from "@/lib/db/random-uuid-v7";
 import { tBytes32, tEvmAddress, tHex, timestamps } from "../helpers";
 import { users } from "./user";
 
@@ -127,7 +128,7 @@ export const fileSignatures = t.pgTable(
 export const complianceExportLogs = t.pgTable(
 	"compliance_export_logs",
 	{
-		id: t.uuid().primaryKey().defaultRandom(),
+		id: t.uuid().primaryKey().$defaultFn(randomUuidV7),
 		filePieceCid: t
 			.text()
 			.notNull()

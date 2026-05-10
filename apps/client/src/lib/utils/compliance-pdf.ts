@@ -166,11 +166,11 @@ function incentiveSuffixForAddress(
 	);
 	if (!inc) return "";
 	if (!inc.hasIncentive) {
-		return " — Incentive: none";
+		return " - Incentive: none";
 	}
 	const amt = formatUnits(inc.amount, inc.decimals);
 	const paid = inc.claimed ? "Paid" : "Unpaid";
-	return ` — Incentive: ${amt} ${inc.tokenLabel} · ${paid}`;
+	return ` - Incentive: ${amt} ${inc.tokenLabel} / ${paid}`;
 }
 
 function fieldPlacementStatus(
@@ -185,6 +185,15 @@ function fieldPlacementStatus(
 	if (row.signed && row.completedFieldIds.includes(fieldId)) return "signed";
 	if (row.draftCompletedFieldIds.includes(fieldId)) return "draft";
 	return "pending";
+}
+
+function shortId(uuid: string): string {
+	return uuid.slice(0, 8);
+}
+
+function truncateHash(hash: string, head: number, tail: number): string {
+	if (hash.length <= head + tail + 3) return hash;
+	return `${hash.slice(0, head)}...${hash.slice(-tail)}`;
 }
 
 export function buildCompliancePdfSummaryFromBundle(
@@ -209,8 +218,8 @@ export function buildCompliancePdfSummaryFromBundle(
 
 	const execPlain =
 		bundle.executionStatus === "fully_executed"
-			? "Fully executed — every required signer has an on-chain signature recorded as of this export."
-			: "Partially executed — at least one signer has not yet recorded an on-chain signature. This record reflects status at export time only.";
+			? "Fully executed - every required signer has an on-chain signature recorded as of this export."
+			: "Partially executed - at least one signer has not yet recorded an on-chain signature. This record reflects status at export time only.";
 
 	const fields: CompliancePdfSummary["fields"] = [
 		{ label: "Export ID", value: exportId },
@@ -231,7 +240,7 @@ export function buildCompliancePdfSummaryFromBundle(
 
 	if (documentSha256) {
 		fields.push({
-			label: "Document SHA-256 (this session)",
+			label: "Document SHA-256",
 			value: documentSha256,
 		});
 	}
@@ -244,75 +253,128 @@ export function buildCompliancePdfSummaryFromBundle(
 		});
 	}
 
+	const hasExplorerLinks = Boolean(explorerBaseUrl);
+	const explorerNote = hasExplorerLinks
+		? "Registration and signature transaction links are provided below for blockchain verification."
+		: "No blockchain explorer configured for this network - verify transactions manually using the chain ID and transaction hashes provided.";
+
 	const plainLines: CompliancePdfLine[] = [
 		{
-			text: "This appendix is generated from a server-stored compliance bundle. The bundle hash above identifies the exact JSON snapshot. You can verify on-chain registration and signature transactions using the links below without interpreting the technical sections.",
+			text:
+				"The bundle hash identifies this exact JSON snapshot. " + explorerNote,
 		},
 		{ text: "" },
 		{ text: execPlain },
 	];
 
 	const signerMatrix: CompliancePdfLine[] = [
-		{ text: "Signer status (each row is one required participant):" },
+		{ text: "Each required participant and their on-chain status:" },
 		{ text: "" },
 	];
-	for (const s of bundle.signers) {
+
+	for (let i = 0; i < bundle.signers.length; i++) {
+		const s = bundle.signers[i];
 		const privy = privyIdMap?.[s.wallet];
-		const who =
-			s.displayName || s.email
-				? `${s.displayName ?? "—"} · ${s.email ?? "—"} · ${s.wallet}`
-				: s.wallet;
-		const line = `${privy ? `${who} (Privy: ${privy})` : who}${incentiveSuffixForAddress(s.wallet, signerIncentives)}`;
-		const status = s.signed
-			? `Signed · completions root ${s.completionsRoot ?? "—"} · tx ${s.onchainTxHash ?? "—"}`
-			: `Not signed · draft fields marked: ${s.draftCompletedFieldIds.length > 0 ? s.draftCompletedFieldIds.join(", ") : "(none)"}`;
-		signerMatrix.push({ text: `• ${line}` });
-		signerMatrix.push({ text: `  ${status}` });
-		const txLink =
-			s.signed && s.onchainTxHash && explorerBaseUrl
-				? explorerTxUrl(explorerBaseUrl, s.onchainTxHash)
-				: null;
-		if (txLink) {
-			signerMatrix.push({ text: `  ${txLink}`, linkUri: txLink });
+
+		// Build identity line
+		const parts: string[] = [];
+		if (s.displayName) parts.push(s.displayName);
+		if (s.email) parts.push(s.email);
+		parts.push(s.wallet);
+		if (privy) parts.push(`(ID: ${privy})`);
+
+		const identityLine = parts.join(" / ");
+		const incentiveInfo = incentiveSuffixForAddress(s.wallet, signerIncentives);
+
+		// Status indicator
+		const statusLabel = s.signed ? "SIGNED" : "NOT SIGNED";
+
+		signerMatrix.push({ text: `${i + 1}. ${identityLine}${incentiveInfo}` });
+
+		if (s.signed) {
+			signerMatrix.push({ text: `   Status: ${statusLabel}` });
+			if (s.completionsRoot) {
+				signerMatrix.push({
+					text: `   Root: ${s.completionsRoot.slice(0, 32)}...${s.completionsRoot.slice(-16)}`,
+				});
+			}
+			if (s.onchainTxHash) {
+				signerMatrix.push({ text: `   Tx: ${s.onchainTxHash}` });
+				if (explorerBaseUrl) {
+					const txLink = explorerTxUrl(explorerBaseUrl, s.onchainTxHash);
+					signerMatrix.push({ text: `   Link: ${txLink}`, linkUri: txLink });
+				}
+			}
+		} else {
+			signerMatrix.push({ text: `   Status: ${statusLabel}` });
+			if (s.draftCompletedFieldIds.length > 0) {
+				signerMatrix.push({
+					text: `   Draft fields: ${s.draftCompletedFieldIds.join(", ")}`,
+				});
+			}
 		}
-		signerMatrix.push({ text: "" });
+
+		// Compact separator (single blank line between signers)
+		if (i < bundle.signers.length - 1) {
+			signerMatrix.push({ text: "" });
+		}
 	}
 
 	const docMetaLines: CompliancePdfLine[] = decryptedDocumentMeta
 		? [
 				{ text: "Decrypted document snapshot (this export only):" },
-				{
-					text: `  Name: ${decryptedDocumentMeta.name ?? "(unnamed)"}`,
-				},
-				{
-					text: `  MIME: ${decryptedDocumentMeta.mimeType ?? "—"}`,
-				},
-				{
-					text: `  Size (bytes): ${String(decryptedDocumentMeta.sizeBytes)}`,
-				},
-				{
-					text: "  Raw bytes are not embedded in this PDF; hashes above bind the content you viewed.",
-				},
 				{ text: "" },
+				{
+					text: `Name: ${decryptedDocumentMeta.name ?? "(unnamed)"} / ${decryptedDocumentMeta.mimeType ?? "-"} / ${String(decryptedDocumentMeta.sizeBytes)} bytes`,
+				},
+				{
+					text: "Note: Raw bytes are not embedded; document hash binds the viewed content.",
+				},
 			]
 		: [
 				{
-					text: "Document bytes were not available in this session — bundle still reflects on-chain placement and signatures.",
+					text: "Document bytes were not available in this session. The bundle still reflects on-chain placement and signatures.",
 				},
-				{ text: "" },
 			];
 
 	const placementRef: CompliancePdfLine[] = [
 		{
-			text: "Placement fields (coordinates are normalized 0–1 relative to page width/height; pageIndex is zero-based).",
+			text: "Field placements (coordinates normalized 0-1; page numbers are 1-based):",
 		},
 		{ text: "" },
 	];
-	for (const f of bundle.placementManifest.fields) {
+
+	for (let i = 0; i < bundle.placementManifest.fields.length; i++) {
+		const f = bundle.placementManifest.fields[i];
 		const st = fieldPlacementStatus(bundle, f.id, f.assignedSigner);
+		const signerRow = bundle.signers.find(
+			(s) => s.wallet.toLowerCase() === f.assignedSigner.toLowerCase(),
+		);
+		const name = signerRow?.displayName?.trim();
+		const email = signerRow?.email?.trim();
+
+		const statusLabel =
+			st === "signed" ? "SIGNED" : st === "draft" ? "DRAFT" : "PENDING";
+		const reqLabel = f.required ? "required" : "optional";
+
 		placementRef.push({
-			text: `• ${f.id} · ${f.type} · page ${f.pageIndex + 1} · required=${f.required} · status=${st} · rect x=${f.rect.x.toFixed(4)} y=${f.rect.y.toFixed(4)} w=${f.rect.width.toFixed(4)} h=${f.rect.height.toFixed(4)} · signer ${f.assignedSigner}`,
+			text: `${i + 1}. ${f.id} (${f.type}, ${reqLabel}, ${statusLabel})`,
 		});
+		placementRef.push({
+			text: `   Page ${f.pageIndex + 1} / Rect [x:${f.rect.x.toFixed(3)} y:${f.rect.y.toFixed(3)} w:${f.rect.width.toFixed(3)} h:${f.rect.height.toFixed(3)}]`,
+		});
+
+		// Signer info on single line when possible
+		const signerParts: string[] = [];
+		if (name) signerParts.push(name);
+		if (email) signerParts.push(email);
+		signerParts.push(f.assignedSigner);
+		placementRef.push({ text: `   -> ${signerParts.join(" | ")}` });
+
+		// Compact separator
+		if (i < bundle.placementManifest.fields.length - 1) {
+			placementRef.push({ text: "" });
+		}
 	}
 
 	const manifestJson = JSON.stringify(bundle.placementManifest, null, 2);
@@ -328,30 +390,78 @@ export function buildCompliancePdfSummaryFromBundle(
 
 	const cryptoDetail: CompliancePdfLine[] = [
 		{
-			text: "Per-signer Merkle data (leaf schema v1). Each leaf hashes field id, placement commitment, piece CID digest, and signer address. Inclusion siblings recover the completions root registered on-chain.",
+			text: "Merkle proofs verify each field completion on-chain. Each leaf hashes: field ID + placement commitment + piece CID digest + signer address. Siblings reconstruct the completions root.",
 		},
 		{ text: "" },
 	];
-	for (const s of bundle.signers) {
-		cryptoDetail.push({
-			text: `Signer ${s.wallet} · signed=${s.signed} · leafSchemaVersion=${s.leafSchemaVersion ?? "—"}`,
-		});
+
+	for (let signerIdx = 0; signerIdx < bundle.signers.length; signerIdx++) {
+		const s = bundle.signers[signerIdx];
+		const signerNum = signerIdx + 1;
+
+		// Visual header for signer
+		const statusBadge = s.signed ? "SIGNED" : "NOT SIGNED";
+		cryptoDetail.push({ text: `+-- Signer ${signerNum} ${statusBadge}` });
+		cryptoDetail.push({ text: `| Wallet: ${truncateHash(s.wallet, 20, 12)}` });
+
 		if (s.completionsRoot) {
-			cryptoDetail.push({ text: `  completionsRoot: ${s.completionsRoot}` });
-		}
-		cryptoDetail.push({
-			text: `  completedFieldIds: ${s.completedFieldIds.join(", ") || "(none)"}`,
-		});
-		for (const pr of s.merkleProofs) {
 			cryptoDetail.push({
-				text: `  Proof · field ${pr.fieldId} · leafIndex ${pr.leafIndex} · leafHash ${pr.leafHash}`,
+				text: `| Root:   ${truncateHash(s.completionsRoot, 20, 12)}`,
 			});
-			const sibStr = pr.siblings.length
-				? pr.siblings.join(", ")
-				: "(empty — single leaf)";
-			cryptoDetail.push({ text: `    siblings: ${sibStr}` });
 		}
-		cryptoDetail.push({ text: "" });
+
+		if (s.completedFieldIds.length > 0) {
+			cryptoDetail.push({
+				text: `| Fields: ${s.completedFieldIds.join(", ")}`,
+			});
+		}
+
+		// Merkle proofs section
+		if (s.merkleProofs.length > 0) {
+			cryptoDetail.push({ text: "|" });
+			cryptoDetail.push({ text: "| Proofs:" });
+
+			for (let pIdx = 0; pIdx < s.merkleProofs.length; pIdx++) {
+				const pr = s.merkleProofs[pIdx];
+				const isLastProof = pIdx === s.merkleProofs.length - 1;
+				const proofPrefix = isLastProof ? "`--" : "|--";
+				const childPrefix = isLastProof ? "    " : "|   ";
+
+				// Field ID and leaf hash on one compact line
+				cryptoDetail.push({
+					text: `| ${proofPrefix} [${shortId(pr.fieldId)}] leaf ${pr.leafIndex}: ${truncateHash(pr.leafHash, 14, 10)}`,
+				});
+
+				// Siblings display
+				if (pr.siblings.length === 0) {
+					cryptoDetail.push({
+						text: `| ${childPrefix}\`-- (no siblings - single leaf)`,
+					});
+				} else if (pr.siblings.length === 1) {
+					cryptoDetail.push({
+						text: `| ${childPrefix}\`-- ${truncateHash(pr.siblings[0], 14, 10)}`,
+					});
+				} else {
+					cryptoDetail.push({
+						text: `| ${childPrefix}\`-- ${pr.siblings.length} siblings:`,
+					});
+					for (let sIdx = 0; sIdx < pr.siblings.length; sIdx++) {
+						const isLastSib = sIdx === pr.siblings.length - 1;
+						const sibPrefix = isLastSib ? "`--" : "|--";
+						cryptoDetail.push({
+							text: `| ${childPrefix}   ${sibPrefix} ${truncateHash(pr.siblings[sIdx], 14, 10)}`,
+						});
+					}
+				}
+			}
+		}
+
+		cryptoDetail.push({ text: "+------------------------------" });
+
+		// Compact separator between signers
+		if (signerIdx < bundle.signers.length - 1) {
+			cryptoDetail.push({ text: "" });
+		}
 	}
 
 	return {
@@ -364,7 +474,7 @@ export function buildCompliancePdfSummaryFromBundle(
 			{ title: "Document content metadata", lines: docMetaLines },
 			{ title: "Field placements", lines: placementRef },
 			{ title: "Placement manifest (JSON)", lines: manifestLines },
-			{ title: "Technical — Merkle / completions", lines: cryptoDetail },
+			{ title: "Technical - Merkle / completions", lines: cryptoDetail },
 		],
 	};
 }
@@ -384,16 +494,19 @@ const FILOSIGN = {
 } as const;
 
 const PDF_M = {
-	margin: 48,
-	gap: 24,
-	sectionGap: 24,
-	blankLineGap: 9,
-	valueX: 160,
-	bodySize: 9,
-	labelSize: 9,
-	titleSize: 18,
-	sectionTitleSize: 11,
-	bottomSafe: 50,
+	margin: 56,
+	gap: 20,
+	sectionGap: 18,
+	sectionTitleBottomPad: 10,
+	blankLineGap: 8,
+	valueX: 200,
+	bodySize: 10,
+	labelSize: 10,
+	titleSize: 20,
+	sectionTitleSize: 12,
+	bottomSafe: 56,
+	fieldRowGapAfterRule: 10,
+	fieldLabelValueGap: 6,
 } as const;
 
 const WORD_BREAKS_FULL = ["", " ", "-"] as const;
@@ -410,7 +523,7 @@ type Ctx = {
 };
 
 function lineHeightAt(font: PDFFont, size: number): number {
-	return font.heightAtSize(size) * 1.25;
+	return font.heightAtSize(size) * 1.38;
 }
 
 function wrapLines(
@@ -509,7 +622,7 @@ function drawWrappedLine(
 	}
 
 	for (const ln of lines) {
-		ensureSpace(ctx, lh + 4);
+		ensureSpace(ctx, lh + 10);
 		ctx.page.drawText(ln, {
 			x,
 			y: ctx.y,
@@ -552,7 +665,7 @@ async function drawComplianceReport(
 		font: fontBold,
 		color: FILOSIGN.foreground,
 	});
-	ctx.y -= 18;
+	ctx.y -= 22;
 
 	if (summary.explorerBaseUrl) {
 		const subText = `Block explorer: ${summary.explorerBaseUrl}`;
@@ -575,7 +688,7 @@ async function drawComplianceReport(
 			);
 		}
 	}
-	ctx.y -= 12;
+	ctx.y -= 16;
 
 	ctx.page.drawLine({
 		start: { x: PDF_M.margin, y: ctx.y },
@@ -583,7 +696,7 @@ async function drawComplianceReport(
 		thickness: 2,
 		color: FILOSIGN.accent,
 	});
-	ctx.y -= PDF_M.gap;
+	ctx.y -= PDF_M.gap + 4;
 
 	ctx.page.drawText("File Record", {
 		x: PDF_M.margin,
@@ -592,7 +705,9 @@ async function drawComplianceReport(
 		font: fontBold,
 		color: FILOSIGN.accent,
 	});
-	ctx.y -= lineHeightAt(fontBold, PDF_M.sectionTitleSize) + 8;
+	ctx.y -=
+		lineHeightAt(fontBold, PDF_M.sectionTitleSize) +
+		PDF_M.sectionTitleBottomPad;
 
 	const valueMaxW = ctx.pw - PDF_M.valueX - PDF_M.margin;
 
@@ -600,9 +715,11 @@ async function drawComplianceReport(
 		const vLines = wrapLines(row.value, valueMaxW, font, PDF_M.bodySize);
 		const lh = lineHeightAt(font, PDF_M.bodySize);
 		const valueTotalH = vLines.length * lh;
-		const rowH = Math.max(lineHeightAt(fontBold, PDF_M.labelSize), valueTotalH);
+		const labelH = lineHeightAt(fontBold, PDF_M.labelSize);
+		const rowH = Math.max(labelH, valueTotalH);
+		const blockPad = PDF_M.fieldLabelValueGap;
 
-		ensureSpace(ctx, rowH + 16);
+		ensureSpace(ctx, rowH + blockPad + PDF_M.fieldRowGapAfterRule + 8);
 
 		ctx.page.drawText(row.label, {
 			x: PDF_M.margin,
@@ -636,7 +753,7 @@ async function drawComplianceReport(
 			vy -= lh;
 		}
 
-		ctx.y -= rowH + 6;
+		ctx.y -= rowH + blockPad;
 
 		ctx.page.drawLine({
 			start: { x: PDF_M.margin, y: ctx.y },
@@ -644,15 +761,16 @@ async function drawComplianceReport(
 			thickness: 0.5,
 			color: FILOSIGN.border,
 		});
-		ctx.y -= 10;
+		ctx.y -= PDF_M.fieldRowGapAfterRule;
 	}
 
-	ctx.y -= PDF_M.gap - 10;
+	ctx.y -= PDF_M.sectionGap;
 
 	const bodyMaxW = ctx.pw - PDF_M.margin * 2;
 
 	for (const section of summary.sections) {
-		ensureSpace(ctx, lineHeightAt(fontBold, PDF_M.sectionTitleSize) + 32);
+		const sectionTitleH = lineHeightAt(fontBold, PDF_M.sectionTitleSize);
+		ensureSpace(ctx, sectionTitleH + PDF_M.sectionTitleBottomPad + 16);
 
 		ctx.page.drawText(section.title, {
 			x: PDF_M.margin,
@@ -661,7 +779,7 @@ async function drawComplianceReport(
 			font: fontBold,
 			color: FILOSIGN.accent,
 		});
-		ctx.y -= lineHeightAt(fontBold, PDF_M.sectionTitleSize) + 8;
+		ctx.y -= sectionTitleH + PDF_M.sectionTitleBottomPad;
 
 		for (const line of section.lines) {
 			drawWrappedLine(ctx, PDF_M.margin, bodyMaxW, line, PDF_M.bodySize);
@@ -691,11 +809,20 @@ export async function sha256HexOfBytes(
 	return `0x${hex}` as `0x${string}`;
 }
 
-function drawPlacementOverlaysOnDocumentPdf(
+type OverlayTextSeg = { text: string; font: PDFFont; size: number };
+
+function overlaySegTotalHeight(segments: OverlayTextSeg[]): number {
+	return segments.reduce((acc, s) => acc + lineHeightAt(s.font, s.size), 0);
+}
+
+async function drawPlacementOverlaysOnDocumentPdf(
 	doc: PDFDocument,
 	bundle: ComplianceBundleV1,
-): void {
+): Promise<void> {
+	const font = await doc.embedFont(StandardFonts.Helvetica);
+	const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
 	const n = doc.getPageCount();
+
 	for (const f of bundle.placementManifest.fields) {
 		const pi = f.pageIndex;
 		if (pi < 0 || pi >= n) continue;
@@ -730,20 +857,100 @@ function drawPlacementOverlaysOnDocumentPdf(
 			borderColor: border,
 			borderWidth: 1.5,
 			color: bg,
-			opacity: 0.35,
+			opacity: 0.38,
 		});
-		const label =
-			st === "signed"
-				? `${f.type} · signed`
-				: st === "draft"
-					? `${f.type} · draft`
-					: `${f.type} · pending`;
-		page.drawText(label, {
-			x: x + 2,
-			y: yPdf + rh - 9,
-			size: 7,
-			color: rgb(0.15, 0.15, 0.15),
+
+		const signerRow = bundle.signers.find(
+			(s) => s.wallet.toLowerCase() === f.assignedSigner.toLowerCase(),
+		);
+		const displayName = (signerRow?.displayName ?? "").trim() || "Signer";
+		const email = (signerRow?.email ?? "").trim() || "-";
+		const statusWord =
+			st === "signed" ? "Signed" : st === "draft" ? "Draft" : "Pending";
+		const footerText = `${f.type} / ${statusWord}${f.required ? " / required" : " / optional"}`;
+
+		const pad = Math.min(6, Math.max(3, Math.min(rw, rh) * 0.06));
+		const innerW = Math.max(28, rw - 2 * pad);
+
+		let nameSize = Math.min(8.5, Math.max(6, Math.min(rh / 5, rw / 22)));
+
+		const buildSegments = (): OverlayTextSeg[] => {
+			const detailSize = nameSize * 0.9;
+			const tagSize = detailSize * 0.95;
+			const parts: OverlayTextSeg[] = [];
+			for (const t of wrapLines(displayName, innerW, fontBold, nameSize)) {
+				parts.push({ text: t, font: fontBold, size: nameSize });
+			}
+			for (const t of wrapLines(email, innerW, font, detailSize)) {
+				parts.push({ text: t, font, size: detailSize });
+			}
+			for (const t of wrapLines(footerText, innerW, font, tagSize)) {
+				parts.push({ text: t, font, size: tagSize });
+			}
+			return parts;
+		};
+
+		let segments = buildSegments();
+		const cap = rh - 2 * pad;
+		while (overlaySegTotalHeight(segments) > cap && nameSize > 5.5) {
+			nameSize -= 0.5;
+			segments = buildSegments();
+		}
+
+		if (overlaySegTotalHeight(segments) > cap) {
+			const kept: OverlayTextSeg[] = [];
+			let used = 0;
+			for (const s of segments) {
+				const step = lineHeightAt(s.font, s.size);
+				if (used + step > cap) break;
+				kept.push(s);
+				used += step;
+			}
+			if (kept.length > 0) {
+				const last = kept[kept.length - 1];
+				const t = last.text;
+				kept[kept.length - 1] = {
+					...last,
+					text:
+						t.length > 8
+							? `${t.slice(0, Math.max(1, t.length - 4))}...`
+							: `${t}...`,
+				};
+			}
+			segments = kept;
+		}
+
+		if (segments.length === 0) continue;
+
+		const blockH = Math.min(
+			cap,
+			Math.max(
+				overlaySegTotalHeight(segments),
+				lineHeightAt(fontBold, nameSize),
+			),
+		);
+		page.drawRectangle({
+			x: x + 0.75,
+			y: yPdf + rh - blockH - pad * 0.5,
+			width: Math.max(0, rw - 1.5),
+			height: blockH + pad * 0.5,
+			color: rgb(1, 1, 1),
+			opacity: 0.92,
+			borderWidth: 0,
 		});
+
+		let baseline = yPdf + rh - pad - segments[0].size * 0.85;
+		for (const seg of segments) {
+			if (baseline < yPdf + pad) break;
+			page.drawText(seg.text, {
+				x: x + pad,
+				y: baseline,
+				size: seg.size,
+				font: seg.font,
+				color: rgb(0.1, 0.1, 0.11),
+			});
+			baseline -= lineHeightAt(seg.font, seg.size);
+		}
 	}
 }
 
@@ -912,7 +1119,7 @@ export async function buildDocumentPlusCompliancePdf(
 			for (const p of copied) {
 				out.addPage(p);
 			}
-			drawPlacementOverlaysOnDocumentPdf(out, options.bundle);
+			await drawPlacementOverlaysOnDocumentPdf(out, options.bundle);
 		} catch {
 			throw new Error(
 				"The PDF could not be read. Try downloading the original file separately.",
@@ -930,7 +1137,7 @@ export async function buildDocumentPlusCompliancePdf(
 			);
 		}
 		await embedImagePage(out, fileData.fileBytes, resolved);
-		drawPlacementOverlaysOnDocumentPdf(out, options.bundle);
+		await drawPlacementOverlaysOnDocumentPdf(out, options.bundle);
 	}
 
 	await drawComplianceReport(out, {

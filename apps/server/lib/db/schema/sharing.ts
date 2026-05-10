@@ -1,11 +1,12 @@
 import * as t from "drizzle-orm/pg-core";
+import { randomUuidV7 } from "@/lib/db/random-uuid-v7";
 import { tBytes32, tEvmAddress, timestamps } from "../helpers";
 import { users } from "./user";
 
 export const shareApprovals = t.pgTable(
 	"share_approvals",
 	{
-		id: t.uuid().primaryKey().defaultRandom(),
+		id: t.uuid().primaryKey().$defaultFn(randomUuidV7),
 
 		recipientWallet: tEvmAddress()
 			.notNull()
@@ -29,7 +30,7 @@ export const shareApprovals = t.pgTable(
 );
 
 export const shareRequests = t.pgTable("share_requests", {
-	id: t.uuid().primaryKey().defaultRandom(),
+	id: t.uuid().primaryKey().$defaultFn(randomUuidV7),
 
 	senderWallet: tEvmAddress()
 		.notNull()

@@ -25,6 +25,10 @@ export const env = createEnv({
 		PRIVY_APP_ID: z.string().min(1),
 		PRIVY_APP_SECRET: z.string().min(1),
 		PRIVY_VERIFICATION_KEY: z.string().min(1),
+		DEBUG: z
+			.enum(["true", "false"])
+			.default("false")
+			.transform((v) => v === "true"),
 	},
 	runtimeEnv: Bun.env,
 	emptyStringAsUndefined: true,

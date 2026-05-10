@@ -2,6 +2,14 @@ import { Resend } from "resend";
 import type { Address } from "viem";
 import env from "@/env";
 
+function shouldSkipEmail(): boolean {
+	if (env.DEBUG) {
+		console.log("[DEBUG] Skipping email send (DEBUG mode is enabled)");
+		return true;
+	}
+	return false;
+}
+
 function escapeHtml(value: string) {
 	return value
 		.replaceAll("&", "&amp;")
@@ -42,6 +50,8 @@ type SendInviteEmailArgs = {
 const resend = new Resend(env.RESEND_API_KEY);
 
 export async function sendShareRequestEmail(args: SendShareRequestEmailArgs) {
+	if (shouldSkipEmail()) return;
+
 	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
 	const requestUrl = `${appUrl}/dashboard/connections`;
 	const senderLabel =
@@ -104,6 +114,8 @@ export async function sendShareRequestEmail(args: SendShareRequestEmailArgs) {
 }
 
 export async function sendInviteEmail(args: SendInviteEmailArgs) {
+	if (shouldSkipEmail()) return;
+
 	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
 	const inviteUrl = `${appUrl}/invite/${args.inviteId}`;
 	const senderLabel =
@@ -181,6 +193,8 @@ export async function sendInviteEmail(args: SendInviteEmailArgs) {
 export async function sendDocumentReceivedEmail(
 	args: SendDocumentReceivedEmailArgs,
 ) {
+	if (shouldSkipEmail()) return;
+
 	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
 	const documentUrl = `${appUrl}/dashboard`;
 	const senderLabel =
