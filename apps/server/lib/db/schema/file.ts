@@ -1,7 +1,7 @@
 import type { PlacementManifest } from "@filosign/shared";
 import * as t from "drizzle-orm/pg-core";
 import { tBytes32, tEvmAddress, tHex, timestamps } from "../helpers";
-import { userSignatures, users } from "./user";
+import { users } from "./user";
 
 export const files = t.pgTable(
 	"files",
@@ -104,14 +104,14 @@ export const fileSignatures = t.pgTable(
 			.text()
 			.notNull()
 			.references(() => files.pieceCid, { onDelete: "cascade" }),
-		signatureId: t
-			.uuid()
-			.references(() => userSignatures.id, { onDelete: "cascade" }),
-		signer: t.text().notNull(),
+		signer: tEvmAddress().notNull(),
 		evmSignature: tHex().notNull(),
 		dl3Signature: tHex().notNull(),
-		onchainTxHash: t.text(),
-
+		onchainTxHash: t.text().notNull(),
+		/** Field IDs included in this signature’s completions Merkle tree (sorted in-tree). */
+		completedFieldIds: t.jsonb().$type<string[]>().notNull(),
+		completionsRoot: tBytes32().notNull(),
+		leafSchemaVersion: t.smallint().notNull(),
 		...timestamps,
 	},
 	(table) => [
@@ -120,5 +120,35 @@ export const fileSignatures = t.pgTable(
 			name: "pk_file_signatures",
 		}),
 		t.index("idx_signatures_file").on(table.filePieceCid),
+	],
+);
+
+/** Platform log: each compliance bundle generation for audit / future attestation. */
+export const complianceExportLogs = t.pgTable(
+	"compliance_export_logs",
+	{
+		id: t.uuid().primaryKey().defaultRandom(),
+		filePieceCid: t
+			.text()
+			.notNull()
+			.references(() => files.pieceCid, { onDelete: "cascade" }),
+		requestedBy: tEvmAddress().notNull(),
+		bundleVersion: t.smallint().notNull(),
+		bundleHash: t.text().notNull(),
+		bundleJson: t.jsonb().notNull(),
+		executionStatus: t
+			.text({ enum: ["fully_executed", "partially_executed"] })
+			.notNull(),
+		signaturesSnapshotCount: t.integer().notNull(),
+		documentSha256: t.text(),
+		requestUserAgent: t.text(),
+		requestIp: t.text(),
+		createdAt: t.timestamp({ withTimezone: true }).notNull().defaultNow(),
+	},
+	(table) => [
+		t
+			.index("idx_compliance_export_file_created")
+			.on(table.filePieceCid, table.createdAt),
+		t.index("idx_compliance_export_requester").on(table.requestedBy),
 	],
 );
