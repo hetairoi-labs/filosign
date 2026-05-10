@@ -23,37 +23,39 @@ export function SaveButton({
 
 	return (
 		<motion.div
-			initial={{ opacity: 0, y: 10 }}
+			initial={{ opacity: 0, y: 6 }}
 			animate={{ opacity: 1, y: 0 }}
-			exit={{ opacity: 0, y: 10 }}
-			transition={{ duration: 0.2 }}
-			className="flex justify-end gap-2"
+			exit={{ opacity: 0, y: 6 }}
+			transition={{ duration: 0.15 }}
+			className="flex flex-col items-end gap-2 sm:flex-row sm:items-center sm:justify-end"
 		>
-			{error && (
+			{error ? (
 				<motion.div
-					initial={{ opacity: 0, scale: 0.95 }}
-					animate={{ opacity: 1, scale: 1 }}
-					className="flex items-center gap-2 text-destructive text-sm"
+					initial={{ opacity: 0 }}
+					animate={{ opacity: 1 }}
+					className="flex max-w-full items-start gap-1.5 text-xs text-destructive/90"
 				>
-					<WarningIcon className="size-4" />
-					{error}
+					<WarningIcon className="size-3.5 shrink-0 mt-0.5" />
+					<span className="text-right">{error}</span>
 				</motion.div>
-			)}
+			) : null}
 			<Button
-				variant="primary"
+				type="button"
+				variant="outline"
 				size="sm"
+				className="shrink-0 text-muted-foreground hover:bg-muted/60 hover:text-foreground disabled:opacity-60"
 				onClick={onSave}
 				disabled={disabled || isLoading}
 			>
 				{isLoading ? (
-					"Saving..."
+					"Saving…"
 				) : isSaved ? (
-					<span className="flex gap-2 items-center">
-						<CheckIcon className="size-4" />
+					<span className="flex items-center gap-1.5">
+						<CheckIcon className="size-3.5" weight="bold" />
 						Saved
 					</span>
 				) : (
-					"Save Changes"
+					"Save"
 				)}
 			</Button>
 		</motion.div>

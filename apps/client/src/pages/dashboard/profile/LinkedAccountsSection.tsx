@@ -1,6 +1,5 @@
 import { useSetPrimaryEmail, useUserProfile } from "@filosign/react/hooks";
 import {
-	CaretDownIcon,
 	EnvelopeSimpleIcon,
 	GoogleLogoIcon,
 	PlusIcon,
@@ -195,7 +194,6 @@ export function LinkedAccountsSection() {
 						>
 							<PlusIcon className="size-4 shrink-0" weight="bold" />
 							<span>Link account</span>
-							<CaretDownIcon className="size-3 shrink-0 opacity-40" weight="bold" />
 						</DropdownMenuTrigger>
 						<DropdownMenuContent align="end" className="min-w-40">
 							<DropdownMenuItem
@@ -264,7 +262,9 @@ export function LinkedAccountsSection() {
 												>
 													<StarIcon className="size-4" weight="regular" />
 												</TooltipTrigger>
-												<TooltipContent side="top">Set as primary</TooltipContent>
+												<TooltipContent side="top">
+													Set as primary
+												</TooltipContent>
 											</Tooltip>
 											<Tooltip>
 												<TooltipTrigger

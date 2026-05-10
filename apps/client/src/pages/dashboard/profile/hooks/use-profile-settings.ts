@@ -1,11 +1,7 @@
-import {
-	useRecoverWithPhrase,
-	useRotatePin,
-	useUserProfile,
-} from "@filosign/react/hooks";
+import { useUserProfile } from "@filosign/react/hooks";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { usePrivy } from "@privy-io/react-auth";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import type { ProfileForm } from "../types";
 import { profileSchema } from "../types";
@@ -65,55 +61,10 @@ export function useProfileSettings() {
 	);
 	const fileUpload = useFileUpload(form);
 
-	const rotatePin = useRotatePin();
-	const recoverWithPhrase = useRecoverWithPhrase();
-	const [currentPin, setCurrentPin] = useState("");
-	const [newPin, setNewPin] = useState("");
-	const [confirmPin, setConfirmPin] = useState("");
-	const [pinMessage, setPinMessage] = useState<string | null>(null);
-
-	const [recoveryPhrase, setRecoveryPhrase] = useState("");
-	const [phraseNewPin, setPhraseNewPin] = useState("");
-	const [phraseConfirmPin, setPhraseConfirmPin] = useState("");
-	const [phraseMessage, setPhraseMessage] = useState<string | null>(null);
-
-	const canRotatePin =
-		currentPin.length >= 6 &&
-		currentPin.length <= 10 &&
-		newPin.length >= 6 &&
-		newPin.length <= 10 &&
-		newPin === confirmPin;
-
-	const canRecoverWithPhrase =
-		recoveryPhrase.trim().length > 0 &&
-		phraseNewPin.length >= 6 &&
-		phraseNewPin.length <= 10 &&
-		phraseNewPin === phraseConfirmPin;
-
 	return {
 		form,
 		personalSection,
 		profilePictureSection,
 		fileUpload,
-		rotatePin,
-		recoverWithPhrase,
-		currentPin,
-		newPin,
-		confirmPin,
-		pinMessage,
-		setCurrentPin,
-		setNewPin,
-		setConfirmPin,
-		setPinMessage,
-		canRotatePin,
-		recoveryPhrase,
-		phraseNewPin,
-		phraseConfirmPin,
-		phraseMessage,
-		setRecoveryPhrase,
-		setPhraseNewPin,
-		setPhraseConfirmPin,
-		setPhraseMessage,
-		canRecoverWithPhrase,
 	};
 }
