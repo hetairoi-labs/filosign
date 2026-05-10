@@ -7,8 +7,11 @@ import {
 	toBytes,
 	toHex,
 } from "@filosign/crypto-utils";
-import { encodeFileData } from "@filosign/shared";
-import type { zFileData } from "@filosign/shared/zod";
+import {
+	computePlacementCommitment,
+	encodeFileData,
+	type zFileData,
+} from "@filosign/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Address, Hex } from "viem";
 import { getAddress } from "viem";
@@ -30,13 +33,13 @@ export function useSendFile() {
 			signers: {
 				address: Address;
 				encryptionPublicKey: Hex;
-				signaturePosition: [number, number, number, number];
 			}[];
 			viewers: { address: Address; encryptionPublicKey: string }[];
 			bytes: Uint8Array;
 			metadata: FileData["metadata"];
+			placementManifest: FileData["placementManifest"];
 		}) => {
-			const { signers, viewers, bytes, metadata } = args;
+			const { signers, viewers, bytes, metadata, placementManifest } = args;
 			const timestamp = Math.floor(Date.now() / 1000);
 
 			if (!contracts || !wallet || !user) {
@@ -48,10 +51,12 @@ export function useSendFile() {
 			const data = encodeFileData({
 				bytes: bytes,
 				sender: wallet.account.address,
-				signers: signers,
 				timestamp,
 				metadata,
+				placementManifest,
 			});
+
+			const placementCommitment = computePlacementCommitment(placementManifest);
 
 			const encryptionKey = randomBytes(32);
 			const encryptionInfo = "ignore-encryption-info";
@@ -160,6 +165,7 @@ export function useSendFile() {
 						{ name: "cidIdentifier", type: "bytes32" },
 						{ name: "sender", type: "address" },
 						{ name: "signersCommitment", type: "bytes20" },
+						{ name: "placementCommitment", type: "bytes32" },
 						{ name: "timestamp", type: "uint256" },
 						{ name: "nonce", type: "uint256" },
 					],
@@ -171,6 +177,7 @@ export function useSendFile() {
 					signersCommitment: computeSignersCommitment(
 						signers.map((s) => getAddress(s.address)),
 					),
+					placementCommitment,
 					timestamp: BigInt(timestamp),
 					nonce: BigInt(nonce),
 				},
@@ -183,6 +190,8 @@ export function useSendFile() {
 				senderEncryptedEncryptionKey: toHex(selfEncryptedEncryptionKey),
 				senderKemCiphertext: toHex(selfKemCiphertext),
 				timestamp: timestamp,
+				placementCommitment,
+				placementManifest,
 			};
 
 			const registerResponse = await api.rpc.postSafe(

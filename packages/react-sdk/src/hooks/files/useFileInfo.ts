@@ -9,6 +9,8 @@ export type FileInfo = {
 	status: string;
 	onchainTxHash: `0x${string}`;
 	createdAt: string;
+	placementCommitment: `0x${string}`;
+	placementManifest: unknown;
 	signers: Array<
 		string | { wallet: string; name: string | null; email: string | null }
 	>;
@@ -47,6 +49,8 @@ export function useFileInfo(args: { pieceCid: string | undefined }) {
 					status: z.string(),
 					onchainTxHash: zHexString(),
 					createdAt: z.string(),
+					placementCommitment: zHexString(),
+					placementManifest: z.unknown(),
 					signers: z.array(zParticipant),
 					viewers: z.array(zParticipant),
 					signatures: z.array(
