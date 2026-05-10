@@ -90,3 +90,93 @@ export function completionsMerkleRootV1(params: {
 	);
 	return merkleRootFromLeaves(leaves);
 }
+
+/** Build tree levels: levels[0] = leaf hashes, levels[L] = root. */
+export function merkleLevelsFromLeaves(leafHashes: Hex[]): Hex[][] {
+	if (leafHashes.length === 0) {
+		throw new Error("merkleLevelsFromLeaves: empty leaves");
+	}
+	const levels: Hex[][] = [];
+	let level = [...leafHashes];
+	levels.push(level);
+	while (level.length > 1) {
+		const next: Hex[] = [];
+		for (let i = 0; i < level.length; i += 2) {
+			const left = level[i];
+			const right = level[i + 1] ?? left;
+			if (!left || !right) break;
+			next.push(hashPair(left, right));
+		}
+		level = next;
+		levels.push(level);
+	}
+	return levels;
+}
+
+/**
+ * Sibling hashes from leaf to root (same pairing rule as {@link merkleRootFromLeaves}).
+ */
+export function merkleInclusionSiblings(
+	levels: Hex[][],
+	leafIndex: number,
+): Hex[] {
+	const siblings: Hex[] = [];
+	let index = leafIndex;
+	for (let d = 0; d < levels.length - 1; d++) {
+		const row = levels[d];
+		if (!row) break;
+		const pairBase = Math.floor(index / 2) * 2;
+		const left = row[pairBase];
+		const right = row[pairBase + 1] ?? left;
+		const sibling = index === pairBase ? right : left;
+		if (sibling !== undefined) siblings.push(sibling);
+		index = Math.floor(index / 2);
+	}
+	return siblings;
+}
+
+/** Recompute root from one leaf and its sibling path (order-agnostic via hashPair). */
+export function merkleRootFromLeafAndSiblings(
+	leafHash: Hex,
+	siblings: Hex[],
+): Hex {
+	let cur = leafHash;
+	for (const sib of siblings) {
+		cur = hashPair(cur, sib);
+	}
+	return cur;
+}
+
+export type CompletionMerkleLeafProofV1 = {
+	fieldId: string;
+	leafHash: Hex;
+	leafIndex: number;
+	siblings: Hex[];
+};
+
+/** One inclusion proof per completed field (sorted field order matches root). */
+export function completionsMerkleProofsV1(params: {
+	fieldIds: string[];
+	placementCommitment: Hex;
+	pieceCid: string;
+	signer: Address;
+}): CompletionMerkleLeafProofV1[] {
+	const uniqueSorted = [...new Set(params.fieldIds)].sort((a, b) =>
+		a.localeCompare(b),
+	);
+	const leaves = uniqueSorted.map((fieldId) =>
+		computeLeafHashV1({
+			fieldId,
+			placementCommitment: params.placementCommitment,
+			pieceCid: params.pieceCid,
+			signer: params.signer,
+		}),
+	);
+	const levels = merkleLevelsFromLeaves(leaves);
+	return uniqueSorted.map((fieldId, leafIndex) => ({
+		fieldId,
+		leafHash: leaves[leafIndex] as Hex,
+		leafIndex,
+		siblings: merkleInclusionSiblings(levels, leafIndex),
+	}));
+}

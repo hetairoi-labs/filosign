@@ -8,10 +8,12 @@ import {
 	stringToBytes,
 } from "viem";
 import {
+	completionsMerkleProofsV1,
 	completionsMerkleRootV1,
 	computeLeafHashV1,
 	fieldIdToBytes32,
 	LEAF_SCHEMA_VERSION_V1,
+	merkleRootFromLeafAndSiblings,
 	merkleRootFromLeaves,
 } from "./completions-merkle";
 
@@ -149,5 +151,46 @@ describe("completionsMerkleRootV1", () => {
 			signer,
 		});
 		expect(got).toBe(manual);
+	});
+});
+
+describe("completionsMerkleProofsV1", () => {
+	it("each proof verifies to the same root as completionsMerkleRootV1", () => {
+		const fieldIds = ["alpha", "beta", "gamma"];
+		const root = completionsMerkleRootV1({
+			fieldIds,
+			placementCommitment,
+			pieceCid,
+			signer,
+		});
+		const proofs = completionsMerkleProofsV1({
+			fieldIds,
+			placementCommitment,
+			pieceCid,
+			signer,
+		});
+		expect(proofs).toHaveLength(3);
+		for (const p of proofs) {
+			const computed = merkleRootFromLeafAndSiblings(p.leafHash, p.siblings);
+			expect(computed).toBe(root);
+		}
+	});
+
+	it("single-field proof has empty siblings", () => {
+		const fieldIds = ["only-one"];
+		const root = completionsMerkleRootV1({
+			fieldIds,
+			placementCommitment,
+			pieceCid,
+			signer,
+		});
+		const proofs = completionsMerkleProofsV1({
+			fieldIds,
+			placementCommitment,
+			pieceCid,
+			signer,
+		});
+		expect(proofs[0]?.siblings).toEqual([]);
+		expect(proofs[0]?.leafHash).toBe(root);
 	});
 });

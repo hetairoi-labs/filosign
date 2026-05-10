@@ -5,6 +5,7 @@ import { zFileData } from "./file-data";
 import type { PlacementManifest } from "./placement-manifest";
 
 export * from "./completions-merkle";
+export * from "./compliance-bundle";
 export { zFileData } from "./file-data";
 export * from "./placement-manifest";
 
