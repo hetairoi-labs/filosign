@@ -36,7 +36,7 @@ const App = () => {
 									>
 										<ProfileEmailSync />
 										<RouterProvider router={router} />
-										<Toaster position="bottom-right" />
+										<Toaster position="bottom-right" richColors />
 									</IconContext.Provider>
 								</FilosignProvider>
 							</WagmiProvider>

@@ -31,7 +31,7 @@ export default function Header({ onSend, status = "idle" }: HeaderProps) {
 			return (
 				<>
 					<CheckCircleIcon className="size-4" weight="fill" />
-					<p className="hidden sm:block">Sent!</p>
+					<p className="hidden sm:block">Document Sent</p>
 				</>
 			);
 		}
@@ -39,7 +39,7 @@ export default function Header({ onSend, status = "idle" }: HeaderProps) {
 			return (
 				<>
 					<XCircleIcon className="size-4" weight="fill" />
-					<p className="hidden sm:block">Failed</p>
+					<p className="hidden sm:block">Failed to Send</p>
 				</>
 			);
 		}

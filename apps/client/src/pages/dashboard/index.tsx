@@ -1,6 +1,13 @@
+import {
+	useReceivedFiles,
+	useReceivedRequests,
+	useSentFiles,
+} from "@filosign/react/hooks";
 import { usePrivy } from "@privy-io/react-auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
+import { useEffect } from "react";
 import { formatUnits } from "viem";
 import { useBalance } from "wagmi";
 import { Image } from "@/src/lib/components/custom/Image";
@@ -14,6 +21,15 @@ import {
 	CardTitle,
 } from "@/src/lib/components/ui/card";
 import DashboardLayout from "./layout";
+
+/** Invalidate queries for notifications and documents to re-fetch on navigation */
+function invalidateDashboardQueries(
+	queryClient: ReturnType<typeof useQueryClient>,
+) {
+	queryClient.invalidateQueries({ queryKey: ["received-files"] });
+	queryClient.invalidateQueries({ queryKey: ["sent-files"] });
+	queryClient.invalidateQueries({ queryKey: ["received-requests"] });
+}
 
 const statsCards = [
 	{
@@ -44,9 +60,20 @@ const statsCards = [
 
 export default function DashboardPage() {
 	const { user } = usePrivy();
+	const queryClient = useQueryClient();
 	const { data: balance } = useBalance({
 		address: user?.wallet?.address as `0x${string}`,
 	});
+
+	// Re-fetch notifications and documents when navigating to dashboard
+	useEffect(() => {
+		invalidateDashboardQueries(queryClient);
+	}, [queryClient]);
+
+	// Subscribe to query data for stats (optional - for future use)
+	useReceivedFiles();
+	useSentFiles();
+	useReceivedRequests();
 
 	return (
 		<DashboardLayout>

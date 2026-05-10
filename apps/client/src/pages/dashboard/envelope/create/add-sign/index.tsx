@@ -231,33 +231,66 @@ export default function AddSignaturePage() {
 
 	const handleSend = async () => {
 		if (isSendingRef.current) {
-			toast.info("Already sending documents...");
+			toast.info("Already sending...");
 			return;
 		}
 
 		if (!createForm?.documents.length) {
-			toast.error("No documents to send");
+			toast.error("Add a document first");
 			setSendStatus("error");
 			setTimeout(() => setSendStatus("idle"), 3000);
 			return;
 		}
 
 		if (createForm.documents.length !== 1) {
-			toast.error("Only one document per envelope is supported");
+			toast.error("Only one document supported");
 			setSendStatus("error");
 			setTimeout(() => setSendStatus("idle"), 3000);
 			return;
 		}
 
 		if (!createForm.recipients || createForm.recipients.length === 0) {
-			toast.error("No recipients selected");
+			toast.error("Add recipients first");
 			setSendStatus("error");
 			setTimeout(() => setSendStatus("idle"), 3000);
 			return;
 		}
 
+		const signerRecipients = createForm.recipients.filter(
+			(r) => r.role === "signer",
+		);
+		if (signerRecipients.length === 0) {
+			toast.error("Add at least one signer");
+			setSendStatus("error");
+			setTimeout(() => setSendStatus("idle"), 3000);
+			return;
+		}
+
+		// Check every signer has at least one required field
+		for (const signer of signerRecipients) {
+			const signerFields = signatureFields.filter(
+				(f) =>
+					f.assignedSignerWallet.toLowerCase() ===
+					(signer.walletAddress as Address).toLowerCase(),
+			);
+			if (signerFields.length === 0) {
+				toast.error(`${signer.name || "A signer"} has no signature fields`);
+				setSendStatus("error");
+				setTimeout(() => setSendStatus("idle"), 3000);
+				return;
+			}
+			if (!signerFields.some((f) => f.required)) {
+				toast.error(
+					`${signer.name || "A signer"} needs at least one required field`,
+				);
+				setSendStatus("error");
+				setTimeout(() => setSendStatus("idle"), 3000);
+				return;
+			}
+		}
+
 		if (recipientProfilesLoading) {
-			toast.error("Loading recipient information...");
+			toast.error("Loading recipient info...");
 			return;
 		}
 
@@ -265,9 +298,7 @@ export default function AddSignaturePage() {
 			(r) => !recipientProfilesMapWithRecipient.has(r.walletAddress as Address),
 		);
 		if (missingProfiles.length > 0) {
-			toast.error(
-				"Could not load all recipient profiles. Please try again in a moment.",
-			);
+			toast.error("Loading recipient profiles...");
 			setSendStatus("error");
 			setTimeout(() => setSendStatus("idle"), 3000);
 			return;
