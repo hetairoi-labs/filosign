@@ -235,7 +235,7 @@ export default function AddRecipientDialog({
 							<span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/50 text-muted-foreground">
 								<CheckCircleIcon className="size-4" weight="regular" />
 							</span>
-							<div className="min-w-0 space-y-2 flex items-center text-sm leading-relaxed">
+							<div className="min-w-0 flex-col items-center text-sm leading-relaxed">
 								{result.alreadyApproved && (
 									<p className="text-foreground/90">
 										You&apos;re already connected with{" "}
@@ -279,16 +279,18 @@ export default function AddRecipientDialog({
 									</p>
 								)}
 
-								{message ? (
-									<div className="border-l-2 border-border/60 pl-3 pt-1">
-										<p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-											Your note
-										</p>
-										<p className="mt-1 text-sm text-foreground/85">
-											&ldquo;{message}&rdquo;
-										</p>
-									</div>
-								) : null}
+								<div>
+									{message ? (
+										<div className="border-l-2 mt-4 border-border/60 pl-3 pt-1">
+											<p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+												Your note
+											</p>
+											<p className="mt-1 text-sm text-foreground/85">
+												&ldquo;{message}&rdquo;
+											</p>
+										</div>
+									) : null}
+								</div>
 							</div>
 						</div>
 
