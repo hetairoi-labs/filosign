@@ -30,14 +30,6 @@ import { getOrCreateUserDataset } from "@/lib/synapse";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
 
-const DEBUG_PREFIX = "[FileRoutes]";
-const debugLog = (step: string, data?: unknown) => {
-	console.log(
-		`${DEBUG_PREFIX} ${step}`,
-		data ? JSON.stringify(data, null, 2) : "",
-	);
-};
-
 const { FSFileRegistry } = fsContracts;
 
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
@@ -619,8 +611,6 @@ export default new Hono()
 		const userWallet = ctx.var.userWallet;
 		const pieceCid = ctx.req.param("pieceCid");
 
-		debugLog("GET_SIGN_DRAFT_START", { pieceCid, userWallet });
-
 		const [fileRecord] = await db
 			.select({
 				placementManifestJson: files.placementManifestJson,
@@ -640,11 +630,9 @@ export default new Hono()
 			);
 
 		if (!fileRecord) {
-			debugLog("GET_SIGN_DRAFT_FILE_NOT_FOUND", { pieceCid });
 			return respond.err(ctx, "File not found", 404);
 		}
 		if (!participantRecord) {
-			debugLog("GET_SIGN_DRAFT_NOT_SIGNER", { pieceCid, userWallet });
 			return respond.err(ctx, "You are not required to sign this file", 403);
 		}
 
@@ -652,9 +640,6 @@ export default new Hono()
 			fileRecord.placementManifestJson,
 		);
 		if (!manifestParsed.success) {
-			debugLog("GET_SIGN_DRAFT_MANIFEST_PARSE_FAILED", {
-				error: manifestParsed.error,
-			});
 			return respond.err(
 				ctx,
 				"File placement manifest missing or invalid",
@@ -681,12 +666,6 @@ export default new Hono()
 
 		const stored = draft?.completedFieldIds ?? [];
 		const completedFieldIds = stored.filter((id) => allowedIds.has(id));
-		debugLog("GET_SIGN_DRAFT_COMPLETE", {
-			pieceCid,
-			storedCount: stored.length,
-			filteredCount: completedFieldIds.length,
-			completedFieldIds,
-		});
 
 		return respond.ok(ctx, { completedFieldIds }, "Sign draft retrieved", 200);
 	})
@@ -695,8 +674,6 @@ export default new Hono()
 		const userWallet = ctx.var.userWallet;
 		const pieceCid = ctx.req.param("pieceCid");
 
-		debugLog("PUT_SIGN_DRAFT_START", { pieceCid, userWallet });
-
 		const rawBody = await ctx.req.json();
 		const parsedBody = z
 			.object({
@@ -704,16 +681,9 @@ export default new Hono()
 			})
 			.safeParse(rawBody);
 		if (parsedBody.error) {
-			debugLog("PUT_SIGN_DRAFT_VALIDATION_FAILED", {
-				error: parsedBody.error.message,
-			});
 			return respond.err(ctx, parsedBody.error.message, 400);
 		}
 		const { completedFieldIds: bodyIds } = parsedBody.data;
-		debugLog("PUT_SIGN_DRAFT_BODY_VALIDATED", {
-			receivedCount: bodyIds.length,
-			bodyIds,
-		});
 
 		const [fileRecord] = await db
 			.select({
@@ -734,11 +704,9 @@ export default new Hono()
 			);
 
 		if (!fileRecord) {
-			debugLog("PUT_SIGN_DRAFT_FILE_NOT_FOUND", { pieceCid });
 			return respond.err(ctx, "File not found", 404);
 		}
 		if (!participantRecord) {
-			debugLog("PUT_SIGN_DRAFT_NOT_SIGNER", { pieceCid, userWallet });
 			return respond.err(ctx, "You are not required to sign this file", 403);
 		}
 
@@ -746,9 +714,6 @@ export default new Hono()
 			fileRecord.placementManifestJson,
 		);
 		if (!manifestParsed.success) {
-			debugLog("PUT_SIGN_DRAFT_MANIFEST_PARSE_FAILED", {
-				error: manifestParsed.error,
-			});
 			return respond.err(
 				ctx,
 				"File placement manifest missing or invalid",
@@ -765,10 +730,6 @@ export default new Hono()
 
 		for (const id of bodyIds) {
 			if (!allowedIds.has(id)) {
-				debugLog("PUT_SIGN_DRAFT_FIELD_NOT_ALLOWED", {
-					id,
-					allowedIds: Array.from(allowedIds),
-				});
 				return respond.err(
 					ctx,
 					"completedFieldIds must match manifest fields for signer",
@@ -779,12 +740,6 @@ export default new Hono()
 
 		const completedFieldIds = [...new Set(bodyIds)];
 		const now = new Date();
-		debugLog("PUT_SIGN_DRAFT_SAVING", {
-			pieceCid,
-			wallet: participantRecord.wallet,
-			count: completedFieldIds.length,
-			completedFieldIds,
-		});
 
 		await db
 			.insert(fileSignerDrafts)
@@ -803,10 +758,6 @@ export default new Hono()
 				},
 			});
 
-		debugLog("PUT_SIGN_DRAFT_COMPLETE", {
-			pieceCid,
-			wallet: participantRecord.wallet,
-		});
 		return respond.ok(ctx, { completedFieldIds }, "Sign draft saved", 200);
 	})
 
@@ -816,17 +767,7 @@ export default new Hono()
 		const encoder = new TextEncoder();
 		const dilithium = await signatures.dilithiumInstance();
 
-		debugLog("SIGN_ENDPOINT_START", {
-			pieceCid,
-			userWallet,
-			timestamp: Date.now(),
-		});
-
 		const rawBody = await ctx.req.json();
-		debugLog("REQUEST_BODY_RECEIVED", {
-			rawBodyKeys: Object.keys(rawBody),
-			hasCompletedFieldIds: !!rawBody.completedFieldIds,
-		});
 
 		const parsedBody = z
 			.object({
@@ -837,18 +778,11 @@ export default new Hono()
 			})
 			.safeParse(rawBody);
 		if (parsedBody.error) {
-			debugLog("BODY_VALIDATION_FAILED", { error: parsedBody.error.message });
 			return respond.err(ctx, parsedBody.error.message, 400);
 		}
 		const { signature, timestamp, dl3Signature, completedFieldIds } =
 			parsedBody.data;
-		debugLog("BODY_VALIDATED", {
-			timestamp,
-			hasCompletedFieldIds: !!completedFieldIds,
-			completedFieldIdsCount: completedFieldIds?.length,
-		});
 
-		debugLog("FETCHING_FILE_RECORD", { pieceCid });
 		const [fileRecord] = await db
 			.select({
 				pieceCid: files.pieceCid,
@@ -859,7 +793,6 @@ export default new Hono()
 			.from(files)
 			.where(eq(files.pieceCid, pieceCid));
 
-		debugLog("FETCHING_PARTICIPANT_RECORD", { pieceCid, userWallet });
 		const [participantRecord] = await db
 			.select({
 				wallet: fileParticipants.wallet,
@@ -874,69 +807,41 @@ export default new Hono()
 			);
 
 		if (!fileRecord) {
-			debugLog("FILE_NOT_FOUND", { pieceCid });
 			return respond.err(ctx, "File not found", 404);
 		}
-		debugLog("FILE_RECORD_FOUND", { pieceCid, sender: fileRecord.sender });
 
 		if (!participantRecord) {
-			debugLog("PARTICIPANT_NOT_SIGNER", { pieceCid, userWallet });
 			return respond.err(ctx, "You are not required to sign this file", 403);
 		}
-		debugLog("PARTICIPANT_VERIFIED_AS_SIGNER", {
-			wallet: participantRecord.wallet,
-		});
 
-		debugLog("PARSING_MANIFEST");
 		const manifestParsed = zPlacementManifest.safeParse(
 			fileRecord.placementManifestJson,
 		);
 		if (!manifestParsed.success) {
-			debugLog("MANIFEST_PARSE_FAILED", { error: manifestParsed.error });
 			return respond.err(
 				ctx,
 				"File placement manifest missing or invalid",
 				500,
 			);
 		}
-		debugLog("MANIFEST_PARSED", {
-			fieldCount: manifestParsed.data.fields.length,
-		});
 
 		const signerAddr = getAddress(participantRecord.wallet);
 		const assignedForSigner = manifestParsed.data.fields.filter(
 			(f) => getAddress(f.assignedSigner) === signerAddr,
 		);
 		const allowedIds = new Set(assignedForSigner.map((f) => f.id));
-		debugLog("ASSIGNED_FIELDS_FOR_SIGNER", {
-			signerAddr,
-			assignedCount: assignedForSigner.length,
-			allowedIds: Array.from(allowedIds),
-		});
 
 		const requiredIds = requiredFieldIdsForSigner(
 			manifestParsed.data,
 			signerAddr,
 		);
-		debugLog("REQUIRED_FIELDS_FOR_SIGNER", {
-			requiredIds,
-			requiredCount: requiredIds.length,
-		});
 
 		let fieldIds: string[];
 		if (completedFieldIds !== undefined) {
 			fieldIds = completedFieldIds;
-			debugLog("USING_PROVIDED_COMPLETED_FIELD_IDS", {
-				count: fieldIds.length,
-				fieldIds,
-			});
 			const completedSet = new Set(fieldIds);
 			for (const id of fieldIds) {
 				if (!allowedIds.has(id)) {
-					debugLog("FIELD_ID_NOT_ALLOWED", {
-						id,
-						allowedIds: Array.from(allowedIds),
-					});
 					return respond.err(
 						ctx,
 						"completedFieldIds must match manifest fields for signer",
@@ -946,10 +851,6 @@ export default new Hono()
 			}
 			for (const req of requiredIds) {
 				if (!completedSet.has(req)) {
-					debugLog("REQUIRED_FIELD_MISSING", {
-						requiredId: req,
-						completedIds: Array.from(completedSet),
-					});
 					return respond.err(
 						ctx,
 						"All required fields must be marked complete before signing",
@@ -957,17 +858,11 @@ export default new Hono()
 					);
 				}
 			}
-			debugLog("ALL_REQUIRED_FIELDS_PRESENT");
 		} else {
 			fieldIds = assignedForSigner.map((f) => f.id);
-			debugLog("USING_ALL_ASSIGNED_FIELD_IDS", {
-				count: fieldIds.length,
-				fieldIds,
-			});
 		}
 
 		if (fieldIds.length === 0) {
-			debugLog("NO_FIELDS_TO_SIGN");
 			return respond.err(ctx, "No fields to complete for this signer", 400);
 		}
 
@@ -977,37 +872,22 @@ export default new Hono()
 
 		let completionsRoot: `0x${string}`;
 		try {
-			debugLog("COMPUTING_COMPLETIONS_ROOT", {
-				fieldIds: completedFieldIdsStored,
-				placementCommitment: fileRecord.placementCommitment,
-				signerAddr,
-			});
 			completionsRoot = completionsMerkleRootV1({
 				fieldIds: completedFieldIdsStored,
 				placementCommitment: fileRecord.placementCommitment,
 				pieceCid,
 				signer: signerAddr,
 			});
-			debugLog("COMPLETIONS_ROOT_COMPUTED", { completionsRoot });
-		} catch (e) {
-			debugLog("COMPLETIONS_ROOT_COMPUTATION_FAILED", {
-				error: e instanceof Error ? e.message : String(e),
-			});
+		} catch {
 			return respond.err(ctx, "Could not compute completions root", 400);
 		}
 
-		debugLog("FETCHING_SIGNER_PUBLIC_KEY", {
-			wallet: participantRecord.wallet,
-		});
 		const [{ signaturePublicKey: signerDl3PubKey }] = await db
 			.select({
 				signaturePublicKey: users.signaturePublicKey,
 			})
 			.from(users)
 			.where(eq(users.walletAddress, participantRecord.wallet));
-		debugLog("SIGNER_PUBLIC_KEY_FOUND", {
-			publicKeyLength: signerDl3PubKey?.length,
-		});
 
 		const dl3SignatureMessage = jsonStringify({
 			pieceCid,
@@ -1018,28 +898,18 @@ export default new Hono()
 			leafSchemaVersion: LEAF_SCHEMA_VERSION_V1,
 		});
 		const dl3SignatureCommitment = computeCommitment([dl3Signature]);
-		debugLog("DL3_MESSAGE_AND_COMMITMENT_PREPARED", {
-			messageLength: dl3SignatureMessage.length,
-			commitment: dl3SignatureCommitment,
-		});
 
-		debugLog("VERIFYING_DL3_SIGNATURE");
 		const isDl3SignatureValid = await signatures.verify({
 			dl: dilithium,
 			message: encoder.encode(dl3SignatureMessage),
 			signature: toBytes(dl3Signature),
 			publicKey: toBytes(signerDl3PubKey),
 		});
-		debugLog("DL3_SIGNATURE_VERIFICATION_RESULT", {
-			isValid: isDl3SignatureValid,
-		});
 
 		if (!isDl3SignatureValid) {
-			debugLog("DL3_SIGNATURE_INVALID");
 			return respond.err(ctx, "Invalid DL3 signature", 400);
 		}
 
-		debugLog("FETCHING_ALL_SIGNERS", { pieceCid });
 		const signerRows = await db
 			.select({ wallet: fileParticipants.wallet })
 			.from(fileParticipants)
@@ -1052,10 +922,6 @@ export default new Hono()
 		const allSignersCalldata = signerRows
 			.map((p) => getAddress(p.wallet))
 			.sort();
-		debugLog("ALL_SIGNERS_FETCHED", {
-			count: allSignersCalldata.length,
-			signers: allSignersCalldata,
-		});
 
 		const registerSignatureArgs = [
 			pieceCid,
@@ -1068,14 +934,8 @@ export default new Hono()
 			completionsRoot,
 			LEAF_SCHEMA_VERSION_V1,
 		] as const;
-		debugLog("REGISTER_SIGNATURE_ARGS_PREPARED", {
-			args: registerSignatureArgs.map((a) =>
-				typeof a === "bigint" ? a.toString() : a,
-			),
-		});
 
 		try {
-			debugLog("SIMULATING_CONTRACT_CALL");
 			await FSFileRegistry.simulate.registerFileSignature(
 				registerSignatureArgs,
 				{
@@ -1083,21 +943,14 @@ export default new Hono()
 					account: evmClient.account,
 				},
 			);
-			debugLog("CONTRACT_SIMULATION_SUCCESS");
 		} catch (_err) {
-			debugLog("CONTRACT_SIMULATION_FAILED", {
-				error: _err instanceof Error ? _err.message : String(_err),
-			});
 			return respond.err(ctx, "Invalid signature", 400);
 		}
 
-		debugLog("SENDING_TRANSACTION");
 		const txHash = await FSFileRegistry.write.registerFileSignature(
 			registerSignatureArgs,
 		);
-		debugLog("TRANSACTION_SENT", { txHash });
 
-		debugLog("INSERTING_SIGNATURE_TO_DB");
 		await db.insert(fileSignatures).values({
 			filePieceCid: pieceCid,
 			signer: signerAddr,
@@ -1109,9 +962,7 @@ export default new Hono()
 			leafSchemaVersion: LEAF_SCHEMA_VERSION_V1,
 			createdAt: new Date(timestamp * 1000),
 		});
-		debugLog("SIGNATURE_INSERTED_TO_DB");
 
-		debugLog("DELETING_SIGN_DRAFT");
 		await db
 			.delete(fileSignerDrafts)
 			.where(
@@ -1120,14 +971,8 @@ export default new Hono()
 					eq(fileSignerDrafts.wallet, participantRecord.wallet),
 				),
 			);
-		debugLog("SIGN_DRAFT_DELETED");
 
-		debugLog("SIGN_ENDPOINT_COMPLETE", {
-			pieceCid,
-			txHash,
-			signer: participantRecord.wallet,
-		});
-		return respond.ok(ctx, {}, "File signed successfully", 200);
+		return respond.ok(ctx, { txHash, signature }, "Signature recorded", 200);
 	})
 
 	.post("/:pieceCid/incentive", authenticated, async (ctx) => {

@@ -63,14 +63,6 @@ const LazyPdfJsPreview = lazy(
 	() => import("@/src/lib/components/custom/PdfJsPreview.lazy"),
 );
 
-const DEBUG_PREFIX = "[SignFlow]";
-const debugLog = (step: string, data?: unknown) => {
-	console.log(
-		`${DEBUG_PREFIX} ${step}`,
-		data ? JSON.stringify(data, null, 2) : "",
-	);
-};
-
 export default function SignDocumentPage() {
 	const navigate = useNavigate();
 	const search = useSearch({ from: "/dashboard/document/sign/" });
@@ -80,29 +72,11 @@ export default function SignDocumentPage() {
 	const { contracts } = useFilosignContext();
 	const signerAddress = user?.wallet?.address as `0x${string}` | undefined;
 
-	debugLog("COMPONENT_MOUNT", {
-		pieceCid,
-		signerAddress,
-		timestamp: Date.now(),
-	});
-
 	const {
 		data: file,
 		isLoading: fileLoading,
 		error: fileError,
 	} = useFileInfo({ pieceCid });
-
-	useEffect(() => {
-		debugLog("FILE_INFO_UPDATED", {
-			pieceCid,
-			hasFile: !!file,
-			isLoading: fileLoading,
-			hasError: !!fileError,
-			fileStatus: file?.status,
-			signerCount: file?.signers?.length,
-			signatureCount: file?.signatures?.length,
-		});
-	}, [file, fileLoading, fileError, pieceCid]);
 
 	const acknowledgeFile = useAckFile();
 
@@ -171,30 +145,14 @@ export default function SignDocumentPage() {
 
 	useEffect(() => {
 		if (!pieceCid || serverDraftIds === undefined) {
-			debugLog("DRAFT_HYDRATION_SKIPPED", {
-				pieceCid,
-				hasServerDraftIds: serverDraftIds !== undefined,
-			});
 			return;
 		}
 		if (hasHydratedDraftForPieceCid.current === pieceCid) {
-			debugLog("DRAFT_HYDRATION_ALREADY_DONE", { pieceCid });
 			return;
 		}
-		debugLog("DRAFT_HYDRATION_START", {
-			pieceCid,
-			serverDraftIds,
-			currentCompleted: completedFieldIds,
-		});
 		hasHydratedDraftForPieceCid.current = pieceCid;
 		setCompletedFieldIds((prev) => {
 			const next = prev.length > 0 ? prev : [...serverDraftIds];
-			debugLog("DRAFT_HYDRATION_COMPLETE", {
-				pieceCid,
-				previousCount: prev.length,
-				newCount: next.length,
-				hydratedIds: serverDraftIds,
-			});
 			return next;
 		});
 	}, [pieceCid, serverDraftIds]);
@@ -208,24 +166,11 @@ export default function SignDocumentPage() {
 	const flushSignDraft = useCallback(
 		(ids: string[]) => {
 			if (!pieceCid) {
-				debugLog("FLUSH_SIGN_DRAFT_BLOCKED", { reason: "no pieceCid" });
 				return;
 			}
-			debugLog("FLUSH_SIGN_DRAFT", {
-				pieceCid,
-				completedFieldIds: ids,
-				count: ids.length,
-			});
 			void updateSignDraft
 				.mutateAsync({ pieceCid, completedFieldIds: ids })
-				.then(() => {
-					debugLog("SIGN_DRAFT_SAVED", { pieceCid, completedFieldIds: ids });
-				})
 				.catch((err: unknown) => {
-					debugLog("SIGN_DRAFT_SAVE_FAILED", {
-						pieceCid,
-						error: err instanceof Error ? err.message : String(err),
-					});
 					console.warn("[sign-draft] save failed", err);
 				});
 		},
@@ -251,22 +196,11 @@ export default function SignDocumentPage() {
 	const togglePlacementField = useCallback(
 		(fieldId: string) => {
 			if (alreadySigned) return;
-			debugLog("TOGGLE_PLACEMENT_FIELD", {
-				fieldId,
-				currentCompleted: completedFieldIds,
-			});
 			setCompletedFieldIds((prev) => {
 				const isRemoving = prev.includes(fieldId);
 				const next = isRemoving
 					? prev.filter((x) => x !== fieldId)
 					: [...prev, fieldId];
-				debugLog("COMPLETED_FIELDS_UPDATED", {
-					fieldId,
-					action: isRemoving ? "removed" : "added",
-					previousCount: prev.length,
-					newCount: next.length,
-					newCompletedIds: next,
-				});
 				scheduleSignDraftSave(next);
 				return next;
 			});
@@ -284,25 +218,15 @@ export default function SignDocumentPage() {
 	const documentRef = useRef<HTMLDivElement>(null);
 
 	const myPlacementFields = useMemo(() => {
-		debugLog("COMPUTING_MY_PLACEMENT_FIELDS", {
-			hasSignerAddress: !!signerAddress,
-			hasPlacementManifest: !!fileData?.placementManifest,
-		});
 		if (!signerAddress || !fileData?.placementManifest) return [];
 		const parsed = zPlacementManifest.safeParse(fileData.placementManifest);
 		if (!parsed.success) {
-			debugLog("PLACEMENT_MANIFEST_PARSE_FAILED", { error: parsed.error });
 			return [];
 		}
 		const me = getAddress(signerAddress);
 		const fields = parsed.data.fields.filter(
 			(f) => getAddress(f.assignedSigner) === me,
 		);
-		debugLog("MY_PLACEMENT_FIELDS_COMPUTED", {
-			fieldCount: fields.length,
-			fieldIds: fields.map((f) => f.id),
-			pageIndices: fields.map((f) => f.pageIndex),
-		});
 		return fields;
 	}, [fileData?.placementManifest, signerAddress]);
 
@@ -337,13 +261,6 @@ export default function SignDocumentPage() {
 		const mime = fileData.metadata.mimeType;
 		const name = fileData.metadata.name?.toLowerCase() ?? "";
 		const isPdf = mime === "application/pdf" || name.endsWith(".pdf");
-		debugLog("PREVIEW_PDF_BYTES_COMPUTED", {
-			hasFileData: !!fileData,
-			mimeType: mime,
-			fileName: name,
-			isPdf,
-			byteLength: fileData.fileBytes?.length,
-		});
 		if (!isPdf) return null;
 		return new Uint8Array(fileData.fileBytes);
 	}, [fileData]);
@@ -352,46 +269,25 @@ export default function SignDocumentPage() {
 	const signPdfTotalDisplay = signPdfNumPages ?? signPdfPageCountHint;
 
 	useEffect(() => {
-		debugLog("PDF_PAGE_RESET", {
-			pieceCid,
-			hasPreviewBytes: !!previewPdfBytes,
-		});
 		setSignPdfPage(1);
 		setSignPdfNumPages(null);
 	}, [pieceCid, previewPdfBytes]);
 
 	// Memoize the handleViewFile function
 	const handleViewFile = useCallback(async () => {
-		debugLog("HANDLE_VIEW_FILE_START", {
-			pieceCid: file?.pieceCid,
-			hasKemCiphertext: !!file?.kemCiphertext,
-			hasEncryptedKey: !!file?.encryptedEncryptionKey,
-		});
 		if (!file?.kemCiphertext || !file?.encryptedEncryptionKey) {
 			const errMsg = "Missing decryption keys. Acknowledge the file first.";
-			debugLog("VIEW_FILE_BLOCKED", { reason: errMsg });
 			setViewError(errMsg);
 			return;
 		}
 
 		try {
 			setViewError(null);
-			debugLog("VIEW_FILE_MUTATING", {
-				pieceCid: file.pieceCid,
-				status: file.status,
-			});
 			const result = await viewFile.mutateAsync({
 				pieceCid: file.pieceCid,
 				kemCiphertext: file.kemCiphertext,
 				encryptedEncryptionKey: file.encryptedEncryptionKey,
 				status: file.status as "s3" | "foc",
-			});
-			debugLog("VIEW_FILE_SUCCESS", {
-				pieceCid: file.pieceCid,
-				fileBytesLength: result.fileBytes?.length,
-				sender: result.sender,
-				metadata: result.metadata,
-				hasPlacementManifest: !!result.placementManifest,
 			});
 			setFileData(result);
 		} catch (error) {
@@ -399,10 +295,6 @@ export default function SignDocumentPage() {
 				error instanceof Error
 					? error.message
 					: "Failed to load file for signing";
-			debugLog("VIEW_FILE_ERROR", {
-				error: errorMessage,
-				stack: error instanceof Error ? error.stack : undefined,
-			});
 			console.error("Failed to load file:", error);
 			setViewError(errorMessage);
 			toast.error(errorMessage);
@@ -570,43 +462,24 @@ export default function SignDocumentPage() {
 	};
 
 	const handleSign = async () => {
-		debugLog("HANDLE_SIGN_START", {
-			pieceCid,
-			canSubmitPlacementSign,
-			completedFieldIds,
-			completedCount: completedFieldIds.length,
-			signerAddress,
-		});
 		if (!pieceCid) {
-			debugLog("SIGN_BLOCKED_NO_PIECE_CID");
 			return;
 		}
 		if (!canSubmitPlacementSign) {
 			const errMsg = "Mark every required field on the document first.";
-			debugLog("SIGN_BLOCKED_VALIDATION_FAILED", {
-				reason: errMsg,
-				requiredPlacementIds,
-				completedFieldIds,
-			});
 			toast.error(errMsg);
 			return;
 		}
 		try {
-			debugLog("SIGN_FILE_MUTATING", { pieceCid, completedFieldIds });
 			await signFile.mutateAsync({
 				pieceCid,
 				completedFieldIds,
 			});
-			debugLog("SIGN_FILE_SUCCESS", { pieceCid });
 			toast.success("Document signed successfully!");
 			window.location.reload();
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : "Failed to sign";
-			debugLog("SIGN_FILE_ERROR", {
-				error: errorMessage,
-				stack: error instanceof Error ? error.stack : undefined,
-			});
 			console.error(error);
 			toast.error(errorMessage);
 		}
