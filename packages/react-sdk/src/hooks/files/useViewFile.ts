@@ -27,7 +27,10 @@ export type ViewFileResult = {
 
 const DEBUG_PREFIX = "[useViewFile]";
 const debugLog = (step: string, data?: unknown) => {
-	console.log(`${DEBUG_PREFIX} ${step}`, data ? JSON.stringify(data, null, 2) : "");
+	console.log(
+		`${DEBUG_PREFIX} ${step}`,
+		data ? JSON.stringify(data, null, 2) : "",
+	);
 };
 
 export function useViewFile() {
@@ -37,10 +40,18 @@ export function useViewFile() {
 		mutationFn: async (args) => {
 			const { pieceCid, kemCiphertext, encryptedEncryptionKey } = args;
 
-			debugLog("MUTATION_START", { pieceCid, walletAddress: wallet?.account?.address });
+			debugLog("MUTATION_START", {
+				pieceCid,
+				walletAddress: wallet?.account?.address,
+			});
 
 			if (!contracts || !wallet || !runtime || !api) {
-				debugLog("VALIDATION_FAILED", { hasContracts: !!contracts, hasWallet: !!wallet, hasRuntime: !!runtime, hasApi: !!api });
+				debugLog("VALIDATION_FAILED", {
+					hasContracts: !!contracts,
+					hasWallet: !!wallet,
+					hasRuntime: !!runtime,
+					hasApi: !!api,
+				});
 				throw new Error("not conected iido");
 			}
 
@@ -64,7 +75,9 @@ export function useViewFile() {
 				}
 
 				const { presignedUrl } = s3Response.data;
-				debugLog("S3_PRESIGNED_URL_RECEIVED", { urlLength: presignedUrl.length });
+				debugLog("S3_PRESIGNED_URL_RECEIVED", {
+					urlLength: presignedUrl.length,
+				});
 
 				debugLog("DOWNLOADING_FROM_S3");
 				const downloadResponse = await fetch(presignedUrl, {
@@ -72,14 +85,19 @@ export function useViewFile() {
 				});
 
 				if (!downloadResponse.ok) {
-					debugLog("S3_DOWNLOAD_FAILED", { status: downloadResponse.status, statusText: downloadResponse.statusText });
+					debugLog("S3_DOWNLOAD_FAILED", {
+						status: downloadResponse.status,
+						statusText: downloadResponse.statusText,
+					});
 					throw new Error("Failed to fetch file from S3");
 				}
 
 				data = new Uint8Array(await downloadResponse.arrayBuffer());
 				debugLog("S3_DOWNLOAD_SUCCESS", { byteLength: data.length });
 			} catch (s3Err) {
-				debugLog("S3_FALLBACK_TO_FILECOIN", { error: s3Err instanceof Error ? s3Err.message : String(s3Err) });
+				debugLog("S3_FALLBACK_TO_FILECOIN", {
+					error: s3Err instanceof Error ? s3Err.message : String(s3Err),
+				});
 				const filecoinUrl = `https://${runtime.serverAddressSynapse}.calibration.filbeam.io/${pieceCid}`;
 				debugLog("FETCHING_FROM_FILECOIN", { url: filecoinUrl });
 
@@ -87,7 +105,10 @@ export function useViewFile() {
 
 				if (!fileResponse.ok) {
 					const errorText = await fileResponse.text();
-					debugLog("FILECOIN_FETCH_FAILED", { status: fileResponse.status, errorText });
+					debugLog("FILECOIN_FETCH_FAILED", {
+						status: fileResponse.status,
+						errorText,
+					});
 					console.error("Filecoin error response:", errorText);
 					throw new Error(
 						`Failed to fetch file from S3 and Filecoin: ${fileResponse.status} - ${errorText}`,
@@ -106,7 +127,9 @@ export function useViewFile() {
 				);
 			}
 
-			debugLog("GETTING_SESSION_SEED", { walletAddress: wallet.account.address });
+			debugLog("GETTING_SESSION_SEED", {
+				walletAddress: wallet.account.address,
+			});
 			const keySeed = getSessionSeed(wallet.account.address);
 			if (!keySeed) {
 				debugLog("SESSION_SEED_NOT_FOUND");
@@ -118,7 +141,9 @@ export function useViewFile() {
 			const { privateKey } = await KEM.keyGen({
 				seed: new Uint8Array(Array.from(keySeed)),
 			});
-			debugLog("KEM_KEYPAIR_GENERATED", { privateKeyLength: privateKey.length });
+			debugLog("KEM_KEYPAIR_GENERATED", {
+				privateKeyLength: privateKey.length,
+			});
 
 			debugLog("DECAPSULATING_KEM");
 			const { sharedSecret: ssE } = await KEM.decapsulate({
@@ -134,9 +159,13 @@ export function useViewFile() {
 					secretKey: ssE,
 					info: `${pieceCid}:${wallet.account.address}`,
 				});
-				debugLog("ENCRYPTION_KEY_DECRYPTED", { keyLength: encryptionKey.length });
+				debugLog("ENCRYPTION_KEY_DECRYPTED", {
+					keyLength: encryptionKey.length,
+				});
 			} catch (e) {
-				debugLog("ENCRYPTION_KEY_DECRYPTION_FAILED", { error: e instanceof Error ? e.message : String(e) });
+				debugLog("ENCRYPTION_KEY_DECRYPTION_FAILED", {
+					error: e instanceof Error ? e.message : String(e),
+				});
 				console.error("Decryption error: ", e);
 				throw e;
 			}
@@ -149,7 +178,9 @@ export function useViewFile() {
 				secretKey: encryptionKey,
 				info: encryptionInfo,
 			});
-			debugLog("FILE_DATA_DECRYPTED", { decryptedLength: decryptedData.length });
+			debugLog("FILE_DATA_DECRYPTED", {
+				decryptedLength: decryptedData.length,
+			});
 
 			debugLog("DECODING_FILE_DATA");
 			const parsedData = await decodeFileData(decryptedData);

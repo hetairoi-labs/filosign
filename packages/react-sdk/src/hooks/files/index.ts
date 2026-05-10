@@ -1,5 +1,6 @@
 export * from "./useAckFile";
 export * from "./useAttachIncentiveToFile";
+export * from "./useComplianceBundle";
 export * from "./useDocumentIncentive";
 export * from "./useFileInfo";
 export * from "./useReceivedFiles";

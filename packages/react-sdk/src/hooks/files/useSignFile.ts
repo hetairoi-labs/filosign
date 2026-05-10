@@ -19,7 +19,10 @@ import { useCryptoSeed } from "../auth";
 
 const DEBUG_PREFIX = "[useSignFile]";
 const debugLog = (step: string, data?: unknown) => {
-	console.log(`${DEBUG_PREFIX} ${step}`, data ? JSON.stringify(data, null, 2) : "");
+	console.log(
+		`${DEBUG_PREFIX} ${step}`,
+		data ? JSON.stringify(data, null, 2) : "",
+	);
 };
 
 export function useSignFile() {
@@ -49,7 +52,12 @@ export function useSignFile() {
 			debugLog("MUTATION_START", { pieceCid, completedFieldIds, timestamp });
 
 			if (!contracts || !wallet || !wasm.dilithium || !api) {
-				debugLog("VALIDATION_FAILED", { hasContracts: !!contracts, hasWallet: !!wallet, hasWasm: !!wasm.dilithium, hasApi: !!api });
+				debugLog("VALIDATION_FAILED", {
+					hasContracts: !!contracts,
+					hasWallet: !!wallet,
+					hasWasm: !!wasm.dilithium,
+					hasApi: !!api,
+				});
 				throw new Error("not connected");
 			}
 			debugLog("CONTEXT_VALID", { walletAddress: wallet.account.address });
@@ -76,7 +84,11 @@ export function useSignFile() {
 					debugLog("FILE_INFO_FETCH_FAILED", { pieceCid });
 					throw new Error("Failed to fetch file info");
 				}
-				debugLog("FILE_INFO_FETCHED", { pieceCid, sender: fileResponse.data.sender, status: fileResponse.data.status });
+				debugLog("FILE_INFO_FETCHED", {
+					pieceCid,
+					sender: fileResponse.data.sender,
+					status: fileResponse.data.status,
+				});
 
 				const {
 					sender,
@@ -92,24 +104,37 @@ export function useSignFile() {
 				const assignedIds = manifest.fields
 					.filter((f) => getAddress(f.assignedSigner) === signerAddr)
 					.map((f) => f.id);
-				debugLog("ASSIGNED_IDS_COMPUTED", { signerAddr, assignedCount: assignedIds.length, assignedIds });
+				debugLog("ASSIGNED_IDS_COMPUTED", {
+					signerAddr,
+					assignedCount: assignedIds.length,
+					assignedIds,
+				});
 
 				let fieldIds: string[];
 				if (completedFieldIds !== undefined) {
 					const allowed = new Set(assignedIds);
 					for (const id of completedFieldIds) {
 						if (!allowed.has(id)) {
-							debugLog("FIELD_ID_VALIDATION_FAILED", { id, allowedIds: Array.from(allowed) });
+							debugLog("FIELD_ID_VALIDATION_FAILED", {
+								id,
+								allowedIds: Array.from(allowed),
+							});
 							throw new Error(
 								"completedFieldIds must match manifest fields for signer",
 							);
 						}
 					}
 					fieldIds = completedFieldIds;
-					debugLog("USING_COMPLETED_FIELD_IDS", { count: fieldIds.length, fieldIds });
+					debugLog("USING_COMPLETED_FIELD_IDS", {
+						count: fieldIds.length,
+						fieldIds,
+					});
 				} else {
 					fieldIds = assignedIds;
-					debugLog("USING_ALL_ASSIGNED_IDS", { count: fieldIds.length, fieldIds });
+					debugLog("USING_ALL_ASSIGNED_IDS", {
+						count: fieldIds.length,
+						fieldIds,
+					});
 				}
 
 				if (fieldIds.length === 0) {
@@ -143,14 +168,18 @@ export function useSignFile() {
 					completionsRoot,
 					leafSchemaVersion: LEAF_SCHEMA_VERSION_V1,
 				});
-				debugLog("DL3_MESSAGE_PREPARED", { messageLength: dl3SignatureMessage.length });
+				debugLog("DL3_MESSAGE_PREPARED", {
+					messageLength: dl3SignatureMessage.length,
+				});
 
 				debugLog("GENERATING_DL3_KEYPAIR");
 				const dl3Keypair = await signatures.keyGen({
 					dl: wasm.dilithium,
 					seed: seed,
 				});
-				debugLog("DL3_KEYPAIR_GENERATED", { publicKeyLength: dl3Keypair.publicKey.length });
+				debugLog("DL3_KEYPAIR_GENERATED", {
+					publicKeyLength: dl3Keypair.publicKey.length,
+				});
 
 				debugLog("SIGNING_DL3_MESSAGE");
 				const dl3Signature = await signatures.sign({
@@ -158,7 +187,9 @@ export function useSignFile() {
 					privateKey: dl3Keypair.privateKey,
 					message: textEncoder.encode(dl3SignatureMessage),
 				});
-				debugLog("DL3_SIGNATURE_CREATED", { signatureLength: dl3Signature.length });
+				debugLog("DL3_SIGNATURE_CREATED", {
+					signatureLength: dl3Signature.length,
+				});
 
 				const dl3SignatureCommitment = computeCommitment([toHex(dl3Signature)]);
 				debugLog("DL3_COMMITMENT_COMPUTED", { dl3SignatureCommitment });
@@ -190,7 +221,11 @@ export function useSignFile() {
 					},
 				});
 
-				debugLog("SENDING_SIGN_REQUEST", { pieceCid, timestamp, hasCompletedFieldIds: completedFieldIds !== undefined });
+				debugLog("SENDING_SIGN_REQUEST", {
+					pieceCid,
+					timestamp,
+					hasCompletedFieldIds: completedFieldIds !== undefined,
+				});
 				const signResponse = await api.rpc.postSafe(
 					{},
 					`/files/${pieceCid}/sign`,
@@ -201,8 +236,8 @@ export function useSignFile() {
 						...(completedFieldIds !== undefined ? { completedFieldIds } : {}),
 					},
 				);
-			debugLog("SIGN_RESPONSE_RECEIVED", { success: signResponse.success });
-			success = signResponse.success;
+				debugLog("SIGN_RESPONSE_RECEIVED", { success: signResponse.success });
+				success = signResponse.success;
 			});
 			debugLog("CRYPTO_ACTION_COMPLETE", { success });
 
