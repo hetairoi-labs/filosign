@@ -18,10 +18,10 @@ case "$ENVIRONMENT" in
     bun run --cwd apps/contracts migrate:testnet
 
     echo "Purging database..."
-    bun run --cwd apps/server db:purge
+    bun run --cwd apps/server db:purge:testnet
 
     echo "Pushing database schema..."
-    bun run --cwd apps/server db:push
+    bun run --cwd apps/server db:push:testnet
     ;;
   mainnet)
     echo "Deploying contracts to mainnet..."

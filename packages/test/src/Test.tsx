@@ -18,7 +18,9 @@ import {
 	useUserProfileByQuery,
 	useViewFile,
 } from "@filosign/react/hooks";
+import type { PlacementManifest } from "@filosign/shared";
 import { memo, useId, useMemo, useRef, useState } from "react";
+import { getAddress } from "viem";
 import {
 	useCurrentWalletAddress,
 	useOtherAddress,
@@ -31,7 +33,6 @@ import { useEffectOnce } from "./hooks/useEffectOnce";
 import { useSet } from "./hooks/useSet";
 import { useTimeout } from "./hooks/useTimeout";
 import {
-	DEFAULT_SIGNATURE_POSITION,
 	type FileValidationError,
 	MAX_CID_DISPLAY_LENGTH,
 	MAX_CONTENT_DISPLAY_LENGTH,
@@ -509,6 +510,23 @@ function TestFileSend(props: { notify: NotifierFn }) {
 		return key && /^0x[0-9a-fA-F]+$/.test(key) ? (key as `0x${string}`) : null;
 	}, [otherProfile?.encryptionPublicKey]);
 
+	const testPlacementManifest: PlacementManifest = useMemo(
+		() => ({
+			version: 1,
+			fields: [
+				{
+					id: "test-signature-1",
+					pageIndex: 0,
+					rect: { x: 0.1, y: 0.1, width: 0.2, height: 0.05 },
+					assignedSigner: getAddress(otherAddress),
+					required: true,
+					type: "signature",
+				},
+			],
+		}),
+		[otherAddress],
+	);
+
 	if (!otherProfile) {
 		return (
 			<section
@@ -607,7 +625,6 @@ function TestFileSend(props: { notify: NotifierFn }) {
 								{
 									address: otherAddress,
 									encryptionPublicKey,
-									signaturePosition: DEFAULT_SIGNATURE_POSITION,
 								},
 							]
 						: [],
@@ -615,6 +632,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 					metadata: {
 						name: selectedFile ? selectedFile.name : "Test File",
 					},
+					placementManifest: testPlacementManifest,
 				}}
 			>
 				Send {displayFileName}
