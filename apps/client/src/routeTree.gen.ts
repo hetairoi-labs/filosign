@@ -19,7 +19,6 @@ import { Route as OnboardingCreateSignatureRouteImport } from "./routes/onboardi
 import { Route as InviteInviteIdRouteImport } from "./routes/invite/$inviteId"
 import { Route as DashboardConnectionsIndexRouteImport } from "./routes/dashboard/connections/index"
 import { Route as DashboardSettingsProfileRouteImport } from "./routes/dashboard/settings/profile"
-import { Route as DashboardSettingsPermissionsRouteImport } from "./routes/dashboard/settings/permissions"
 import { Route as DashboardSignatureCreateIndexRouteImport } from "./routes/dashboard/signature/create/index"
 import { Route as DashboardEnvelopeCreateIndexRouteImport } from "./routes/dashboard/envelope/create/index"
 import { Route as DashboardDocumentSignIndexRouteImport } from "./routes/dashboard/document/sign/index"
@@ -79,12 +78,6 @@ const DashboardSettingsProfileRoute =
     path: "/settings/profile",
     getParentRoute: () => DashboardRouteRoute,
   } as any)
-const DashboardSettingsPermissionsRoute =
-  DashboardSettingsPermissionsRouteImport.update({
-    id: "/settings/permissions",
-    path: "/settings/permissions",
-    getParentRoute: () => DashboardRouteRoute,
-  } as any)
 const DashboardSignatureCreateIndexRoute =
   DashboardSignatureCreateIndexRouteImport.update({
     id: "/signature/create/",
@@ -125,7 +118,6 @@ export interface FileRoutesByFullPath {
   "/onboarding/welcome": typeof OnboardingWelcomeRoute
   "/dashboard/": typeof DashboardIndexRoute
   "/onboarding/": typeof OnboardingIndexRoute
-  "/dashboard/settings/permissions": typeof DashboardSettingsPermissionsRoute
   "/dashboard/settings/profile": typeof DashboardSettingsProfileRoute
   "/dashboard/connections/": typeof DashboardConnectionsIndexRoute
   "/dashboard/document/all/": typeof DashboardDocumentAllIndexRoute
@@ -142,7 +134,6 @@ export interface FileRoutesByTo {
   "/onboarding/welcome": typeof OnboardingWelcomeRoute
   "/dashboard": typeof DashboardIndexRoute
   "/onboarding": typeof OnboardingIndexRoute
-  "/dashboard/settings/permissions": typeof DashboardSettingsPermissionsRoute
   "/dashboard/settings/profile": typeof DashboardSettingsProfileRoute
   "/dashboard/connections": typeof DashboardConnectionsIndexRoute
   "/dashboard/document/all": typeof DashboardDocumentAllIndexRoute
@@ -161,7 +152,6 @@ export interface FileRoutesById {
   "/onboarding/welcome": typeof OnboardingWelcomeRoute
   "/dashboard/": typeof DashboardIndexRoute
   "/onboarding/": typeof OnboardingIndexRoute
-  "/dashboard/settings/permissions": typeof DashboardSettingsPermissionsRoute
   "/dashboard/settings/profile": typeof DashboardSettingsProfileRoute
   "/dashboard/connections/": typeof DashboardConnectionsIndexRoute
   "/dashboard/document/all/": typeof DashboardDocumentAllIndexRoute
@@ -181,7 +171,6 @@ export interface FileRouteTypes {
     | "/onboarding/welcome"
     | "/dashboard/"
     | "/onboarding/"
-    | "/dashboard/settings/permissions"
     | "/dashboard/settings/profile"
     | "/dashboard/connections/"
     | "/dashboard/document/all/"
@@ -198,7 +187,6 @@ export interface FileRouteTypes {
     | "/onboarding/welcome"
     | "/dashboard"
     | "/onboarding"
-    | "/dashboard/settings/permissions"
     | "/dashboard/settings/profile"
     | "/dashboard/connections"
     | "/dashboard/document/all"
@@ -216,7 +204,6 @@ export interface FileRouteTypes {
     | "/onboarding/welcome"
     | "/dashboard/"
     | "/onboarding/"
-    | "/dashboard/settings/permissions"
     | "/dashboard/settings/profile"
     | "/dashboard/connections/"
     | "/dashboard/document/all/"
@@ -308,13 +295,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof DashboardSettingsProfileRouteImport
       parentRoute: typeof DashboardRouteRoute
     }
-    "/dashboard/settings/permissions": {
-      id: "/dashboard/settings/permissions"
-      path: "/settings/permissions"
-      fullPath: "/dashboard/settings/permissions"
-      preLoaderRoute: typeof DashboardSettingsPermissionsRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
     "/dashboard/signature/create/": {
       id: "/dashboard/signature/create/"
       path: "/signature/create"
@@ -355,7 +335,6 @@ declare module "@tanstack/react-router" {
 
 interface DashboardRouteRouteChildren {
   DashboardIndexRoute: typeof DashboardIndexRoute
-  DashboardSettingsPermissionsRoute: typeof DashboardSettingsPermissionsRoute
   DashboardSettingsProfileRoute: typeof DashboardSettingsProfileRoute
   DashboardConnectionsIndexRoute: typeof DashboardConnectionsIndexRoute
   DashboardDocumentAllIndexRoute: typeof DashboardDocumentAllIndexRoute
@@ -367,7 +346,6 @@ interface DashboardRouteRouteChildren {
 
 const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardIndexRoute: DashboardIndexRoute,
-  DashboardSettingsPermissionsRoute: DashboardSettingsPermissionsRoute,
   DashboardSettingsProfileRoute: DashboardSettingsProfileRoute,
   DashboardConnectionsIndexRoute: DashboardConnectionsIndexRoute,
   DashboardDocumentAllIndexRoute: DashboardDocumentAllIndexRoute,

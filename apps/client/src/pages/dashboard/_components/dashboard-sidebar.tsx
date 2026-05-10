@@ -3,7 +3,6 @@ import {
 	EnvelopeSimpleIcon,
 	HouseIcon,
 	SealIcon,
-	ShieldCheckIcon,
 	UserCircleIcon,
 	UsersThreeIcon,
 } from "@phosphor-icons/react";
@@ -99,13 +98,6 @@ const groups: { label: string; items: NavItem[] }[] = [
 				icon: UserCircleIcon,
 				match: (p) => matchPrefix(p, "/dashboard/settings/profile"),
 				tooltip: "Profile",
-			},
-			{
-				title: "Permissions",
-				url: "/dashboard/settings/permissions",
-				icon: ShieldCheckIcon,
-				match: (p) => matchPrefix(p, "/dashboard/settings/permissions"),
-				tooltip: "Permissions",
 			},
 		],
 	},

@@ -88,7 +88,7 @@ export default function InvitePage() {
 
 				// Redirect after a short delay
 				setTimeout(() => {
-					navigate({ to: "/dashboard/settings/permissions" });
+					navigate({ to: "/dashboard/connections" });
 				}, 2000);
 			} catch (error) {
 				logger.error("Failed to claim invite:", error);

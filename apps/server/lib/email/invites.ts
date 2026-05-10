@@ -43,7 +43,7 @@ const resend = new Resend(env.RESEND_API_KEY);
 
 export async function sendShareRequestEmail(args: SendShareRequestEmailArgs) {
 	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
-	const requestUrl = `${appUrl}/dashboard/settings/permissions`;
+	const requestUrl = `${appUrl}/dashboard/connections`;
 	const senderLabel =
 		args.senderName?.trim() || formatAddress(args.senderWallet);
 	const escapedSenderLabel = escapeHtml(senderLabel);
