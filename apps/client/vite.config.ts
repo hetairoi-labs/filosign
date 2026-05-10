@@ -66,7 +66,7 @@ export default defineConfig(({ mode, command }) => {
 		},
 		envPrefix: "VITE_",
 		optimizeDeps: {
-			include: ["buffer"],
+			include: ["buffer", "react-pdf", "pdfjs-dist"],
 		},
 		build: {
 			outDir: "dist",
