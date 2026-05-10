@@ -2,24 +2,43 @@ import {
 	ArrowClockwiseIcon,
 	ArrowCounterClockwiseIcon,
 	CalendarIcon,
+	CaretLeftIcon,
+	CaretRightIcon,
 	CheckSquareIcon,
-	DownloadIcon,
 	EnvelopeIcon,
 	FileIcon,
 	MagnifyingGlassMinusIcon,
 	MagnifyingGlassPlusIcon,
-	PrinterIcon,
 	SignatureIcon,
 	TextAaIcon,
 	TextBIcon,
 	UserIcon,
 	XIcon,
 } from "@phosphor-icons/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import type * as React from "react";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { Image } from "@/src/lib/components/custom/Image";
 import { Button } from "@/src/lib/components/ui/button";
+import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
 import { cn } from "@/src/lib/utils/utils";
 import type { Document, SignatureField } from "../mock";
+
+function fieldSignerAriaSnippet(field: SignatureField): string {
+	const name = field.assignedSignerName.trim() || "Signer";
+	const email = field.assignedSignerEmail.trim();
+	return email ? `${name}, ${email}` : name;
+}
+
+const LazyPdfJsPreview = lazy(
+	() => import("@/src/lib/components/custom/PdfJsPreview.lazy"),
+);
 
 export const useDocumentDimensions = () => {
 	const [isMobile, setIsMobile] = useState(false);
@@ -49,7 +68,14 @@ interface DocumentViewerProps {
 	selectedField: string | null;
 	isPlacingField: boolean;
 	pendingFieldType: SignatureField["type"] | null;
-	onFieldPlaced: (x: number, y: number) => void;
+	/** 1-based page for non-PDF placement (PDF uses internal PDF page). */
+	documentPage: number;
+	onFieldPlacementRequest: (coords: {
+		x: number;
+		y: number;
+		page: number;
+	}) => void;
+	onPdfPageChange?: (page: number) => void;
 	onFieldSelect: (fieldId: string) => void;
 	onFieldRemove: (fieldId: string) => void;
 	onFieldUpdate: (fieldId: string, updates: Partial<SignatureField>) => void;
@@ -64,7 +90,9 @@ export default function DocumentViewer({
 	selectedField,
 	isPlacingField,
 	pendingFieldType,
-	onFieldPlaced,
+	documentPage,
+	onFieldPlacementRequest,
+	onPdfPageChange,
 	onFieldSelect,
 	onFieldRemove,
 	onFieldUpdate,
@@ -72,6 +100,8 @@ export default function DocumentViewer({
 	onBack,
 }: DocumentViewerProps) {
 	const [isDragging, setIsDragging] = useState(false);
+	const [pdfPageNumber, setPdfPageNumber] = useState(1);
+	const [pdfNumPages, setPdfNumPages] = useState<number | null>(null);
 	const {
 		width: documentWidth,
 		height: documentHeight,
@@ -89,6 +119,20 @@ export default function DocumentViewer({
 	});
 	const lastUpdateRef = useRef(0);
 
+	const isPdfDocument = Boolean(
+		document?.url &&
+			(document.url.startsWith("data:application/pdf") ||
+				document.name?.toLowerCase().endsWith(".pdf")),
+	);
+
+	useEffect(() => {
+		setPdfPageNumber(1);
+		const hint =
+			document?.pages != null && document.pages > 0 ? document.pages : null;
+		setPdfNumPages(hint);
+		onPdfPageChange?.(1);
+	}, [document?.id, document?.url, onPdfPageChange]);
+
 	const handleDocumentClick = useCallback(
 		(event: React.MouseEvent) => {
 			if (!isPlacingField) return;
@@ -104,15 +148,19 @@ export default function DocumentViewer({
 			const boundedX = Math.max(margin, Math.min(x, documentWidth - margin));
 			const boundedY = Math.max(margin, Math.min(y, documentHeight - margin));
 
-			onFieldPlaced(boundedX, boundedY);
+			const page = isPdfDocument ? pdfPageNumber : documentPage;
+			onFieldPlacementRequest({ x: boundedX, y: boundedY, page });
 		},
 		[
 			isPlacingField,
-			onFieldPlaced,
+			onFieldPlacementRequest,
 			zoom,
 			documentWidth,
 			documentHeight,
 			margin,
+			isPdfDocument,
+			pdfPageNumber,
+			documentPage,
 		],
 	);
 
@@ -225,21 +273,6 @@ export default function DocumentViewer({
 		return fieldConfig[type]?.label || "Field";
 	};
 
-	const handleDownloadDocument = useCallback(() => {
-		if (!document?.url) return;
-		const a = window.document.createElement("a");
-		a.href = document.url;
-		a.download = document.name || "document";
-		a.rel = "noopener";
-		window.document.body.appendChild(a);
-		a.click();
-		window.document.body.removeChild(a);
-	}, [document]);
-
-	const handlePrint = useCallback(() => {
-		window.print();
-	}, []);
-
 	return (
 		<div className="flex flex-col flex-1">
 			{/* Document Tools */}
@@ -253,6 +286,52 @@ export default function DocumentViewer({
 				>
 					<ArrowCounterClockwiseIcon className="size-5" />
 				</Button>
+				{isPdfDocument && (
+					<>
+						<Button
+							variant="ghost"
+							size="sm"
+							type="button"
+							onClick={() => {
+								setPdfPageNumber((p) => {
+									const n = Math.max(1, p - 1);
+									onPdfPageChange?.(n);
+									return n;
+								});
+							}}
+							disabled={pdfPageNumber <= 1}
+							className="text-muted-foreground hover:text-foreground hover:bg-accent/50"
+							title="Previous page"
+						>
+							<CaretLeftIcon className="size-5" />
+						</Button>
+						<span className="min-w-11 text-center text-xs font-medium tabular-nums text-muted-foreground sm:text-sm">
+							{pdfNumPages == null
+								? `${pdfPageNumber} / …`
+								: `${pdfPageNumber} / ${pdfNumPages}`}
+						</span>
+						<Button
+							variant="ghost"
+							size="sm"
+							type="button"
+							onClick={() => {
+								setPdfPageNumber((p) => {
+									const n =
+										pdfNumPages == null
+											? p + 1
+											: Math.min(pdfNumPages, p + 1);
+									onPdfPageChange?.(n);
+									return n;
+								});
+							}}
+							disabled={pdfNumPages != null && pdfPageNumber >= pdfNumPages}
+							className="text-muted-foreground hover:text-foreground hover:bg-accent/50"
+							title="Next page"
+						>
+							<CaretRightIcon className="size-5" />
+						</Button>
+					</>
+				)}
 				<Button
 					variant="ghost"
 					size="sm"
@@ -272,7 +351,7 @@ export default function DocumentViewer({
 				>
 					<MagnifyingGlassMinusIcon className="size-5" />
 				</Button>
-				<span className="text-sm font-medium min-w-[3rem] text-center text-foreground tabular-nums">
+				<span className="text-sm font-medium min-w-12 text-center text-foreground tabular-nums">
 					{zoom}%
 				</span>
 				<Button
@@ -283,26 +362,6 @@ export default function DocumentViewer({
 					title="Zoom in"
 				>
 					<MagnifyingGlassPlusIcon className="size-5" />
-				</Button>
-				<div className="w-px h-6 bg-border mx-0.5 hidden sm:block" />
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={handlePrint}
-					className="text-muted-foreground hover:text-foreground hover:bg-accent/50"
-					title="Print"
-				>
-					<PrinterIcon className="size-5" />
-				</Button>
-				<Button
-					variant="ghost"
-					size="sm"
-					onClick={handleDownloadDocument}
-					disabled={!document?.url}
-					className="text-muted-foreground hover:text-foreground hover:bg-accent/50"
-					title="Download file"
-				>
-					<DownloadIcon className="size-5" />
 				</Button>
 			</div>
 
@@ -335,15 +394,26 @@ export default function DocumentViewer({
 							document.url.startsWith("data:application/pdf") ||
 							document.name?.toLowerCase().endsWith(".pdf") ? (
 								<>
-									<object
-										data={document.url}
-										type="application/pdf"
-										className="absolute inset-0 w-full h-full z-10"
+									<Suspense
+										fallback={
+											<div className="absolute inset-0 z-10 flex items-center justify-center bg-white">
+												<InlineLoader size="md" />
+											</div>
+										}
 									>
-										<div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground px-6 text-center">
-											PDF preview not supported in this browser.
-										</div>
-									</object>
+										<LazyPdfJsPreview
+											file={document.url}
+											documentKey={document.id}
+											pageNumber={pdfPageNumber}
+											width={documentWidth}
+											maxHeight={documentHeight}
+											className="absolute inset-0 z-10"
+											onNumPagesLoaded={(n) => {
+												setPdfNumPages(n);
+												setPdfPageNumber((prev) => Math.min(prev, n));
+											}}
+										/>
+									</Suspense>
 									{isPlacingField ? (
 										<div
 											className="absolute inset-0 w-full h-full pointer-events-auto cursor-crosshair bg-blue-500/5 z-20"
@@ -362,8 +432,9 @@ export default function DocumentViewer({
 									)}
 									{isPlacingField && (
 										<div className="absolute inset-0 border-2 border-dashed border-secondary/50 bg-secondary/20 pointer-events-none">
-											<div className="absolute top-2 left-2 text-xs text-primary bg-secondary px-2 py-1 rounded">
-												Click to place {pendingFieldType} field
+											<div className="absolute top-2 left-2 max-w-[min(100%,18rem)] rounded bg-secondary px-2 py-1 text-xs text-primary">
+												Click to place — choose signer and required/optional
+												in the dialog
 											</div>
 										</div>
 									)}
@@ -393,8 +464,9 @@ export default function DocumentViewer({
 									)}
 									{isPlacingField && (
 										<div className="absolute inset-0 border-2 border-dashed border-secondary/50 bg-secondary/20 pointer-events-none z-20">
-											<div className="absolute top-2 left-2 text-xs text-primary bg-secondary px-2 py-1 rounded ">
-												Click to place {pendingFieldType} field
+											<div className="absolute top-2 left-2 max-w-[min(100%,18rem)] rounded bg-secondary px-2 py-1 text-xs text-primary">
+												Click to place — choose signer and required/optional
+												in the dialog
 											</div>
 										</div>
 									)}
@@ -408,9 +480,9 @@ export default function DocumentViewer({
 
 						{/* Signature Fields */}
 						{signatureFields.map((field) => {
-							// Responsive signature box dimensions
-							const fieldWidth = isMobile ? 90 : 130;
-							const fieldHeight = isMobile ? 32 : 42;
+							// Responsive signature box dimensions (room for name + email)
+							const fieldWidth = isMobile ? 100 : 148;
+							const fieldHeight = isMobile ? 60 : 76;
 
 							const constrainedX = Math.max(
 								margin,
@@ -425,8 +497,8 @@ export default function DocumentViewer({
 								<div
 									key={field.id}
 									className={cn(
-										"absolute border-2 border-dashed rounded-md bg-primary/10 hover:bg-primary/10 cursor-move select-none group flex justify-center items-center gap-1.5 z-30",
-										isMobile ? "p-1.5" : "p-2",
+										"absolute flex min-w-0 flex-col gap-1 rounded-md border-2 border-dashed bg-primary/10 p-1.5 hover:bg-primary/10 cursor-move select-none group z-30",
+										isMobile ? "max-w-[10rem]" : "max-w-[12rem]",
 										selectedField === field.id
 											? "border-primary bg-primary/10 shadow-lg "
 											: "border-primary/50 hover:border-primary/70 hover:bg-primary/80",
@@ -447,20 +519,20 @@ export default function DocumentViewer({
 									}}
 									role="button"
 									tabIndex={0}
-									aria-label={`${getFieldLabel(field.type)} field, press Enter to select`}
+									aria-label={`${getFieldLabel(field.type)} field for ${fieldSignerAriaSnippet(field)}, press Enter to select`}
 								>
 									<div
 										className={cn(
-											"flex items-center",
+											"flex items-center gap-1.5",
 											isMobile ? "gap-1" : "gap-2",
 										)}
 									>
-										<span className="text-primary">
+										<span className="shrink-0 text-primary">
 											{getFieldIcon(field.type)}
 										</span>
 										<span
 											className={cn(
-												"font-medium text-primary whitespace-nowrap",
+												"min-w-0 flex-1 truncate font-medium text-primary",
 												isMobile ? "text-[10px]" : "text-xs",
 											)}
 										>
@@ -468,7 +540,7 @@ export default function DocumentViewer({
 										</span>
 										<button
 											type="button"
-											className={cn("p-0", isMobile ? "w-3 h-3" : "w-4 h-4")}
+											className={cn("shrink-0 p-0", isMobile ? "w-3 h-3" : "w-4 h-4")}
 											onClick={(e) => {
 												e.stopPropagation();
 												onFieldRemove(field.id);
@@ -478,6 +550,39 @@ export default function DocumentViewer({
 												className={cn(isMobile ? "w-2.5 h-2.5" : "w-3 h-3")}
 											/>
 										</button>
+									</div>
+									<div className="flex items-start justify-between gap-1 border-t border-primary/20 pt-1">
+										<div className="min-w-0 flex-1 flex flex-col gap-0.5 text-left">
+											<span
+												className={cn(
+													"truncate font-medium text-foreground",
+													isMobile ? "text-[10px]" : "text-xs",
+												)}
+											>
+												{field.assignedSignerName.trim() || "Signer"}
+											</span>
+											{field.assignedSignerEmail.trim() ? (
+												<span
+													className={cn(
+														"truncate text-muted-foreground",
+														isMobile ? "text-[9px]" : "text-[10px]",
+													)}
+												>
+													{field.assignedSignerEmail.trim()}
+												</span>
+											) : null}
+										</div>
+										<span
+											className={cn(
+												"shrink-0 rounded px-1 font-semibold uppercase tracking-tight",
+												field.required
+													? "bg-amber-500/25 text-amber-950"
+													: "bg-muted text-muted-foreground",
+												isMobile ? "text-[8px]" : "text-[9px]",
+											)}
+										>
+											{field.required ? "Req" : "Opt"}
+										</span>
 									</div>
 								</div>
 							);
