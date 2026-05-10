@@ -7,27 +7,35 @@
 
 :root {
 	/* Surfaces — light, airy greys (sidebar matches main chrome) */
-	--background: hsl(0 0% 100%);
-	--foreground: hsl(210 8% 12%);
-	--card: hsl(240 6% 98%);
-	--card-foreground: hsl(210 8% 12%);
-	--border: hsl(240 6% 91%);
-	--input: hsl(0 0% 100%);
+	--background: oklch(1 0 0);
+	--foreground: oklch(0.141 0.005 285.823);
 
-	--popover: hsl(0 0% 100%);
-	--popover-foreground: hsl(210 8% 12%);
-	--primary: #202223;
-	--primary-foreground: hsl(60 100% 99%);
-	--secondary: hsl(90 84% 84%);
-	--secondary-foreground: hsl(210 8% 12%);
-	/* Was hsl(240 11% 76%) — too heavy; use a soft wash for muted fills */
-	--muted: hsl(240 5% 100%);
-	--muted-foreground: hsl(215 6% 44%);
-	--accent: hsl(240 5% 94%);
-	--accent-foreground: hsl(210 8% 12%);
+	--card: oklch(0.99 0.001 286);
+	--card-foreground: oklch(0.141 0.005 285.823);
+
+	--border: oklch(0.92 0.004 286.32);
+	--input: oklch(0.92 0.004 286.32);
+
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.141 0.005 285.823);
+
+	--primary: oklch(0.21 0.006 285.885);
+	--primary-foreground: oklch(0.985 0 0);
+
+	--secondary: oklch(94% 0.097 130);
+	--secondary-foreground: oklch(0.21 0.006 285.885);
+
+	--muted: oklch(0.967 0.001 286.375);
+	--muted-foreground: oklch(0.552 0.016 285.938);
+
+	--accent: oklch(0.967 0.001 286.375);
+	--accent-foreground: oklch(0.21 0.006 285.885);
+
 	--destructive: hsl(0, 84%, 58%);
 	--destructive-foreground: hsl(0, 0%, 100%);
-	--ring: hsl(90, 50%, 38%);
+
+	--ring: hsl(90, 56%, 71%);
+
 	--chart-1: hsl(38, 92%, 50%);
 	--chart-2: hsl(160, 84%, 37%);
 	--chart-3: hsl(217, 91%, 60%);

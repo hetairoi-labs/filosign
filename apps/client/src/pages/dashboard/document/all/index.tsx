@@ -133,7 +133,7 @@ export default function DocumentAllPage() {
 								</Button>
 							</motion.div> */}
 
-							<div className="flex items-center gap-2 bg-card rounded-lg p-1">
+							<div className="flex items-center gap-2 bg-muted rounded-lg p-1">
 								<Button
 									type="button"
 									variant={viewMode === "list" ? "default" : "ghost"}
