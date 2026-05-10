@@ -1,5 +1,6 @@
+import type { User } from "@privy-io/node";
 import { PrivyClient } from "@privy-io/node";
-import jwt from "jsonwebtoken";
+import type { Address } from "viem";
 import env from "@/env";
 
 export interface PrivyAuthResult {
@@ -11,58 +12,107 @@ export interface PrivyAuthResult {
 export const privyClient = new PrivyClient({
 	appId: env.PRIVY_APP_ID,
 	appSecret: env.PRIVY_APP_SECRET,
+	jwtVerificationKey: env.PRIVY_VERIFICATION_KEY,
 });
 
-export function verifyPrivyToken(idToken: string): PrivyAuthResult {
-	try {
-		const decoded = jwt.verify(idToken, env.PRIVY_VERIFICATION_KEY, {
-			algorithms: ["ES256"],
-		}) as {
-			sub: string;
-			email?: string;
-			"custom:wallet_address"?: string;
-		};
-
-		return {
-			privyDid: decoded.sub,
-			email: decoded.email || null,
-			walletAddress: decoded["custom:wallet_address"] || null,
-		};
-	} catch (error) {
-		if (error instanceof jwt.JsonWebTokenError) {
-			throw new Error(`Invalid Privy token: ${error.message}`);
+function linkedWalletAddresses(user: User): string[] {
+	const out: string[] = [];
+	for (const account of user.linked_accounts) {
+		if (account.type === "wallet" && "address" in account && account.address) {
+			out.push(account.address);
 		}
-		if (error instanceof jwt.TokenExpiredError) {
-			throw new Error("Privy token has expired");
+		if (
+			account.type === "smart_wallet" &&
+			"address" in account &&
+			account.address
+		) {
+			out.push(account.address);
 		}
-		throw new Error(
-			`Failed to verify Privy token: ${error instanceof Error ? error.message : String(error)}`,
-		);
 	}
+	return out;
 }
 
-export function verifyPrivyTokenWithWallet(
-	idToken: string,
+/** Prefer explicit email login, then Google (matches client `email || google.email`). */
+function canonicalEmailFromPrivyUser(user: User): string | null {
+	for (const account of user.linked_accounts) {
+		if (account.type === "email" && "address" in account && account.address) {
+			return account.address;
+		}
+	}
+	for (const account of user.linked_accounts) {
+		if (
+			account.type === "google_oauth" &&
+			"email" in account &&
+			account.email
+		) {
+			return account.email;
+		}
+	}
+	return null;
+}
+
+/**
+ * Verifies a Privy **identity** JWT and ensures linked wallets include `expectedWalletAddress`
+ * when the token lists any wallets (same rules as registration).
+ */
+async function verifiedPrivyUserForWallet(
+	identityToken: string,
 	expectedWalletAddress: string,
-): PrivyAuthResult {
-	const result = verifyPrivyToken(idToken);
+): Promise<User> {
+	const user = await privyClient.utils().auth().verifyIdentityToken(identityToken);
 
-	if (result.walletAddress) {
-		const normalizedTokenWallet = result.walletAddress.toLowerCase();
-		const normalizedExpected = expectedWalletAddress.toLowerCase();
+	const linked = linkedWalletAddresses(user);
+	const normalizedExpected = expectedWalletAddress.toLowerCase();
 
-		if (normalizedTokenWallet !== normalizedExpected) {
+	if (linked.length > 0) {
+		const match = linked.some(
+			(addr) => addr.toLowerCase() === normalizedExpected,
+		);
+		if (!match) {
 			throw new Error(
-				`Wallet address mismatch: token wallet ${result.walletAddress} does not match expected ${expectedWalletAddress}`,
+				`Wallet address mismatch: identity token wallets do not include expected ${expectedWalletAddress}`,
 			);
 		}
 	}
 
-	if (!result.email) {
+	return user;
+}
+
+export async function verifyPrivyTokenWithWallet(
+	identityToken: string,
+	expectedWalletAddress: string,
+): Promise<PrivyAuthResult> {
+	const user = await verifiedPrivyUserForWallet(
+		identityToken,
+		expectedWalletAddress,
+	);
+
+	const email = canonicalEmailFromPrivyUser(user);
+	if (!email) {
 		throw new Error(
 			"Email is required for registration. Please log in with email or Google.",
 		);
 	}
 
-	return result;
+	const linked = linkedWalletAddresses(user);
+	const normalizedExpected = expectedWalletAddress.toLowerCase();
+	const walletAddress =
+		linked.find((addr) => addr.toLowerCase() === normalizedExpected) ??
+		linked[0] ??
+		null;
+
+	return {
+		privyDid: user.id,
+		email,
+		walletAddress,
+	};
+}
+
+/** Canonical email from a verified identity token, or null if none linked. */
+export async function verifiedPrivyEmailForWallet(
+	identityToken: string,
+	walletAddress: Address,
+): Promise<string | null> {
+	const user = await verifiedPrivyUserForWallet(identityToken, walletAddress);
+	return canonicalEmailFromPrivyUser(user);
 }

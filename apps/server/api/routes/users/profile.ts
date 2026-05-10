@@ -8,7 +8,10 @@ import db from "@/lib/db";
 import { fsContracts } from "@/lib/evm";
 import { processTransaction } from "@/lib/indexer/process";
 import { bucket } from "@/lib/s3/client";
-import { verifyPrivyTokenWithWallet } from "@/lib/utils/privy";
+import {
+	verifyPrivyTokenWithWallet,
+	verifiedPrivyEmailForWallet,
+} from "@/lib/utils/privy";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
 
@@ -53,6 +56,55 @@ export default new Hono()
 		);
 	})
 
+	.post("/sync-privy-email", authenticated, async (ctx) => {
+		const wallet = ctx.var.userWallet;
+		const rawBody = await ctx.req.json();
+		const parsedBody = z
+			.object({
+				identityToken: z.string().min(1),
+			})
+			.safeParse(rawBody);
+
+		if (parsedBody.error) {
+			return respond.err(ctx, parsedBody.error.message, 400);
+		}
+
+		const emailResult = await tryCatch(
+			verifiedPrivyEmailForWallet(parsedBody.data.identityToken, wallet),
+		);
+
+		if (emailResult.error) {
+			return respond.err(
+				ctx,
+				`Privy verification failed: ${emailResult.error.message}`,
+				401,
+			);
+		}
+
+		const email = emailResult.data;
+		if (!email) {
+			return respond.ok(
+				ctx,
+				{ updated: false },
+				"No email on this Privy identity token",
+				200,
+			);
+		}
+
+		await db.updateUserFieldWithLog({
+			walletAddress: wallet,
+			fieldName: "email",
+			newValue: email,
+		});
+
+		return respond.ok(
+			ctx,
+			{ updated: true, email },
+			"Email synced from Privy",
+			200,
+		);
+	})
+
 	.post("/", async (ctx) => {
 		const rawBody = await ctx.req.json();
 		const parsedBody = z
@@ -66,6 +118,7 @@ export default new Hono()
 				encryptionPublicKey: zHexString(),
 				signaturePublicKey: zHexString(),
 				walletAddress: zEvmAddress(),
+				/** Privy identity JWT (`useIdentityToken`), not the access token from `getAccessToken`. */
 				idToken: z.string().min(1),
 			})
 			.safeParse(rawBody);
@@ -88,7 +141,7 @@ export default new Hono()
 		} = parsedBody.data;
 
 		const privyResult = await tryCatch(
-			Promise.resolve(verifyPrivyTokenWithWallet(idToken, walletAddress)),
+			verifyPrivyTokenWithWallet(idToken, walletAddress),
 		);
 
 		if (privyResult.error) {

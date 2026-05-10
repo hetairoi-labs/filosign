@@ -1,3 +1,4 @@
+export { useSyncPrivyEmail } from "./useSyncPrivyEmail";
 export { useProfilesByAddresses } from "./useProfilesByAddresses";
 export { useUpdateUserAvatar } from "./useUpdateUserAvatar";
 export { useUpdateUserProfile } from "./useUpdateUserProfile";

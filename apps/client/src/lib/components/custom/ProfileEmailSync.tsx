@@ -1,42 +1,27 @@
-import { useUpdateUserProfile, useUserProfile } from "@filosign/react/hooks";
-import { usePrivy } from "@privy-io/react-auth";
+import { useSyncPrivyEmail, useUserProfile } from "@filosign/react/hooks";
+import { useIdentityToken, usePrivy } from "@privy-io/react-auth";
 import { useEffect, useRef } from "react";
 
+/** Syncs email from a verified Privy identity JWT on each new Privy identity token (e.g. login). */
 export default function ProfileEmailSync() {
-	const { authenticated, user } = usePrivy();
+	const { authenticated } = usePrivy();
+	const { identityToken } = useIdentityToken();
 	const userProfile = useUserProfile();
-	const updateUserProfile = useUpdateUserProfile();
-	const syncedEmailRef = useRef<string | null>(null);
-
-	const privyEmail = user?.email?.address || user?.google?.email || null;
-	const profileEmail = userProfile.data?.email;
+	const syncPrivyEmail = useSyncPrivyEmail();
+	const lastSyncedTokenRef = useRef<string | null>(null);
 
 	useEffect(() => {
-		if (!authenticated || !privyEmail || !userProfile.data) {
+		if (!authenticated || !identityToken || !userProfile.data) {
 			return;
 		}
 
-		const normalizedPrivy = privyEmail.toLowerCase();
-		const normalizedProfile = profileEmail?.toLowerCase();
-
-		if (normalizedPrivy === normalizedProfile) {
-			syncedEmailRef.current = privyEmail;
+		if (lastSyncedTokenRef.current === identityToken) {
 			return;
 		}
 
-		if (syncedEmailRef.current === privyEmail) {
-			return;
-		}
-
-		syncedEmailRef.current = privyEmail;
-		updateUserProfile.mutate({ email: privyEmail });
-	}, [
-		authenticated,
-		privyEmail,
-		profileEmail,
-		userProfile.data,
-		updateUserProfile,
-	]);
+		lastSyncedTokenRef.current = identityToken;
+		syncPrivyEmail.mutate({ identityToken });
+	}, [authenticated, identityToken, userProfile.data, syncPrivyEmail]);
 
 	return null;
 }
