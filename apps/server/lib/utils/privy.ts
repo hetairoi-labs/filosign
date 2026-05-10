@@ -119,3 +119,38 @@ export async function verifiedPrivyEmailForWallet(
 	const user = await verifiedPrivyUserForWallet(identityToken, walletAddress);
 	return canonicalEmailFromPrivyUser(user);
 }
+
+/** Distinct emails from email + Google linked accounts (preserves first-seen casing). */
+export function linkedEmailsFromPrivyUser(user: User): string[] {
+	const seen = new Set<string>();
+	const ordered: string[] = [];
+	for (const account of user.linked_accounts) {
+		let raw: string | null = null;
+		if (account.type === "email" && "address" in account && account.address) {
+			raw = account.address;
+		} else if (
+			account.type === "google_oauth" &&
+			"email" in account &&
+			account.email
+		) {
+			raw = account.email;
+		}
+		if (raw) {
+			const trimmed = raw.trim();
+			const norm = trimmed.toLowerCase();
+			if (!seen.has(norm)) {
+				seen.add(norm);
+				ordered.push(trimmed);
+			}
+		}
+	}
+	return ordered;
+}
+
+export async function verifiedLinkedEmailsForWallet(
+	identityToken: string,
+	walletAddress: Address,
+): Promise<string[]> {
+	const user = await verifiedPrivyUserForWallet(identityToken, walletAddress);
+	return linkedEmailsFromPrivyUser(user);
+}

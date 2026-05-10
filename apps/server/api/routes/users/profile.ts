@@ -9,6 +9,7 @@ import { fsContracts } from "@/lib/evm";
 import { processTransaction } from "@/lib/indexer/process";
 import { bucket } from "@/lib/s3/client";
 import {
+	verifiedLinkedEmailsForWallet,
 	verifiedPrivyEmailForWallet,
 	verifyPrivyTokenWithWallet,
 } from "@/lib/utils/privy";
@@ -103,6 +104,56 @@ export default new Hono()
 			"Email synced from Privy",
 			200,
 		);
+	})
+
+	.post("/set-primary-email", authenticated, async (ctx) => {
+		const wallet = ctx.var.userWallet;
+		const rawBody = await ctx.req.json();
+		const parsedBody = z
+			.object({
+				identityToken: z.string().min(1),
+				email: z.string().email(),
+			})
+			.safeParse(rawBody);
+
+		if (parsedBody.error) {
+			return respond.err(ctx, parsedBody.error.message, 400);
+		}
+
+		const { identityToken, email: requestedRaw } = parsedBody.data;
+		const linkedResult = await tryCatch(
+			verifiedLinkedEmailsForWallet(identityToken, wallet),
+		);
+
+		if (linkedResult.error) {
+			return respond.err(
+				ctx,
+				`Privy verification failed: ${linkedResult.error.message}`,
+				401,
+			);
+		}
+
+		const linked = linkedResult.data;
+		const normalizedRequested = requestedRaw.trim().toLowerCase();
+		const canonical = linked.find(
+			(e) => e.toLowerCase() === normalizedRequested,
+		);
+
+		if (!canonical) {
+			return respond.err(
+				ctx,
+				"This email is not linked to your Privy account.",
+				400,
+			);
+		}
+
+		await db.updateUserFieldWithLog({
+			walletAddress: wallet,
+			fieldName: "email",
+			newValue: canonical,
+		});
+
+		return respond.ok(ctx, { email: canonical }, "Primary email updated", 200);
 	})
 
 	.post("/", async (ctx) => {

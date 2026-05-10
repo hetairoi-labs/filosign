@@ -22,7 +22,7 @@ import DashboardLayout from "../../layout";
 import FileCard from "./_components/FileCard";
 
 export default function DocumentAllPage() {
-	const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
+	const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 	const [isFilterOpen, _setIsFilterOpen] = useState(false);
 	const navigate = useNavigate();
 
@@ -66,9 +66,9 @@ export default function DocumentAllPage() {
 
 	return (
 		<DashboardLayout>
-			<div className="flex flex-col h-full rounded-tl-2xl bg-background @container">
+			<div className="flex min-h-0 flex-1 flex-col bg-background @container">
 				{/* Main Content */}
-				<div className="flex flex-1 flex-col">
+				<div className="flex min-h-0 flex-1 flex-col">
 					{/* Header with view mode toggle */}
 					<motion.div
 						className="flex items-center justify-between px-8 py-4 border-b border-border"
@@ -136,21 +136,21 @@ export default function DocumentAllPage() {
 							<div className="flex items-center gap-2 bg-card rounded-lg p-1">
 								<Button
 									type="button"
-									variant={viewMode === "grid" ? "default" : "ghost"}
-									size="sm"
-									onClick={() => handleViewModeChange("grid")}
-									className="h-7 w-7 p-0"
-								>
-									<GridFourIcon className="h-4 w-4" />
-								</Button>
-								<Button
-									type="button"
 									variant={viewMode === "list" ? "default" : "ghost"}
 									size="sm"
 									onClick={() => handleViewModeChange("list")}
 									className="h-7 w-7 p-0"
 								>
 									<ListIcon className="h-4 w-4" />
+								</Button>
+								<Button
+									type="button"
+									variant={viewMode === "grid" ? "default" : "ghost"}
+									size="sm"
+									onClick={() => handleViewModeChange("grid")}
+									className="h-7 w-7 p-0"
+								>
+									<GridFourIcon className="h-4 w-4" />
 								</Button>
 							</div>
 
@@ -222,15 +222,15 @@ export default function DocumentAllPage() {
 
 					{/* Content */}
 					<motion.div
-						className="flex-1 p-8 space-y-8"
+						className="flex min-h-0 flex-1 flex-col overflow-y-auto p-8 space-y-8 bg-card/50"
 						initial={{ opacity: 0, y: 20 }}
 						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.2, delay: 0.3 }}
 					>
 						{sentFiles.isLoading || receivedFiles.isLoading ? (
-							<Loader text="Loading documents..." className="min-h-full" />
+							<Loader text="Loading documents..." className="min-h-0 flex-1" />
 						) : allFiles.length === 0 ? (
-							<div className="flex flex-col items-center justify-center h-full">
+							<div className="flex min-h-0 flex-1 flex-col items-center justify-center">
 								<motion.div
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}

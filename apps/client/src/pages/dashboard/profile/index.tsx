@@ -22,16 +22,13 @@ import { Textarea } from "@/src/lib/components/ui/textarea";
 import { cn } from "@/src/lib/utils/index";
 import OtpInput from "@/src/pages/onboarding/_components/OtpInput";
 import { useProfileSettings } from "./hooks/use-profile-settings";
+import { LinkedAccountsSection } from "./LinkedAccountsSection";
 import { PersonalInfoSection } from "./PersonalInfoSection";
 
 export default function ProfilePage() {
 	const {
 		form,
 		personalSection,
-		startPrimaryEmailWithPrivy,
-		primaryEmailActionDisabled,
-		primaryEmailFlowPending,
-		primaryEmailUiMode,
 		rotatePin,
 		recoverWithPhrase,
 		currentPin,
@@ -122,7 +119,7 @@ export default function ProfilePage() {
 			{/* Main Content */}
 			<Form {...form}>
 				<form>
-					<main className="p-8 mx-auto max-w-4xl space-y-8 flex flex-col items-center justify-center min-h-[calc(100dvh-4rem)]">
+					<main className="p-8 mx-auto max-w-xl space-y-8 flex flex-col items-center justify-center min-h-[calc(100dvh-4rem)]">
 						<Button
 							variant="ghost"
 							size="lg"
@@ -153,16 +150,8 @@ export default function ProfilePage() {
 							/> */}
 
 							{/* Personal Information */}
-							<PersonalInfoSection
-								form={form}
-								sectionState={personalSection}
-								primaryEmailWithPrivy={{
-									onPress: startPrimaryEmailWithPrivy,
-									disabled: primaryEmailActionDisabled,
-									pending: primaryEmailFlowPending,
-									mode: primaryEmailUiMode,
-								}}
-							/>
+							<PersonalInfoSection form={form} sectionState={personalSection} />
+							<LinkedAccountsSection />
 							<Card>
 								<CardHeader>
 									<CardTitle>Change PIN</CardTitle>
@@ -268,7 +257,6 @@ export default function ProfilePage() {
 									</Tabs>
 								</CardContent>
 							</Card>
-							{/* Privy linked accounts */}
 						</motion.div>
 					</main>
 				</form>
