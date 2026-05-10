@@ -4,9 +4,9 @@ import {
 	useSendFile,
 } from "@filosign/react/hooks";
 import { useNavigate } from "@tanstack/react-router";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { type Address, parseUnits } from "viem";
+import { type Address, getAddress, parseUnits } from "viem";
 
 import { SUPPORTED_TOKENS } from "@/src/constants";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
@@ -14,12 +14,18 @@ import { cn } from "@/src/lib/utils/utils";
 import DocumentViewer, {
 	useDocumentDimensions,
 } from "./_components/DocumentViewer";
+import {
+	FieldPlacementDialog,
+	type FieldPlacementConfirmPayload,
+	type FieldPlacementSignerOption,
+} from "./_components/FieldPlacementDialog";
 import Header from "./_components/Header";
 import MobileSignatureToolbar from "./_components/MobileSignatureToolbar";
 import SignatureFieldsSidebar from "./_components/SignatureFieldsSidebar";
 import { useSignatureFields } from "./_components/use-signature-fields";
 import { type Document, fieldTypeConfigs, mockDocuments } from "./mock";
 import {
+	buildPlacementManifestForDocument,
 	buildSignersAndViewersForDocument,
 	loadDocumentFileBytes,
 	type RecipientWithEncryptionProfile,
@@ -90,7 +96,34 @@ export default function AddSignaturePage() {
 		handleFieldPlaced: placeField,
 		handleFieldRemove,
 		handleFieldUpdate,
+		cancelPlacement,
 	} = useSignatureFields();
+
+	const placementCommittedRef = useRef(false);
+	const [placementDialogOpen, setPlacementDialogOpen] = useState(false);
+	const [placementCoords, setPlacementCoords] = useState<{
+		x: number;
+		y: number;
+		page: number;
+	} | null>(null);
+
+	const signerOptionsForPlacement = useMemo((): FieldPlacementSignerOption[] => {
+		if (!createForm?.recipients?.length) return [];
+		return createForm.recipients
+			.filter((r) => r.role === "signer")
+			.map((r) => {
+				const addr = getAddress(r.walletAddress as Address);
+				const name = r.name?.trim() || "Signer";
+				const email = r.email?.trim() || "";
+				const label = email ? `${name} · ${email}` : name;
+				return {
+					walletAddress: addr,
+					name,
+					email,
+					label,
+				};
+			});
+	}, [createForm?.recipients]);
 
 	// Convert createForm documents to Document format
 	const documents: Document[] = createForm?.documents?.length
@@ -113,16 +146,76 @@ export default function AddSignaturePage() {
 		(doc) => doc.id === currentDocumentId,
 	);
 
-	const handleFieldPlaced = (x: number, y: number) => {
-		if (!pendingFieldType || !currentDocumentId) return;
+	const handleFieldPlacementRequest = useCallback(
+		(coords: { x: number; y: number; page: number }) => {
+			if (!pendingFieldType || !currentDocumentId) return;
+			if (signerOptionsForPlacement.length === 0) {
+				toast.error("Add at least one signer before placing fields.");
+				cancelPlacement();
+				return;
+			}
+			setPlacementCoords(coords);
+			setPlacementDialogOpen(true);
+		},
+		[
+			pendingFieldType,
+			currentDocumentId,
+			signerOptionsForPlacement.length,
+			cancelPlacement,
+		],
+	);
 
-		const fieldConfig = fieldTypeConfigs.find(
-			(config) => config.type === pendingFieldType,
+	const handlePlacementDialogOpenChange = useCallback(
+		(open: boolean) => {
+			setPlacementDialogOpen(open);
+			if (!open) {
+				setPlacementCoords(null);
+				if (!placementCommittedRef.current) {
+					cancelPlacement();
+				}
+				placementCommittedRef.current = false;
+			}
+		},
+		[cancelPlacement],
+	);
+
+	const handlePlacementConfirm = useCallback(
+		(payload: FieldPlacementConfirmPayload) => {
+			if (!placementCoords || !pendingFieldType || !currentDocumentId) return;
+			placementCommittedRef.current = true;
+			const fieldConfig = fieldTypeConfigs.find(
+				(config) => config.type === pendingFieldType,
+			);
+			if (!fieldConfig) return;
+			placeField(
+				placementCoords.x,
+				placementCoords.y,
+				placementCoords.page,
+				currentDocumentId,
+				{
+					label: fieldConfig.label,
+					assignedSignerWallet: payload.assignedSignerWallet,
+					assignedSignerName: payload.assignedSignerName,
+					assignedSignerEmail: payload.assignedSignerEmail,
+					required: payload.required,
+				},
+			);
+		},
+		[
+			placementCoords,
+			pendingFieldType,
+			currentDocumentId,
+			placeField,
+		],
+	);
+
+	const placementFieldTypeLabel = useMemo(() => {
+		if (!pendingFieldType) return "Field";
+		return (
+			fieldTypeConfigs.find((c) => c.type === pendingFieldType)?.label ??
+			pendingFieldType
 		);
-		if (!fieldConfig) return;
-
-		placeField(x, y, currentPage, currentDocumentId, fieldConfig.label);
-	};
+	}, [pendingFieldType]);
 
 	const handleFieldSelect = (fieldId: string) => setSelectedField(fieldId);
 
@@ -138,6 +231,13 @@ export default function AddSignaturePage() {
 
 		if (!createForm?.documents.length) {
 			toast.error("No documents to send");
+			setSendStatus("error");
+			setTimeout(() => setSendStatus("idle"), 3000);
+			return;
+		}
+
+		if (createForm.documents.length !== 1) {
+			toast.error("Only one document per envelope is supported");
 			setSendStatus("error");
 			setTimeout(() => setSendStatus("idle"), 3000);
 			return;
@@ -172,60 +272,63 @@ export default function AddSignaturePage() {
 		toast.loading("Sending documents...", { id: "send-progress" });
 
 		try {
-			const sendPromises = createForm.documents.map(async (doc) => {
-				const fileData = await loadDocumentFileBytes(doc);
+			const doc = createForm.documents[0];
+			if (!doc) {
+				throw new Error("No document to send");
+			}
+			const fileData = await loadDocumentFileBytes(doc);
 
-				const { signers, viewers } = buildSignersAndViewersForDocument({
-					docId: doc.id,
-					recipients: createForm.recipients,
-					recipientMap: recipientProfilesMapWithRecipient as Map<
-						Address,
-						RecipientWithEncryptionProfile
-					>,
-					signatureFields,
-					docWidth,
-					docHeight,
-				});
-
-				if (signers.length === 0) {
-					toast.error("At least one signer is required");
-					throw new Error(SendEnvelopeError.NO_SIGNERS);
-				}
-
-				const result = await sendFile.mutateAsync({
-					signers,
-					viewers,
-					bytes: fileData,
-					metadata: { name: doc.name },
-				});
-
-				if (result.success && result.pieceCid) {
-					for (const recipient of createForm.recipients) {
-						if (recipient.incentive?.token && recipient.incentive?.amount) {
-							const tokenAddress = recipient.incentive.token.toLowerCase();
-							const tokenData = SUPPORTED_TOKENS.find(
-								(t) => t.address.toLowerCase() === tokenAddress,
-							);
-							const decimals = tokenData?.decimals ?? 18;
-							const amountInWei = parseUnits(
-								recipient.incentive.amount,
-								decimals,
-							);
-
-							await attachIncentive.mutateAsync({
-								pieceCid: result.pieceCid,
-								signer: recipient.walletAddress as Address,
-								token: recipient.incentive.token as Address,
-								amount: amountInWei,
-							});
-						}
-					}
-				}
-
-				return result;
+			const { signers, viewers } = buildSignersAndViewersForDocument({
+				recipients: createForm.recipients,
+				recipientMap: recipientProfilesMapWithRecipient as Map<
+					Address,
+					RecipientWithEncryptionProfile
+				>,
 			});
 
-			await Promise.all(sendPromises);
+			if (signers.length === 0) {
+				toast.error("At least one signer is required");
+				throw new Error(SendEnvelopeError.NO_SIGNERS);
+			}
+
+			const placementManifest = buildPlacementManifestForDocument({
+				docId: doc.id,
+				signersOrder: signers.map((s) => s.address),
+				signatureFields,
+				docWidth,
+				docHeight,
+			});
+
+			const result = await sendFile.mutateAsync({
+				signers,
+				viewers,
+				bytes: fileData,
+				metadata: { name: doc.name },
+				placementManifest,
+			});
+
+			if (result.success && result.pieceCid) {
+				for (const recipient of createForm.recipients) {
+					if (recipient.incentive?.token && recipient.incentive?.amount) {
+						const tokenAddress = recipient.incentive.token.toLowerCase();
+						const tokenData = SUPPORTED_TOKENS.find(
+							(t) => t.address.toLowerCase() === tokenAddress,
+						);
+						const decimals = tokenData?.decimals ?? 18;
+						const amountInWei = parseUnits(
+							recipient.incentive.amount,
+							decimals,
+						);
+
+						await attachIncentive.mutateAsync({
+							pieceCid: result.pieceCid,
+							signer: recipient.walletAddress as Address,
+							token: recipient.incentive.token as Address,
+							amount: amountInWei,
+						});
+					}
+				}
+			}
 
 			clearCreateForm();
 
@@ -302,7 +405,9 @@ export default function AddSignaturePage() {
 							selectedField={selectedField}
 							isPlacingField={isPlacingField}
 							pendingFieldType={pendingFieldType}
-							onFieldPlaced={handleFieldPlaced}
+							documentPage={currentPage}
+							onFieldPlacementRequest={handleFieldPlacementRequest}
+							onPdfPageChange={setCurrentPage}
 							onFieldSelect={handleFieldSelect}
 							onFieldRemove={handleFieldRemove}
 							onFieldUpdate={handleFieldUpdate}
@@ -383,6 +488,14 @@ export default function AddSignaturePage() {
 				onAddField={handleAddField}
 				isPlacingField={isPlacingField}
 				pendingFieldType={pendingFieldType}
+			/>
+
+			<FieldPlacementDialog
+				open={placementDialogOpen}
+				onOpenChange={handlePlacementDialogOpenChange}
+				fieldTypeLabel={placementFieldTypeLabel}
+				signers={signerOptionsForPlacement}
+				onConfirm={handlePlacementConfirm}
 			/>
 		</div>
 	);
