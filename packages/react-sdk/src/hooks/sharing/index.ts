@@ -11,3 +11,4 @@ export { useRequestApproval } from "./useRequestApproval";
 export { useRevokeSender } from "./useRevokeSender";
 export { useAcceptedRecipients, useSendableTo } from "./useSendableTo";
 export { useSentRequests } from "./useSentRequests";
+export { useSentEmailInvites } from "./useSentEmailInvites";

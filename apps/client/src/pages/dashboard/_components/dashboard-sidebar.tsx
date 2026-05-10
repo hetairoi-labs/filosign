@@ -2,9 +2,7 @@ import {
 	CaretRightIcon,
 	EnvelopeSimpleIcon,
 	FileTextIcon,
-	FolderOpenIcon,
 	HouseIcon,
-	PenNibIcon,
 	SealIcon,
 	ShieldCheckIcon,
 	UserCircleIcon,
@@ -59,32 +57,6 @@ const groups: { label: string; items: NavItem[] }[] = [
 				match: (p) =>
 					matchExact(p, "/dashboard") || matchExact(p, "/dashboard/"),
 				tooltip: "Home",
-			},
-			{
-				title: "Files",
-				url: "/dashboard/files",
-				icon: FolderOpenIcon,
-				match: (p) => matchPrefix(p, "/dashboard/files"),
-				tooltip: "Files",
-			},
-		],
-	},
-	{
-		label: "Documents",
-		items: [
-			{
-				title: "All documents",
-				url: "/dashboard/document/all",
-				icon: FileTextIcon,
-				match: (p) => matchPrefix(p, "/dashboard/document/all"),
-				tooltip: "All documents",
-			},
-			{
-				title: "Sign",
-				url: "/dashboard/document/sign",
-				icon: PenNibIcon,
-				match: (p) => matchPrefix(p, "/dashboard/document/sign"),
-				tooltip: "Sign a document",
 			},
 		],
 	},

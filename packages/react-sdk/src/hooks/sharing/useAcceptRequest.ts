@@ -18,13 +18,12 @@ export function useAcceptRequest() {
 			return response.success;
 		},
 		onSuccess: () => {
-			// Invalidate received requests and approvals
-			queryClient.invalidateQueries({
-				queryKey: ["received-requests"],
-			});
-			queryClient.invalidateQueries({
-				queryKey: ["received-approvals"],
-			});
+			queryClient.invalidateQueries({ queryKey: ["received-requests"] });
+			queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
+			queryClient.invalidateQueries({ queryKey: ["sendable-to"] });
+			queryClient.invalidateQueries({ queryKey: ["receivable-from"] });
+			queryClient.invalidateQueries({ queryKey: ["accepted-people"] });
+			queryClient.invalidateQueries({ queryKey: ["accepted-recipients"] });
 		},
 	});
 }

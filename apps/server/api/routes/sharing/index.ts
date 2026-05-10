@@ -467,6 +467,28 @@ export default new Hono()
 			return respond.err(ctx, "Failed to retrieve sent requests", 500);
 		}
 	})
+	.get("/email-invites", authenticated, async (ctx) => {
+		const userWallet = ctx.var.userWallet;
+
+		try {
+			const invites = await db
+				.select({
+					id: userInvites.id,
+					inviteeEmail: userInvites.inviteeEmail,
+					message: userInvites.message,
+					accepted: userInvites.accepted,
+					createdAt: userInvites.createdAt,
+				})
+				.from(userInvites)
+				.where(eq(userInvites.sender, userWallet))
+				.orderBy(desc(userInvites.createdAt));
+
+			return respond.ok(ctx, { invites }, "Email invites retrieved", 200);
+		} catch (error) {
+			console.error("Error fetching email invites", error);
+			return respond.err(ctx, "Failed to retrieve email invites", 500);
+		}
+	})
 	.get("/can-send-to", authenticated, async (ctx) => {
 		const { recipient } = ctx.req.query();
 		if (!recipient || !isAddress(recipient)) {

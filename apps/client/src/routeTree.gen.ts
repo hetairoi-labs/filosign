@@ -17,7 +17,6 @@ import { Route as OnboardingWelcomeRouteImport } from "./routes/onboarding/welco
 import { Route as OnboardingSetPinRouteImport } from "./routes/onboarding/set-pin"
 import { Route as OnboardingCreateSignatureRouteImport } from "./routes/onboarding/create-signature"
 import { Route as InviteInviteIdRouteImport } from "./routes/invite/$inviteId"
-import { Route as DashboardFilesIndexRouteImport } from "./routes/dashboard/files/index"
 import { Route as DashboardConnectionsIndexRouteImport } from "./routes/dashboard/connections/index"
 import { Route as DashboardSettingsProfileRouteImport } from "./routes/dashboard/settings/profile"
 import { Route as DashboardSettingsPermissionsRouteImport } from "./routes/dashboard/settings/permissions"
@@ -67,11 +66,6 @@ const InviteInviteIdRoute = InviteInviteIdRouteImport.update({
   id: "/invite/$inviteId",
   path: "/invite/$inviteId",
   getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardFilesIndexRoute = DashboardFilesIndexRouteImport.update({
-  id: "/files/",
-  path: "/files/",
-  getParentRoute: () => DashboardRouteRoute,
 } as any)
 const DashboardConnectionsIndexRoute =
   DashboardConnectionsIndexRouteImport.update({
@@ -134,7 +128,6 @@ export interface FileRoutesByFullPath {
   "/dashboard/settings/permissions": typeof DashboardSettingsPermissionsRoute
   "/dashboard/settings/profile": typeof DashboardSettingsProfileRoute
   "/dashboard/connections/": typeof DashboardConnectionsIndexRoute
-  "/dashboard/files/": typeof DashboardFilesIndexRoute
   "/dashboard/document/all/": typeof DashboardDocumentAllIndexRoute
   "/dashboard/document/sign/": typeof DashboardDocumentSignIndexRoute
   "/dashboard/envelope/create/": typeof DashboardEnvelopeCreateIndexRoute
@@ -152,7 +145,6 @@ export interface FileRoutesByTo {
   "/dashboard/settings/permissions": typeof DashboardSettingsPermissionsRoute
   "/dashboard/settings/profile": typeof DashboardSettingsProfileRoute
   "/dashboard/connections": typeof DashboardConnectionsIndexRoute
-  "/dashboard/files": typeof DashboardFilesIndexRoute
   "/dashboard/document/all": typeof DashboardDocumentAllIndexRoute
   "/dashboard/document/sign": typeof DashboardDocumentSignIndexRoute
   "/dashboard/envelope/create": typeof DashboardEnvelopeCreateIndexRoute
@@ -172,7 +164,6 @@ export interface FileRoutesById {
   "/dashboard/settings/permissions": typeof DashboardSettingsPermissionsRoute
   "/dashboard/settings/profile": typeof DashboardSettingsProfileRoute
   "/dashboard/connections/": typeof DashboardConnectionsIndexRoute
-  "/dashboard/files/": typeof DashboardFilesIndexRoute
   "/dashboard/document/all/": typeof DashboardDocumentAllIndexRoute
   "/dashboard/document/sign/": typeof DashboardDocumentSignIndexRoute
   "/dashboard/envelope/create/": typeof DashboardEnvelopeCreateIndexRoute
@@ -193,7 +184,6 @@ export interface FileRouteTypes {
     | "/dashboard/settings/permissions"
     | "/dashboard/settings/profile"
     | "/dashboard/connections/"
-    | "/dashboard/files/"
     | "/dashboard/document/all/"
     | "/dashboard/document/sign/"
     | "/dashboard/envelope/create/"
@@ -211,7 +201,6 @@ export interface FileRouteTypes {
     | "/dashboard/settings/permissions"
     | "/dashboard/settings/profile"
     | "/dashboard/connections"
-    | "/dashboard/files"
     | "/dashboard/document/all"
     | "/dashboard/document/sign"
     | "/dashboard/envelope/create"
@@ -230,7 +219,6 @@ export interface FileRouteTypes {
     | "/dashboard/settings/permissions"
     | "/dashboard/settings/profile"
     | "/dashboard/connections/"
-    | "/dashboard/files/"
     | "/dashboard/document/all/"
     | "/dashboard/document/sign/"
     | "/dashboard/envelope/create/"
@@ -306,13 +294,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof InviteInviteIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    "/dashboard/files/": {
-      id: "/dashboard/files/"
-      path: "/files"
-      fullPath: "/dashboard/files/"
-      preLoaderRoute: typeof DashboardFilesIndexRouteImport
-      parentRoute: typeof DashboardRouteRoute
-    }
     "/dashboard/connections/": {
       id: "/dashboard/connections/"
       path: "/connections"
@@ -377,7 +358,6 @@ interface DashboardRouteRouteChildren {
   DashboardSettingsPermissionsRoute: typeof DashboardSettingsPermissionsRoute
   DashboardSettingsProfileRoute: typeof DashboardSettingsProfileRoute
   DashboardConnectionsIndexRoute: typeof DashboardConnectionsIndexRoute
-  DashboardFilesIndexRoute: typeof DashboardFilesIndexRoute
   DashboardDocumentAllIndexRoute: typeof DashboardDocumentAllIndexRoute
   DashboardDocumentSignIndexRoute: typeof DashboardDocumentSignIndexRoute
   DashboardEnvelopeCreateIndexRoute: typeof DashboardEnvelopeCreateIndexRoute
@@ -390,7 +370,6 @@ const DashboardRouteRouteChildren: DashboardRouteRouteChildren = {
   DashboardSettingsPermissionsRoute: DashboardSettingsPermissionsRoute,
   DashboardSettingsProfileRoute: DashboardSettingsProfileRoute,
   DashboardConnectionsIndexRoute: DashboardConnectionsIndexRoute,
-  DashboardFilesIndexRoute: DashboardFilesIndexRoute,
   DashboardDocumentAllIndexRoute: DashboardDocumentAllIndexRoute,
   DashboardDocumentSignIndexRoute: DashboardDocumentSignIndexRoute,
   DashboardEnvelopeCreateIndexRoute: DashboardEnvelopeCreateIndexRoute,

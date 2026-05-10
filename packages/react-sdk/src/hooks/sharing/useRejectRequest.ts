@@ -11,6 +11,7 @@ export function useRejectRequest() {
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["received-requests"] });
+			queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
 		},
 	});
 }

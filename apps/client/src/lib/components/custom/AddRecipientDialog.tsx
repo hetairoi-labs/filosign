@@ -25,6 +25,8 @@ import { safeAsync } from "@/src/lib/utils/safe";
 interface AddRecipientDialogProps {
 	trigger?: React.ReactElement;
 	onSuccess?: () => void;
+	/** Called after a request or invite is successfully sent (not on every dialog close). */
+	onRequestCompleted?: () => void;
 }
 
 type Step = "email" | "success";
@@ -32,6 +34,7 @@ type Step = "email" | "success";
 export default function AddRecipientDialog({
 	trigger,
 	onSuccess,
+	onRequestCompleted,
 }: AddRecipientDialogProps) {
 	const [open, setOpen] = useState(false);
 	const [email, setEmail] = useState("");
@@ -79,6 +82,7 @@ export default function AddRecipientDialog({
 
 		setResult(data || {});
 		setStep("success");
+		onRequestCompleted?.();
 	};
 
 	const handleClose = () => {

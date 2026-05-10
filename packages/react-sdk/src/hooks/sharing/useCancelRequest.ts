@@ -10,6 +10,7 @@ export function useCancelRequest() {
 			await api.rpc.deleteSafe({}, `/sharing/${requestId}/cancel`);
 		},
 		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
 			queryClient.invalidateQueries({ queryKey: ["received-requests"] });
 		},
 	});
