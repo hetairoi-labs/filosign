@@ -5,6 +5,7 @@ import {
 	useViewFile,
 	type ViewFileResult,
 } from "@filosign/react/hooks";
+import type { PlacementManifest } from "@filosign/shared";
 import {
 	ArrowClockwiseIcon,
 	ArrowCounterClockwiseIcon,
@@ -18,7 +19,15 @@ import {
 	XIcon,
 } from "@phosphor-icons/react";
 import type * as React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { toast } from "sonner";
 import { defaultChain, erc20DisplayForChain } from "@/src/constants";
 import {
@@ -29,6 +38,8 @@ import {
 } from "@/src/lib/utils/compliance-pdf";
 import { Button } from "../ui/button";
 import { InlineLoader } from "../ui/inline-loader";
+
+const LazyPdfJsPreview = lazy(() => import("./PdfJsPreview.lazy"));
 
 interface FileObject {
 	pieceCid: string;
@@ -48,6 +59,7 @@ function toViewFileResult(fd: {
 	metadata: { name: string; mimeType?: string };
 	sender: string;
 	timestamp: number;
+	placementManifest: PlacementManifest;
 }): ViewFileResult {
 	return {
 		fileBytes: fd.fileBytes,
@@ -57,6 +69,7 @@ function toViewFileResult(fd: {
 			name: fd.metadata.name,
 			mimeType: fd.metadata.mimeType ?? "application/octet-stream",
 		},
+		placementManifest: fd.placementManifest,
 	};
 }
 
@@ -64,13 +77,7 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 	const [zoom, setZoom] = useState(75);
 	const [viewError, setViewError] = useState<string | null>(null);
 	const [pdfExportBusy, setPdfExportBusy] = useState(false);
-	const [fileData, setFileData] = useState<{
-		fileBytes: Uint8Array;
-		metadata: { name: string; mimeType: string };
-		sender: string;
-		timestamp: number;
-		signaturePositionOffset?: { top: number; left: number };
-	} | null>(null);
+	const [fileData, setFileData] = useState<ViewFileResult | null>(null);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const [documentDimensions, setDocumentDimensions] = useState({
 		width: 600,
@@ -78,6 +85,14 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 	});
 
 	const { wallet, contracts } = useFilosignContext();
+
+	const previewPdfBytes = useMemo(() => {
+		if (!fileData) return null;
+		const mime = fileData.metadata.mimeType;
+		const name = fileData.metadata.name?.toLowerCase() ?? "";
+		if (mime !== "application/pdf" && !name.endsWith(".pdf")) return null;
+		return new Uint8Array(fileData.fileBytes);
+	}, [fileData]);
 
 	// Get detailed file info including decryption keys
 	const { data: fileInfo, isLoading: fileLoading } = useFileInfo({
@@ -385,10 +400,13 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 			mimeType === "application/pdf" ||
 			fileName?.toLowerCase().endsWith(".pdf")
 		) {
-			const arrayBuffer = new ArrayBuffer(fileBytes.length);
-			new Uint8Array(arrayBuffer).set(fileBytes);
-			const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-			const pdfUrl = URL.createObjectURL(blob);
+			if (!previewPdfBytes) {
+				return (
+					<div className="flex items-center justify-center w-full h-full p-4 text-sm text-muted-foreground">
+						Loading PDF…
+					</div>
+				);
+			}
 
 			return (
 				<div className="flex items-center justify-center w-full h-full p-4 md:p-8 bg-muted/5">
@@ -401,14 +419,22 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 							transformOrigin: "center",
 						}}
 					>
-						<iframe
-							src={pdfUrl}
-							className="absolute inset-0 w-full h-full border-0"
-							title={fileName || "PDF Document"}
-							onLoad={() => {
-								setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-							}}
-						/>
+						<Suspense
+							fallback={
+								<div className="absolute inset-0 flex items-center justify-center bg-white">
+									<InlineLoader size="md" />
+								</div>
+							}
+						>
+							<LazyPdfJsPreview
+								className="absolute inset-0 overflow-auto"
+								documentKey={file?.pieceCid ?? "file-viewer"}
+								file={previewPdfBytes}
+								maxHeight={documentDimensions.height}
+								pageNumber={1}
+								width={documentDimensions.width}
+							/>
+						</Suspense>
 					</div>
 				</div>
 			);

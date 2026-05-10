@@ -3,13 +3,18 @@ import {
 	useAckFile,
 	useDocumentIncentive,
 	useFileInfo,
+	useSignDraft,
 	useSignFile,
+	useUpdateSignDraft,
 	useViewFile,
 	type ViewFileResult,
 } from "@filosign/react/hooks";
+import { zPlacementManifest } from "@filosign/shared";
 import {
 	ArrowLeftIcon,
 	ArrowSquareOutIcon,
+	CaretLeftIcon,
+	CaretRightIcon,
 	CheckCircleIcon,
 	CheckIcon,
 	ClockIcon,
@@ -24,9 +29,17 @@ import {
 } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	lazy,
+	Suspense,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { toast } from "sonner";
-import { formatUnits } from "viem";
+import { formatUnits, getAddress } from "viem";
 import {
 	defaultChain,
 	erc20DisplayForChain,
@@ -44,6 +57,18 @@ import {
 	fetchSignerIncentivesForCompliancePdf,
 } from "@/src/lib/utils/compliance-pdf";
 
+const LazyPdfJsPreview = lazy(
+	() => import("@/src/lib/components/custom/PdfJsPreview.lazy"),
+);
+
+const DEBUG_PREFIX = "[SignFlow]";
+const debugLog = (step: string, data?: unknown) => {
+	console.log(
+		`${DEBUG_PREFIX} ${step}`,
+		data ? JSON.stringify(data, null, 2) : "",
+	);
+};
+
 export default function SignDocumentPage() {
 	const navigate = useNavigate();
 	const search = useSearch({ from: "/dashboard/document/sign/" });
@@ -53,11 +78,29 @@ export default function SignDocumentPage() {
 	const { contracts } = useFilosignContext();
 	const signerAddress = user?.wallet?.address as `0x${string}` | undefined;
 
+	debugLog("COMPONENT_MOUNT", {
+		pieceCid,
+		signerAddress,
+		timestamp: Date.now(),
+	});
+
 	const {
 		data: file,
 		isLoading: fileLoading,
 		error: fileError,
 	} = useFileInfo({ pieceCid });
+
+	useEffect(() => {
+		debugLog("FILE_INFO_UPDATED", {
+			pieceCid,
+			hasFile: !!file,
+			isLoading: fileLoading,
+			hasError: !!fileError,
+			fileStatus: file?.status,
+			signerCount: file?.signers?.length,
+			signatureCount: file?.signatures?.length,
+		});
+	}, [file, fileLoading, fileError, pieceCid]);
 
 	const acknowledgeFile = useAckFile();
 
@@ -105,35 +148,259 @@ export default function SignDocumentPage() {
 	const viewFile = useViewFile();
 	const signFile = useSignFile();
 
+	const signDraftPieceCid =
+		pieceCid && file?.kemCiphertext && file?.encryptedEncryptionKey
+			? pieceCid
+			: undefined;
+	const { data: serverDraftIds } = useSignDraft(signDraftPieceCid);
+	const updateSignDraft = useUpdateSignDraft();
+
+	const [completedFieldIds, setCompletedFieldIds] = useState<string[]>([]);
+	const hasHydratedDraftForPieceCid = useRef<string | null>(null);
+	const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+		undefined,
+	);
+
+	useEffect(() => {
+		hasHydratedDraftForPieceCid.current = null;
+		setCompletedFieldIds([]);
+	}, [pieceCid]);
+
+	useEffect(() => {
+		if (!pieceCid || serverDraftIds === undefined) {
+			debugLog("DRAFT_HYDRATION_SKIPPED", {
+				pieceCid,
+				hasServerDraftIds: serverDraftIds !== undefined,
+			});
+			return;
+		}
+		if (hasHydratedDraftForPieceCid.current === pieceCid) {
+			debugLog("DRAFT_HYDRATION_ALREADY_DONE", { pieceCid });
+			return;
+		}
+		debugLog("DRAFT_HYDRATION_START", {
+			pieceCid,
+			serverDraftIds,
+			currentCompleted: completedFieldIds,
+		});
+		hasHydratedDraftForPieceCid.current = pieceCid;
+		setCompletedFieldIds((prev) => {
+			const next = prev.length > 0 ? prev : [...serverDraftIds];
+			debugLog("DRAFT_HYDRATION_COMPLETE", {
+				pieceCid,
+				previousCount: prev.length,
+				newCount: next.length,
+				hydratedIds: serverDraftIds,
+			});
+			return next;
+		});
+	}, [pieceCid, serverDraftIds]);
+
+	useEffect(() => {
+		return () => {
+			if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+		};
+	}, []);
+
+	const flushSignDraft = useCallback(
+		(ids: string[]) => {
+			if (!pieceCid) {
+				debugLog("FLUSH_SIGN_DRAFT_BLOCKED", { reason: "no pieceCid" });
+				return;
+			}
+			debugLog("FLUSH_SIGN_DRAFT", {
+				pieceCid,
+				completedFieldIds: ids,
+				count: ids.length,
+			});
+			void updateSignDraft
+				.mutateAsync({ pieceCid, completedFieldIds: ids })
+				.then(() => {
+					debugLog("SIGN_DRAFT_SAVED", { pieceCid, completedFieldIds: ids });
+				})
+				.catch((err: unknown) => {
+					debugLog("SIGN_DRAFT_SAVE_FAILED", {
+						pieceCid,
+						error: err instanceof Error ? err.message : String(err),
+					});
+					console.warn("[sign-draft] save failed", err);
+				});
+		},
+		[pieceCid, updateSignDraft],
+	);
+
+	const scheduleSignDraftSave = useCallback(
+		(ids: string[]) => {
+			if (draftSaveTimerRef.current) clearTimeout(draftSaveTimerRef.current);
+			draftSaveTimerRef.current = setTimeout(() => {
+				flushSignDraft(ids);
+			}, 500);
+		},
+		[flushSignDraft],
+	);
+
+	/** Draft ids are cleared after submit; use on-chain signature as source of truth. */
+	const isMyPlacementFieldDone = useCallback(
+		(fieldId: string) => alreadySigned || completedFieldIds.includes(fieldId),
+		[alreadySigned, completedFieldIds],
+	);
+
+	const togglePlacementField = useCallback(
+		(fieldId: string) => {
+			if (alreadySigned) return;
+			debugLog("TOGGLE_PLACEMENT_FIELD", {
+				fieldId,
+				currentCompleted: completedFieldIds,
+			});
+			setCompletedFieldIds((prev) => {
+				const isRemoving = prev.includes(fieldId);
+				const next = isRemoving
+					? prev.filter((x) => x !== fieldId)
+					: [...prev, fieldId];
+				debugLog("COMPLETED_FIELDS_UPDATED", {
+					fieldId,
+					action: isRemoving ? "removed" : "added",
+					previousCount: prev.length,
+					newCount: next.length,
+					newCompletedIds: next,
+				});
+				scheduleSignDraftSave(next);
+				return next;
+			});
+		},
+		[scheduleSignDraftSave, completedFieldIds, alreadySigned],
+	);
+
 	const [zoom, setZoom] = useState(100);
+	const [signPdfPage, setSignPdfPage] = useState(1);
+	const [signPdfNumPages, setSignPdfNumPages] = useState<number | null>(null);
 	const [viewError, setViewError] = useState<string | null>(null);
 	const [fileData, setFileData] = useState<ViewFileResult | null>(null);
 	const [pdfExportBusy, setPdfExportBusy] = useState(false);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const documentRef = useRef<HTMLDivElement>(null);
 
+	const myPlacementFields = useMemo(() => {
+		debugLog("COMPUTING_MY_PLACEMENT_FIELDS", {
+			hasSignerAddress: !!signerAddress,
+			hasPlacementManifest: !!fileData?.placementManifest,
+		});
+		if (!signerAddress || !fileData?.placementManifest) return [];
+		const parsed = zPlacementManifest.safeParse(fileData.placementManifest);
+		if (!parsed.success) {
+			debugLog("PLACEMENT_MANIFEST_PARSE_FAILED", { error: parsed.error });
+			return [];
+		}
+		const me = getAddress(signerAddress);
+		const fields = parsed.data.fields.filter(
+			(f) => getAddress(f.assignedSigner) === me,
+		);
+		debugLog("MY_PLACEMENT_FIELDS_COMPUTED", {
+			fieldCount: fields.length,
+			fieldIds: fields.map((f) => f.id),
+			pageIndices: fields.map((f) => f.pageIndex),
+		});
+		return fields;
+	}, [fileData?.placementManifest, signerAddress]);
+
+	/** Hint for page count from placement manifest until pdf.js reports the real total. */
+	const signPdfPageCountHint = useMemo(() => {
+		if (myPlacementFields.length === 0) return null;
+		return Math.max(...myPlacementFields.map((f) => f.pageIndex)) + 1;
+	}, [myPlacementFields]);
+
+	const requiredPlacementIds = useMemo(
+		() => myPlacementFields.filter((f) => f.required).map((f) => f.id),
+		[myPlacementFields],
+	);
+
+	const canSubmitPlacementSign = useMemo(() => {
+		if (!canSign || myPlacementFields.length === 0) return false;
+		const requiredOk =
+			requiredPlacementIds.length === 0 ||
+			requiredPlacementIds.every((id) => completedFieldIds.includes(id));
+		const hasLeaf = completedFieldIds.length > 0;
+		return requiredOk && hasLeaf;
+	}, [
+		canSign,
+		myPlacementFields.length,
+		requiredPlacementIds,
+		completedFieldIds,
+	]);
+
+	/** Stable binary source for pdf.js (avoid re-parsing on unrelated re-renders). */
+	const previewPdfBytes = useMemo(() => {
+		if (!fileData) return null;
+		const mime = fileData.metadata.mimeType;
+		const name = fileData.metadata.name?.toLowerCase() ?? "";
+		const isPdf = mime === "application/pdf" || name.endsWith(".pdf");
+		debugLog("PREVIEW_PDF_BYTES_COMPUTED", {
+			hasFileData: !!fileData,
+			mimeType: mime,
+			fileName: name,
+			isPdf,
+			byteLength: fileData.fileBytes?.length,
+		});
+		if (!isPdf) return null;
+		return new Uint8Array(fileData.fileBytes);
+	}, [fileData]);
+
+	const isSigningPdf = Boolean(previewPdfBytes);
+	const signPdfTotalDisplay = signPdfNumPages ?? signPdfPageCountHint;
+
+	useEffect(() => {
+		debugLog("PDF_PAGE_RESET", {
+			pieceCid,
+			hasPreviewBytes: !!previewPdfBytes,
+		});
+		setSignPdfPage(1);
+		setSignPdfNumPages(null);
+	}, [pieceCid, previewPdfBytes]);
+
 	// Memoize the handleViewFile function
 	const handleViewFile = useCallback(async () => {
+		debugLog("HANDLE_VIEW_FILE_START", {
+			pieceCid: file?.pieceCid,
+			hasKemCiphertext: !!file?.kemCiphertext,
+			hasEncryptedKey: !!file?.encryptedEncryptionKey,
+		});
 		if (!file?.kemCiphertext || !file?.encryptedEncryptionKey) {
-			setViewError("Missing decryption keys. Acknowledge the file first.");
+			const errMsg = "Missing decryption keys. Acknowledge the file first.";
+			debugLog("VIEW_FILE_BLOCKED", { reason: errMsg });
+			setViewError(errMsg);
 			return;
 		}
 
 		try {
 			setViewError(null);
+			debugLog("VIEW_FILE_MUTATING", {
+				pieceCid: file.pieceCid,
+				status: file.status,
+			});
 			const result = await viewFile.mutateAsync({
 				pieceCid: file.pieceCid,
 				kemCiphertext: file.kemCiphertext,
 				encryptedEncryptionKey: file.encryptedEncryptionKey,
 				status: file.status as "s3" | "foc",
 			});
+			debugLog("VIEW_FILE_SUCCESS", {
+				pieceCid: file.pieceCid,
+				fileBytesLength: result.fileBytes?.length,
+				sender: result.sender,
+				metadata: result.metadata,
+				hasPlacementManifest: !!result.placementManifest,
+			});
 			setFileData(result);
 		} catch (error) {
-			console.error("Failed to load file:", error);
 			const errorMessage =
 				error instanceof Error
 					? error.message
 					: "Failed to load file for signing";
+			debugLog("VIEW_FILE_ERROR", {
+				error: errorMessage,
+				stack: error instanceof Error ? error.stack : undefined,
+			});
+			console.error("Failed to load file:", error);
 			setViewError(errorMessage);
 			toast.error(errorMessage);
 		}
@@ -264,14 +531,45 @@ export default function SignDocumentPage() {
 	};
 
 	const handleSign = async () => {
-		if (!pieceCid) return;
+		debugLog("HANDLE_SIGN_START", {
+			pieceCid,
+			canSubmitPlacementSign,
+			completedFieldIds,
+			completedCount: completedFieldIds.length,
+			signerAddress,
+		});
+		if (!pieceCid) {
+			debugLog("SIGN_BLOCKED_NO_PIECE_CID");
+			return;
+		}
+		if (!canSubmitPlacementSign) {
+			const errMsg = "Mark every required field on the document first.";
+			debugLog("SIGN_BLOCKED_VALIDATION_FAILED", {
+				reason: errMsg,
+				requiredPlacementIds,
+				completedFieldIds,
+			});
+			toast.error(errMsg);
+			return;
+		}
 		try {
-			await signFile.mutateAsync({ pieceCid });
+			debugLog("SIGN_FILE_MUTATING", { pieceCid, completedFieldIds });
+			await signFile.mutateAsync({
+				pieceCid,
+				completedFieldIds,
+			});
+			debugLog("SIGN_FILE_SUCCESS", { pieceCid });
 			toast.success("Document signed successfully!");
 			window.location.reload();
 		} catch (error) {
+			const errorMessage =
+				error instanceof Error ? error.message : "Failed to sign";
+			debugLog("SIGN_FILE_ERROR", {
+				error: errorMessage,
+				stack: error instanceof Error ? error.stack : undefined,
+			});
 			console.error(error);
-			toast.error(error instanceof Error ? error.message : "Failed to sign");
+			toast.error(errorMessage);
 		}
 	};
 
@@ -328,7 +626,7 @@ export default function SignDocumentPage() {
 			const imageUrl = URL.createObjectURL(blob);
 
 			return (
-				<div className="flex items-center justify-center w-full h-full p-4 md:p-8 bg-muted/5">
+				<div className="flex flex-col items-center justify-center w-full h-full gap-4 p-4 md:p-8 bg-muted/5">
 					<div
 						className="relative bg-white border shadow-lg border-border"
 						style={{
@@ -344,7 +642,69 @@ export default function SignDocumentPage() {
 							className="absolute inset-0 w-full h-full object-contain"
 							onLoad={() => URL.revokeObjectURL(imageUrl)}
 						/>
+						{myPlacementFields
+							.filter((f) => f.pageIndex === 0)
+							.map((field) => {
+								const done = isMyPlacementFieldDone(field.id);
+								return (
+									<button
+										key={field.id}
+										type="button"
+										disabled={alreadySigned}
+										className={cn(
+											"absolute z-10 flex items-center justify-center rounded border-2 px-0.5 text-[9px] font-semibold uppercase tracking-tight transition-colors",
+											done
+												? "border-emerald-600 bg-emerald-500/25 text-emerald-950"
+												: "border-amber-500 bg-amber-400/20 text-amber-950 hover:bg-amber-400/35",
+										)}
+										style={{
+											left: `${field.rect.x * 100}%`,
+											top: `${field.rect.y * 100}%`,
+											width: `${Math.max(field.rect.width * 100, 8)}%`,
+											height: `${Math.max(field.rect.height * 100, 5)}%`,
+										}}
+										onClick={() => togglePlacementField(field.id)}
+									>
+										{alreadySigned
+											? "Signed"
+											: done
+												? "Done"
+												: field.required
+													? "Req"
+													: "Opt"}
+									</button>
+								);
+							})}
 					</div>
+					{myPlacementFields.some((f) => f.pageIndex !== 0) && (
+						<div className="w-full max-w-[600px] rounded-lg border border-border bg-background/80 p-3">
+							<p className="mb-2 text-xs font-medium text-muted-foreground">
+								Fields on other pages — tap to mark complete
+							</p>
+							<div className="flex flex-wrap gap-2">
+								{myPlacementFields
+									.filter((f) => f.pageIndex !== 0)
+									.map((field) => {
+										const done = isMyPlacementFieldDone(field.id);
+										return (
+											<Button
+												key={field.id}
+												type="button"
+												size="sm"
+												variant={done ? "secondary" : "outline"}
+												className="h-8 text-xs"
+												disabled={alreadySigned}
+												onClick={() => togglePlacementField(field.id)}
+											>
+												P{field.pageIndex + 1} ·{" "}
+												{field.required ? "Required" : "Optional"}
+												{alreadySigned ? " · signed" : done ? " ✓" : ""}
+											</Button>
+										);
+									})}
+							</div>
+						</div>
+					)}
 				</div>
 			);
 		}
@@ -354,13 +714,16 @@ export default function SignDocumentPage() {
 			mimeType === "application/pdf" ||
 			fileName?.toLowerCase().endsWith(".pdf")
 		) {
-			const arrayBuffer = new ArrayBuffer(fileBytes.length);
-			new Uint8Array(arrayBuffer).set(fileBytes);
-			const blob = new Blob([arrayBuffer], { type: "application/pdf" });
-			const pdfUrl = URL.createObjectURL(blob);
+			if (!previewPdfBytes) {
+				return (
+					<div className="flex items-center justify-center w-full h-full p-4 text-sm text-muted-foreground">
+						Loading PDF…
+					</div>
+				);
+			}
 
 			return (
-				<div className="flex items-center justify-center w-full h-full p-4 md:p-8 bg-muted/5">
+				<div className="flex flex-col items-center justify-center w-full h-full gap-4 p-4 md:p-8 bg-muted/5">
 					<div
 						className="relative bg-white border shadow-lg border-border"
 						style={{
@@ -370,14 +733,65 @@ export default function SignDocumentPage() {
 							transformOrigin: "center",
 						}}
 					>
-						<iframe
-							src={pdfUrl}
-							className="absolute inset-0 w-full h-full border-0"
-							title={fileName || "PDF Document"}
-							onLoad={() => {
-								setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-							}}
-						/>
+						<div className="absolute inset-0 overflow-hidden bg-white">
+							<Suspense
+								fallback={
+									<div className="flex min-h-[240px] items-center justify-center bg-white">
+										<InlineLoader size="md" />
+									</div>
+								}
+							>
+								<LazyPdfJsPreview
+									className="absolute inset-0 z-0"
+									documentKey={pieceCid ?? "sign"}
+									file={previewPdfBytes}
+									pageNumber={signPdfPage}
+									width={600}
+									maxHeight={800}
+									onNumPagesLoaded={(n) => {
+										setSignPdfNumPages(n);
+										setSignPdfPage((p) => Math.min(p, n));
+									}}
+									renderPageOverlay={(pageIndex) => (
+										<>
+											{myPlacementFields
+												.filter((f) => f.pageIndex === pageIndex)
+												.map((field) => {
+													const done = isMyPlacementFieldDone(field.id);
+													return (
+														<button
+															key={field.id}
+															type="button"
+															disabled={alreadySigned}
+															className={cn(
+																"pointer-events-auto absolute z-10 flex items-center justify-center rounded border-2 px-0.5 text-[9px] font-semibold uppercase tracking-tight transition-colors",
+																done
+																	? "border-emerald-600 bg-emerald-500/25 text-emerald-950"
+																	: "border-amber-500 bg-amber-400/20 text-amber-950 hover:bg-amber-400/35",
+															)}
+															style={{
+																left: `${field.rect.x * 100}%`,
+																top: `${field.rect.y * 100}%`,
+																width: `${Math.max(field.rect.width * 100, 8)}%`,
+																height: `${Math.max(field.rect.height * 100, 5)}%`,
+															}}
+															onClick={() => togglePlacementField(field.id)}
+														>
+															{alreadySigned
+																? "Signed"
+																: done
+																	? "Selected"
+																	: field.required
+																		? "Required"
+																		: "Optional"}
+														</button>
+													);
+												})}
+										</>
+									)}
+								/>
+							</Suspense>
+						</div>
 					</div>
 				</div>
 			);
@@ -412,8 +826,8 @@ export default function SignDocumentPage() {
 
 		// Fallback for other file types
 		return (
-			<div className="flex items-center justify-center w-full h-full text-sm text-muted-foreground p-4 text-center">
-				<div className="flex flex-col items-center gap-3 md:gap-4">
+			<div className="flex flex-col items-center justify-center w-full h-full gap-4 p-4 text-sm text-muted-foreground">
+				<div className="flex flex-col items-center gap-3 text-center">
 					<FileTextIcon className="size-12 md:size-16 text-muted-foreground/50" />
 					<div className="text-xs md:text-sm">
 						Preview not available for this file type
@@ -431,6 +845,34 @@ export default function SignDocumentPage() {
 						Download File
 					</Button>
 				</div>
+				{canSign && myPlacementFields.length > 0 && (
+					<div className="w-full max-w-md rounded-lg border border-border bg-background/90 p-4 text-left">
+						<p className="mb-3 text-xs font-medium text-foreground">
+							Mark each field you are signing (required fields must all be
+							selected):
+						</p>
+						<div className="flex flex-col gap-2">
+							{myPlacementFields.map((field) => {
+								const done = isMyPlacementFieldDone(field.id);
+								return (
+									<Button
+										key={field.id}
+										type="button"
+										size="sm"
+										variant={done ? "secondary" : "outline"}
+										className="h-auto justify-start py-2 text-left text-xs"
+										disabled={alreadySigned}
+										onClick={() => togglePlacementField(field.id)}
+									>
+										p.{field.pageIndex + 1} · {field.type}
+										{field.required ? " · required" : ""}
+										{alreadySigned ? " · signed" : done ? " ✓" : ""}
+									</Button>
+								);
+							})}
+						</div>
+					</div>
+				)}
 			</div>
 		);
 	};
@@ -518,7 +960,7 @@ export default function SignDocumentPage() {
 
 	return (
 		<div className="fixed inset-0 bg-background flex flex-col">
-			<div className="flex-shrink-0 sticky top-0 z-50 bg-background border-b border-border">
+			<div className="shrink-0 sticky top-0 z-50 bg-background border-b border-border">
 				<div className="md:hidden">
 					<div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
 						<Button
@@ -596,7 +1038,7 @@ export default function SignDocumentPage() {
 							>
 								<MagnifyingGlassMinusIcon className="size-4" />
 							</Button>
-							<span className="text-xs font-medium min-w-[2.5rem] text-center text-foreground">
+							<span className="text-xs font-medium min-w-10 text-center text-foreground">
 								{zoom}%
 							</span>
 							<Button
@@ -607,6 +1049,47 @@ export default function SignDocumentPage() {
 							>
 								<MagnifyingGlassPlusIcon className="size-4" />
 							</Button>
+							{isSigningPdf && (
+								<>
+									<div className="mx-0.5 h-5 w-px self-center bg-border/70" />
+									<Button
+										variant="ghost"
+										size="sm"
+										type="button"
+										onClick={() => setSignPdfPage((p) => Math.max(1, p - 1))}
+										disabled={signPdfPage <= 1}
+										className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
+										title="Previous page"
+									>
+										<CaretLeftIcon className="size-4" />
+									</Button>
+									<span className="min-w-10 text-center text-[10px] font-medium tabular-nums text-muted-foreground">
+										{signPdfTotalDisplay == null
+											? `${signPdfPage} / …`
+											: `${signPdfPage} / ${signPdfTotalDisplay}`}
+									</span>
+									<Button
+										variant="ghost"
+										size="sm"
+										type="button"
+										onClick={() =>
+											setSignPdfPage((p) =>
+												signPdfTotalDisplay == null
+													? p + 1
+													: Math.min(signPdfTotalDisplay, p + 1),
+											)
+										}
+										disabled={
+											signPdfTotalDisplay != null &&
+											signPdfPage >= signPdfTotalDisplay
+										}
+										className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
+										title="Next page"
+									>
+										<CaretRightIcon className="size-4" />
+									</Button>
+								</>
+							)}
 						</div>
 
 						<div className="flex items-center gap-2">
@@ -626,7 +1109,7 @@ export default function SignDocumentPage() {
 									variant="primary"
 									size="sm"
 									onClick={() => void handleSign()}
-									disabled={signFile.isPending}
+									disabled={signFile.isPending || !canSubmitPlacementSign}
 								>
 									{signFile.isPending ? (
 										<>
@@ -743,7 +1226,7 @@ export default function SignDocumentPage() {
 							>
 								<MagnifyingGlassMinusIcon className="size-5" />
 							</Button>
-							<span className="text-sm font-medium min-w-[3rem] text-center text-foreground">
+							<span className="text-sm font-medium min-w-12 text-center text-foreground tabular-nums">
 								{zoom}%
 							</span>
 							<Button
@@ -754,6 +1237,47 @@ export default function SignDocumentPage() {
 							>
 								<MagnifyingGlassPlusIcon className="size-5" />
 							</Button>
+							{isSigningPdf && (
+								<>
+									<div className="mx-1 h-6 w-px bg-border" />
+									<Button
+										variant="ghost"
+										size="sm"
+										type="button"
+										onClick={() => setSignPdfPage((p) => Math.max(1, p - 1))}
+										disabled={signPdfPage <= 1}
+										className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+										title="Previous page"
+									>
+										<CaretLeftIcon className="size-5" />
+									</Button>
+									<span className="min-w-11 text-center text-xs font-medium tabular-nums text-muted-foreground">
+										{signPdfTotalDisplay == null
+											? `${signPdfPage} / …`
+											: `${signPdfPage} / ${signPdfTotalDisplay}`}
+									</span>
+									<Button
+										variant="ghost"
+										size="sm"
+										type="button"
+										onClick={() =>
+											setSignPdfPage((p) =>
+												signPdfTotalDisplay == null
+													? p + 1
+													: Math.min(signPdfTotalDisplay, p + 1),
+											)
+										}
+										disabled={
+											signPdfTotalDisplay != null &&
+											signPdfPage >= signPdfTotalDisplay
+										}
+										className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+										title="Next page"
+									>
+										<CaretRightIcon className="size-5" />
+									</Button>
+								</>
+							)}
 						</div>
 
 						<div className="w-px h-6 bg-border mx-2" />
@@ -799,7 +1323,7 @@ export default function SignDocumentPage() {
 									variant="primary"
 									size="sm"
 									onClick={() => void handleSign()}
-									disabled={signFile.isPending}
+									disabled={signFile.isPending || !canSubmitPlacementSign}
 								>
 									{signFile.isPending ? (
 										<>
@@ -852,6 +1376,60 @@ export default function SignDocumentPage() {
 								}}
 							/>
 						</div>
+
+						{(canSign || alreadySigned) && myPlacementFields.length > 0 && (
+							<div className="space-y-2 rounded-lg border border-border bg-muted/25 p-3">
+								<h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+									Your fields
+								</h4>
+								<p className="text-[11px] leading-snug text-muted-foreground">
+									{alreadySigned
+										? "Your signature is recorded. Field markers show where you signed."
+										: "Tap the highlighted regions on the document (or the list below for other pages). Every required field must be marked before you can sign."}
+								</p>
+								<ul className="space-y-1.5">
+									{myPlacementFields.map((field) => {
+										const done = isMyPlacementFieldDone(field.id);
+										return (
+											<li
+												key={field.id}
+												className="flex items-center justify-between gap-2 text-xs"
+											>
+												<button
+													type="button"
+													disabled={alreadySigned}
+													className={cn(
+														"min-w-0 flex-1 truncate text-left underline-offset-2 hover:underline disabled:cursor-default disabled:no-underline disabled:opacity-100",
+														done &&
+															(alreadySigned
+																? "font-medium text-emerald-700 dark:text-emerald-400"
+																: "text-muted-foreground line-through"),
+													)}
+													onClick={() => togglePlacementField(field.id)}
+												>
+													{field.type} · p.{field.pageIndex + 1}
+													{field.required ? " · required" : ""}
+													{alreadySigned && done ? " · signed" : ""}
+												</button>
+												{done ? (
+													<CheckIcon
+														className="size-3.5 shrink-0 text-emerald-600"
+														weight="bold"
+													/>
+												) : (
+													<ClockIcon className="size-3.5 shrink-0 text-muted-foreground" />
+												)}
+											</li>
+										);
+									})}
+								</ul>
+								{canSign && !canSubmitPlacementSign && (
+									<p className="text-[11px] text-amber-800 dark:text-amber-200">
+										Complete every required field to enable Sign.
+									</p>
+								)}
+							</div>
+						)}
 
 						{/* Signer list */}
 						<div className="space-y-2 pt-2">
