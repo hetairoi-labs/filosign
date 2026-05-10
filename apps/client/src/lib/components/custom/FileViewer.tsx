@@ -1,6 +1,6 @@
 import { useFilosignContext } from "@filosign/react";
 import {
-	type FileInfo,
+	useComplianceBundle,
 	useFileInfo,
 	useViewFile,
 	type ViewFileResult,
@@ -35,6 +35,7 @@ import {
 	buildDocumentPlusCompliancePdf,
 	downloadPdfBytes,
 	fetchSignerIncentivesForCompliancePdf,
+	sha256HexOfBytes,
 } from "@/src/lib/utils/compliance-pdf";
 import { Button } from "../ui/button";
 import { InlineLoader } from "../ui/inline-loader";
@@ -100,6 +101,7 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 	});
 
 	const viewFile = useViewFile();
+	const complianceBundle = useComplianceBundle();
 
 	// Determine if current user is the sender or receiver
 	const isSender =
@@ -222,6 +224,14 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		}
 		setPdfExportBusy(true);
 		try {
+			const documentSha256 = fileData
+				? await sha256HexOfBytes(fileData.fileBytes)
+				: undefined;
+			const { bundle, bundleHash, exportId } =
+				await complianceBundle.mutateAsync({
+					pieceCid: file.pieceCid,
+					documentSha256,
+				});
 			const explorerBase = defaultChain.blockExplorers?.default?.url ?? null;
 			const signerIncentives = contracts?.FSFileRegistry?.read
 				? await fetchSignerIncentivesForCompliancePdf(
@@ -232,12 +242,20 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 					)
 				: undefined;
 			const bytes = await buildCompliancePdfOnly({
-				file: fileInfo as FileInfo,
-				fileData: fileData ? toViewFileResult(fileData) : null,
+				bundle,
+				bundleHash,
+				exportId,
 				chainName: defaultChain.name,
 				explorerBaseUrl: explorerBase,
-				exportedAtIso: new Date().toISOString(),
 				signerIncentives,
+				documentSha256,
+				decryptedDocumentMeta: fileData
+					? {
+							name: fileData.metadata.name,
+							mimeType: fileData.metadata.mimeType,
+							sizeBytes: fileData.fileBytes.length,
+						}
+					: null,
 			});
 			const safe = file.pieceCid.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 48);
 			downloadPdfBytes(bytes, `filosign-file-record-${safe}`);
@@ -249,7 +267,13 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		} finally {
 			setPdfExportBusy(false);
 		}
-	}, [contracts?.FSFileRegistry?.read, file?.pieceCid, fileData, fileInfo]);
+	}, [
+		complianceBundle,
+		contracts?.FSFileRegistry?.read,
+		file?.pieceCid,
+		fileData,
+		fileInfo,
+	]);
 
 	const handleDownloadDocumentWithCompliancePdf = useCallback(async () => {
 		if (!fileInfo || !file?.pieceCid || !fileData) {
@@ -264,6 +288,12 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		}
 		setPdfExportBusy(true);
 		try {
+			const documentSha256 = await sha256HexOfBytes(fileData.fileBytes);
+			const { bundle, bundleHash, exportId } =
+				await complianceBundle.mutateAsync({
+					pieceCid: file.pieceCid,
+					documentSha256,
+				});
 			const explorerBase = defaultChain.blockExplorers?.default?.url ?? null;
 			const signerIncentives = contracts?.FSFileRegistry?.read
 				? await fetchSignerIncentivesForCompliancePdf(
@@ -274,12 +304,14 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 					)
 				: undefined;
 			const bytes = await buildDocumentPlusCompliancePdf({
-				file: fileInfo as FileInfo,
+				bundle,
+				bundleHash,
+				exportId,
 				fileData: toViewFileResult(fileData),
 				chainName: defaultChain.name,
 				explorerBaseUrl: explorerBase,
-				exportedAtIso: new Date().toISOString(),
 				signerIncentives,
+				documentSha256,
 			});
 			const safe = file.pieceCid.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 48);
 			downloadPdfBytes(bytes, `filosign-document-with-record-${safe}`);
@@ -291,7 +323,13 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 		} finally {
 			setPdfExportBusy(false);
 		}
-	}, [contracts?.FSFileRegistry?.read, file?.pieceCid, fileData, fileInfo]);
+	}, [
+		complianceBundle,
+		contracts?.FSFileRegistry?.read,
+		file?.pieceCid,
+		fileData,
+		fileInfo,
+	]);
 
 	// Handle escape key to close
 	useEffect(() => {

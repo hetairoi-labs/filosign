@@ -1,6 +1,7 @@
 import { useFilosignContext } from "@filosign/react";
 import {
 	useAckFile,
+	useComplianceBundle,
 	useDocumentIncentive,
 	useFileInfo,
 	useSignDraft,
@@ -55,6 +56,7 @@ import {
 	buildDocumentPlusCompliancePdf,
 	downloadPdfBytes,
 	fetchSignerIncentivesForCompliancePdf,
+	sha256HexOfBytes,
 } from "@/src/lib/utils/compliance-pdf";
 
 const LazyPdfJsPreview = lazy(
@@ -146,6 +148,7 @@ export default function SignDocumentPage() {
 	const canSign = Boolean(signerAddress && file && !alreadySigned && !isSender);
 
 	const viewFile = useViewFile();
+	const complianceBundle = useComplianceBundle();
 	const signFile = useSignFile();
 
 	const signDraftPieceCid =
@@ -449,6 +452,14 @@ export default function SignDocumentPage() {
 		if (!file || !pieceCid) return;
 		setPdfExportBusy(true);
 		try {
+			const documentSha256 = fileData
+				? await sha256HexOfBytes(fileData.fileBytes)
+				: undefined;
+			const { bundle, bundleHash, exportId } =
+				await complianceBundle.mutateAsync({
+					pieceCid,
+					documentSha256,
+				});
 			const explorerBase = defaultChain.blockExplorers?.default?.url ?? null;
 			const signerIncentives = contracts?.FSFileRegistry?.read
 				? await fetchSignerIncentivesForCompliancePdf(
@@ -459,12 +470,20 @@ export default function SignDocumentPage() {
 					)
 				: undefined;
 			const bytes = await buildCompliancePdfOnly({
-				file,
-				fileData: fileData ?? null,
+				bundle,
+				bundleHash,
+				exportId,
 				chainName: defaultChain.name,
 				explorerBaseUrl: explorerBase,
-				exportedAtIso: new Date().toISOString(),
 				signerIncentives,
+				documentSha256,
+				decryptedDocumentMeta: fileData
+					? {
+							name: fileData.metadata.name,
+							mimeType: fileData.metadata.mimeType,
+							sizeBytes: fileData.fileBytes.length,
+						}
+					: null,
 			});
 			const safe = pieceCid.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 48);
 			downloadPdfBytes(bytes, `filosign-file-record-${safe}`);
@@ -476,7 +495,13 @@ export default function SignDocumentPage() {
 		} finally {
 			setPdfExportBusy(false);
 		}
-	}, [contracts?.FSFileRegistry?.read, file, fileData, pieceCid]);
+	}, [
+		complianceBundle,
+		contracts?.FSFileRegistry?.read,
+		file,
+		fileData,
+		pieceCid,
+	]);
 
 	const handleDownloadDocumentWithCompliancePdf = useCallback(async () => {
 		if (!file || !pieceCid || !fileData) {
@@ -485,6 +510,12 @@ export default function SignDocumentPage() {
 		}
 		setPdfExportBusy(true);
 		try {
+			const documentSha256 = await sha256HexOfBytes(fileData.fileBytes);
+			const { bundle, bundleHash, exportId } =
+				await complianceBundle.mutateAsync({
+					pieceCid,
+					documentSha256,
+				});
 			const explorerBase = defaultChain.blockExplorers?.default?.url ?? null;
 			const signerIncentives = contracts?.FSFileRegistry?.read
 				? await fetchSignerIncentivesForCompliancePdf(
@@ -495,12 +526,14 @@ export default function SignDocumentPage() {
 					)
 				: undefined;
 			const bytes = await buildDocumentPlusCompliancePdf({
-				file,
+				bundle,
+				bundleHash,
+				exportId,
 				fileData,
 				chainName: defaultChain.name,
 				explorerBaseUrl: explorerBase,
-				exportedAtIso: new Date().toISOString(),
 				signerIncentives,
+				documentSha256,
 			});
 			const safe = pieceCid.replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 48);
 			downloadPdfBytes(bytes, `filosign-document-with-record-${safe}`);
@@ -512,7 +545,13 @@ export default function SignDocumentPage() {
 		} finally {
 			setPdfExportBusy(false);
 		}
-	}, [contracts?.FSFileRegistry?.read, file, fileData, pieceCid]);
+	}, [
+		complianceBundle,
+		contracts?.FSFileRegistry?.read,
+		file,
+		fileData,
+		pieceCid,
+	]);
 
 	const formatAddress = (address: string) => {
 		return `${address.slice(0, 6)}...${address.slice(-4)}`;
