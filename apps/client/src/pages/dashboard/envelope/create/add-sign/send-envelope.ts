@@ -1,5 +1,5 @@
 import type { PlacementManifest } from "@filosign/shared";
-import { getAddress, type Address } from "viem";
+import { type Address, getAddress } from "viem";
 import type { StoredDocument } from "../types";
 import type { SignatureField } from "./mock";
 
@@ -44,10 +44,21 @@ export function buildPlacementManifestForDocument(args: {
 	signatureFields: SignatureField[];
 	docWidth: number;
 	docHeight: number;
+	/** Pixel size of field boxes on the authoring canvas (must match add-sign UI). */
+	fieldBox: { width: number; height: number };
 }): PlacementManifest {
-	const { docId, signersOrder, signatureFields, docWidth, docHeight } = args;
+	const {
+		docId,
+		signersOrder,
+		signatureFields,
+		docWidth,
+		docHeight,
+		fieldBox,
+	} = args;
 	const dw = Math.max(docWidth, 1);
 	const dh = Math.max(docHeight, 1);
+	const fw = Math.max(fieldBox.width, 1);
+	const fh = Math.max(fieldBox.height, 1);
 
 	if (signersOrder.length === 0) {
 		throw new Error("At least one signer is required for placement");
@@ -78,8 +89,8 @@ export function buildPlacementManifestForDocument(args: {
 			rect: {
 				x: clamp01(field.x / dw),
 				y: clamp01(field.y / dh),
-				width: clamp01(200 / dw),
-				height: clamp01(100 / dh),
+				width: clamp01(fw / dw),
+				height: clamp01(fh / dh),
 			},
 			assignedSigner: assigned,
 			required: field.required,
@@ -113,9 +124,7 @@ export async function loadDocumentFileBytes(
 		}
 		// URL-encoded fallback (not base64)
 		const decoded = decodeURIComponent(payload);
-		return new Uint8Array(
-			Array.from(decoded).map((c) => c.charCodeAt(0)),
-		);
+		return new Uint8Array(Array.from(decoded).map((c) => c.charCodeAt(0)));
 	}
 	// For non-data URLs, fetch is still allowed by CSP (http/https)
 	const response = await fetch(url);

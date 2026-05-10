@@ -58,15 +58,32 @@ export function PdfJsPreview({
 
 	const overlayWrap = Boolean(renderPageOverlay);
 
+	/**
+	 * Placement manifests normalize field rects against a fixed **width × maxHeight**
+	 * box (see add-sign `DocumentViewer` + `buildPlacementManifestForDocument`).
+	 * The PDF canvas is usually shorter than `maxHeight`, so the overlay must cover
+	 * the full placement grid — not just the page wrapper — or hotspots drift
+	 * (often visibly to the right / vertically) versus where the sender clicked.
+	 */
+	const pageStack = (
+		<div className="absolute inset-0">
+			<div className="absolute inset-0 flex items-start justify-center overflow-hidden">
+				<Page pageNumber={pageNumber} {...pageProps} />
+			</div>
+			{overlayWrap ? (
+				<div className="pointer-events-none absolute inset-0 z-20 [&_button]:pointer-events-auto">
+					{renderPageOverlay?.(pageNumber - 1)}
+				</div>
+			) : null}
+		</div>
+	);
+
 	return (
 		<div
-			className={cn(
-				"relative flex items-start justify-center overflow-hidden bg-white",
-				className,
-			)}
+			className={cn("relative overflow-hidden bg-white", className)}
 			style={{
 				width,
-				...(maxHeight == null ? {} : { maxHeight }),
+				...(maxHeight == null ? {} : { height: maxHeight, maxHeight }),
 			}}
 		>
 			{loadError ? (
@@ -90,14 +107,7 @@ export function PdfJsPreview({
 						</div>
 					}
 				>
-					{overlayWrap ? (
-						<div className="relative w-full">
-							<Page pageNumber={pageNumber} {...pageProps} />
-							{renderPageOverlay?.(pageNumber - 1)}
-						</div>
-					) : (
-						<Page pageNumber={pageNumber} {...pageProps} />
-					)}
+					{pageStack}
 				</Document>
 			)}
 		</div>

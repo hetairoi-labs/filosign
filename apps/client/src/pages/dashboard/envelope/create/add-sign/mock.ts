@@ -1,3 +1,14 @@
+/**
+ * Pixel size of field overlays on the add-sign canvas.
+ * Recipient overlays use normalized rects derived from these dimensions + placement box size.
+ */
+export function signatureFieldBoxCssPx(isMobile: boolean): {
+	width: number;
+	height: number;
+} {
+	return isMobile ? { width: 100, height: 60 } : { width: 148, height: 76 };
+}
+
 export type SignatureField = {
 	id: string;
 	type:

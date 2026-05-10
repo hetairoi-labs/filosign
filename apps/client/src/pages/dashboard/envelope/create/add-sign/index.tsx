@@ -15,15 +15,20 @@ import DocumentViewer, {
 	useDocumentDimensions,
 } from "./_components/DocumentViewer";
 import {
-	FieldPlacementDialog,
 	type FieldPlacementConfirmPayload,
+	FieldPlacementDialog,
 	type FieldPlacementSignerOption,
 } from "./_components/FieldPlacementDialog";
 import Header from "./_components/Header";
 import MobileSignatureToolbar from "./_components/MobileSignatureToolbar";
 import SignatureFieldsSidebar from "./_components/SignatureFieldsSidebar";
 import { useSignatureFields } from "./_components/use-signature-fields";
-import { type Document, fieldTypeConfigs, mockDocuments } from "./mock";
+import {
+	type Document,
+	fieldTypeConfigs,
+	mockDocuments,
+	signatureFieldBoxCssPx,
+} from "./mock";
 import {
 	buildPlacementManifestForDocument,
 	buildSignersAndViewersForDocument,
@@ -78,7 +83,12 @@ export default function AddSignaturePage() {
 		return map;
 	}, [createForm?.recipients, recipientProfilesMap]);
 
-	const { width: docWidth, height: docHeight } = useDocumentDimensions();
+	const {
+		width: docWidth,
+		height: docHeight,
+		isMobile,
+	} = useDocumentDimensions();
+	const fieldBoxCss = signatureFieldBoxCssPx(isMobile);
 	const [currentDocumentId, setCurrentDocumentId] = useState<string>("");
 	const [currentPage, setCurrentPage] = useState(1);
 	const [zoom, setZoom] = useState(100);
@@ -107,23 +117,24 @@ export default function AddSignaturePage() {
 		page: number;
 	} | null>(null);
 
-	const signerOptionsForPlacement = useMemo((): FieldPlacementSignerOption[] => {
-		if (!createForm?.recipients?.length) return [];
-		return createForm.recipients
-			.filter((r) => r.role === "signer")
-			.map((r) => {
-				const addr = getAddress(r.walletAddress as Address);
-				const name = r.name?.trim() || "Signer";
-				const email = r.email?.trim() || "";
-				const label = email ? `${name} · ${email}` : name;
-				return {
-					walletAddress: addr,
-					name,
-					email,
-					label,
-				};
-			});
-	}, [createForm?.recipients]);
+	const signerOptionsForPlacement =
+		useMemo((): FieldPlacementSignerOption[] => {
+			if (!createForm?.recipients?.length) return [];
+			return createForm.recipients
+				.filter((r) => r.role === "signer")
+				.map((r) => {
+					const addr = getAddress(r.walletAddress as Address);
+					const name = r.name?.trim() || "Signer";
+					const email = r.email?.trim() || "";
+					const label = email ? `${name} · ${email}` : name;
+					return {
+						walletAddress: addr,
+						name,
+						email,
+						label,
+					};
+				});
+		}, [createForm?.recipients]);
 
 	// Convert createForm documents to Document format
 	const documents: Document[] = createForm?.documents?.length
@@ -201,12 +212,7 @@ export default function AddSignaturePage() {
 				},
 			);
 		},
-		[
-			placementCoords,
-			pendingFieldType,
-			currentDocumentId,
-			placeField,
-		],
+		[placementCoords, pendingFieldType, currentDocumentId, placeField],
 	);
 
 	const placementFieldTypeLabel = useMemo(() => {
@@ -297,6 +303,7 @@ export default function AddSignaturePage() {
 				signatureFields,
 				docWidth,
 				docHeight,
+				fieldBox: fieldBoxCss,
 			});
 
 			const result = await sendFile.mutateAsync({

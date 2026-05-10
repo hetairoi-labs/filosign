@@ -28,7 +28,11 @@ import { Image } from "@/src/lib/components/custom/Image";
 import { Button } from "@/src/lib/components/ui/button";
 import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
 import { cn } from "@/src/lib/utils/utils";
-import type { Document, SignatureField } from "../mock";
+import {
+	type Document,
+	type SignatureField,
+	signatureFieldBoxCssPx,
+} from "../mock";
 
 function fieldSignerAriaSnippet(field: SignatureField): string {
 	const name = field.assignedSignerName.trim() || "Signer";
@@ -108,6 +112,8 @@ export default function DocumentViewer({
 		margin,
 		isMobile,
 	} = useDocumentDimensions();
+	const { width: fieldWidth, height: fieldHeight } =
+		signatureFieldBoxCssPx(isMobile);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const documentRef = useRef<HTMLDivElement>(null);
 	const dragDataRef = useRef({
@@ -317,9 +323,7 @@ export default function DocumentViewer({
 							onClick={() => {
 								setPdfPageNumber((p) => {
 									const n =
-										pdfNumPages == null
-											? p + 1
-											: Math.min(pdfNumPages, p + 1);
+										pdfNumPages == null ? p + 1 : Math.min(pdfNumPages, p + 1);
 									onPdfPageChange?.(n);
 									return n;
 								});
@@ -433,8 +437,8 @@ export default function DocumentViewer({
 									{isPlacingField && (
 										<div className="absolute inset-0 border-2 border-dashed border-secondary/50 bg-secondary/20 pointer-events-none">
 											<div className="absolute top-2 left-2 max-w-[min(100%,18rem)] rounded bg-secondary px-2 py-1 text-xs text-primary">
-												Click to place — choose signer and required/optional
-												in the dialog
+												Click to place — choose signer and required/optional in
+												the dialog
 											</div>
 										</div>
 									)}
@@ -465,8 +469,8 @@ export default function DocumentViewer({
 									{isPlacingField && (
 										<div className="absolute inset-0 border-2 border-dashed border-secondary/50 bg-secondary/20 pointer-events-none z-20">
 											<div className="absolute top-2 left-2 max-w-[min(100%,18rem)] rounded bg-secondary px-2 py-1 text-xs text-primary">
-												Click to place — choose signer and required/optional
-												in the dialog
+												Click to place — choose signer and required/optional in
+												the dialog
 											</div>
 										</div>
 									)}
@@ -480,10 +484,6 @@ export default function DocumentViewer({
 
 						{/* Signature Fields */}
 						{signatureFields.map((field) => {
-							// Responsive signature box dimensions (room for name + email)
-							const fieldWidth = isMobile ? 100 : 148;
-							const fieldHeight = isMobile ? 60 : 76;
-
 							const constrainedX = Math.max(
 								margin,
 								Math.min(field.x, documentWidth - fieldWidth - margin),
@@ -540,7 +540,10 @@ export default function DocumentViewer({
 										</span>
 										<button
 											type="button"
-											className={cn("shrink-0 p-0", isMobile ? "w-3 h-3" : "w-4 h-4")}
+											className={cn(
+												"shrink-0 p-0",
+												isMobile ? "w-3 h-3" : "w-4 h-4",
+											)}
 											onClick={(e) => {
 												e.stopPropagation();
 												onFieldRemove(field.id);
