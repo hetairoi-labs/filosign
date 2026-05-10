@@ -1,11 +1,18 @@
 import {
 	useRecoverWithPhrase,
 	useRotatePin,
+	useSyncPrivyEmail,
 	useUserProfile,
 } from "@filosign/react/hooks";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
-import { useLinkAccount, usePrivy } from "@privy-io/react-auth";
-import { useEffect, useMemo, useState } from "react";
+import {
+	useIdentityToken,
+	useLinkAccount,
+	usePrivy,
+	useUpdateAccount,
+	useUser,
+} from "@privy-io/react-auth";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { ProfileForm } from "../types";
 import { profileSchema } from "../types";
@@ -13,7 +20,77 @@ import { useFileUpload } from "./use-file-upload";
 import { useSectionState } from "./use-section-state";
 
 export function useProfileSettings() {
-	const { user } = usePrivy();
+	const { ready, authenticated, user } = usePrivy();
+	const { refreshUser } = useUser();
+	const { identityToken } = useIdentityToken();
+	const syncPrivyEmail = useSyncPrivyEmail();
+
+	const [pendingBackendEmailSync, setPendingBackendEmailSync] =
+		useState(false);
+
+	const syncBackendEmailAfterPrivyChange = useCallback(async () => {
+		await refreshUser();
+		setPendingBackendEmailSync(true);
+	}, [refreshUser]);
+
+	const { updateEmail } = useUpdateAccount({
+		onSuccess: async ({ updateMethod }) => {
+			if (updateMethod !== "email") return;
+			await syncBackendEmailAfterPrivyChange();
+		},
+	});
+
+	const { linkEmail } = useLinkAccount({
+		onSuccess: async ({ linkMethod }) => {
+			if (linkMethod !== "email") return;
+			await syncBackendEmailAfterPrivyChange();
+		},
+	});
+
+	useEffect(() => {
+		if (!pendingBackendEmailSync || !identityToken) return;
+		setPendingBackendEmailSync(false);
+		syncPrivyEmail.mutate({ identityToken });
+	}, [pendingBackendEmailSync, identityToken, syncPrivyEmail]);
+
+	const hasPrivyEmailLogin =
+		Boolean(user?.email) ||
+		Boolean(user?.linkedAccounts?.some((a) => a.type === "email"));
+	const hasGoogleLogin =
+		Boolean(user?.google) ||
+		Boolean(
+			user?.linkedAccounts?.some((a) => a.type === "google_oauth"),
+		);
+
+	const startPrimaryEmailWithPrivy = useCallback(() => {
+		if (!ready || !authenticated || !user) return;
+		if (hasPrivyEmailLogin) {
+			updateEmail();
+			return;
+		}
+		if (hasGoogleLogin) {
+			linkEmail();
+			return;
+		}
+	}, [
+		authenticated,
+		hasGoogleLogin,
+		hasPrivyEmailLogin,
+		linkEmail,
+		ready,
+		updateEmail,
+		user,
+	]);
+
+	const primaryEmailActionDisabled =
+		!ready ||
+		!authenticated ||
+		!user ||
+		(!hasPrivyEmailLogin && !hasGoogleLogin);
+
+	const primaryEmailFlowPending =
+		pendingBackendEmailSync || syncPrivyEmail.isPending;
+
 	const walletAddress = user?.wallet?.address || "";
 	const userProfileQuery = useUserProfile();
 
@@ -76,8 +153,6 @@ export function useProfileSettings() {
 	const [phraseConfirmPin, setPhraseConfirmPin] = useState("");
 	const [phraseMessage, setPhraseMessage] = useState<string | null>(null);
 
-	useLinkAccount();
-
 	const canRotatePin =
 		currentPin.length >= 6 &&
 		currentPin.length <= 10 &&
@@ -94,6 +169,12 @@ export function useProfileSettings() {
 	return {
 		form,
 		personalSection,
+		startPrimaryEmailWithPrivy,
+		primaryEmailActionDisabled,
+		primaryEmailFlowPending,
+		primaryEmailUiMode: hasPrivyEmailLogin
+			? ("update" as const)
+			: ("link" as const),
 		profilePictureSection,
 		fileUpload,
 		rotatePin,

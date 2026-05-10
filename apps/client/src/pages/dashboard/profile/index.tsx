@@ -28,6 +28,10 @@ export default function ProfilePage() {
 	const {
 		form,
 		personalSection,
+		startPrimaryEmailWithPrivy,
+		primaryEmailActionDisabled,
+		primaryEmailFlowPending,
+		primaryEmailUiMode,
 		rotatePin,
 		recoverWithPhrase,
 		currentPin,
@@ -149,7 +153,16 @@ export default function ProfilePage() {
 							/> */}
 
 							{/* Personal Information */}
-							<PersonalInfoSection form={form} sectionState={personalSection} />
+							<PersonalInfoSection
+								form={form}
+								sectionState={personalSection}
+								primaryEmailWithPrivy={{
+									onPress: startPrimaryEmailWithPrivy,
+									disabled: primaryEmailActionDisabled,
+									pending: primaryEmailFlowPending,
+									mode: primaryEmailUiMode,
+								}}
+							/>
 							<Card>
 								<CardHeader>
 									<CardTitle>Change PIN</CardTitle>
