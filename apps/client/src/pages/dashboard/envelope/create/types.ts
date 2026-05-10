@@ -2,7 +2,7 @@ export type Recipient = {
 	name: string;
 	email: string;
 	walletAddress: string;
-	role: "signer" | "cc" | "approver";
+	role: "signer" | "viewer";
 	incentive?: {
 		token: string;
 		amount: string; // Stored as integer string of smallest unit (wei)

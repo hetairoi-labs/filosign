@@ -125,7 +125,7 @@ export function buildSignersAndViewersForDocument(args: {
 					docHeight,
 				),
 			});
-		} else if (recipient.role === "cc" || recipient.role === "approver") {
+		} else {
 			viewers.push({
 				address,
 				encryptionPublicKey,

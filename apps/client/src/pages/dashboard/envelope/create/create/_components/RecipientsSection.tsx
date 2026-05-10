@@ -3,6 +3,7 @@ import {
 	CaretDownIcon,
 	CheckIcon,
 	CoinsIcon,
+	TrashIcon,
 	UserIcon,
 	UsersIcon,
 	XIcon,
@@ -18,7 +19,7 @@ import {
 	isAddress,
 } from "viem";
 import { useAccount, useReadContract } from "wagmi";
-import { SUPPORTED_TOKENS } from "@/src/constants";
+import { erc20DisplayForChain, SUPPORTED_TOKENS } from "@/src/constants";
 import AddRecipientDialog from "@/src/lib/components/custom/AddRecipientDialog";
 import {
 	Avatar,
@@ -39,9 +40,14 @@ import {
 	CommandItem,
 	CommandList,
 } from "@/src/lib/components/ui/command";
+import { Input } from "@/src/lib/components/ui/input";
+import { Label } from "@/src/lib/components/ui/label";
 import {
 	Popover,
 	PopoverContent,
+	PopoverDescription,
+	PopoverHeader,
+	PopoverTitle,
 	PopoverTrigger,
 } from "@/src/lib/components/ui/popover";
 import {
@@ -52,8 +58,20 @@ import {
 	SelectValue,
 } from "@/src/lib/components/ui/select";
 import { cn } from "@/src/lib/utils/utils";
+import {
+	initialsFromName,
+	shortWallet,
+} from "@/src/pages/dashboard/connections/_components/contact-utils";
 import type { Recipient } from "../../types";
 import { useRecipients } from "./envelope-draft-context";
+
+/** Align with AddRecipientDialog (`labelClass` / `fieldClass`) */
+const FIELD_LABEL_CLASS = "text-xs font-normal text-muted-foreground";
+const FIELD_CONTROL_CLASS =
+	"h-9 border-border/60 bg-muted/5 text-sm text-foreground/90 shadow-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30";
+
+const CONNECTION_SEARCH_INPUT_GROUP_CLASS =
+	"h-9! rounded-md! border-border/60! bg-muted/5! shadow-none!";
 
 export default function RecipientsSection() {
 	const {
@@ -76,10 +94,12 @@ export default function RecipientsSection() {
 			const wallet = (person.walletAddress || "").toLowerCase();
 			const displayName = (person.displayName || "").toLowerCase();
 			const username = (person.username || "").toLowerCase();
+			const email = (person.email || "").toLowerCase();
 			return (
 				displayName.includes(query) ||
 				wallet.includes(query) ||
-				username.includes(query)
+				username.includes(query) ||
+				email.includes(query)
 			);
 		});
 	}, [acceptedPeople.data, searchQuery]);
@@ -94,6 +114,7 @@ export default function RecipientsSection() {
 		walletAddress: string;
 		displayName: string | null;
 		avatarUrl: string | null;
+		email: string | null;
 	}) => {
 		const normalized = getAddress(person.walletAddress);
 		if (existingAddresses.has(normalized.toLowerCase())) {
@@ -103,7 +124,7 @@ export default function RecipientsSection() {
 
 		const newRecipient: Recipient = {
 			name: person.displayName || "",
-			email: "",
+			email: person.email ?? "",
 			walletAddress: normalized,
 			role: "signer",
 		};
@@ -142,16 +163,14 @@ export default function RecipientsSection() {
 			<Collapsible open={isRecipientsOpen} onOpenChange={setIsRecipientsOpen}>
 				<CollapsibleTrigger
 					render={
-						<div className="flex items-center justify-between cursor-pointer hover:bg-accent/50 transition-colors p-2 -m-2 rounded-md group/add-recipients" />
+						<div className="group/add-recipients -m-2 flex cursor-pointer items-center justify-between rounded-lg p-2 transition-colors hover:bg-muted/40" />
 					}
 				>
-					<h4 className="flex items-center gap-3">
-						<UsersIcon
-							className={cn(
-								"size-5 text-muted-foreground transition-colors duration-200",
-							)}
-						/>
-						Add Recipients
+					<h4 className="flex items-center gap-3 text-base font-semibold tracking-tight text-foreground">
+						<span className="flex size-8 items-center justify-center rounded-md bg-muted/50 text-muted-foreground transition-colors group-hover/add-recipients:bg-muted/70">
+							<UsersIcon className="size-4" weight="regular" />
+						</span>
+						Add recipients
 					</h4>
 					<CaretDownIcon
 						className={cn(
@@ -163,21 +182,21 @@ export default function RecipientsSection() {
 				</CollapsibleTrigger>
 
 				<CollapsibleContent className="mt-6">
-					<div className="space-y-4">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center gap-2">
-								<p className="text-sm text-muted-foreground">
+					<div className="space-y-5">
+						<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+							<div className="min-w-0 space-y-1">
+								<p className="text-sm leading-relaxed text-muted-foreground">
 									Add recipients to send documents to
 								</p>
-								{recipients && recipients.length > 0 && (
-									<span className="text-sm bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+								{recipients && recipients.length > 0 ? (
+									<p className="text-xs text-muted-foreground/80">
 										{recipients.length} recipient
-										{recipients.length !== 1 ? "s" : ""}
-									</span>
-								)}
+										{recipients.length !== 1 ? "s" : ""} added
+									</p>
+								) : null}
 							</div>
 
-							<div className="flex items-center gap-2">
+							<div className="flex shrink-0 flex-wrap items-center gap-2">
 								<AddRecipientDialog
 									onSuccess={() => {
 										// Refresh accepted people list after adding
@@ -188,26 +207,73 @@ export default function RecipientsSection() {
 									acceptedPeople.data.people.length > 0 && (
 										<Popover
 											open={selectPopoverOpen}
-											onOpenChange={setSelectPopoverOpen}
+											onOpenChange={(open) => {
+												setSelectPopoverOpen(open);
+												if (!open) setSearchQuery("");
+											}}
 										>
 											<PopoverTrigger
-												render={<Button type="button" variant="outline" />}
-											>
-												<UserIcon className="size-4" />
-												<p className="hidden md:block">Your Recipients</p>
-											</PopoverTrigger>
-											<PopoverContent className="w-80 p-0 mt-2" align="end">
-												<Command>
-													<CommandInput
-														placeholder="Search recipients..."
-														value={searchQuery}
-														onValueChange={setSearchQuery}
+												render={
+													<Button
+														type="button"
+														variant="outline"
+														size="sm"
+														className="gap-1.5 border-border/60 bg-background text-foreground/90 shadow-none"
 													/>
-													<CommandList>
-														<CommandEmpty>
+												}
+											>
+												<UserIcon className="size-4" weight="regular" />
+												<span className="hidden md:inline">
+													Your connections
+												</span>
+											</PopoverTrigger>
+											<PopoverContent
+												className="w-[min(22rem,calc(100vw-2rem))] gap-0 overflow-hidden p-0"
+												align="end"
+												sideOffset={8}
+												initialFocus={(openType) =>
+													!(openType === "mouse" || openType === "pen")
+												}
+											>
+												<PopoverHeader className="gap-1 space-y-0 border-b border-border/50 bg-muted/20 px-5 py-4">
+													<PopoverTitle className="text-lg font-semibold tracking-tight text-foreground">
+														Add from connections
+													</PopoverTitle>
+													<PopoverDescription className="text-sm leading-relaxed text-muted-foreground">
+														Choose someone you&apos;re already connected with on
+														Filosign.
+													</PopoverDescription>
+												</PopoverHeader>
+
+												<Command
+													shouldFilter={false}
+													className="rounded-none border-0 bg-transparent p-0 shadow-none"
+												>
+													<div className="space-y-1.5 border-b border-border/40 px-5 py-4">
+														<Label
+															htmlFor="connections-search"
+															className={FIELD_LABEL_CLASS}
+														>
+															Search
+														</Label>
+														<CommandInput
+															id="connections-search"
+															placeholder="Name or email…"
+															value={searchQuery}
+															onValueChange={setSearchQuery}
+															wrapperClassName="p-0"
+															inputGroupClassName={
+																CONNECTION_SEARCH_INPUT_GROUP_CLASS
+															}
+															className="h-9 text-sm text-foreground/90 placeholder:text-muted-foreground/45"
+														/>
+													</div>
+
+													<CommandList className="max-h-[min(16rem,45vh)] px-2 py-2">
+														<CommandEmpty className="py-10 text-center text-sm text-muted-foreground">
 															{acceptedPeople.isLoading
-																? "Loading..."
-																: "No recipients found"}
+																? "Loading…"
+																: "No recipients match your search."}
 														</CommandEmpty>
 														{filteredConnections.map((person) => {
 															const normalized = getAddress(
@@ -215,39 +281,58 @@ export default function RecipientsSection() {
 															).toLowerCase();
 															const isSelected =
 																existingAddresses.has(normalized);
+															const emailVal = person.email?.trim() ?? "";
+															const primaryLabel =
+																person.displayName?.trim() ||
+																emailVal ||
+																shortWallet(person.walletAddress);
+															const secondaryLabel = emailVal
+																? primaryLabel === emailVal
+																	? null
+																	: emailVal
+																: "No email on profile";
 															return (
 																<CommandItem
 																	key={person.walletAddress}
+																	value={`${person.walletAddress} ${person.displayName ?? ""} ${person.email ?? ""}`}
 																	onSelect={() =>
 																		handleSelectConnection(person)
 																	}
 																	disabled={isSelected}
 																	className={cn(
+																		"my-0.5 rounded-lg border border-transparent px-3 py-2.5 transition-colors data-selected:border-border/50 data-selected:bg-muted/40",
 																		isSelected &&
-																			"opacity-50 cursor-not-allowed",
+																			"cursor-not-allowed opacity-50 data-selected:bg-transparent data-selected:border-transparent",
 																	)}
 																>
-																	<div className="flex items-center gap-3 w-full">
-																		<Avatar className="size-8">
-																			{person.avatarUrl && (
+																	<div className="flex min-w-0 flex-1 items-center gap-3">
+																		<Avatar className="size-9 shrink-0 ring-1 ring-border/50">
+																			{person.avatarUrl ? (
 																				<AvatarImage src={person.avatarUrl} />
-																			)}
-																			<AvatarFallback>
-																				<UserIcon className="size-4" />
+																			) : null}
+																			<AvatarFallback className="bg-muted/40 text-xs font-medium text-muted-foreground">
+																				{initialsFromName(
+																					person.displayName,
+																					person.walletAddress,
+																				)}
 																			</AvatarFallback>
 																		</Avatar>
-																		<div className="flex-1 min-w-0">
-																			<div className="font-medium text-sm truncate">
-																				{person.displayName ||
-																					`${person.walletAddress.slice(0, 6)}...${person.walletAddress.slice(-4)}`}
-																			</div>
-																			<div className="text-sm text-muted-foreground font-mono truncate">
-																				{person.walletAddress.slice(0, 10)}...
-																			</div>
+																		<div className="min-w-0 flex-1">
+																			<p className="truncate text-sm font-medium text-foreground/90">
+																				{primaryLabel}
+																			</p>
+																			{secondaryLabel !== null ? (
+																				<p className="truncate text-xs leading-relaxed text-muted-foreground">
+																					{secondaryLabel}
+																				</p>
+																			) : null}
 																		</div>
-																		{isSelected && (
-																			<CheckIcon className="size-4 text-primary" />
-																		)}
+																		{isSelected ? (
+																			<CheckIcon
+																				className="size-4 shrink-0 text-primary"
+																				weight="bold"
+																			/>
+																		) : null}
 																	</div>
 																</CommandItem>
 															);
@@ -262,62 +347,32 @@ export default function RecipientsSection() {
 
 						{!recipients || recipients.length === 0 ? (
 							<motion.div
-								className="border-2 border-primary/20 rounded-lg p-16 text-center transition-colors bg-muted/5 hover:border-muted-foreground/50"
-								transition={{ duration: 0.2 }}
+								className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-8 py-12 text-center"
+								initial={{ opacity: 0, y: 12 }}
+								animate={{ opacity: 1, y: 0 }}
+								transition={{
+									type: "spring",
+									stiffness: 230,
+									damping: 26,
+								}}
 							>
-								<motion.div
-									initial={{ opacity: 0, y: 20 }}
-									animate={{ opacity: 1, y: 0 }}
-									transition={{
-										type: "spring",
-										stiffness: 230,
-										damping: 25,
-										delay: 0.1,
-									}}
-									className="space-y-6"
-								>
-									<motion.div
-										className="flex justify-center"
-										initial={{ opacity: 0 }}
-										animate={{ opacity: 1 }}
-										transition={{
-											type: "spring",
-											stiffness: 230,
-											damping: 25,
-											delay: 0.2,
-										}}
-									>
-										<motion.div
-											className="p-6 rounded-full bg-muted/20"
-											transition={{
-												type: "spring",
-												stiffness: 230,
-												damping: 25,
-												duration: 0.3,
-											}}
-										>
-											<UsersIcon className="h-12 w-12 text-primary" />
-										</motion.div>
-									</motion.div>
-									<motion.div
-										className="space-y-4"
-										initial={{ opacity: 0, y: 10 }}
-										animate={{ opacity: 1, y: 0 }}
-										transition={{
-											type: "spring",
-											stiffness: 230,
-											damping: 25,
-											delay: 0.3,
-										}}
-									>
-										<p className="text-muted-foreground">
-											No recipients selected
-										</p>
-										<p className="text-sm text-muted-foreground">
-											Add recipients to send documents to
-										</p>
-									</motion.div>
-								</motion.div>
+								<div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-lg bg-muted/40 text-muted-foreground">
+									<UsersIcon className="size-6" weight="regular" />
+								</div>
+								<p className="text-sm font-medium text-foreground/90">
+									No recipients added
+								</p>
+								<p className="mt-1.5 text-xs leading-relaxed text-muted-foreground">
+									Use{" "}
+									<span className="font-medium text-foreground/80">
+										Add recipient
+									</span>{" "}
+									or{" "}
+									<span className="font-medium text-foreground/80">
+										Your connections
+									</span>{" "}
+									when available.
+								</p>
 							</motion.div>
 						) : (
 							<CompactRecipientList
@@ -327,16 +382,15 @@ export default function RecipientsSection() {
 							/>
 						)}
 
-						{/* Validation error */}
-						{error && isTouched && (
+						{error && isTouched ? (
 							<motion.p
-								initial={{ opacity: 0, y: -10 }}
+								initial={{ opacity: 0, y: -6 }}
 								animate={{ opacity: 1, y: 0 }}
-								className="text-sm text-destructive font-medium"
+								className="rounded-md border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm text-destructive"
 							>
 								{error}
 							</motion.p>
-						)}
+						) : null}
 					</div>
 				</CollapsibleContent>
 			</Collapsible>
@@ -358,14 +412,14 @@ function CompactRecipientList({
 }: CompactRecipientListProps) {
 	return (
 		<motion.div
-			className="space-y-2"
-			initial={{ opacity: 0, y: 20 }}
+			className="space-y-3"
+			initial={{ opacity: 0, y: 12 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{
 				type: "spring",
 				stiffness: 230,
-				damping: 25,
-				delay: 0.1,
+				damping: 26,
+				delay: 0.06,
 			}}
 		>
 			{recipients.map((recipient, index) => (
@@ -410,200 +464,314 @@ function CompactRecipientCard({
 
 	return (
 		<motion.div
-			className="rounded-lg border bg-background shadow-sm overflow-hidden"
-			initial={{ opacity: 0, scale: 0.95 }}
-			animate={{ opacity: 1, scale: 1 }}
+			className="overflow-hidden rounded-xl border border-border/60 bg-muted/5 shadow-none"
+			initial={{ opacity: 0, y: 8 }}
+			animate={{ opacity: 1, y: 0 }}
 			transition={{
 				type: "spring",
-				stiffness: 230,
-				damping: 25,
-				duration: 0.3,
+				stiffness: 260,
+				damping: 28,
 			}}
 		>
-			{/* Main row */}
-			<div className="flex items-start gap-4 p-4">
-				{/* Avatar */}
-				<div className="shrink-0">
-					<div className="size-11 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10 flex items-center justify-center">
-						<UserIcon className="size-5 text-primary" weight="duotone" />
-					</div>
-				</div>
+			<div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start">
+				<Avatar className="size-11 shrink-0 ring-1 ring-border/50">
+					<AvatarFallback className="bg-muted/40 text-xs font-medium text-muted-foreground">
+						{initialsFromName(recipient.name, recipient.walletAddress)}
+					</AvatarFallback>
+				</Avatar>
 
-				{/* Info column */}
-				<div className="flex-1 min-w-0 space-y-1.5">
-					{/* Name row */}
-					<div className="flex items-center gap-2">
-						<span className="font-semibold text-sm text-foreground">
-							{recipient.name || "Unnamed"}
-						</span>
-						{recipient.incentive?.token && (
-							<Badge
-								variant="secondary"
-								className="text-[10px] h-5 px-2 font-medium"
+				<div className="min-w-0 flex-1 space-y-3">
+					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+						<div className="min-w-0 space-y-1">
+							<div className="flex flex-wrap items-center gap-2">
+								<p className="truncate text-base font-semibold tracking-tight text-foreground/90">
+									{recipient.name?.trim() || "Unnamed recipient"}
+								</p>
+								{recipient.incentive?.token ? (
+									<Badge
+										variant="secondary"
+										className="h-5 gap-1 border border-border/50 bg-muted/40 px-2 text-[10px] font-medium text-foreground/85"
+									>
+										<CoinsIcon className="size-3" weight="fill" />
+										{recipient.incentive.amount || "0"} {tokenSymbol}
+									</Badge>
+								) : null}
+							</div>
+							{recipient.email?.trim() ? (
+								<p className="truncate text-sm font-medium leading-relaxed text-foreground/85">
+									{recipient.email}
+								</p>
+							) : (
+								<p className="text-sm leading-relaxed text-muted-foreground/70">
+									No email on envelope
+								</p>
+							)}
+						</div>
+
+						<div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="gap-1.5 border-border/60 shadow-none"
+								onClick={() => setShowIncentive(!showIncentive)}
 							>
-								<CoinsIcon className="size-3" weight="fill" />
-								{recipient.incentive.amount || "0"} {tokenSymbol}
-							</Badge>
-						)}
+								{showIncentive ? (
+									<>
+										<XIcon className="size-3.5" weight="bold" />
+										Hide incentive
+									</>
+								) : (
+									<>
+										<CoinsIcon className="size-3.5" weight="regular" />
+										Add incentive
+									</>
+								)}
+							</Button>
+							<Button
+								type="button"
+								variant="ghost"
+								size="sm"
+								className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+								onClick={() => onRemove(index)}
+							>
+								Remove
+							</Button>
+						</div>
 					</div>
 
-					{/* Wallet address */}
-					<div className="text-sm font-mono bg-muted/20 rounded-sm px-2 py-1 my-2 inline-block">
-						{recipient.walletAddress}
+					<div className="border-t border-border/40 pt-3">
+						<div className="flex max-w-xs flex-col gap-1.5">
+							<Label
+								htmlFor={`recipient-role-${index}`}
+								className={FIELD_LABEL_CLASS}
+							>
+								Role
+							</Label>
+							<Select
+								value={recipient.role}
+								onValueChange={(val) =>
+									onUpdate(index, { role: val as Recipient["role"] })
+								}
+							>
+								<SelectTrigger
+									id={`recipient-role-${index}`}
+									className={cn(FIELD_CONTROL_CLASS, "w-full")}
+								>
+									<SelectValue placeholder="Role" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="signer">Signer</SelectItem>
+									<SelectItem value="viewer">Viewer</SelectItem>
+								</SelectContent>
+							</Select>
+						</div>
 					</div>
-
-					{/* Email */}
-					{recipient.email && (
-						<div className="text-sm text-foreground/70">{recipient.email}</div>
-					)}
-
-					{/* Role selector row */}
-					<div className="flex items-center gap-2 pt-1">
-						<span className="text-sm text-foreground/60">Role:</span>
-						<Select
-							value={recipient.role}
-							onValueChange={(val) =>
-								onUpdate(index, { role: val as Recipient["role"] })
-							}
-						>
-							<SelectTrigger className="h-7 w-32 text-sm px-2">
-								<SelectValue />
-							</SelectTrigger>
-							<SelectContent>
-								<SelectItem value="signer">Signer</SelectItem>
-								<SelectItem value="cc">Viewer</SelectItem>
-							</SelectContent>
-						</Select>
-					</div>
-				</div>
-
-				{/* Actions */}
-				<div className="shrink-0 flex self-center gap-2">
-					<Button
-						type="button"
-						variant="outline"
-						size="sm"
-						className="h-9 text-sm px-3 font-medium"
-						onClick={() => setShowIncentive(!showIncentive)}
-					>
-						{showIncentive ? (
-							<>
-								<XIcon className="size-3.5 mr-1.5" />
-								Hide
-							</>
-						) : (
-							<>
-								<CoinsIcon className="size-3.5 mr-1.5" />
-								Add Incentive
-							</>
-						)}
-					</Button>
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						className="h-8 text-sm px-3 text-destructive hover:text-destructive hover:bg-destructive/10"
-						onClick={() => onRemove(index)}
-					>
-						Remove
-					</Button>
 				</div>
 			</div>
 
-			{/* Collapsible incentive section */}
-			{showIncentive && (
+			{showIncentive ? (
 				<IncentiveSection
+					index={index}
 					recipient={recipient}
 					onUpdate={(updates) => onUpdate(index, updates)}
 					onClose={() => setShowIncentive(false)}
 				/>
-			)}
+			) : null}
 		</motion.div>
 	);
 }
 
 // Incentive section with token selection and amount
 interface IncentiveSectionProps {
+	index: number;
 	recipient: Recipient;
 	onUpdate: (updates: Partial<Recipient>) => void;
 	onClose: () => void;
 }
 
 function IncentiveSection({
+	index,
 	recipient,
 	onUpdate,
 	onClose,
 }: IncentiveSectionProps) {
+	const baseId = `recipient-${index}-incentive`;
+
+	const selectedIncentiveToken = useMemo(() => {
+		const addr = recipient.incentive?.token;
+		if (!addr) return null;
+		return (
+			SUPPORTED_TOKENS.find(
+				(t) => t.address.toLowerCase() === addr.toLowerCase(),
+			) ?? null
+		);
+	}, [recipient.incentive?.token]);
+
+	const hasIncentiveValues =
+		Boolean(recipient.incentive?.token?.trim()) ||
+		Boolean(recipient.incentive?.amount?.trim());
+
 	return (
-		<div className="border-t border-border/60 px-3 py-3">
-			<div className="flex items-center justify-between mb-2">
-				<span className="text-sm font-medium text-muted-foreground">
-					Attach Incentive
-				</span>
-				<Button
-					type="button"
-					variant="ghost"
-					size="sm"
-					className="h-6 w-6 p-0"
-					onClick={onClose}
-				>
-					<XIcon className="size-3" />
-				</Button>
-			</div>
-			<div className="grid grid-cols-2 gap-3">
-				<Select
-					value={recipient.incentive?.token || "none"}
-					onValueChange={(val) => {
-						if (val === "none") {
+		<div className="border-t border-border/50 bg-muted/10 px-5 py-4">
+			<div className="mb-4 flex items-start justify-between gap-3">
+				<div className="space-y-1">
+					<p className="text-sm font-medium text-foreground/90">
+						Attach incentive
+					</p>
+					<p className="text-xs leading-relaxed text-muted-foreground">
+						Optional reward for this recipient when they complete signing.
+					</p>
+				</div>
+				<div className="flex shrink-0 items-center gap-0.5">
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						disabled={!hasIncentiveValues}
+						className="size-8 shrink-0 p-0 text-muted-foreground hover:text-destructive disabled:pointer-events-none disabled:opacity-40"
+						aria-label="Clear incentive"
+						title="Clear incentive"
+						onClick={() =>
 							onUpdate({
 								incentive: { token: "", amount: "" },
-							});
-						} else if (val && isAddress(val)) {
-							onUpdate({
-								incentive: {
-									token: getAddress(val),
-									amount: recipient.incentive?.amount || "",
-								},
-							});
+							})
 						}
-					}}
-				>
-					<SelectTrigger className="h-8 text-sm">
-						<SelectValue placeholder="Select token" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="none">None</SelectItem>
-						{SUPPORTED_TOKENS.map((token) => (
-							<SelectItem key={token.address} value={token.address}>
-								<div className="flex items-center gap-2">
-									<img src={token.icon} alt={token.name} className="size-4" />
-									<span className="text-sm">{token.symbol}</span>
-								</div>
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				<input
-					type="number"
-					value={recipient.incentive?.amount || ""}
-					onChange={(e) =>
-						onUpdate({
-							incentive: {
-								token: recipient.incentive?.token || "",
-								amount: e.target.value,
-							},
-						})
-					}
-					placeholder="Amount"
-					className="h-8 text-sm px-3 rounded-md border border-input bg-background"
-					step="any"
-				/>
+					>
+						<TrashIcon className="size-4" weight="regular" />
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="size-8 shrink-0 p-0 text-muted-foreground hover:text-foreground"
+						aria-label="Close incentive section"
+						title="Close"
+						onClick={onClose}
+					>
+						<XIcon className="size-4" weight="bold" />
+					</Button>
+				</div>
 			</div>
 
-			{/* Token warning and balance checker */}
-			{recipient.incentive?.token && (
-				<div className="mt-3 p-2.5 bg-background rounded-md border border-border/60">
-					<p className="text-[11px] text-destructive leading-snug mb-2">
+			<div className="mb-4 rounded-lg border border-border/50 bg-background px-3 py-2.5">
+				<p className={FIELD_LABEL_CLASS}>Recipient wallet</p>
+				<code
+					className="mt-1 block break-all font-mono text-xs leading-relaxed text-muted-foreground"
+					title={recipient.walletAddress}
+				>
+					{recipient.walletAddress}
+				</code>
+			</div>
+
+			<div className="grid gap-4 sm:grid-cols-2">
+				<div className="space-y-1.5">
+					<Label htmlFor={`${baseId}-token`} className={FIELD_LABEL_CLASS}>
+						Token
+					</Label>
+					<Select
+						value={recipient.incentive?.token || "none"}
+						onValueChange={(val) => {
+							if (val === "none") {
+								onUpdate({
+									incentive: { token: "", amount: "" },
+								});
+							} else if (val && isAddress(val)) {
+								onUpdate({
+									incentive: {
+										token: getAddress(val),
+										amount: recipient.incentive?.amount || "",
+									},
+								});
+							}
+						}}
+					>
+						<SelectTrigger
+							id={`${baseId}-token`}
+							className={cn(FIELD_CONTROL_CLASS, "w-full")}
+						>
+							{selectedIncentiveToken ? (
+								<span className="flex min-w-0 flex-1 items-center gap-2 text-left">
+									<img
+										src={selectedIncentiveToken.icon}
+										alt=""
+										className="size-4 shrink-0 rounded-sm"
+									/>
+									<span className="min-w-0 truncate text-sm">
+										<span className="font-medium text-foreground">
+											{selectedIncentiveToken.symbol}
+										</span>
+										<span className="text-muted-foreground">
+											{" "}
+											· {selectedIncentiveToken.name}
+										</span>
+									</span>
+								</span>
+							) : recipient.incentive?.token ? (
+								<span className="flex min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
+									{
+										erc20DisplayForChain(recipient.incentive.token as Address)
+											.label
+									}
+								</span>
+							) : (
+								<SelectValue placeholder="Select token" />
+							)}
+						</SelectTrigger>
+						<SelectContent>
+							<SelectItem value="none">None</SelectItem>
+							{SUPPORTED_TOKENS.map((token) => (
+								<SelectItem key={token.address} value={token.address}>
+									<span className="flex min-w-0 items-center gap-2">
+										<img
+											src={token.icon}
+											alt=""
+											className="size-4 shrink-0 rounded-sm"
+										/>
+										<span className="min-w-0 truncate">
+											<span className="font-medium">{token.symbol}</span>
+											<span className="text-muted-foreground">
+												{" "}
+												· {token.name}
+											</span>
+										</span>
+									</span>
+								</SelectItem>
+							))}
+						</SelectContent>
+					</Select>
+				</div>
+
+				<div className="space-y-1.5">
+					<Label htmlFor={`${baseId}-amount`} className={FIELD_LABEL_CLASS}>
+						Amount
+					</Label>
+					<Input
+						id={`${baseId}-amount`}
+						type="number"
+						inputMode="decimal"
+						value={recipient.incentive?.amount || ""}
+						onChange={(e) =>
+							onUpdate({
+								incentive: {
+									token: recipient.incentive?.token || "",
+									amount: e.target.value,
+								},
+							})
+						}
+						placeholder="0"
+						className={cn(
+							FIELD_CONTROL_CLASS,
+							"placeholder:text-muted-foreground/45",
+						)}
+						step="any"
+					/>
+				</div>
+			</div>
+
+			{recipient.incentive?.token ? (
+				<div className="mt-4 rounded-lg border border-border/60 bg-background p-3">
+					<p className="mb-2 text-[11px] leading-relaxed text-destructive">
 						You must hold enough tokens. They will be locked when sending.
 					</p>
 					{(() => {
@@ -643,7 +811,7 @@ function IncentiveSection({
 						);
 					})()}
 				</div>
-			)}
+			) : null}
 		</div>
 	);
 }
@@ -658,15 +826,13 @@ function TokenBalanceChecker({
 	symbol: string;
 }) {
 	const { address } = useAccount();
-	const { data, refetch, isFetching, error } = useReadContract({
+	const { data, refetch, isFetching } = useReadContract({
 		address: tokenAddress,
 		abi: erc20Abi,
 		functionName: "balanceOf",
 		args: address ? [address] : undefined,
 		query: { enabled: false },
 	});
-
-	console.log(error);
 
 	const [hasChecked, setHasChecked] = useState(false);
 
@@ -676,26 +842,26 @@ function TokenBalanceChecker({
 	};
 
 	return (
-		<div className="flex items-center gap-3">
+		<div className="flex flex-wrap items-center gap-3">
 			<Button
 				type="button"
 				variant="outline"
 				size="sm"
 				onClick={handleCheck}
 				disabled={isFetching || !address}
-				className="h-7 text-sm px-3 bg-background/50"
+				className="h-8 gap-1.5 border-border/60 px-3 text-sm shadow-none"
 			>
-				{isFetching ? "Checking..." : "Check Balance"}
+				{isFetching ? "Checking…" : "Check balance"}
 			</Button>
-			{hasChecked && !isFetching && data !== undefined && (
-				<span className="text-sm font-medium">
-					<span className="text-muted-foreground mr-1">Balance:</span>
+			{hasChecked && !isFetching && data !== undefined ? (
+				<span className="text-sm font-medium text-foreground/90">
+					<span className="mr-1 text-muted-foreground">Balance:</span>
 					{Number(formatUnits(data, decimals)).toLocaleString(undefined, {
 						maximumFractionDigits: 4,
 					})}{" "}
 					{symbol}
 				</span>
-			)}
+			) : null}
 		</div>
 	);
 }

@@ -30,7 +30,7 @@ export default function DocumentsSection() {
 	} = useDocumentUpload();
 	const [isDocumentsOpen, setIsDocumentsOpen] = useState(true);
 	const [isDragOver, setIsDragOver] = useState(false);
-	const [viewMode, setViewMode] = useState<"list" | "grid">("grid");
+	const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 	const [isViewSwitching, setIsViewSwitching] = useState(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const [unsupportedFiles, setUnsupportedFiles] = useState<string[]>([]);
@@ -295,16 +295,7 @@ export default function DocumentsSection() {
 								<h5 className="text-sm font-medium text-muted-foreground">
 									Uploaded Files ({documents.length})
 								</h5>
-								<div className="flex items-center gap-1 bg-muted/20 rounded-lg p-1">
-									<Button
-										type="button"
-										variant={viewMode === "grid" ? "default" : "ghost"}
-										size="sm"
-										onClick={() => handleViewModeChange("grid")}
-										className="h-7 w-7 p-0"
-									>
-										<GridFourIcon className="h-4 w-4" />
-									</Button>
+								<div className="flex items-center gap-1 bg-muted rounded-lg p-1">
 									<Button
 										type="button"
 										variant={viewMode === "list" ? "default" : "ghost"}
@@ -313,6 +304,15 @@ export default function DocumentsSection() {
 										className="h-7 w-7 p-0"
 									>
 										<ListIcon className="h-4 w-4" />
+									</Button>
+									<Button
+										type="button"
+										variant={viewMode === "grid" ? "default" : "ghost"}
+										size="sm"
+										onClick={() => handleViewModeChange("grid")}
+										className="h-7 w-7 p-0"
+									>
+										<GridFourIcon className="h-4 w-4" />
 									</Button>
 								</div>
 							</div>
