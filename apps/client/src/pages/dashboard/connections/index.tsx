@@ -6,7 +6,6 @@ import {
 	useReceivedRequests,
 	useRejectRequest,
 	useSendableTo,
-	useSentEmailInvites,
 	useSentRequests,
 } from "@filosign/react/hooks";
 import { MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
@@ -17,8 +16,8 @@ import AddRecipientDialog from "@/src/lib/components/custom/AddRecipientDialog";
 import { Image } from "@/src/lib/components/custom/Image";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
+import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
 import { Input } from "@/src/lib/components/ui/input";
-import { Loader } from "@/src/lib/components/ui/loader";
 import {
 	Tabs,
 	TabsContent,
@@ -109,6 +108,34 @@ function buildContacts(
 	});
 }
 
+type SharingRequestRow = {
+	id: string;
+	senderWallet: string;
+	recipientWallet: string;
+	message: string | null;
+	createdAt: string;
+};
+
+/** Incoming first; within each group, newest first. */
+function sortPendingRequestRows(
+	incoming: SharingRequestRow[],
+	outgoing: SharingRequestRow[],
+): { direction: "incoming" | "outgoing"; req: SharingRequestRow }[] {
+	const rows = [
+		...incoming.map((req) => ({ direction: "incoming" as const, req })),
+		...outgoing.map((req) => ({ direction: "outgoing" as const, req })),
+	];
+	rows.sort((a, b) => {
+		if (a.direction !== b.direction) {
+			return a.direction === "incoming" ? -1 : 1;
+		}
+		return (
+			new Date(b.req.createdAt).getTime() - new Date(a.req.createdAt).getTime()
+		);
+	});
+	return rows;
+}
+
 function invalidateSharingQueries(
 	queryClient: ReturnType<typeof useQueryClient>,
 ) {
@@ -149,7 +176,6 @@ export default function ConnectionsPage() {
 	const queryClient = useQueryClient();
 	const receivedRequests = useReceivedRequests();
 	const sentRequests = useSentRequests();
-	const emailInvites = useSentEmailInvites();
 	const acceptedPeople = useAcceptedPeople();
 	const sendableTo = useSendableTo();
 	const receivableFrom = useReceivableFrom();
@@ -182,13 +208,18 @@ export default function ConnectionsPage() {
 		sentRequests.data?.filter((r) => r.status === "PENDING") ?? [];
 
 	const pendingWalletCount = pendingIncoming.length + pendingOutgoing.length;
-	const pendingInviteCount =
-		emailInvites.data?.filter((i) => !i.accepted).length ?? 0;
+
+	const sortedPendingRows = useMemo(
+		() => sortPendingRequestRows(pendingIncoming, pendingOutgoing),
+		[pendingIncoming, pendingOutgoing],
+	);
 
 	const loadingContacts =
 		acceptedPeople.isLoading ||
 		sendableTo.isLoading ||
 		receivableFrom.isLoading;
+
+	const loadingRequests = receivedRequests.isLoading || sentRequests.isLoading;
 
 	const tableWrap = "overflow-x-auto";
 	const th =
@@ -207,7 +238,7 @@ export default function ConnectionsPage() {
 								Contacts
 							</h1>
 							<p className="text-sm text-muted-foreground">
-								Add by email, review requests, and invites.
+								Add someone by email or manage wallet connection requests.
 							</p>
 						</div>
 						<AddRecipientDialog
@@ -228,17 +259,13 @@ export default function ConnectionsPage() {
 						className="flex min-h-0 flex-1 flex-col gap-0"
 					>
 						<TabsList className="mb-5 h-9 w-fit max-w-full">
-							<TabsTrigger value="contacts">Contacts</TabsTrigger>
-							<TabsTrigger value="requests">
-								<span className="flex items-center gap-1.5">
-									Pending requests
-									<TabCount count={pendingWalletCount} />
-								</span>
+							<TabsTrigger value="contacts" className="min-w-32">
+								Contacts
 							</TabsTrigger>
-							<TabsTrigger value="invites">
+							<TabsTrigger value="requests" className="min-w-32">
 								<span className="flex items-center gap-1.5">
-									Sent invites
-									<TabCount count={pendingInviteCount} />
+									Requests
+									<TabCount count={pendingWalletCount} />
 								</span>
 							</TabsTrigger>
 						</TabsList>
@@ -267,7 +294,7 @@ export default function ConnectionsPage() {
 							<div className={tableWrap}>
 								{loadingContacts ? (
 									<div className="flex justify-center py-16">
-										<Loader />
+										<InlineLoader />
 									</div>
 								) : filteredContacts.length === 0 ? (
 									<EmptyHint
@@ -360,65 +387,75 @@ export default function ConnectionsPage() {
 						</TabsContent>
 
 						<TabsContent value="requests" className="mt-0 flex-1 outline-none">
-							<div className="space-y-10">
-								<div>
-									<h2 className="mb-3 text-xs font-medium text-muted-foreground">
-										Incoming
-									</h2>
-									<div className={tableWrap}>
-										{receivedRequests.isLoading ? (
-											<div className="flex justify-center py-16">
-												<Loader />
-											</div>
-										) : pendingIncoming.length === 0 ? (
-											<EmptyHint title="None pending." />
-										) : (
-											<table className="w-full min-w-[520px] border-collapse text-sm">
-												<thead>
-													<tr>
-														<th className={th}>From</th>
-														<th className={cn(th, "hidden md:table-cell")}>
-															Message
-														</th>
-														<th className={th}>Received</th>
-														<th className={cn(th, "text-right")}> </th>
-													</tr>
-												</thead>
-												<tbody>
-													{pendingIncoming.map((req) => (
-														<tr key={req.id} className={row}>
-															<td className={td}>
-																<div className="flex items-center gap-1.5">
-																	<span className="font-mono text-sm">
-																		{shortWallet(req.senderWallet)}
-																	</span>
-																	<WalletCopyButton
-																		address={req.senderWallet}
-																	/>
-																</div>
-																{req.message ? (
-																	<p className="mt-1 text-xs text-muted-foreground md:hidden">
-																		{req.message}
-																	</p>
-																) : null}
-															</td>
-															<td className={cn(td, "hidden md:table-cell")}>
-																<p className="max-w-sm text-muted-foreground">
-																	{req.message || "—"}
-																</p>
-															</td>
-															<td
-																className={cn(
-																	td,
-																	"whitespace-nowrap text-xs text-muted-foreground",
-																)}
+							<div className={tableWrap}>
+								{loadingRequests ? (
+									<div className="flex justify-center py-16">
+										<InlineLoader />
+									</div>
+								) : sortedPendingRows.length === 0 ? (
+									<EmptyHint title="No pending requests." />
+								) : (
+									<table className="w-full min-w-[560px] border-collapse text-sm">
+										<thead>
+											<tr>
+												<th className={th}>Direction</th>
+												<th className={th}>Wallet</th>
+												<th className={cn(th, "hidden md:table-cell")}>
+													Message
+												</th>
+												<th className={th}>Date</th>
+												<th className={cn(th, "text-right")}> </th>
+											</tr>
+										</thead>
+										<tbody>
+											{sortedPendingRows.map(({ direction, req }) => {
+												const counterparty =
+													direction === "incoming"
+														? req.senderWallet
+														: req.recipientWallet;
+												return (
+													<tr key={`${direction}-${req.id}`} className={row}>
+														<td className={td}>
+															<Badge
+																variant="secondary"
+																className="text-[10px] font-normal"
 															>
-																{new Date(req.createdAt).toLocaleDateString(
-																	undefined,
-																	{ dateStyle: "medium" },
-																)}
-															</td>
-															<td className={cn(td, "text-right")}>
+																{direction === "incoming"
+																	? "Incoming"
+																	: "Outgoing"}
+															</Badge>
+														</td>
+														<td className={td}>
+															<div className="flex items-center gap-1.5">
+																<span className="font-mono text-sm">
+																	{shortWallet(counterparty)}
+																</span>
+																<WalletCopyButton address={counterparty} />
+															</div>
+															{req.message ? (
+																<p className="mt-1 text-xs text-muted-foreground md:hidden">
+																	{req.message}
+																</p>
+															) : null}
+														</td>
+														<td className={cn(td, "hidden md:table-cell")}>
+															<p className="max-w-sm text-muted-foreground">
+																{req.message || "—"}
+															</p>
+														</td>
+														<td
+															className={cn(
+																td,
+																"whitespace-nowrap text-xs text-muted-foreground",
+															)}
+														>
+															{new Date(req.createdAt).toLocaleDateString(
+																undefined,
+																{ dateStyle: "medium" },
+															)}
+														</td>
+														<td className={cn(td, "text-right")}>
+															{direction === "incoming" ? (
 																<div className="flex justify-end gap-2">
 																	<Button
 																		type="button"
@@ -447,73 +484,7 @@ export default function ConnectionsPage() {
 																		Accept
 																	</Button>
 																</div>
-															</td>
-														</tr>
-													))}
-												</tbody>
-											</table>
-										)}
-									</div>
-								</div>
-
-								<div>
-									<h2 className="mb-3 text-xs font-medium text-muted-foreground">
-										Outgoing
-									</h2>
-									<div className={tableWrap}>
-										{sentRequests.isLoading ? (
-											<div className="flex justify-center py-16">
-												<Loader />
-											</div>
-										) : pendingOutgoing.length === 0 ? (
-											<EmptyHint title="None pending." />
-										) : (
-											<table className="w-full min-w-[480px] border-collapse text-sm">
-												<thead>
-													<tr>
-														<th className={th}>To</th>
-														<th className={cn(th, "hidden md:table-cell")}>
-															Message
-														</th>
-														<th className={th}>Sent</th>
-														<th className={cn(th, "text-right")}> </th>
-													</tr>
-												</thead>
-												<tbody>
-													{pendingOutgoing.map((req) => (
-														<tr key={req.id} className={row}>
-															<td className={td}>
-																<div className="flex items-center gap-1.5">
-																	<span className="font-mono text-sm">
-																		{shortWallet(req.recipientWallet)}
-																	</span>
-																	<WalletCopyButton
-																		address={req.recipientWallet}
-																	/>
-																</div>
-																{req.message ? (
-																	<p className="mt-1 text-xs text-muted-foreground md:hidden">
-																		{req.message}
-																	</p>
-																) : null}
-															</td>
-															<td className={cn(td, "hidden md:table-cell")}>
-																<p className="max-w-sm text-muted-foreground">
-																	{req.message || "—"}
-																</p>
-															</td>
-															<td
-																className={cn(
-																	td,
-																	"whitespace-nowrap text-xs text-muted-foreground",
-																)}
-															>
-																{new Date(req.createdAt).toLocaleDateString(
-																	undefined,
-																	{ dateStyle: "medium" },
-																)}
-															</td>
-															<td className={cn(td, "text-right")}>
+															) : (
 																<Button
 																	type="button"
 																	size="sm"
@@ -526,87 +497,11 @@ export default function ConnectionsPage() {
 																>
 																	Cancel
 																</Button>
-															</td>
-														</tr>
-													))}
-												</tbody>
-											</table>
-										)}
-									</div>
-								</div>
-							</div>
-						</TabsContent>
-
-						<TabsContent value="invites" className="mt-0 flex-1 outline-none">
-							<div className={tableWrap}>
-								{emailInvites.isLoading ? (
-									<div className="flex justify-center py-16">
-										<Loader />
-									</div>
-								) : !emailInvites.data?.length ? (
-									<EmptyHint title="No email invites sent yet." />
-								) : (
-									<table className="w-full min-w-[480px] border-collapse text-sm">
-										<thead>
-											<tr>
-												<th className={th}>Email</th>
-												<th className={cn(th, "hidden md:table-cell")}>
-													Message
-												</th>
-												<th className={th}>Sent</th>
-												<th className={th}>Status</th>
-											</tr>
-										</thead>
-										<tbody>
-											{emailInvites.data.map((inv) => (
-												<tr key={inv.id} className={row}>
-													<td className={td}>
-														<span className="font-medium">
-															{inv.inviteeEmail}
-														</span>
-														{inv.message ? (
-															<p className="mt-1 text-xs text-muted-foreground md:hidden">
-																{inv.message}
-															</p>
-														) : null}
-													</td>
-													<td className={cn(td, "hidden md:table-cell")}>
-														<p className="max-w-sm text-muted-foreground">
-															{inv.message || "—"}
-														</p>
-													</td>
-													<td
-														className={cn(
-															td,
-															"whitespace-nowrap text-xs text-muted-foreground",
-														)}
-													>
-														{new Date(inv.createdAt).toLocaleDateString(
-															undefined,
-															{
-																dateStyle: "medium",
-															},
-														)}
-													</td>
-													<td className={td}>
-														{inv.accepted ? (
-															<Badge
-																variant="secondary"
-																className="font-normal"
-															>
-																Joined
-															</Badge>
-														) : (
-															<Badge
-																variant="secondary"
-																className="font-normal"
-															>
-																Pending
-															</Badge>
-														)}
-													</td>
-												</tr>
-											))}
+															)}
+														</td>
+													</tr>
+												);
+											})}
 										</tbody>
 									</table>
 								)}

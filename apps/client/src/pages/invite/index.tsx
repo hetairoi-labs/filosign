@@ -12,6 +12,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
+import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
 import { Loader } from "@/src/lib/components/ui/loader";
 import { logger } from "@/src/lib/utils/logger";
 import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
@@ -117,11 +118,7 @@ export default function InvitePage() {
 	};
 
 	if (isLoading || !ready) {
-		return (
-			<div className="min-h-screen flex items-center justify-center bg-background">
-				<Loader />
-			</div>
-		);
+		return <Loader />;
 	}
 
 	return (
@@ -145,13 +142,13 @@ export default function InvitePage() {
 							</p>
 						</div>
 					) : isClaiming ? (
-						<div className="space-y-4">
-							<Loader />
-							<p className="text-muted-foreground">Accepting invite...</p>
+						<div className="flex flex-col items-center gap-3">
+							<InlineLoader size="lg" />
+							<p className="text-muted-foreground">Accepting invite…</p>
 						</div>
 					) : authenticated && isRegistered.isPending ? (
-						<div className="space-y-4">
-							<Loader />
+						<div className="flex flex-col items-center gap-3">
+							<InlineLoader size="lg" />
 							<p className="text-muted-foreground">Checking your account…</p>
 						</div>
 					) : authenticated && isRegistered.data === false ? (
@@ -202,9 +199,9 @@ export default function InvitePage() {
 							<OnboardingSwitchAccountLink />
 						</div>
 					) : authenticated && isRegistered.data === true && !claimSuccess ? (
-						<div className="space-y-4">
-							<Loader />
-							<p className="text-muted-foreground">Accepting invite...</p>
+						<div className="flex flex-col items-center gap-3">
+							<InlineLoader size="lg" />
+							<p className="text-muted-foreground">Accepting invite…</p>
 						</div>
 					) : (
 						<div className="space-y-6">

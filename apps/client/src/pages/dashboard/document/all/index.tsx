@@ -10,7 +10,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { Button } from "@/src/lib/components/ui/button";
-import { Loader } from "@/src/lib/components/ui/loader";
+import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
 import {
 	Select,
 	SelectContent,
@@ -228,7 +228,12 @@ export default function DocumentAllPage() {
 						transition={{ duration: 0.2, delay: 0.3 }}
 					>
 						{sentFiles.isLoading || receivedFiles.isLoading ? (
-							<Loader text="Loading documents..." className="min-h-0 flex-1" />
+							<div className="flex flex-1 flex-col items-center justify-center gap-2 py-24">
+								<InlineLoader size="lg" />
+								<p className="text-sm text-muted-foreground">
+									Loading documents…
+								</p>
+							</div>
 						) : allFiles.length === 0 ? (
 							<div className="flex min-h-0 flex-1 flex-col items-center justify-center">
 								<motion.div

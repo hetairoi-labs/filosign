@@ -28,7 +28,7 @@ import {
 	fetchSignerIncentivesForCompliancePdf,
 } from "@/src/lib/utils/compliance-pdf";
 import { Button } from "../ui/button";
-import { Loader } from "../ui/loader";
+import { InlineLoader } from "../ui/inline-loader";
 
 interface FileObject {
 	pieceCid: string;
@@ -622,12 +622,11 @@ export function FileViewer({ file, open, onOpenChange }: FileViewerProps) {
 					className="overflow-auto bg-transparent flex items-center justify-center px-4 py-4 @md:px-8 @md:py-8 flex-1"
 				>
 					{(fileLoading || viewFile.isPending) && (
-						<div className="flex items-center justify-center w-full h-full">
-							<Loader
-								text={
-									fileLoading ? "Preparing document..." : "Loading document..."
-								}
-							/>
+						<div className="flex h-full w-full flex-col items-center justify-center gap-2">
+							<InlineLoader size="lg" />
+							<p className="text-sm text-muted-foreground">
+								{fileLoading ? "Preparing document…" : "Loading document…"}
+							</p>
 						</div>
 					)}
 					{!fileLoading &&

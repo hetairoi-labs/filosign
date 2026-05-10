@@ -1,12 +1,10 @@
 import { useRequestApproval } from "@filosign/react/hooks";
 import {
 	CheckCircleIcon,
-	EnvelopeIcon,
 	PlusIcon,
 	SpinnerGapIcon,
 } from "@phosphor-icons/react";
-import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/src/lib/components/ui/button";
 import {
@@ -31,6 +29,34 @@ interface AddRecipientDialogProps {
 
 type Step = "email" | "success";
 
+const labelClass = "text-xs font-normal text-muted-foreground";
+
+const fieldClass =
+	"h-9 border-border/60 bg-muted/5 text-sm text-foreground/90 placeholder:text-muted-foreground/45 shadow-none";
+
+const textareaClass =
+	"min-h-[4.5rem] resize-none border-border/60 bg-muted/5 py-2.5 text-sm text-foreground/90 placeholder:text-muted-foreground/45 shadow-none";
+
+function isValidEmail(email: string) {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function successHeading(result: {
+	alreadyApproved?: boolean;
+	alreadyRequested?: boolean;
+	alreadyInvited?: boolean;
+	exists?: boolean;
+	requested?: boolean;
+	invited?: boolean;
+}) {
+	if (result.alreadyApproved) return "Already connected";
+	if (result.alreadyRequested) return "Request pending";
+	if (result.alreadyInvited) return "Already invited";
+	if (result.exists && result.requested) return "Request sent";
+	if (result.invited && !result.alreadyInvited) return "Invite sent";
+	return "Done";
+}
+
 export default function AddRecipientDialog({
 	trigger,
 	onSuccess,
@@ -51,11 +77,19 @@ export default function AddRecipientDialog({
 	} | null>(null);
 
 	const sendShareRequest = useRequestApproval();
-	const navigate = useNavigate();
 
-	const isValidEmail = (email: string) => {
-		return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-	};
+	useEffect(() => {
+		if (!open) {
+			const id = window.setTimeout(() => {
+				setStep("email");
+				setEmail("");
+				setMessage("");
+				setResult(null);
+				setIsSubmitting(false);
+			}, 200);
+			return () => window.clearTimeout(id);
+		}
+	}, [open]);
 
 	const handleSubmit = async () => {
 		if (!isValidEmail(email.trim())) {
@@ -65,7 +99,6 @@ export default function AddRecipientDialog({
 
 		setIsSubmitting(true);
 
-		// Single API call handles both cases
 		const [data, error] = await safeAsync(
 			sendShareRequest.mutateAsync({
 				recipientEmail: email.trim(),
@@ -85,208 +118,191 @@ export default function AddRecipientDialog({
 		onRequestCompleted?.();
 	};
 
-	const handleClose = () => {
+	const handleDone = () => {
 		setOpen(false);
-		setTimeout(() => {
-			setStep("email");
-			setEmail("");
-			setMessage("");
-			setResult(null);
-		}, 200);
 		onSuccess?.();
 	};
 
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger render={trigger || <Button variant="primary" />}>
+			<DialogTrigger render={trigger || <Button variant="primary" size="sm" />}>
 				{!trigger && (
 					<>
-						<PlusIcon className="w-4 h-4" />
-						Add Recipient
+						<PlusIcon className="size-4" weight="bold" />
+						Add recipient
 					</>
 				)}
 			</DialogTrigger>
 
-			<DialogContent className="sm:max-w-[425px]">
-				{step === "email" && (
-					<>
-						<DialogHeader>
-							<DialogTitle>Add Recipient</DialogTitle>
-							<DialogDescription>
-								Enter their email address. We&apos;ll handle the rest - connect
-								if they&apos;re on Filosign, or invite them to join.
+			<DialogContent
+				className="gap-0 overflow-hidden p-0 sm:max-w-md"
+				showCloseButton
+			>
+				<div className="border-b border-border/50 bg-muted/20 px-6 py-5">
+					<DialogHeader className="gap-1 space-y-0">
+						<DialogTitle className="text-xl">
+							{step === "email"
+								? "Add recipient"
+								: successHeading(result ?? {})}
+						</DialogTitle>
+						{step === "email" ? (
+							<DialogDescription className="text-sm leading-relaxed">
+								We&apos;ll connect them if they already use Filosign, or send an
+								email invite otherwise.
 							</DialogDescription>
-						</DialogHeader>
+						) : (
+							<DialogDescription className="sr-only">
+								Result of your invitation or connection request.
+							</DialogDescription>
+						)}
+					</DialogHeader>
+				</div>
 
-						<div className="space-y-4 py-4">
-							<div className="space-y-2">
-								<Label htmlFor="email" className="flex items-center gap-2">
-									<EnvelopeIcon className="w-4 h-4" />
-									Email Address
-								</Label>
-								<Input
-									id="email"
-									type="email"
-									placeholder="name@example.com"
-									value={email}
-									onChange={(e) => setEmail(e.target.value)}
-									onKeyDown={(e) => {
-										if (e.key === "Enter" && !isSubmitting) {
-											handleSubmit();
-										}
-									}}
-									autoFocus
-								/>
-							</div>
-
-							<div className="space-y-2">
-								<Label htmlFor="message">Message (Optional)</Label>
-								<Textarea
-									id="message"
-									placeholder="Hey, I want to send you some documents on Filosign..."
-									value={message}
-									onChange={(e) => setMessage(e.target.value)}
-									rows={3}
-								/>
-							</div>
+				{step === "email" && (
+					<div className="space-y-5 px-6 py-6">
+						<div className="space-y-1.5">
+							<Label htmlFor="add-recipient-email" className={labelClass}>
+								Email
+							</Label>
+							<Input
+								id="add-recipient-email"
+								type="email"
+								autoComplete="email"
+								placeholder="name@example.com"
+								value={email}
+								onChange={(e) => setEmail(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter" && !isSubmitting) {
+										void handleSubmit();
+									}
+								}}
+								className={fieldClass}
+								autoFocus
+							/>
 						</div>
 
-						<div className="flex justify-end gap-3">
+						<div className="space-y-1.5">
+							<Label htmlFor="add-recipient-message" className={labelClass}>
+								Message{" "}
+								<span className="font-normal text-muted-foreground/70">
+									(optional)
+								</span>
+							</Label>
+							<Textarea
+								id="add-recipient-message"
+								placeholder="Short note…"
+								value={message}
+								onChange={(e) => setMessage(e.target.value)}
+								rows={3}
+								className={textareaClass}
+							/>
+						</div>
+
+						<div className="flex justify-end gap-2 border-t border-border/50 pt-5">
 							<Button
+								type="button"
 								variant="outline"
+								size="sm"
+								className="text-muted-foreground hover:bg-muted/60 hover:text-foreground"
 								onClick={() => setOpen(false)}
 								disabled={isSubmitting}
 							>
 								Cancel
 							</Button>
 							<Button
-								onClick={handleSubmit}
-								disabled={!isValidEmail(email.trim()) || isSubmitting}
+								type="button"
 								variant="primary"
+								size="sm"
+								onClick={() => void handleSubmit()}
+								disabled={!isValidEmail(email.trim()) || isSubmitting}
 							>
 								{isSubmitting ? (
 									<>
-										<SpinnerGapIcon className="w-4 h-4 animate-spin" />
-										Sending...
+										<SpinnerGapIcon className="size-4 animate-spin" />
+										Sending
 									</>
 								) : (
-									"Send Request"
+									"Send"
 								)}
 							</Button>
 						</div>
-					</>
+					</div>
 				)}
 
 				{step === "success" && result && (
-					<>
-						<DialogHeader>
-							<DialogTitle className="flex items-center gap-2">
-								<CheckCircleIcon className="w-6 h-6 text-green-500" />
-								{result.alreadyApproved
-									? "Already Connected"
-									: result.alreadyRequested
-										? "Request Pending"
-										: result.alreadyInvited
-											? "Already Invited"
-											: result.exists
-												? "Request Sent"
-												: "Invite Sent"}
-							</DialogTitle>
-						</DialogHeader>
-
-						<div className="py-2 space-y-4">
-							{/* Already connected */}
-							{result.alreadyApproved && (
-								<div className="text-center space-y-2">
+					<div className="space-y-5 px-6 py-6">
+						<div className="flex gap-3">
+							<span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md bg-muted/50 text-muted-foreground">
+								<CheckCircleIcon className="size-4" weight="regular" />
+							</span>
+							<div className="min-w-0 space-y-2 flex items-center text-sm leading-relaxed">
+								{result.alreadyApproved && (
+									<p className="text-foreground/90">
+										You&apos;re already connected with{" "}
+										<span className="font-medium text-foreground">{email}</span>
+										. You can send documents anytime.
+									</p>
+								)}
+								{result.alreadyRequested && (
 									<p className="text-muted-foreground">
-										You&apos;re already connected with <strong>{email}</strong>.
+										A request to{" "}
+										<span className="font-medium text-foreground/90">
+											{email}
+										</span>{" "}
+										is already pending.
 									</p>
-									<p className="text-sm text-muted-foreground">
-										You can send them documents right away.
-									</p>
-								</div>
-							)}
-
-							{/* Request already pending */}
-							{result.alreadyRequested && (
-								<div className="text-center space-y-2">
+								)}
+								{result.alreadyInvited && (
 									<p className="text-muted-foreground">
-										You&apos;ve already sent a request to{" "}
-										<strong>{email}</strong>.
+										<span className="font-medium text-foreground/90">
+											{email}
+										</span>{" "}
+										already has a pending invite.
 									</p>
-									<p className="text-sm text-muted-foreground">
-										Waiting for them to accept.
-									</p>
-								</div>
-							)}
-
-							{/* Already invited */}
-							{result.alreadyInvited && (
-								<div className="text-center space-y-2">
+								)}
+								{result.exists && result.requested && (
 									<p className="text-muted-foreground">
-										You&apos;ve already invited <strong>{email}</strong>.
-									</p>
-									<p className="text-sm text-muted-foreground">
-										They&apos;ll receive your invitation email.
-									</p>
-								</div>
-							)}
-
-							{/* User exists - request sent */}
-							{result.exists && result.requested && (
-								<div className="text-center space-y-2">
-									<p className="text-muted-foreground">
-										<strong>{email}</strong> is on Filosign!
-									</p>
-									<p className="text-sm text-muted-foreground">
-										They&apos;ll receive a notification to accept your
+										<span className="font-medium text-foreground/90">
+											{email}
+										</span>{" "}
+										is on Filosign. They&apos;ll be asked to accept your
 										connection request.
 									</p>
-								</div>
-							)}
-
-							{/* User doesn't exist - invite sent */}
-							{result.invited && !result.alreadyInvited && (
-								<div className="text-center space-y-2">
+								)}
+								{result.invited && !result.alreadyInvited && (
 									<p className="text-muted-foreground">
-										<strong>{email}</strong> invited!
+										We sent an invite to{" "}
+										<span className="font-medium text-foreground/90">
+											{email}
+										</span>
+										. They can join and connect with you from the email.
 									</p>
-									<p className="text-sm text-muted-foreground">
-										They&apos;ll receive an email invitation. Once they join,
-										you can send them documents.
-									</p>
-								</div>
-							)}
+								)}
 
-							{message && (
-								<div className="bg-muted/30 p-3 rounded-lg">
-									<p className="text-xs text-muted-foreground mb-1">
-										Your message:
-									</p>
-									<p className="text-sm italic">&quot;{message}&quot;</p>
-								</div>
-							)}
+								{message ? (
+									<div className="border-l-2 border-border/60 pl-3 pt-1">
+										<p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+											Your note
+										</p>
+										<p className="mt-1 text-sm text-foreground/85">
+											&ldquo;{message}&rdquo;
+										</p>
+									</div>
+								) : null}
+							</div>
 						</div>
 
-						<div className="flex justify-end gap-3">
-							{(result.requested ||
-								result.invited ||
-								result.alreadyInvited) && (
-								<Button
-									onClick={() => {
-										handleClose();
-										navigate({ to: "/dashboard" });
-									}}
-									variant="outline"
-								>
-									Back to Dashboard
-								</Button>
-							)}
-							<Button onClick={handleClose} variant="primary">
-								{result.alreadyApproved ? "Close" : "Done"}
+						<div className="flex justify-end border-t border-border/50 pt-5">
+							<Button
+								type="button"
+								variant="primary"
+								size="sm"
+								onClick={handleDone}
+							>
+								Done
 							</Button>
 						</div>
-					</>
+					</div>
 				)}
 			</DialogContent>
 		</Dialog>

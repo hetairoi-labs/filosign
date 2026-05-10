@@ -35,7 +35,7 @@ import {
 import { CopyButton } from "@/src/lib/components/custom/CopyButton";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
-import { Loader } from "@/src/lib/components/ui/loader";
+import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
 import { cn } from "@/src/lib/utils";
 import {
 	buildCompliancePdfOnly,
@@ -437,7 +437,12 @@ export default function SignDocumentPage() {
 
 	// Show loader while authenticating or loading file
 	if (fileLoading) {
-		return <Loader text="Preparing document..." />;
+		return (
+			<div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4">
+				<InlineLoader size="lg" />
+				<p className="text-sm text-muted-foreground">Preparing document…</p>
+			</div>
+		);
 	}
 
 	if (fileError || !file) {

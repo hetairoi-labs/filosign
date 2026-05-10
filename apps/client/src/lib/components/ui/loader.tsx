@@ -1,32 +1,27 @@
-import { SpinnerBallIcon } from "@phosphor-icons/react";
-import { cn } from "@/src/lib/utils/utils";
+import { cn } from "@/src/lib/utils/index";
 
-interface LoaderProps {
+import { InlineLoader, type InlineLoaderProps } from "./inline-loader";
+
+interface LoaderProps extends Pick<InlineLoaderProps, "size"> {
 	text?: string;
-	size?: "sm" | "md" | "lg";
 	className?: string;
 }
 
-export function Loader({
-	text = "Working on it...",
-	size = "md",
-	className,
-}: LoaderProps) {
-	const sizeClasses = {
-		sm: "size-4",
-		md: "size-8",
-		lg: "size-12",
-	};
-
+/**
+ * Full-viewport loading shell (bootstrap, route guards). Prefer {@link InlineLoader} inside sections.
+ */
+export function Loader({ text, size = "md", className }: LoaderProps) {
 	return (
 		<div
 			className={cn(
-				"flex items-center justify-center min-h-screen gap-2",
+				"flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4",
 				className,
 			)}
 		>
-			<SpinnerBallIcon className={cn("animate-spin", sizeClasses[size])} />
-			<h3 className="text-foreground">{text}</h3>
+			<InlineLoader size={size} />
+			{text ? (
+				<p className="text-center text-sm text-muted-foreground">{text}</p>
+			) : null}
 		</div>
 	);
 }
