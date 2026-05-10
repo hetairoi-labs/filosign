@@ -6,7 +6,7 @@
 		"db:purge:local": "bun run --env-file=.env.local scripts/clear-db.ts",
 		"db:purge:testnet": "bun run --env-file=.env.testnet scripts/clear-db.ts",
 		"db:push:local": "bunx --bun --env-file=.env.local drizzle-kit push",
-		"db:push:testnet": "bunx --bun .env-file=.env.testnet drizzle-kit push",
+		"db:push:testnet": "bunx --bun --env-file=.env.testnet drizzle-kit push",
 		"compile": "bun build --compile --minify --sourcemap --bytecode ./index.ts --outfile out/server",
 		"check": "bunx --bun biome check --write",
 		"check-types": "tsc --noEmit"

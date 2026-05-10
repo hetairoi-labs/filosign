@@ -9,8 +9,11 @@
 			"default": "./helpers/zod.ts"
 		}
 	},
-	"scripts": {},
+	"scripts": {
+		"test": "bun test"
+	},
 	"dependencies": {
+		"viem": "catalog:",
 		"@filosign/contracts": "workspace:*",
 		"@filosign/crypto-utils": "workspace:*",
 		"@web3-storage/data-segment": "catalog:",

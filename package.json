@@ -27,9 +27,12 @@
 		"client:typecheck": "bunx tsc -p apps/client/tsconfig.json --noEmit",
 		"client:verify": "bun run client:typecheck && bun run client:build && bun run --cwd apps/client lint",
 		"serloc": "./scripts/serloc.sh",
-		"db:purge": "bun run --cwd apps/server db:purge",
-		"db:push": "bun run --cwd apps/server db:push",
-		"purge:modules": "./scripts/purge.sh"
+		"db:purge:local": "bun run --cwd apps/server db:purge:local",
+		"db:purge:testnet": "bun run --cwd apps/server db:purge:testnet",
+		"db:push:local": "bun run --cwd apps/server db:push:local",
+		"db:push:testnet": "bun run --cwd apps/server db:push:testnet",
+		"purge:modules": "./scripts/purge.sh",
+		"test": "bun run --cwd packages/shared test"
 	},
 	"engines": {
 		"bun": ">=1.3.12",

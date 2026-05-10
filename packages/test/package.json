@@ -16,6 +16,7 @@
 		"@filosign/contracts": "workspace:*",
 		"@filosign/crypto-utils": "workspace:*",
 		"@filosign/react": "workspace:*",
+		"@filosign/shared": "workspace:*",
 		"@tanstack/react-query": "catalog:",
 		"dilithium-crystals-js": "catalog:",
 		"react": "catalog:",
