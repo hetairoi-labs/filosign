@@ -11,7 +11,7 @@ import {
 } from "@filosign/react/hooks";
 import { MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { type ComponentProps, useMemo, useState } from "react";
 import { type Address, getAddress } from "viem";
 
 import AddRecipientDialog from "@/src/lib/components/custom/AddRecipientDialog";
@@ -149,6 +149,25 @@ function invalidateSharingQueries(
 	queryClient.invalidateQueries({ queryKey: ["accepted-recipients"] });
 }
 
+type ConnectionsTab = "contacts" | "requests";
+
+/** Refetch data for the tab being opened (partial keys match nested query keys). */
+function invalidateQueriesForTab(
+	queryClient: ReturnType<typeof useQueryClient>,
+	tab: ConnectionsTab,
+) {
+	if (tab === "contacts") {
+		queryClient.invalidateQueries({ queryKey: ["accepted-people"] });
+		queryClient.invalidateQueries({ queryKey: ["accepted-recipients"] });
+		queryClient.invalidateQueries({ queryKey: ["sendable-to"] });
+		queryClient.invalidateQueries({ queryKey: ["receivable-from"] });
+		queryClient.invalidateQueries({ queryKey: ["fsQ-user-info-by-address"] });
+	} else {
+		queryClient.invalidateQueries({ queryKey: ["received-requests"] });
+		queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
+	}
+}
+
 function TabCount({ count }: { count: number }) {
 	if (count <= 0) return null;
 	return <span className="tabular-nums text-muted-foreground">({count})</span>;
@@ -175,6 +194,16 @@ function EmptyHint({
 
 export default function ConnectionsPage() {
 	const queryClient = useQueryClient();
+	const [activeTab, setActiveTab] = useState<ConnectionsTab>("contacts");
+
+	const handleTabChange: NonNullable<
+		ComponentProps<typeof Tabs>["onValueChange"]
+	> = (next) => {
+		const tab = next as ConnectionsTab;
+		setActiveTab(tab);
+		invalidateQueriesForTab(queryClient, tab);
+	};
+
 	const receivedRequests = useReceivedRequests();
 	const sentRequests = useSentRequests();
 	const acceptedPeople = useAcceptedPeople();
@@ -250,7 +279,7 @@ export default function ConnectionsPage() {
 					<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
 						<div className="min-w-0 space-y-0.5">
 							<h1 className="text-base font-semibold text-foreground">
-								Your Recipients
+								Connections
 							</h1>
 							<p className="text-sm text-muted-foreground">
 								Add someone by email or manage wallet connection requests.
@@ -270,12 +299,13 @@ export default function ConnectionsPage() {
 
 				<div className="flex min-h-0 flex-1 flex-col px-6 py-5 md:px-8">
 					<Tabs
-						defaultValue="contacts"
+						value={activeTab}
+						onValueChange={handleTabChange}
 						className="flex min-h-0 flex-1 flex-col gap-0"
 					>
 						<TabsList className="mb-5 h-9 w-fit max-w-full">
 							<TabsTrigger value="contacts" className="min-w-40">
-								Your Recipients
+								Connections
 							</TabsTrigger>
 							<TabsTrigger value="requests" className="min-w-40">
 								<span className="flex items-center gap-1.5">

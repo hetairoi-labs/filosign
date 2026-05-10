@@ -82,7 +82,7 @@ const groups: { label: string; items: NavItem[] }[] = [
 		label: "People",
 		items: [
 			{
-				title: "Your Recipients",
+				title: "Connections",
 				url: "/dashboard/connections",
 				icon: UsersThreeIcon,
 				match: (p) => matchPrefix(p, "/dashboard/connections"),
