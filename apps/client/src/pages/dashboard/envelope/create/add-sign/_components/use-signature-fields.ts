@@ -21,7 +21,13 @@ export function useSignatureFields() {
 		y: number,
 		currentPage: number,
 		currentDocumentId: string,
-		label: string,
+		options: {
+			label: string;
+			assignedSignerWallet: string;
+			assignedSignerName: string;
+			assignedSignerEmail: string;
+			required: boolean;
+		},
 	) => {
 		if (!pendingFieldType || !currentDocumentId) return;
 		const newField: SignatureField = {
@@ -31,12 +37,21 @@ export function useSignatureFields() {
 			y,
 			page: currentPage,
 			documentId: currentDocumentId,
-			required: true,
-			label,
+			assignedSignerWallet: options.assignedSignerWallet,
+			assignedSignerName: options.assignedSignerName,
+			assignedSignerEmail: options.assignedSignerEmail,
+			required: options.required,
+			label: options.label,
 		};
 		setSignatureFields((prev) => [...prev, newField]);
 		setIsPlacingField(false);
 		setPendingFieldType(null);
+	};
+
+	const cancelPlacement = () => {
+		setIsPlacingField(false);
+		setPendingFieldType(null);
+		setSelectedField(null);
 	};
 
 	const handleFieldRemove = (fieldId: string) => {
@@ -65,5 +80,6 @@ export function useSignatureFields() {
 		handleFieldPlaced,
 		handleFieldRemove,
 		handleFieldUpdate,
+		cancelPlacement,
 	};
 }

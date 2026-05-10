@@ -78,7 +78,8 @@ export default function SignatureFieldsSidebar({
 					Standard Fields
 				</p>
 				<p className="text-xs text-muted-foreground mb-4">
-					Drag and drop fields onto your document
+					Select a field, then click the document. A dialog will ask which signer
+					to assign and whether the field is required.
 				</p>
 			</div>
 

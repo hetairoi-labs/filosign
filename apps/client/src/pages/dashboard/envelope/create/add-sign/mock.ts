@@ -12,6 +12,11 @@ export type SignatureField = {
 	y: number;
 	page: number;
 	documentId: string;
+	/** Envelope signer wallet (`0x…`) this field is assigned to. */
+	assignedSignerWallet: string;
+	/** Signer display (from envelope recipient; not shown as raw wallet in UI). */
+	assignedSignerName: string;
+	assignedSignerEmail: string;
 	required: boolean;
 	label?: string;
 };
