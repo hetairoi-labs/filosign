@@ -3,8 +3,9 @@
 	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
-		"dev:local": "bunx --bun --env-file=.env.local vite",
-		"dev:testnet": "bunx --bun --env-file=.env.testnet vite",
+		"vite:dev": "bunx --bun vite",
+		"dev:local": "bun run --env-file=.env.local vite:dev",
+		"dev:testnet": "bun run --env-file=.env.testnet vite:dev",
 		"start": "vite preview",
 		"build": "vite build",
 		"check": "bunx biome check --write",

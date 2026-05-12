@@ -25,6 +25,8 @@ export const LOGIN_PIN_REQUIRED = "PIN_REQUIRED";
 export interface LoginParams {
 	pin?: string;
 	idToken?: string;
+	/** @internal For dev testing only - skips token authentication */
+	skipToken?: boolean;
 }
 
 export function useLogin() {
@@ -45,11 +47,11 @@ export function useLogin() {
 			let recoveryPhrase: string | undefined;
 
 			if (!isRegistered) {
-				const { pin, idToken } = params;
+				const { pin, idToken, skipToken } = params;
 				if (!pin || !validatePin(pin)) {
 					throw new Error("PIN must be 6-10 digits");
 				}
-				if (!idToken) {
+				if (!idToken && !skipToken) {
 					throw new Error(
 						"Authentication token required. Please ensure you are logged in with Privy.",
 					);
@@ -59,9 +61,11 @@ export function useLogin() {
 					dl: wasm.dilithium,
 				});
 
+				const walletAddress = wallet.account.address;
 				const signature = await eip712signature(contracts, "FSKeyRegistry", {
 					types: {
 						RegisterKeygenData: [
+							{ name: "from", type: "address" },
 							{ name: "salt_pin", type: "bytes16" },
 							{ name: "salt_seed", type: "bytes16" },
 							{ name: "salt_challenge", type: "bytes16" },
@@ -71,6 +75,7 @@ export function useLogin() {
 					},
 					primaryType: "RegisterKeygenData",
 					message: {
+						from: walletAddress,
 						salt_pin: keygenData.saltPin,
 						salt_seed: keygenData.saltSeed,
 						salt_challenge: keygenData.saltChallenge,
@@ -90,6 +95,7 @@ export function useLogin() {
 					signaturePublicKey: toHex(keygenData.sigKeypair.publicKey),
 					walletAddress: wallet.account.address,
 					idToken,
+					skipToken,
 				};
 
 				await api.rpc.postSafe({}, "/users/profile", requestPayload);

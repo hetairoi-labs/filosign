@@ -41,7 +41,7 @@ contract FSKeyRegistry is EIP712 {
 
     bytes32 private constant REGISTER_KEYGEN_DATA_TYPEHASH =
         keccak256(
-            "RegisterKeygenData(bytes16 salt_pin,bytes16 salt_seed,bytes16 salt_challenge,bytes20 commitment_kyber_pk,bytes20 commitment_dilithium_pk)"
+            "RegisterKeygenData(address from,bytes16 salt_pin,bytes16 salt_seed,bytes16 salt_challenge,bytes20 commitment_kyber_pk,bytes20 commitment_dilithium_pk)"
         );
 
     function registerKeygenData(
@@ -97,6 +97,7 @@ contract FSKeyRegistry is EIP712 {
         bytes32 structHash = keccak256(
             abi.encode(
                 REGISTER_KEYGEN_DATA_TYPEHASH,
+                walletAddress_,
                 salt_pin_,
                 salt_seed_,
                 salt_challenge_,

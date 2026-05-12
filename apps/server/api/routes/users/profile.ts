@@ -197,7 +197,9 @@ export default new Hono()
 				signaturePublicKey: zHexString(),
 				walletAddress: zEvmAddress(),
 				/** Privy identity JWT (`useIdentityToken`), not the access token from `getAccessToken`. */
-				idToken: z.string().min(1),
+				idToken: z.string().min(1).optional(),
+				/** @internal For dev testing only - skips Privy token verification */
+				skipToken: z.boolean().optional(),
 			})
 			.safeParse(rawBody);
 
@@ -216,21 +218,34 @@ export default new Hono()
 			signaturePublicKey,
 			walletAddress,
 			idToken,
+			skipToken,
 		} = parsedBody.data;
 
-		const privyResult = await tryCatch(
-			verifyPrivyTokenWithWallet(idToken, walletAddress),
-		);
+		let email: string;
+		let privyDid: string;
 
-		if (privyResult.error) {
-			return respond.err(
-				ctx,
-				`Privy verification failed: ${privyResult.error.message}`,
-				401,
+		if (skipToken) {
+			// Dev testing mode - use wallet address as email and a mock privyDid
+			email = `dev-${walletAddress}@filosign.local`;
+			privyDid = `did:dev:${walletAddress}`;
+		} else if (idToken) {
+			const privyResult = await tryCatch(
+				verifyPrivyTokenWithWallet(idToken, walletAddress),
 			);
-		}
 
-		const { email, privyDid } = privyResult.data;
+			if (privyResult.error) {
+				return respond.err(
+					ctx,
+					`Privy verification failed: ${privyResult.error.message}`,
+					401,
+				);
+			}
+
+			email = privyResult.data.email ?? "";
+			privyDid = privyResult.data.privyDid;
+		} else {
+			return respond.err(ctx, "idToken or skipToken required", 400);
+		}
 
 		if (!email) {
 			return respond.err(

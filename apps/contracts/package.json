@@ -17,9 +17,12 @@
 		"compile": "bun gen:interfaces; bun --bun hardhat compile",
 		"tests": "bun compile; bunx --bun hardhat test",
 		"gen:interfaces": "bun run scripts/generateInterfaces.ts",
-		"migrate": "bun --env.file=.env.local compile; bunx --bun hardhat run scripts/deploy.ts",
-		"migrate:testnet": "bun --env.file=.env.testnet compile; bunx --bun hardhat run scripts/deploy.ts --network baseSepolia",
-		"migrate:mainnet": "bun --env.file=.env.production compile; bunx --bun hardhat run scripts/deploy.ts --network base"
+		"deploy": "bunx --bun hardhat run scripts/deploy.ts",
+		"deploy:testnet": "bunx --bun hardhat run scripts/deploy.ts --network baseSepolia",
+		"deploy:mainnet": "bunx --bun hardhat run scripts/deploy.ts --network base",
+		"migrate": "bun run --env-file=.env.local compile && bun run --env-file=.env.local deploy",
+		"migrate:testnet": "bun run --env-file=.env.staging compile && bun run --env-file=.env.staging deploy:testnet",
+		"migrate:mainnet": "bun run --env-file=.env.production compile && bun run --env-file=.env.production deploy:mainnet"
 	},
 	"devDependencies": {
 		"@filosign/crypto-utils": "workspace:*",

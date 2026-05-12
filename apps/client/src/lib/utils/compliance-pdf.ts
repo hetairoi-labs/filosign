@@ -260,8 +260,7 @@ export function buildCompliancePdfSummaryFromBundle(
 
 	const plainLines: CompliancePdfLine[] = [
 		{
-			text:
-				"The bundle hash identifies this exact JSON snapshot. " + explorerNote,
+			text: `The bundle hash identifies this exact JSON snapshot. ${explorerNote}`,
 		},
 		{ text: "" },
 		{ text: execPlain },
