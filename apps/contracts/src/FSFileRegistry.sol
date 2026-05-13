@@ -230,10 +230,6 @@ contract FSFileRegistry is EIP712 {
         );
 
         if (!manager.isRegistered(sender_)) revert SenderNotRegistered();
-        for (uint256 i = 0; i < signers_.length; i++) {
-            if (!manager.approvedSenders(signers_[i], sender_))
-                revert SignerNotApproved(signers_[i], sender_);
-        }
 
         bytes20 signersCommitment = computeSignersCommitment(signers_);
 

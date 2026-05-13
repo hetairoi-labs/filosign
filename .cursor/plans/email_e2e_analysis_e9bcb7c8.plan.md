@@ -1,15 +1,15 @@
 ---
 name: Email E2E — research & options archive
-overview: "Brainstorming, threat model, invite/crypto paths, WaaP vendor Q&A, EVM-vs-Kyber reconciliation, and appendices. For the actionable WaaP mainnet plan only, use send_sign_flow_architecture.plan.md."
+overview: Brainstorming, threat model, invite/crypto paths, WaaP vendor Q&A, EVM-vs-Kyber reconciliation, and appendices. For the actionable WaaP mainnet plan only, use send_sign_flow_architecture.plan.md.
 todos:
   - id: threat-model
-    content: "One-page envelope threat model (link leakage, phishing, revocation, coercion, server compromise) mapped to OTP vs split-key link vs pubkey directory."
+    content: One-page envelope threat model (link leakage, phishing, revocation, coercion, server compromise) mapped to OTP vs split-key link vs pubkey directory.
     status: pending
   - id: envelope-protocol
-    content: "Specify invite + re-wrap if used split-channel DEK wrap, client-only unwrap, API for posting new KEM wraps only, TTL, retire invite rows; optional single-channel."
+    content: Specify invite + re-wrap if used split-channel DEK wrap, client-only unwrap, API for posting new KEM wraps only, TTL, retire invite rows; optional single-channel.
     status: pending
   - id: re-wrap-mitigations
-    content: "Re-wrap mitigation checklist (logging, step-up auth, invite artifact deletion, USP copy)—reference when invite crypto ships."
+    content: Re-wrap mitigation checklist (logging, step-up auth, invite artifact deletion, USP copy)—reference when invite crypto ships.
     status: pending
   - id: lit-eval-poc
     content: "If pursuing Lit: prototype PKP + Seal-style gate; compare UX/latency to invite-wrapped symmetric flow."
@@ -18,7 +18,7 @@ todos:
     content: "Human.tech engineering: pregen gating, SLA, privilege scopes for Dilithium+EIP-712, any pre-login encryption/KEM material, revenue-share agreement."
     status: pending
   - id: waap-kyber-bridge
-    content: "Document chosen branch from send_sign §3 (post-login keys vs vendor material vs interim wrap); update threat model and marketing claims accordingly."
+    content: Document chosen branch from send_sign §3 (post-login keys vs vendor material vs interim wrap); update threat model and marketing claims accordingly.
     status: pending
 isProject: false
 ---

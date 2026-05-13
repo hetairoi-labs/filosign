@@ -17,7 +17,7 @@ Filosign provides a decentralized e-signature platform with three core contracts
 The main contract that coordinates the entire system:
 
 - Deploys and manages FSFileRegistry and FSKeyRegistry contracts
-- Handles sender approval system (recipients approve senders who can send them documents)
+- Handles sender trust system (`approveSender` / `revokeSender`)
 - Manages contract versioning
 - Server-controlled administrative functions
 
@@ -42,7 +42,8 @@ Handles cryptographic identity management:
 
 ### Decentralized Trust Model
 
-- Recipients approve trusted senders for document exchange
+- Documents can be registered for any signer address without pre-approval
+- Recipient trust (`approveSender`) is a separate, recipient-signed action
 - All signatures and document states are immutably stored on-chain
 - Cryptographic verification of all operations
 
@@ -112,7 +113,7 @@ const signatureData = await contracts.FSFileRegistry.read.getSignatureData([
 
 #### Read Functions
 
-- `approvedSenders(address recipient, address sender)` - Check if sender is approved
+- `approvedSenders(address recipient, address sender)` - Check recipient trust state
 - `version()` - Get current contract version
 
 ### FSFileRegistry Functions

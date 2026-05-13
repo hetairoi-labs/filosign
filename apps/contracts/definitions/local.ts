@@ -684,22 +684,6 @@ export const definitions = {
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "signer",
-              "type": "address"
-            },
-            {
-              "internalType": "address",
-              "name": "sender",
-              "type": "address"
-            }
-          ],
-          "name": "SignerNotApproved",
-          "type": "error"
-        },
-        {
-          "inputs": [
-            {
               "internalType": "string",
               "name": "str",
               "type": "string"

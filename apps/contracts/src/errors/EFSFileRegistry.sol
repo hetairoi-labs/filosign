@@ -6,7 +6,6 @@ import "./EFSCommon.sol";
 error OnlyServer();
 error SignatureExpired();
 error SenderNotRegistered();
-error SignerNotApproved(address signer, address sender);
 error BadSignersLength();
 error DuplicateSigner(address signer);
 error ZeroSigner();
