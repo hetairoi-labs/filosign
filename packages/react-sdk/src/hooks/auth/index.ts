@@ -1,3 +1,4 @@
+export { getSessionSeed } from "./session-seed";
 export { useAuthedApi } from "./useAuthedApi";
 export { useCryptoSeed } from "./useCryptoSeed";
 export { useIsLoggedIn } from "./useIsLoggedIn";
