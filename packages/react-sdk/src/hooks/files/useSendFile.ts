@@ -1,20 +1,21 @@
 import { computeCidIdentifier, eip712signature } from "@filosign/contracts";
 import {
-	computeSignersCommitment,
 	encryption,
+	generateColdInvitePhrase,
 	KEM,
 	randomBytes,
 	toBytes,
 	toHex,
+	wrapColdInviteDek,
 } from "@filosign/crypto-utils";
 import {
+	buildRegistrationEmailCommitments,
 	computePlacementCommitment,
 	encodeFileData,
 	type zFileData,
 } from "@filosign/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Address, Hex } from "viem";
-import { getAddress } from "viem";
 import z from "zod";
 import { calculatePieceCid } from "../../../utils/piece";
 import { useFilosignContext } from "../../context/useFilosignContext";
@@ -38,8 +39,19 @@ export function useSendFile() {
 			bytes: Uint8Array;
 			metadata: FileData["metadata"];
 			placementManifest: FileData["placementManifest"];
+			coldInvites?: { email: string; isSigner: boolean }[];
+			/** Normalized viewer emails (non-signer recipients); must match server derivation. */
+			viewerEmails: string[];
 		}) => {
-			const { signers, viewers, bytes, metadata, placementManifest } = args;
+			const {
+				signers,
+				viewers,
+				bytes,
+				metadata,
+				placementManifest,
+				coldInvites,
+				viewerEmails,
+			} = args;
 			const timestamp = Math.floor(Date.now() / 1000);
 
 			if (!contracts || !wallet || !user) {
@@ -159,12 +171,19 @@ export function useSendFile() {
 
 			const cidIdentifier = computeCidIdentifier(pieceCid.toString());
 
+			const { signersCommitment, viewersCommitment } =
+				buildRegistrationEmailCommitments({
+					placementManifest,
+					viewerEmails,
+				});
+
 			const signature = await eip712signature(contracts, "FSFileRegistry", {
 				types: {
 					RegisterFile: [
 						{ name: "cidIdentifier", type: "bytes32" },
 						{ name: "sender", type: "address" },
 						{ name: "signersCommitment", type: "bytes20" },
+						{ name: "viewersCommitment", type: "bytes20" },
 						{ name: "placementCommitment", type: "bytes32" },
 						{ name: "timestamp", type: "uint256" },
 						{ name: "nonce", type: "uint256" },
@@ -174,14 +193,46 @@ export function useSendFile() {
 				message: {
 					cidIdentifier: cidIdentifier,
 					sender: wallet.account.address,
-					signersCommitment: computeSignersCommitment(
-						signers.map((s) => getAddress(s.address)),
-					),
+					signersCommitment,
+					viewersCommitment,
 					placementCommitment,
 					timestamp: BigInt(timestamp),
 					nonce: BigInt(nonce),
 				},
 			});
+
+			const coldInvitePairs =
+				coldInvites?.length && pieceCid
+					? await (async () => {
+							const phrase = generateColdInvitePhrase();
+							const inviteToken = toHex(randomBytes(32));
+							const wrapped = toHex(
+								await wrapColdInviteDek({
+									encryptionKey,
+									phrase,
+								}),
+							);
+							return coldInvites.map((c) => ({
+								row: {
+									email: c.email.trim().toLowerCase(),
+									inviteToken,
+									wrappedEncryptionKey: wrapped,
+									isSigner: c.isSigner,
+								},
+								phrase,
+							}));
+						})()
+					: [];
+
+			const coldInviteRows = coldInvitePairs.map((p) => p.row);
+			const firstColdInvite = coldInvitePairs[0];
+			const coldInviteShareCode = firstColdInvite
+				? {
+						phrase: firstColdInvite.phrase,
+						inviteToken: firstColdInvite.row.inviteToken,
+						emails: coldInviteRows.map((r) => r.email),
+					}
+				: undefined;
 
 			const requestPayload = {
 				pieceCid: pieceCid.toString(),
@@ -192,6 +243,7 @@ export function useSendFile() {
 				timestamp: timestamp,
 				placementCommitment,
 				placementManifest,
+				...(coldInviteRows.length > 0 ? { coldInvites: coldInviteRows } : {}),
 			};
 
 			const registerResponse = await api.rpc.postSafe(
@@ -205,6 +257,7 @@ export function useSendFile() {
 			return {
 				success: registerResponse.success,
 				pieceCid: pieceCid.toString(),
+				...(coldInviteShareCode ? { coldInviteShareCode } : {}),
 			};
 		},
 	});

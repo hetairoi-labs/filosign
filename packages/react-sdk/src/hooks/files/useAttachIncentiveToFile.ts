@@ -3,6 +3,7 @@ import {
 	type Address,
 	createPublicClient,
 	erc20Abi,
+	type Hex,
 	hexToSignature,
 	http,
 } from "viem";
@@ -42,7 +43,8 @@ const ERC20_VERSION_ABI = [
 
 export type AttachIncentiveArgs = {
 	pieceCid: string;
-	signer: Address;
+	/** `keccak256("filosign:signer-email:v1:" || normalized email)` */
+	signerEmailCommitment: Hex;
 	token: Address;
 	amount: bigint;
 };
@@ -53,7 +55,7 @@ export function useAttachIncentiveToFile() {
 	return useMutation({
 		mutationKey: ["fsM-attach-incentive"],
 		mutationFn: async (args: AttachIncentiveArgs) => {
-			const { pieceCid, signer, token, amount } = args;
+			const { pieceCid, signerEmailCommitment, token, amount } = args;
 
 			if (!contracts || !wallet) {
 				throw new Error("not connected");
@@ -149,7 +151,7 @@ export function useAttachIncentiveToFile() {
 				const { v, r, s } = hexToSignature(permitSig);
 
 				await api.rpc.postSafe({}, `/files/${pieceCid}/incentive`, {
-					signer,
+					signerEmailCommitment,
 					token,
 					amount: amount.toString(),
 					usePermit: true,
@@ -188,7 +190,7 @@ export function useAttachIncentiveToFile() {
 				}
 
 				await api.rpc.postSafe({}, `/files/${pieceCid}/incentive`, {
-					signer,
+					signerEmailCommitment,
 					token,
 					amount: amount.toString(),
 					usePermit: false,

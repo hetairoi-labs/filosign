@@ -7,7 +7,9 @@ import {
 } from "@filosign/crypto-utils";
 import {
 	completionsMerkleRootV1,
+	hashNormalizedSignerEmail,
 	LEAF_SCHEMA_VERSION_V1,
+	normalizePlacementRecipientEmail,
 	zPlacementManifest,
 } from "@filosign/shared";
 import { useMutation } from "@tanstack/react-query";
@@ -72,10 +74,29 @@ export function useSignFile() {
 
 				const manifest = zPlacementManifest.parse(manifestRaw);
 				const signerAddr = getAddress(wallet.account.address);
+
+				const selfSigner = fileResponse.data.signers.find((s) => {
+					if (typeof s === "string") {
+						return getAddress(s) === signerAddr;
+					}
+					return getAddress(s.wallet) === signerAddr;
+				});
+				const rawEmail =
+					typeof selfSigner === "object" && selfSigner?.email
+						? selfSigner.email.trim()
+						: "";
+				if (!rawEmail) {
+					throw new Error(
+						"Your Filosign profile must include an email to sign placed fields for this document",
+					);
+				}
+				const signerEmail = normalizePlacementRecipientEmail(rawEmail);
+				const signerEmailCommitment = hashNormalizedSignerEmail(signerEmail);
+
 				const placementCommitmentHex = placementCommitment as Hex;
 
 				const assignedIds = manifest.fields
-					.filter((f) => getAddress(f.assignedSigner) === signerAddr)
+					.filter((f) => f.assignedRecipientEmail === signerEmail)
 					.map((f) => f.id);
 
 				let fieldIds: string[];
@@ -140,7 +161,8 @@ export function useSignFile() {
 						SignFile: [
 							{ name: "cidIdentifier", type: "bytes32" },
 							{ name: "sender", type: "address" },
-							{ name: "signer", type: "address" },
+							{ name: "signerWallet", type: "address" },
+							{ name: "signerEmailCommitment", type: "bytes32" },
 							{ name: "dl3SignatureCommitment", type: "bytes20" },
 							{ name: "completionsRoot", type: "bytes32" },
 							{ name: "leafSchemaVersion", type: "uint8" },
@@ -152,7 +174,8 @@ export function useSignFile() {
 					message: {
 						cidIdentifier,
 						sender,
-						signer: wallet.account.address,
+						signerWallet: wallet.account.address,
+						signerEmailCommitment,
 						dl3SignatureCommitment,
 						completionsRoot,
 						leafSchemaVersion: LEAF_SCHEMA_VERSION_V1,

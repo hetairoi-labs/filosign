@@ -1,21 +1,25 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Address } from "viem";
+import type { Address, Hex } from "viem";
 import { useFilosignContext } from "../../context/useFilosignContext";
 
 export function useDocumentIncentive(args: {
 	pieceCid: string | undefined;
-	signerAddress: Address | undefined;
+	signerEmailCommitment: Hex | undefined;
 }) {
 	const { contracts, wallet } = useFilosignContext();
 
 	return useQuery({
-		queryKey: ["fsQ-document-incentive", args.pieceCid, args.signerAddress],
+		queryKey: [
+			"fsQ-document-incentive",
+			args.pieceCid,
+			args.signerEmailCommitment,
+		],
 		queryFn: async () => {
 			if (
 				!contracts ||
 				!wallet?.chain ||
 				!args.pieceCid ||
-				!args.signerAddress
+				!args.signerEmailCommitment
 			) {
 				return null;
 			}
@@ -28,7 +32,7 @@ export function useDocumentIncentive(args: {
 				const [token, amount, claimed] =
 					await contracts.FSFileRegistry.read.getSignerIncentive([
 						cidId,
-						args.signerAddress,
+						args.signerEmailCommitment,
 					]);
 
 				return {
@@ -41,6 +45,10 @@ export function useDocumentIncentive(args: {
 				return null;
 			}
 		},
-		enabled: !!args.pieceCid && !!args.signerAddress && !!contracts && !!wallet,
+		enabled:
+			!!args.pieceCid &&
+			!!args.signerEmailCommitment &&
+			!!contracts &&
+			!!wallet,
 	});
 }
