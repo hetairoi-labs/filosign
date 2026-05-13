@@ -3,8 +3,9 @@ import type { ComplianceBundleV1 } from "@filosign/shared";
 import {
 	canonicalComplianceBundleJson,
 	completionsMerkleProofsV1,
-	fieldIdsForSigner,
-	requiredFieldIdsForSigner,
+	fieldIdsForRecipientEmail,
+	normalizePlacementRecipientEmail,
+	requiredFieldIdsForRecipientEmail,
 	zComplianceBundleV1,
 	zPlacementManifest,
 } from "@filosign/shared";
@@ -117,9 +118,16 @@ export async function buildComplianceBundleAndHash(args: {
 		const displayName =
 			[p.firstName, p.lastName].filter(Boolean).join(" ") || p.username || null;
 
-		const assigned = fieldIdsForSigner(manifest, wallet);
+		const emailNorm = p.email?.trim()
+			? normalizePlacementRecipientEmail(p.email)
+			: "";
+		const assigned = emailNorm
+			? fieldIdsForRecipientEmail(manifest, emailNorm)
+			: [];
 		const assignedFieldIds = assigned.map((f) => f.id);
-		const reqIds = requiredFieldIdsForSigner(manifest, wallet);
+		const reqIds = emailNorm
+			? requiredFieldIdsForRecipientEmail(manifest, emailNorm)
+			: [];
 		const reqSet = new Set(reqIds);
 		const optionalFieldIds = assignedFieldIds.filter((id) => !reqSet.has(id));
 
