@@ -16,17 +16,10 @@ import {
 	XIcon,
 } from "@phosphor-icons/react";
 import type * as React from "react";
-import {
-	lazy,
-	Suspense,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Image } from "@/src/lib/components/custom/Image";
+import { PdfJsPreview } from "@/src/lib/components/custom/PdfJsPreview";
 import { Button } from "@/src/lib/components/ui/button";
-import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
 import { cn } from "@/src/lib/utils/utils";
 import {
 	type Document,
@@ -39,10 +32,6 @@ function fieldSignerAriaSnippet(field: SignatureField): string {
 	const email = field.assignedSignerEmail.trim();
 	return email ? `${name}, ${email}` : name;
 }
-
-const LazyPdfJsPreview = lazy(
-	() => import("@/src/lib/components/custom/PdfJsPreview.lazy"),
-);
 
 export const useDocumentDimensions = () => {
 	const [isMobile, setIsMobile] = useState(false);
@@ -398,26 +387,18 @@ export default function DocumentViewer({
 							document.url.startsWith("data:application/pdf") ||
 							document.name?.toLowerCase().endsWith(".pdf") ? (
 								<>
-									<Suspense
-										fallback={
-											<div className="absolute inset-0 z-10 flex items-center justify-center bg-white">
-												<InlineLoader size="md" />
-											</div>
-										}
-									>
-										<LazyPdfJsPreview
-											file={document.url}
-											documentKey={document.id}
-											pageNumber={pdfPageNumber}
-											width={documentWidth}
-											maxHeight={documentHeight}
-											className="absolute inset-0 z-10"
-											onNumPagesLoaded={(n) => {
-												setPdfNumPages(n);
-												setPdfPageNumber((prev) => Math.min(prev, n));
-											}}
-										/>
-									</Suspense>
+									<PdfJsPreview
+										file={document.url}
+										documentKey={document.id}
+										pageNumber={pdfPageNumber}
+										width={documentWidth}
+										maxHeight={documentHeight}
+										className="absolute inset-0 z-10"
+										onNumPagesLoaded={(n) => {
+											setPdfNumPages(n);
+											setPdfPageNumber((prev) => Math.min(prev, n));
+										}}
+									/>
 									{isPlacingField ? (
 										<div
 											className="absolute inset-0 w-full h-full pointer-events-auto cursor-crosshair bg-blue-500/5 z-20"
