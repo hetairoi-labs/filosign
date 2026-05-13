@@ -1,3 +1,4 @@
+import { hashPrivySubjectCommitment } from "@filosign/shared";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
@@ -34,6 +35,7 @@ export default new Hono()
 				firstName: users.firstName,
 				lastName: users.lastName,
 				avatarKey: users.avatarKey,
+				privyDid: users.privyDid,
 			})
 			.from(users)
 			.where(eq(users.walletAddress, wallet));
@@ -50,9 +52,12 @@ export default new Hono()
 			});
 		}
 
+		const { privyDid, ...rest } = userData;
+		const privySubjectCommitment = hashPrivySubjectCommitment(privyDid);
+
 		return respond.ok(
 			ctx,
-			{ ...userData, avatarUrl },
+			{ ...rest, avatarUrl, privySubjectCommitment },
 			"User data retrieved",
 			200,
 		);

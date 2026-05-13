@@ -8,7 +8,9 @@ import {
 	buildRegistrationEmailCommitments,
 	completionsMerkleRootV1,
 	computePlacementCommitment,
+	FILE_ACK_COLD_CLAIM_SENTINEL_V1,
 	hashNormalizedSignerEmail,
+	hashPrivySubjectCommitment,
 	LEAF_SCHEMA_VERSION_V1,
 	normalizePlacementRecipientEmail,
 	requiredFieldIdsForRecipientEmail,
@@ -287,6 +289,17 @@ export default new Hono()
 				),
 			);
 
+		await db
+			.insert(fileAcknowledgements)
+			.values({
+				filePieceCid: invite.filePieceCid,
+				wallet: userWallet,
+				ack: FILE_ACK_COLD_CLAIM_SENTINEL_V1,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.onConflictDoNothing();
+
 		return respond.ok(
 			ctx,
 			{
@@ -440,12 +453,41 @@ export default new Hono()
 				viewerEmails,
 			});
 
+		const [senderUser] = await db
+			.select({
+				email: users.email,
+				privyDid: users.privyDid,
+			})
+			.from(users)
+			.where(eq(users.walletAddress, getAddress(sender)));
+
+		if (!senderUser) {
+			return respond.err(ctx, "User not found", 404);
+		}
+
+		const senderEmailRaw = senderUser.email?.trim();
+		if (!senderEmailRaw) {
+			return respond.err(
+				ctx,
+				"Add a primary email to your profile before sending documents",
+				400,
+			);
+		}
+		const senderEmailCommitment = hashNormalizedSignerEmail(
+			normalizePlacementRecipientEmail(senderEmailRaw),
+		);
+		const senderPrivySubjectCommitment = hashPrivySubjectCommitment(
+			senderUser.privyDid,
+		);
+
 		const valid = await tryCatch(
 			FSFileRegistry.read.validateFileRegistrationSignature([
 				pieceCid,
 				sender,
 				signerEmailCommitmentsSorted,
 				viewerEmailCommitmentsSorted,
+				senderEmailCommitment,
+				senderPrivySubjectCommitment,
 				BigInt(timestamp),
 				signature,
 				placementCommitment,
@@ -481,6 +523,8 @@ export default new Hono()
 			sender,
 			signerEmailCommitmentsSorted,
 			viewerEmailCommitmentsSorted,
+			senderEmailCommitment,
+			senderPrivySubjectCommitment,
 			BigInt(timestamp),
 			signature,
 			placementCommitment,
@@ -950,8 +994,11 @@ export default new Hono()
 		const [participantRecord] = await db
 			.select({
 				wallet: fileParticipants.wallet,
+				email: users.email,
+				privyDid: users.privyDid,
 			})
 			.from(fileParticipants)
+			.innerJoin(users, eq(fileParticipants.wallet, users.walletAddress))
 			.where(
 				and(
 					eq(fileParticipants.filePieceCid, fileRecord.pieceCid),
@@ -971,34 +1018,57 @@ export default new Hono()
 					eq(fileAcknowledgements.wallet, userWallet),
 				),
 			);
-		if (existingAck) {
+		if (existingAck && existingAck.ack !== FILE_ACK_COLD_CLAIM_SENTINEL_V1) {
 			return respond.err(ctx, "File already acked", 409);
 		}
 
-		const viewerAckEmail = await primaryEmailForWallet(
-			getAddress(participantRecord.wallet),
-		);
-		if (!viewerAckEmail) {
+		const viewerAckEmailRaw = participantRecord.email?.trim();
+		if (!viewerAckEmailRaw) {
 			return respond.err(ctx, "Profile email required to acknowledge", 400);
 		}
+		const viewerAckEmail = normalizePlacementRecipientEmail(viewerAckEmailRaw);
 		const viewerEmailCommitment = hashNormalizedSignerEmail(viewerAckEmail);
+		const privySubjectCommitment = hashPrivySubjectCommitment(
+			participantRecord.privyDid,
+		);
 
 		const valid = await FSFileRegistry.read.validateFileAckSignature([
 			pieceCid,
 			fileRecord.sender,
 			participantRecord.wallet,
 			viewerEmailCommitment,
+			privySubjectCommitment,
 			BigInt(timestamp),
 			signature,
 		]);
 
 		if (valid) {
-			await db.insert(fileAcknowledgements).values({
-				filePieceCid: fileRecord.pieceCid,
-				wallet: getAddress(participantRecord.wallet),
-				ack: signature,
-				createdAt: new Date(timestamp * 1000),
-			});
+			const walletNorm = getAddress(participantRecord.wallet);
+			const createdAt = new Date(timestamp * 1000);
+			const updatedAt = new Date();
+			if (existingAck) {
+				await db
+					.update(fileAcknowledgements)
+					.set({
+						ack: signature,
+						createdAt,
+						updatedAt,
+					})
+					.where(
+						and(
+							eq(fileAcknowledgements.filePieceCid, pieceCid),
+							eq(fileAcknowledgements.wallet, walletNorm),
+						),
+					);
+			} else {
+				await db.insert(fileAcknowledgements).values({
+					filePieceCid: fileRecord.pieceCid,
+					wallet: walletNorm,
+					ack: signature,
+					createdAt,
+					updatedAt,
+				});
+			}
 			return respond.ok(ctx, {}, "File acknowledged successfully", 200);
 		} else {
 			return respond.err(ctx, "Invalid signature", 400);
@@ -1220,8 +1290,10 @@ export default new Hono()
 		const [participantRecord] = await db
 			.select({
 				wallet: fileParticipants.wallet,
+				privyDid: users.privyDid,
 			})
 			.from(fileParticipants)
+			.innerJoin(users, eq(fileParticipants.wallet, users.walletAddress))
 			.where(
 				and(
 					eq(fileParticipants.filePieceCid, pieceCid),
@@ -1344,6 +1416,10 @@ export default new Hono()
 
 		const signerEmailCommitment = hashNormalizedSignerEmail(signerEmail);
 
+		const privySubjectCommitment = hashPrivySubjectCommitment(
+			participantRecord.privyDid,
+		);
+
 		const allSignerEmailCommitments = sortedSignerCommitsForManifest(
 			manifestParsed.data,
 		);
@@ -1382,6 +1458,7 @@ export default new Hono()
 			fileRecord.sender,
 			participantRecord.wallet,
 			signerEmailCommitment,
+			privySubjectCommitment,
 			dl3SignatureCommitment,
 			BigInt(timestamp),
 			signature,
