@@ -12,7 +12,7 @@ import {
 	zPlacementManifest,
 } from "@filosign/shared";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
-import { and, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import type { Address } from "viem";
 import { getAddress } from "viem";
@@ -30,7 +30,7 @@ import { getOrCreateUserDataset } from "@/lib/synapse";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
 
-const { FSFileRegistry } = fsContracts;
+const { FSFileRegistry, FSManager } = fsContracts;
 
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
 
@@ -40,8 +40,14 @@ const {
 	fileParticipants,
 	fileSignatures,
 	fileSignerDrafts,
+	shareApprovals,
 	users,
 } = db.schema;
+
+function isSenderAlreadyApprovedError(err: unknown): boolean {
+	const msg = err instanceof Error ? err.message : String(err);
+	return msg.includes("SenderAlreadyApproved");
+}
 
 export default new Hono()
 	.post("/upload/start", authenticated, async (ctx) => {
@@ -321,9 +327,46 @@ export default new Hono()
 				),
 			);
 
+		const approvalRows = await db
+			.select({
+				senderWallet: shareApprovals.senderWallet,
+				active: shareApprovals.active,
+			})
+			.from(shareApprovals)
+			.where(eq(shareApprovals.recipientWallet, userWallet))
+			.orderBy(desc(shareApprovals.createdAt));
+
+		const latestApprovalBySender = new Map<string, boolean>();
+		for (const row of approvalRows) {
+			const sender = getAddress(row.senderWallet).toLowerCase();
+			if (!latestApprovalBySender.has(sender)) {
+				latestApprovalBySender.set(sender, row.active);
+			}
+		}
+
+		type ReceivedInboxEntry = (typeof receivedFiles)[number] & {
+			inboxCategory: "primary" | "pending";
+		};
+		const primary: ReceivedInboxEntry[] = [];
+		const pending: ReceivedInboxEntry[] = [];
+		for (const file of receivedFiles) {
+			const sender = getAddress(file.sender).toLowerCase();
+			const isApproved = latestApprovalBySender.get(sender) === true;
+			const entry = {
+				...file,
+				inboxCategory: isApproved ? ("primary" as const) : ("pending" as const),
+			};
+			if (isApproved) {
+				primary.push(entry);
+			} else {
+				pending.push(entry);
+			}
+		}
+		const categorizedFiles: ReceivedInboxEntry[] = [...primary, ...pending];
+
 		return respond.ok(
 			ctx,
-			{ files: receivedFiles },
+			{ files: categorizedFiles, primary, pending },
 			"Received files retrieved",
 			200,
 		);
@@ -775,13 +818,25 @@ export default new Hono()
 				timestamp: z.number("timestamp must be a number"),
 				dl3Signature: zHexString(),
 				completedFieldIds: z.array(z.string()).optional(),
+				approveSender: z
+					.object({
+						nonce: z.coerce.bigint(),
+						deadline: z.coerce.bigint(),
+						signature: zHexString(),
+					})
+					.optional(),
 			})
 			.safeParse(rawBody);
 		if (parsedBody.error) {
 			return respond.err(ctx, parsedBody.error.message, 400);
 		}
-		const { signature, timestamp, dl3Signature, completedFieldIds } =
-			parsedBody.data;
+		const {
+			signature,
+			timestamp,
+			dl3Signature,
+			completedFieldIds,
+			approveSender,
+		} = parsedBody.data;
 
 		const [fileRecord] = await db
 			.select({
@@ -950,6 +1005,41 @@ export default new Hono()
 		const txHash = await FSFileRegistry.write.registerFileSignature(
 			registerSignatureArgs,
 		);
+		let approveSenderTxHash: string | null = null;
+		if (approveSender) {
+			const approveSenderArgs = [
+				participantRecord.wallet,
+				fileRecord.sender,
+				approveSender.nonce,
+				approveSender.deadline,
+				approveSender.signature,
+			] as const;
+
+			const approveSimulation = await tryCatch(
+				FSManager.simulate.approveSender(approveSenderArgs, {
+					account: evmClient.account,
+				}),
+			);
+			if (
+				approveSimulation.error &&
+				!isSenderAlreadyApprovedError(approveSimulation.error)
+			) {
+				return respond.err(ctx, "Invalid approveSender signature", 400);
+			}
+
+			if (!approveSimulation.error) {
+				const approveWrite = await tryCatch(
+					FSManager.write.approveSender(approveSenderArgs),
+				);
+				if (approveWrite.error) {
+					if (!isSenderAlreadyApprovedError(approveWrite.error)) {
+						return respond.err(ctx, "Could not approve sender", 500);
+					}
+				} else {
+					approveSenderTxHash = approveWrite.data;
+				}
+			}
+		}
 
 		await db.insert(fileSignatures).values({
 			filePieceCid: pieceCid,
@@ -972,7 +1062,12 @@ export default new Hono()
 				),
 			);
 
-		return respond.ok(ctx, { txHash, signature }, "Signature recorded", 200);
+		return respond.ok(
+			ctx,
+			{ txHash, signature, approveSenderTxHash },
+			"Signature recorded",
+			200,
+		);
 	})
 
 	.post("/:pieceCid/incentive", authenticated, async (ctx) => {

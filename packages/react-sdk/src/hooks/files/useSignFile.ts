@@ -109,6 +109,12 @@ export function useSignFile() {
 				const nonce = await contracts.FSFileRegistry.read.nonce([
 					wallet.account.address,
 				]);
+				const approveSenderNonce = await contracts.FSManager.read.approveNonce([
+					wallet.account.address,
+				]);
+				const approveSenderDeadline = BigInt(
+					Math.floor(Date.now() / 1000) + 10 * 60,
+				);
 
 				const dl3SignatureMessage = jsonStringify({
 					pieceCid,
@@ -154,6 +160,27 @@ export function useSignFile() {
 						nonce: BigInt(nonce),
 					},
 				});
+				const approveSenderSignature = await eip712signature(
+					contracts,
+					"FSManager",
+					{
+						types: {
+							ApproveSender: [
+								{ name: "recipient", type: "address" },
+								{ name: "sender", type: "address" },
+								{ name: "nonce", type: "uint256" },
+								{ name: "deadline", type: "uint256" },
+							],
+						},
+						primaryType: "ApproveSender",
+						message: {
+							recipient: wallet.account.address,
+							sender,
+							nonce: BigInt(approveSenderNonce),
+							deadline: approveSenderDeadline,
+						},
+					},
+				);
 				const signResponse = await api.rpc.postSafe(
 					{},
 					`/files/${pieceCid}/sign`,
@@ -161,6 +188,11 @@ export function useSignFile() {
 						signature,
 						timestamp: timestamp,
 						dl3Signature: toHex(dl3Signature),
+						approveSender: {
+							nonce: approveSenderNonce.toString(),
+							deadline: approveSenderDeadline.toString(),
+							signature: approveSenderSignature,
+						},
 						...(completedFieldIds !== undefined ? { completedFieldIds } : {}),
 					},
 				);

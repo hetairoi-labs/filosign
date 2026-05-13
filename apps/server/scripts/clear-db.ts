@@ -6,12 +6,16 @@ const DB_NAME = process.env.DB_NAME;
 
 if (!PG_URI || !DB_NAME) {
 	console.error("Missing required env vars: PG_URI and DB_NAME");
-	console.error("Make sure to run with: bun run --env-file=.env.xxx scripts/clear-db.ts");
+	console.error(
+		"Make sure to run with: bun run --env-file=.env.xxx scripts/clear-db.ts",
+	);
 	process.exit(1);
 }
 
 const connectionString = PG_URI.replace(":dbname", DB_NAME);
-console.log(`Connecting to: ${connectionString.replace(/:\/\/.*@/, "://***@")}`);
+console.log(
+	`Connecting to: ${connectionString.replace(/:\/\/.*@/, "://***@")}`,
+);
 
 const client = new Client({ connectionString });
 

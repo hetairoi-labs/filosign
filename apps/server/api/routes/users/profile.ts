@@ -465,7 +465,6 @@ export default new Hono()
 
 	.get("/:q", authenticated, async (ctx) => {
 		const q = ctx.req.param("q");
-		const user = ctx.var.userWallet;
 
 		const returns = {
 			walletAddress: users.walletAddress,
@@ -498,19 +497,6 @@ export default new Hono()
 
 		if (!userData) {
 			return respond.err(ctx, "User not found", 404);
-		}
-
-		const canSendToThem = await db.canSendTo({
-			sender: user,
-			recipient: userData.walletAddress,
-		});
-		const canReceiveFromThem = await db.canSendTo({
-			sender: userData.walletAddress,
-			recipient: user,
-		});
-
-		if (!canSendToThem && !canReceiveFromThem) {
-			return respond.err(ctx, "No active sharing link with this user", 401);
 		}
 
 		let avatarUrl: string | null = null;

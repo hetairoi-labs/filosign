@@ -19,6 +19,7 @@ export function useReceivedFiles() {
 							status: z.string(),
 							encryptedEncryptionKey: zHexString(),
 							kemCiphertext: zHexString(),
+							inboxCategory: z.enum(["primary", "pending"]).optional(),
 						}),
 					),
 				},
