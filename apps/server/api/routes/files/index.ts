@@ -5,17 +5,21 @@ import {
 	toBytes,
 } from "@filosign/crypto-utils/node";
 import {
+	buildRegistrationEmailCommitments,
 	completionsMerkleRootV1,
 	computePlacementCommitment,
+	hashNormalizedSignerEmail,
 	LEAF_SCHEMA_VERSION_V1,
-	requiredFieldIdsForSigner,
+	normalizePlacementRecipientEmail,
+	requiredFieldIdsForRecipientEmail,
+	sortedSignerCommitsForManifest,
 	zPlacementManifest,
 } from "@filosign/shared";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
-import { and, desc, eq, inArray, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, ne, sql } from "drizzle-orm";
 import { Hono } from "hono";
-import type { Address } from "viem";
-import { getAddress } from "viem";
+import type { Address, Hex } from "viem";
+import { getAddress, zeroAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
 import {
@@ -23,7 +27,10 @@ import {
 	insertComplianceExportLog,
 } from "@/lib/compliance/buildComplianceBundle";
 import db from "@/lib/db";
-import { sendDocumentReceivedEmail } from "@/lib/email/invites";
+import {
+	sendColdDocumentInviteEmail,
+	sendDocumentReceivedEmail,
+} from "@/lib/email/invites";
 import { evmClient, fsContracts } from "@/lib/evm";
 import { bucket } from "@/lib/s3/client";
 import { getOrCreateUserDataset } from "@/lib/synapse";
@@ -33,10 +40,15 @@ import { tryCatch } from "@/lib/utils/tryCatch";
 const { FSFileRegistry, FSManager } = fsContracts;
 
 const MAX_FILE_SIZE = 30 * 1024 * 1024;
+const COLD_INVITE_TTL_DAYS = 7;
+const COLD_INVITE_TTL_MS = COLD_INVITE_TTL_DAYS * 24 * 60 * 60 * 1000;
+
+const coldInviteExpiry = () => new Date(Date.now() + COLD_INVITE_TTL_MS);
 
 const {
 	files,
 	fileAcknowledgements,
+	fileColdInvites,
 	fileParticipants,
 	fileSignatures,
 	fileSignerDrafts,
@@ -47,6 +59,56 @@ const {
 function isSenderAlreadyApprovedError(err: unknown): boolean {
 	const msg = err instanceof Error ? err.message : String(err);
 	return msg.includes("SenderAlreadyApproved");
+}
+
+async function primaryEmailForWallet(wallet: Address): Promise<string | null> {
+	const [row] = await db
+		.select({ email: users.email })
+		.from(users)
+		.where(eq(users.walletAddress, getAddress(wallet)));
+	const e = row?.email?.trim();
+	return e ? normalizePlacementRecipientEmail(e) : null;
+}
+
+function coldInviteSenderLabel(args: {
+	senderWallet: string;
+	email: string | null | undefined;
+	firstName: string | null | undefined;
+	lastName: string | null | undefined;
+}): string {
+	const email = args.email?.trim();
+	const parts = [args.firstName?.trim(), args.lastName?.trim()].filter(
+		(x): x is string => Boolean(x && x.length > 0),
+	);
+	const name = parts.join(" ");
+	if (name && email) return `${name} (${email})`;
+	if (email) return `(${email})`;
+	return getAddress(args.senderWallet as Address);
+}
+
+async function normalizedViewerEmailsForRegister(args: {
+	participants: { address: string; isSigner?: boolean }[];
+	coldInvites: { email: string; isSigner: boolean }[];
+}): Promise<string[]> {
+	const emails = new Set<string>();
+	const viewerWallets = args.participants
+		.filter((p) => !p.isSigner)
+		.map((p) => getAddress(p.address as Address));
+	if (viewerWallets.length > 0) {
+		const rows = await db
+			.select({ email: users.email })
+			.from(users)
+			.where(inArray(users.walletAddress, viewerWallets));
+		for (const row of rows) {
+			const e = row.email?.trim();
+			if (e) emails.add(normalizePlacementRecipientEmail(e));
+		}
+	}
+	for (const c of args.coldInvites) {
+		if (!c.isSigner)
+			emails.add(normalizePlacementRecipientEmail(c.email.trim()));
+	}
+	return [...emails];
 }
 
 export default new Hono()
@@ -74,6 +136,237 @@ export default new Hono()
 		);
 	})
 
+	.get("/invite/by-token/:inviteToken", async (ctx) => {
+		const inviteToken = ctx.req.param("inviteToken");
+		if (!inviteToken || inviteToken.length < 8) {
+			return respond.err(ctx, "Invalid invite", 400);
+		}
+
+		const rows = await db
+			.select({
+				inviteToken: fileColdInvites.inviteToken,
+				email: fileColdInvites.email,
+				wrappedEncryptionKey: fileColdInvites.wrappedEncryptionKey,
+				expiresAt: fileColdInvites.expiresAt,
+				isSigner: fileColdInvites.isSigner,
+				pieceCid: files.pieceCid,
+				sender: files.sender,
+				placementManifestJson: files.placementManifestJson,
+			})
+			.from(fileColdInvites)
+			.innerJoin(files, eq(fileColdInvites.filePieceCid, files.pieceCid))
+			.where(
+				and(
+					eq(fileColdInvites.inviteToken, inviteToken),
+					gt(fileColdInvites.expiresAt, new Date()),
+				),
+			);
+
+		if (rows.length === 0) {
+			return respond.err(ctx, "Invite not found", 404);
+		}
+		const [row] = rows;
+		if (!row) {
+			return respond.err(ctx, "Invite not found", 404);
+		}
+		const recipientEmails = [...new Set(rows.map((r) => r.email))];
+
+		const key = `uploads/${row.pieceCid}`;
+		if (!bucket.exists(key)) {
+			return respond.err(ctx, "File not found", 404);
+		}
+
+		const downloadUrl = bucket.presign(key, {
+			method: "GET",
+			expiresIn: 60 * 5,
+		});
+
+		const [senderProfile] = await db
+			.select({
+				email: users.email,
+				firstName: users.firstName,
+				lastName: users.lastName,
+			})
+			.from(users)
+			.where(eq(users.walletAddress, getAddress(row.sender as Address)));
+
+		const senderLabel = coldInviteSenderLabel({
+			senderWallet: row.sender,
+			email: senderProfile?.email ?? null,
+			firstName: senderProfile?.firstName ?? null,
+			lastName: senderProfile?.lastName ?? null,
+		});
+
+		return respond.ok(
+			ctx,
+			{
+				pieceCid: row.pieceCid,
+				recipientEmails,
+				wrappedEncryptionKey: row.wrappedEncryptionKey,
+				isSigner: row.isSigner,
+				sender: row.sender,
+				senderLabel,
+				placementManifest: row.placementManifestJson,
+				expiresAt: row.expiresAt?.toISOString() ?? null,
+				downloadUrl,
+			},
+			"Invite resolved",
+			200,
+		);
+	})
+	.post("/invite/claim/:inviteToken", authenticated, async (ctx) => {
+		const userWallet = getAddress(ctx.var.userWallet);
+		const inviteToken = ctx.req.param("inviteToken");
+		const parsedBody = z
+			.object({
+				kemCiphertext: zHexString(),
+				encryptedEncryptionKey: zHexString(),
+			})
+			.safeParse(await ctx.req.json());
+		if (parsedBody.error) {
+			return respond.err(ctx, parsedBody.error.message, 400);
+		}
+		if (!inviteToken || inviteToken.length < 8) {
+			return respond.err(ctx, "Invalid invite", 400);
+		}
+		const profileEmail = await primaryEmailForWallet(userWallet);
+		if (!profileEmail) {
+			return respond.err(
+				ctx,
+				"Add a primary email to your profile before claiming this invite",
+				400,
+			);
+		}
+
+		const [invite] = await db
+			.select({
+				filePieceCid: fileColdInvites.filePieceCid,
+				email: fileColdInvites.email,
+				isSigner: fileColdInvites.isSigner,
+			})
+			.from(fileColdInvites)
+			.where(
+				and(
+					eq(fileColdInvites.inviteToken, inviteToken),
+					gt(fileColdInvites.expiresAt, new Date()),
+					eq(fileColdInvites.email, profileEmail),
+				),
+			);
+		if (!invite) {
+			return respond.err(ctx, "Invite not found for this account email", 404);
+		}
+
+		const now = new Date();
+		await db
+			.insert(fileParticipants)
+			.values({
+				filePieceCid: invite.filePieceCid,
+				wallet: userWallet,
+				role: invite.isSigner ? "signer" : "viewer",
+				kemCiphertext: parsedBody.data.kemCiphertext,
+				encryptedEncryptionKey: parsedBody.data.encryptedEncryptionKey,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.onConflictDoUpdate({
+				target: [fileParticipants.filePieceCid, fileParticipants.wallet],
+				set: {
+					role: invite.isSigner ? "signer" : "viewer",
+					kemCiphertext: parsedBody.data.kemCiphertext,
+					encryptedEncryptionKey: parsedBody.data.encryptedEncryptionKey,
+					updatedAt: now,
+				},
+			});
+
+		await db
+			.delete(fileColdInvites)
+			.where(
+				and(
+					eq(fileColdInvites.inviteToken, inviteToken),
+					eq(fileColdInvites.email, profileEmail),
+				),
+			);
+
+		return respond.ok(
+			ctx,
+			{
+				filePieceCid: invite.filePieceCid,
+				role: invite.isSigner ? "signer" : "viewer",
+			},
+			"Invite claimed",
+			200,
+		);
+	})
+	.post("/:pieceCid/cold-invite/regenerate", authenticated, async (ctx) => {
+		const pieceCid = ctx.req.param("pieceCid");
+		const senderWallet = getAddress(ctx.var.userWallet);
+		const parsedBody = z
+			.object({
+				inviteToken: z.string().min(16),
+				wrappedEncryptionKey: zHexString(),
+			})
+			.safeParse(await ctx.req.json());
+		if (!pieceCid || pieceCid.length < 8 || parsedBody.error) {
+			return respond.err(ctx, "Invalid request", 400);
+		}
+
+		const [file] = await db
+			.select({
+				sender: files.sender,
+			})
+			.from(files)
+			.where(eq(files.pieceCid, pieceCid))
+			.limit(1);
+		if (
+			!file ||
+			getAddress(file.sender as Address) !== getAddress(senderWallet)
+		) {
+			return respond.err(ctx, "Forbidden", 403);
+		}
+
+		const activeInvites = await db
+			.select({
+				email: fileColdInvites.email,
+			})
+			.from(fileColdInvites)
+			.where(
+				and(
+					eq(fileColdInvites.filePieceCid, pieceCid),
+					gt(fileColdInvites.expiresAt, new Date()),
+				),
+			);
+		if (activeInvites.length === 0) {
+			return respond.err(ctx, "No active cold invites found", 404);
+		}
+
+		const expiresAt = coldInviteExpiry();
+		await db
+			.update(fileColdInvites)
+			.set({
+				inviteToken: parsedBody.data.inviteToken,
+				wrappedEncryptionKey: parsedBody.data.wrappedEncryptionKey,
+				expiresAt,
+				updatedAt: new Date(),
+			})
+			.where(
+				and(
+					eq(fileColdInvites.filePieceCid, pieceCid),
+					gt(fileColdInvites.expiresAt, new Date()),
+				),
+			);
+
+		return respond.ok(
+			ctx,
+			{
+				inviteToken: parsedBody.data.inviteToken,
+				recipientEmails: activeInvites.map((row) => row.email),
+				expiresAt: expiresAt.toISOString(),
+			},
+			"Cold invite regenerated",
+			200,
+		);
+	})
+
 	.post("/", authenticated, async (ctx) => {
 		const sender = ctx.var.userWallet;
 		const rawBody = await ctx.req.json();
@@ -96,6 +389,16 @@ export default new Hono()
 				timestamp: z.number("timestamp must be a number"),
 				placementCommitment: zHexString(),
 				placementManifest: z.unknown(),
+				coldInvites: z
+					.array(
+						z.object({
+							email: z.string().email(),
+							inviteToken: z.string().min(16),
+							wrappedEncryptionKey: zHexString(),
+							isSigner: z.boolean(),
+						}),
+					)
+					.optional(),
 			})
 			.safeParse(rawBody);
 
@@ -111,6 +414,7 @@ export default new Hono()
 			timestamp,
 			placementCommitment,
 			placementManifest: placementManifestRaw,
+			coldInvites = [],
 		} = parsedBody.data;
 
 		const parsedManifest = zPlacementManifest.safeParse(placementManifestRaw);
@@ -126,16 +430,22 @@ export default new Hono()
 				400,
 			);
 		}
-		const signers = participants
-			.filter((p) => p.isSigner)
-			.map((p) => getAddress(p.address))
-			.sort();
+		const viewerEmails = await normalizedViewerEmailsForRegister({
+			participants,
+			coldInvites,
+		});
+		const { signerEmailCommitmentsSorted, viewerEmailCommitmentsSorted } =
+			buildRegistrationEmailCommitments({
+				placementManifest,
+				viewerEmails,
+			});
 
 		const valid = await tryCatch(
 			FSFileRegistry.read.validateFileRegistrationSignature([
 				pieceCid,
 				sender,
-				signers,
+				signerEmailCommitmentsSorted,
+				viewerEmailCommitmentsSorted,
 				BigInt(timestamp),
 				signature,
 				placementCommitment,
@@ -169,7 +479,8 @@ export default new Hono()
 		const txHash = await FSFileRegistry.write.registerFile([
 			pieceCid,
 			sender,
-			signers,
+			signerEmailCommitmentsSorted,
+			viewerEmailCommitmentsSorted,
 			BigInt(timestamp),
 			signature,
 			placementCommitment,
@@ -209,6 +520,19 @@ export default new Hono()
 					encryptedEncryptionKey: p.encryptedEncryptionKey,
 				})),
 			]);
+
+			if (coldInvites.length > 0) {
+				await tx.insert(fileColdInvites).values(
+					coldInvites.map((c) => ({
+						filePieceCid: pieceCid,
+						email: c.email.trim().toLowerCase(),
+						inviteToken: c.inviteToken,
+						wrappedEncryptionKey: c.wrappedEncryptionKey,
+						isSigner: c.isSigner,
+						expiresAt: coldInviteExpiry(),
+					})),
+				);
+			}
 
 			return insertResult;
 		});
@@ -263,6 +587,28 @@ export default new Hono()
 				pieceCid,
 				failedCount: emailFailures.length,
 				errors: emailFailures.map((result) => result.error?.message),
+			});
+		}
+
+		const coldEmailResults = await Promise.all(
+			coldInvites.map((c) =>
+				tryCatch(
+					sendColdDocumentInviteEmail({
+						to: c.email.trim().toLowerCase(),
+						pieceCid,
+						inviteToken: c.inviteToken,
+						senderWallet: sender as Address,
+						senderName,
+					}),
+				),
+			),
+		);
+		const coldEmailFailures = coldEmailResults.filter((r) => r.error);
+		if (coldEmailFailures.length > 0) {
+			console.error("Failed to send cold invite emails", {
+				pieceCid,
+				failedCount: coldEmailFailures.length,
+				errors: coldEmailFailures.map((r) => r.error?.message),
 			});
 		}
 
@@ -629,10 +975,19 @@ export default new Hono()
 			return respond.err(ctx, "File already acked", 409);
 		}
 
+		const viewerAckEmail = await primaryEmailForWallet(
+			getAddress(participantRecord.wallet),
+		);
+		if (!viewerAckEmail) {
+			return respond.err(ctx, "Profile email required to acknowledge", 400);
+		}
+		const viewerEmailCommitment = hashNormalizedSignerEmail(viewerAckEmail);
+
 		const valid = await FSFileRegistry.read.validateFileAckSignature([
 			pieceCid,
 			fileRecord.sender,
 			participantRecord.wallet,
+			viewerEmailCommitment,
 			BigInt(timestamp),
 			signature,
 		]);
@@ -690,10 +1045,17 @@ export default new Hono()
 			);
 		}
 
-		const signerAddr = getAddress(participantRecord.wallet);
+		const signerEmail = await primaryEmailForWallet(participantRecord.wallet);
+		if (!signerEmail) {
+			return respond.err(
+				ctx,
+				"Add a primary email to your Filosign profile to use placement drafts",
+				400,
+			);
+		}
 		const allowedIds = new Set(
 			manifestParsed.data.fields
-				.filter((f) => getAddress(f.assignedSigner) === signerAddr)
+				.filter((f) => f.assignedRecipientEmail === signerEmail)
 				.map((f) => f.id),
 		);
 
@@ -764,10 +1126,17 @@ export default new Hono()
 			);
 		}
 
-		const signerAddr = getAddress(participantRecord.wallet);
+		const signerEmail = await primaryEmailForWallet(participantRecord.wallet);
+		if (!signerEmail) {
+			return respond.err(
+				ctx,
+				"Add a primary email to your Filosign profile to use placement drafts",
+				400,
+			);
+		}
 		const allowedIds = new Set(
 			manifestParsed.data.fields
-				.filter((f) => getAddress(f.assignedSigner) === signerAddr)
+				.filter((f) => f.assignedRecipientEmail === signerEmail)
 				.map((f) => f.id),
 		);
 
@@ -881,14 +1250,22 @@ export default new Hono()
 		}
 
 		const signerAddr = getAddress(participantRecord.wallet);
+		const signerEmail = await primaryEmailForWallet(participantRecord.wallet);
+		if (!signerEmail) {
+			return respond.err(
+				ctx,
+				"Add a primary email to your Filosign profile to sign placement fields",
+				400,
+			);
+		}
 		const assignedForSigner = manifestParsed.data.fields.filter(
-			(f) => getAddress(f.assignedSigner) === signerAddr,
+			(f) => f.assignedRecipientEmail === signerEmail,
 		);
 		const allowedIds = new Set(assignedForSigner.map((f) => f.id));
 
-		const requiredIds = requiredFieldIdsForSigner(
+		const requiredIds = requiredFieldIdsForRecipientEmail(
 			manifestParsed.data,
-			signerAddr,
+			signerEmail,
 		);
 
 		let fieldIds: string[];
@@ -965,27 +1342,51 @@ export default new Hono()
 			return respond.err(ctx, "Invalid DL3 signature", 400);
 		}
 
+		const signerEmailCommitment = hashNormalizedSignerEmail(signerEmail);
+
+		const allSignerEmailCommitments = sortedSignerCommitsForManifest(
+			manifestParsed.data,
+		);
+
 		const signerRows = await db
-			.select({ wallet: fileParticipants.wallet })
+			.select({
+				wallet: fileParticipants.wallet,
+				email: users.email,
+			})
 			.from(fileParticipants)
+			.innerJoin(users, eq(fileParticipants.wallet, users.walletAddress))
 			.where(
 				and(
 					eq(fileParticipants.filePieceCid, pieceCid),
 					eq(fileParticipants.role, "signer"),
 				),
 			);
-		const allSignersCalldata = signerRows
-			.map((p) => getAddress(p.wallet))
-			.sort();
+
+		const walletByC = new Map<string, Address>();
+		for (const r of signerRows) {
+			const raw = r.email?.trim();
+			if (!raw) continue;
+			const c = hashNormalizedSignerEmail(
+				normalizePlacementRecipientEmail(raw),
+			);
+			walletByC.set(c.toLowerCase() as string, getAddress(r.wallet));
+		}
+
+		const payouts = allSignerEmailCommitments.map(
+			(c) =>
+				walletByC.get(c.toLowerCase() as string) ?? (zeroAddress as Address),
+		);
 
 		const registerSignatureArgs = [
 			pieceCid,
 			fileRecord.sender,
 			participantRecord.wallet,
+			signerEmailCommitment,
 			dl3SignatureCommitment,
 			BigInt(timestamp),
 			signature,
-			allSignersCalldata,
+			allSignerEmailCommitments,
+			payouts,
 			completionsRoot,
 			LEAF_SCHEMA_VERSION_V1,
 		] as const;
@@ -994,7 +1395,6 @@ export default new Hono()
 			await FSFileRegistry.simulate.registerFileSignature(
 				registerSignatureArgs,
 				{
-					// viem simulates via the public client; `account` sets `msg.sender` for `onlyServer`.
 					account: evmClient.account,
 				},
 			);
@@ -1075,8 +1475,15 @@ export default new Hono()
 		const pieceCid = ctx.req.param("pieceCid");
 
 		const rawBody = await ctx.req.json();
+		const zBytes32Hex = z
+			.string()
+			.regex(
+				/^0x[a-fA-F0-9]{64}$/,
+				"signerEmailCommitment must be bytes32 hex",
+			);
+
 		const baseSchema = z.object({
-			signer: zEvmAddress(),
+			signerEmailCommitment: zBytes32Hex.transform((s) => s as Hex),
 			token: zEvmAddress(),
 			amount: z
 				.string()
@@ -1120,13 +1527,13 @@ export default new Hono()
 			);
 		}
 
-		const { signer, token, amount } = parsedBody.data;
+		const { signerEmailCommitment, token, amount } = parsedBody.data;
 
 		const attachResult = await tryCatch(
 			parsedBody.data.usePermit
 				? FSManager.write.attachIncentiveWithPermit([
 						pieceCid,
-						getAddress(signer),
+						signerEmailCommitment,
 						getAddress(token),
 						BigInt(amount),
 						BigInt(parsedBody.data.deadline),
@@ -1136,7 +1543,7 @@ export default new Hono()
 					])
 				: FSManager.write.attachIncentive([
 						pieceCid,
-						getAddress(signer),
+						signerEmailCommitment,
 						getAddress(token),
 						BigInt(amount),
 					]),
