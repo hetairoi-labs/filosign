@@ -1,6 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { erc20Abi } from "viem";
 import { useAccount, usePublicClient } from "wagmi";
@@ -18,11 +19,16 @@ import DocumentsSection from "./_components/DocumentUpload";
 import { EnvelopeDraftProvider } from "./_components/envelope-draft-context";
 import RecipientsSection from "./_components/RecipientsSection";
 
+function isValidRecipientEmail(email: string) {
+	return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 export default function CreateEnvelopePage() {
 	const navigate = useNavigate();
 	const { setCreateForm } = useStorePersist();
 	const { address } = useAccount();
 	const publicClient = usePublicClient();
+	const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
 
 	const form = useForm({
 		defaultValues: {
@@ -44,12 +50,11 @@ export default function CreateEnvelopePage() {
 				return;
 			}
 
-			// Validate recipient wallet addresses
 			const invalidRecipients = value.recipients.filter(
-				(r) => !r.walletAddress || r.walletAddress.trim() === "",
+				(r) => !isValidRecipientEmail(r.email ?? ""),
 			);
 			if (invalidRecipients.length > 0) {
-				toast.error("All recipients must have a wallet address");
+				toast.error("Enter a valid email for every recipient");
 				return;
 			}
 
@@ -140,6 +145,11 @@ export default function CreateEnvelopePage() {
 			}
 		},
 	});
+	const showValidationErrors = hasAttemptedSubmit;
+	const documentsSubmitError =
+		showValidationErrors && form.state.values.documents.length === 0
+			? "Please upload at least one document"
+			: undefined;
 
 	return (
 		<div className="min-h-screen bg-background">
@@ -162,6 +172,7 @@ export default function CreateEnvelopePage() {
 				onSubmit={(e) => {
 					e.preventDefault();
 					e.stopPropagation();
+					setHasAttemptedSubmit(true);
 					form.handleSubmit();
 				}}
 			>
@@ -186,10 +197,10 @@ export default function CreateEnvelopePage() {
 											return "Please add at least one recipient";
 										}
 										const invalid = value.filter(
-											(r) => !r.walletAddress || r.walletAddress.trim() === "",
+											(r) => !isValidRecipientEmail(r.email ?? ""),
 										);
 										if (invalid.length > 0) {
-											return "All recipients must have a wallet address";
+											return "Enter a valid email for every recipient";
 										}
 										return undefined;
 									},
@@ -201,16 +212,16 @@ export default function CreateEnvelopePage() {
 											documentsField: {
 												value: documentsField.state.value,
 												onChange: documentsField.handleChange,
-												onBlur: documentsField.handleBlur,
-												error: documentsField.state.meta.errors?.[0],
-												isTouched: documentsField.state.meta.isTouched,
+												error:
+													documentsField.state.meta.errors?.[0] ??
+													documentsSubmitError,
+												showError: showValidationErrors,
 											},
 											recipientsField: {
 												value: recipientsField.state.value,
 												onChange: recipientsField.handleChange,
-												onBlur: recipientsField.handleBlur,
 												error: recipientsField.state.meta.errors?.[0],
-												isTouched: recipientsField.state.meta.isTouched,
+												showError: showValidationErrors,
 											},
 										}}
 									>

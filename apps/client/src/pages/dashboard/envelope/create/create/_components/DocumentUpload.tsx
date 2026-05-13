@@ -21,13 +21,7 @@ import { useDocumentUpload } from "./envelope-draft-context";
 import FileCard from "./FileCard";
 
 export default function DocumentsSection() {
-	const {
-		value: documents,
-		onChange,
-		onBlur,
-		error,
-		isTouched,
-	} = useDocumentUpload();
+	const { value: documents, onChange, error, showError } = useDocumentUpload();
 	const [isDocumentsOpen, setIsDocumentsOpen] = useState(true);
 	const [isDragOver, setIsDragOver] = useState(false);
 	const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -187,7 +181,6 @@ export default function DocumentsSection() {
 						onDragOver={handleDragOver}
 						onDragLeave={handleDragLeave}
 						onDrop={handleDrop}
-						onBlur={onBlur}
 					>
 						<motion.div
 							initial={{ opacity: 0, y: 20 }}
@@ -267,7 +260,7 @@ export default function DocumentsSection() {
 					)}
 
 					{/* Validation error */}
-					{error && isTouched && (
+					{error && showError && (
 						<motion.p
 							initial={{ opacity: 0, y: -10 }}
 							animate={{ opacity: 1, y: 0 }}

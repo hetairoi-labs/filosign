@@ -5,16 +5,14 @@ type EnvelopeDraftContextValue = {
 	documentsField: {
 		value: EnvelopeForm["documents"];
 		onChange: (documents: EnvelopeForm["documents"]) => void;
-		onBlur: () => void;
 		error?: string;
-		isTouched?: boolean;
+		showError?: boolean;
 	};
 	recipientsField: {
 		value: EnvelopeForm["recipients"];
 		onChange: (recipients: EnvelopeForm["recipients"]) => void;
-		onBlur: () => void;
 		error?: string;
-		isTouched?: boolean;
+		showError?: boolean;
 	};
 };
 

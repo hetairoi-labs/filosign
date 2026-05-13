@@ -1,11 +1,12 @@
 export type Recipient = {
+	clientRowId?: string;
 	name: string;
 	email: string;
-	walletAddress: string;
+	walletAddress?: string;
 	role: "signer" | "viewer";
 	incentive?: {
 		token: string;
-		amount: string; // Stored as integer string of smallest unit (wei)
+		amount: string;
 	};
 };
 
@@ -24,7 +25,6 @@ export type EnvelopeForm = {
 	documents: UploadedFile[];
 };
 
-// Single source of truth for allowed file types
 export const ALLOWED_FILE_TYPES = [
 	{ mime: "application/pdf", extensions: [".pdf"] },
 ] as const;
@@ -39,17 +39,15 @@ export const ACCEPTED_FILE_EXTENSIONS = Array.from(
 	new Set(ALLOWED_FILE_TYPES.flatMap((t) => t.extensions)),
 );
 
-// Uploaded file type
 export type StoredDocument = {
 	id: string;
-	pieceCid?: string; // SDK piece CID for the uploaded file
+	pieceCid?: string;
 	name: string;
 	size: number;
 	type: string;
 	dataUrl?: string;
 };
 
-// Create form
 export type CreateForm = {
 	recipients: Recipient[];
 	emailSubject: string;
