@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+
+- don't manually edit files in the `definitions` directory in apps/contracts. It is auto-generated during deployment.
