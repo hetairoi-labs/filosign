@@ -13,7 +13,7 @@ export function useUserProfileByQuery(query: {
 	const { data: api } = useAuthedApi();
 
 	return useQuery({
-		queryKey: ["fsQ-user-info-by-address", query],
+		queryKey: ["fsQ-user-profile-by-query", query],
 		queryFn: async () => {
 			if ((!query.address && !query.username && !query.email) || !api)
 				throw new Error("Not unreachable");
