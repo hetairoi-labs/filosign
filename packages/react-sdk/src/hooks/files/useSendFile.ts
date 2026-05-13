@@ -12,6 +12,8 @@ import {
 	buildRegistrationEmailCommitments,
 	computePlacementCommitment,
 	encodeFileData,
+	hashNormalizedSignerEmail,
+	normalizePlacementRecipientEmail,
 	type zFileData,
 } from "@filosign/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -57,6 +59,22 @@ export function useSendFile() {
 			if (!contracts || !wallet || !user) {
 				throw new Error(
 					"Not connected: contracts, wallet, and profile required",
+				);
+			}
+
+			const rawSenderEmail = user.email?.trim();
+			if (!rawSenderEmail) {
+				throw new Error(
+					"Add a primary email to your Filosign profile before sending documents",
+				);
+			}
+			const senderEmailCommitment = hashNormalizedSignerEmail(
+				normalizePlacementRecipientEmail(rawSenderEmail),
+			);
+			const senderPrivySubjectCommitment = user.privySubjectCommitment;
+			if (!senderPrivySubjectCommitment?.trim()) {
+				throw new Error(
+					"Profile missing identity commitment; try signing out and back in.",
 				);
 			}
 
@@ -185,6 +203,8 @@ export function useSendFile() {
 						{ name: "signersCommitment", type: "bytes20" },
 						{ name: "viewersCommitment", type: "bytes20" },
 						{ name: "placementCommitment", type: "bytes32" },
+						{ name: "senderEmailCommitment", type: "bytes32" },
+						{ name: "senderPrivySubjectCommitment", type: "bytes32" },
 						{ name: "timestamp", type: "uint256" },
 						{ name: "nonce", type: "uint256" },
 					],
@@ -196,6 +216,8 @@ export function useSendFile() {
 					signersCommitment,
 					viewersCommitment,
 					placementCommitment,
+					senderEmailCommitment,
+					senderPrivySubjectCommitment,
 					timestamp: BigInt(timestamp),
 					nonce: BigInt(nonce),
 				},

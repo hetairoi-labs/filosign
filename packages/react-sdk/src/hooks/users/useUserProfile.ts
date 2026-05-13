@@ -15,6 +15,8 @@ const userProfileResponseShape = {
 	firstName: z.string().nullable(),
 	lastName: z.string().nullable(),
 	avatarUrl: z.string().nullable(),
+	/** Opaque `bytes32` for EIP-712 AckFile / SignFile; derived from `users.privyDid`. */
+	privySubjectCommitment: zHexString(),
 };
 
 const zUserProfileModel = z.object(userProfileResponseShape);

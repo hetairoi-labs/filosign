@@ -4,6 +4,7 @@ import {
 	normalizePlacementRecipientEmail,
 } from "@filosign/shared";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { getAddress } from "viem";
 import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
 import { useAuthedApi } from "../auth/useAuthedApi";
@@ -48,21 +49,49 @@ export function useAckFile() {
 				throw new Error("Failed to fetch file info");
 			}
 
-			const { sender } = fileResponse.data;
+			const { sender, signers, viewers } = fileResponse.data;
 
 			const cidIdentifier = computeCidIdentifier(pieceCid);
 
 			const timestamp = Math.floor(Date.now() / 1000);
 
-			const rawEmail = userProfile?.email?.trim();
+			const addr = getAddress(wallet.account.address);
+			let rawEmail: string | null = null;
+			for (const s of signers) {
+				if (typeof s === "object" && getAddress(s.wallet) === addr) {
+					const e = s.email?.trim();
+					if (e) {
+						rawEmail = e;
+						break;
+					}
+				}
+			}
+			if (!rawEmail) {
+				for (const v of viewers) {
+					if (typeof v === "object" && getAddress(v.wallet) === addr) {
+						const e = v.email?.trim();
+						if (e) {
+							rawEmail = e;
+							break;
+						}
+					}
+				}
+			}
 			if (!rawEmail) {
 				throw new Error(
-					"Add an email to your profile to acknowledge documents",
+					"No email on file roster for your wallet; sync your profile or re-open the document.",
 				);
 			}
 			const viewerEmailCommitment = hashNormalizedSignerEmail(
 				normalizePlacementRecipientEmail(rawEmail),
 			);
+
+			const privySubjectCommitment = userProfile?.privySubjectCommitment;
+			if (!privySubjectCommitment) {
+				throw new Error(
+					"Profile missing Privy subject commitment; try re-login.",
+				);
+			}
 
 			const signature = await eip712signature(contracts, "FSFileRegistry", {
 				types: {
@@ -71,6 +100,7 @@ export function useAckFile() {
 						{ name: "sender", type: "address" },
 						{ name: "viewerWallet", type: "address" },
 						{ name: "viewerEmailCommitment", type: "bytes32" },
+						{ name: "privySubjectCommitment", type: "bytes32" },
 						{ name: "timestamp", type: "uint256" },
 					],
 				},
@@ -80,6 +110,7 @@ export function useAckFile() {
 					sender,
 					viewerWallet: wallet.account.address,
 					viewerEmailCommitment,
+					privySubjectCommitment,
 					timestamp: BigInt(timestamp),
 				},
 			});

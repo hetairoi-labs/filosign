@@ -18,10 +18,12 @@ import { getAddress } from "viem";
 import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
 import { useCryptoSeed } from "../auth";
+import { useUserProfile } from "../users/useUserProfile";
 
 export function useSignFile() {
 	const { contracts, wallet, api, wasm } = useFilosignContext();
 	const { action: cryptoAction } = useCryptoSeed();
+	const { data: userProfile } = useUserProfile();
 
 	const zParticipant = z.union([
 		z.string(),
@@ -93,6 +95,13 @@ export function useSignFile() {
 				const signerEmail = normalizePlacementRecipientEmail(rawEmail);
 				const signerEmailCommitment = hashNormalizedSignerEmail(signerEmail);
 
+				const privySubjectCommitment = userProfile?.privySubjectCommitment;
+				if (!privySubjectCommitment) {
+					throw new Error(
+						"Profile missing Privy subject commitment; try re-login.",
+					);
+				}
+
 				const placementCommitmentHex = placementCommitment as Hex;
 
 				const assignedIds = manifest.fields
@@ -163,6 +172,7 @@ export function useSignFile() {
 							{ name: "sender", type: "address" },
 							{ name: "signerWallet", type: "address" },
 							{ name: "signerEmailCommitment", type: "bytes32" },
+							{ name: "privySubjectCommitment", type: "bytes32" },
 							{ name: "dl3SignatureCommitment", type: "bytes20" },
 							{ name: "completionsRoot", type: "bytes32" },
 							{ name: "leafSchemaVersion", type: "uint8" },
@@ -176,6 +186,7 @@ export function useSignFile() {
 						sender,
 						signerWallet: wallet.account.address,
 						signerEmailCommitment,
+						privySubjectCommitment,
 						dl3SignatureCommitment,
 						completionsRoot,
 						leafSchemaVersion: LEAF_SCHEMA_VERSION_V1,
