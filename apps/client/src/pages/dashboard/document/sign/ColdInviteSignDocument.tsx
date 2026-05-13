@@ -18,6 +18,7 @@ import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
 import { Input } from "@/src/lib/components/ui/input";
 import { Label } from "@/src/lib/components/ui/label";
 import { cn } from "@/src/lib/utils";
+import { ColdInviteNotForYouCallout } from "@/src/pages/onboarding/_components/ColdInviteNotForYouCallout";
 import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
 import { SignDocumentPdfPreview } from "./_components/SignDocumentPdfPreview";
 import { SignDocumentShell } from "./_components/SignDocumentShell";
@@ -116,6 +117,10 @@ export function ColdInviteSignDocument({ pieceCid, inviteToken }: Props) {
 
 	const invite = f.invite;
 
+	const coldWizardDialogOpen = !(
+		f.shouldSwitchAccountPrompt && f.wizardPanel === "passphrase"
+	);
+
 	if (!f.fileData) {
 		return (
 			<SignDocumentShell
@@ -128,11 +133,14 @@ export function ColdInviteSignDocument({ pieceCid, inviteToken }: Props) {
 							<FileTextIcon className="size-12 text-muted-foreground mb-3" />
 							<div className="text-center space-y-1 max-w-md">
 								<h1 className="text-lg font-semibold">
-									You have a document to sign
+									{f.shouldSwitchAccountPrompt
+										? "Wrong account for this invite"
+										: "You have a document to sign"}
 								</h1>
 								<p className="text-sm text-muted-foreground">
-									When your session is ready, enter the six-word passphrase the
-									sender gave you out-of-band.
+									{f.shouldSwitchAccountPrompt
+										? "Use Switch account in the dialog to sign in with the invited address."
+										: "When your session is ready, enter the six-word passphrase the sender gave you out-of-band."}
 								</p>
 							</div>
 						</div>
@@ -147,13 +155,15 @@ export function ColdInviteSignDocument({ pieceCid, inviteToken }: Props) {
 								</p>
 							</div>
 							<div className="p-4 text-xs text-muted-foreground">
-								Use the dialog to sign in and enter your passphrase.
+								{f.shouldSwitchAccountPrompt
+									? "Close the switch-account dialog after you change logins, or cancel to leave."
+									: "Use the dialog to sign in and enter your passphrase."}
 							</div>
 						</aside>
 					</>
 				}
 			>
-				<Dialog open>
+				<Dialog open={coldWizardDialogOpen}>
 					<DialogContent className="sm:max-w-md" showCloseButton={false}>
 						{f.wizardPanel === "signingIn" ||
 						f.wizardPanel === "busy" ||
@@ -305,17 +315,13 @@ export function ColdInviteSignDocument({ pieceCid, inviteToken }: Props) {
 					<DialogContent>
 						<DialogHeader>
 							<DialogTitle>Switch account to continue</DialogTitle>
-							<DialogDescription>
-								This invite is restricted to{" "}
-								<strong>{invite.recipientEmails.join(", ")}</strong>, but you
-								are signed in as{" "}
-								<strong>
-									{f.user?.email?.address ?? "an account without email"}
-								</strong>
-								.
-							</DialogDescription>
 						</DialogHeader>
-						<DialogFooter>
+						<ColdInviteNotForYouCallout
+							className="mt-1"
+							recipientEmails={invite.recipientEmails}
+							signedInEmailForUi={f.signedInEmailForUi}
+						/>
+						<DialogFooter className="mt-4">
 							<Button type="button" variant="outline" onClick={toHome}>
 								Cancel
 							</Button>

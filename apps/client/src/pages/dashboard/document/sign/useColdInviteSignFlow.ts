@@ -10,6 +10,7 @@ import {
 	useIsRegistered,
 	useLogin,
 	useLogout,
+	useUserProfile,
 	type ViewFileResult,
 } from "@filosign/react/hooks";
 import { usePrivy } from "@privy-io/react-auth";
@@ -19,11 +20,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getAddress, type Hex } from "viem";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
+import { coldInviteRecipientMatchesIdentity } from "@/src/lib/routing/cold-invite-search";
 import { executeSwitchAccountLogout } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
-
-function normalizeEmail(input: string | null | undefined): string {
-	return input?.trim().toLowerCase() ?? "";
-}
 
 export function useColdInviteSignFlow(args: {
 	pieceCid: string;
@@ -34,6 +32,7 @@ export function useColdInviteSignFlow(args: {
 	const queryClient = useQueryClient();
 	const { api, wallet } = useFilosignContext();
 	const { ready, authenticated, login, logout: logoutPrivy, user } = usePrivy();
+	const { data: userProfile } = useUserProfile();
 	const sdkLogin = useLogin();
 	const logoutFilosign = useLogout();
 	const clearOnboardingForm = useStorePersist((s) => s.clearOnboardingForm);
@@ -96,22 +95,29 @@ export function useColdInviteSignFlow(args: {
 		return normalized.split("-").filter(Boolean).length;
 	}, [phrase]);
 
-	const activePrivyEmail = normalizeEmail(user?.email?.address);
-	const recipientEmailsSet = useMemo(
-		() =>
-			new Set(
-				(invite?.recipientEmails ?? [])
-					.map((e) => normalizeEmail(e))
-					.filter(Boolean),
-			),
-		[invite?.recipientEmails],
+	const loggedInEmail = useMemo(
+		() => user?.email?.address?.trim() || user?.google?.email?.trim() || "",
+		[user?.email?.address, user?.google?.email],
 	);
+
+	const inviteMatchesCurrentUser = useMemo(() => {
+		if (!invite) return false;
+		return coldInviteRecipientMatchesIdentity({
+			recipientEmails: invite.recipientEmails,
+			loggedInEmail,
+			profileEmail: userProfile?.email,
+			senderWallet: wallet?.account?.address,
+			inviteSender: invite.sender,
+		});
+	}, [invite, loggedInEmail, userProfile?.email, wallet?.account?.address]);
+
+	const signedInEmailForUi = loggedInEmail || userProfile?.email?.trim() || "";
+
 	const shouldSwitchAccountPrompt =
-		recipientEmailsSet.size > 0 &&
+		(invite?.recipientEmails.length ?? 0) > 0 &&
 		authenticated &&
-		!!activePrivyEmail &&
 		!fileData &&
-		!recipientEmailsSet.has(activePrivyEmail);
+		!inviteMatchesCurrentUser;
 
 	useEffect(() => {
 		if (!authenticated || !invite || fileData) return;
@@ -307,7 +313,7 @@ export function useColdInviteSignFlow(args: {
 		}
 		if (shouldSwitchAccountPrompt) {
 			toast.error(
-				"This invite is for a different email. Switch account to continue.",
+				"Only the invited email can open this document. Switch account or sign in with that address.",
 			);
 			return;
 		}
@@ -378,6 +384,8 @@ export function useColdInviteSignFlow(args: {
 		decryptError,
 		phraseWordCount,
 		shouldSwitchAccountPrompt,
+		signedInEmailForUi,
+		inviteMatchesCurrentUser,
 		submitFilosignPin,
 		handleUnlockDocument,
 		runColdInviteSwitchAccount,
