@@ -1,3 +1,4 @@
+import { normalizePlacementRecipientEmail } from "@filosign/shared";
 import { useEffect, useMemo, useState } from "react";
 import { getAddress } from "viem";
 import { Button } from "@/src/lib/components/ui/button";
@@ -20,14 +21,17 @@ import {
 import { cn } from "@/src/lib/utils/utils";
 
 export type FieldPlacementSignerOption = {
-	walletAddress: string;
-	name: string;
+	/** Normalized email — select value. */
 	email: string;
+	name: string;
+	/** When on-platform, used for display / optional linkage only. */
+	walletAddress?: `0x${string}`;
 	/** Single-line label for the select (name + email). */
 	label: string;
 };
 
 export type FieldPlacementConfirmPayload = {
+	/** `0x…` when on-platform; empty for invite-only signers. */
 	assignedSignerWallet: string;
 	assignedSignerName: string;
 	assignedSignerEmail: string;
@@ -50,46 +54,47 @@ export function FieldPlacementDialog({
 	signers,
 	onConfirm,
 }: FieldPlacementDialogProps) {
-	const firstWallet = signers[0]?.walletAddress ?? "";
-	const [selectedWallet, setSelectedWallet] = useState(firstWallet);
+	const firstEmail = signers[0]?.email ?? "";
+	const [selectedEmail, setSelectedEmail] = useState(firstEmail);
 	const [required, setRequired] = useState(true);
 
 	const normalizedOptions = useMemo(
 		() =>
 			signers.map((s) => ({
 				...s,
-				normalized: getAddress(s.walletAddress),
+				key: normalizePlacementRecipientEmail(s.email),
 			})),
 		[signers],
 	);
 
 	const selectedSignerLabel = useMemo(() => {
-		if (!selectedWallet) return null;
-		try {
-			const key = getAddress(selectedWallet);
-			return normalizedOptions.find((o) => o.normalized === key)?.label ?? null;
-		} catch {
-			return null;
-		}
-	}, [selectedWallet, normalizedOptions]);
+		if (!selectedEmail) return null;
+		const key = normalizePlacementRecipientEmail(selectedEmail);
+		return normalizedOptions.find((o) => o.key === key)?.label ?? null;
+	}, [selectedEmail, normalizedOptions]);
 
 	useEffect(() => {
 		if (!open) return;
-		const initial = signers[0]?.walletAddress
-			? getAddress(signers[0].walletAddress)
+		const initial = signers[0]?.email
+			? normalizePlacementRecipientEmail(signers[0].email)
 			: "";
-		setSelectedWallet(initial);
+		setSelectedEmail(initial);
 		setRequired(true);
 	}, [open, signers]);
 
 	const handleConfirm = () => {
-		if (!selectedWallet) return;
-		const normalized = getAddress(selectedWallet);
-		const picked = normalizedOptions.find((s) => s.normalized === normalized);
+		if (!selectedEmail) return;
+		const key = normalizePlacementRecipientEmail(selectedEmail);
+		const picked = normalizedOptions.find((s) => s.key === key);
+		const walletRaw = picked?.walletAddress?.trim();
+		const assignedSignerWallet =
+			walletRaw && /^0x[a-fA-F0-9]{40}$/.test(walletRaw)
+				? getAddress(walletRaw as `0x${string}`)
+				: "";
 		onConfirm({
-			assignedSignerWallet: normalized,
+			assignedSignerWallet,
 			assignedSignerName: picked?.name?.trim() || "Signer",
-			assignedSignerEmail: picked?.email?.trim() || "",
+			assignedSignerEmail: key,
 			required,
 		});
 		onOpenChange(false);
@@ -112,16 +117,16 @@ export function FieldPlacementDialog({
 
 				{signers.length === 0 ? (
 					<p className="text-sm text-destructive">
-						Add at least one signer to the envelope before placing fields.
+						Add at least one signer with an email before placing fields.
 					</p>
 				) : (
 					<div className="grid gap-4 py-1">
 						<div className="grid gap-2">
 							<Label htmlFor="field-placement-signer">Assigned signer</Label>
 							<Select
-								value={selectedWallet}
+								value={selectedEmail}
 								onValueChange={(v) => {
-									if (v != null) setSelectedWallet(v);
+									if (v != null) setSelectedEmail(v);
 								}}
 							>
 								<SelectTrigger
@@ -139,14 +144,12 @@ export function FieldPlacementDialog({
 								</SelectTrigger>
 								<SelectContent>
 									{normalizedOptions.map((s) => (
-										<SelectItem key={s.normalized} value={s.normalized}>
+										<SelectItem key={s.key} value={s.key}>
 											<span className="flex min-w-0 flex-col gap-0.5 text-left">
 												<span className="truncate font-medium">{s.name}</span>
-												{s.email ? (
-													<span className="truncate text-xs text-muted-foreground">
-														{s.email}
-													</span>
-												) : null}
+												<span className="truncate text-xs text-muted-foreground">
+													{s.email}
+												</span>
 											</span>
 										</SelectItem>
 									))}
@@ -183,7 +186,7 @@ export function FieldPlacementDialog({
 					<Button
 						type="button"
 						variant="primary"
-						disabled={signers.length === 0 || !selectedWallet}
+						disabled={signers.length === 0 || !selectedEmail}
 						onClick={handleConfirm}
 					>
 						Place field
