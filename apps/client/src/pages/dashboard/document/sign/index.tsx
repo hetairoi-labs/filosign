@@ -4,14 +4,21 @@ import {
 	useComplianceBundle,
 	useDocumentIncentive,
 	useFileInfo,
+	useRegenerateColdInvite,
 	useSignDraft,
 	useSignFile,
 	useUpdateSignDraft,
+	useUserProfile,
 	useViewFile,
 	type ViewFileResult,
 } from "@filosign/react/hooks";
-import { zPlacementManifest } from "@filosign/shared";
 import {
+	hashNormalizedSignerEmail,
+	normalizePlacementRecipientEmail,
+	zPlacementManifest,
+} from "@filosign/shared";
+import {
+	ArrowClockwiseIcon,
 	ArrowLeftIcon,
 	ArrowSquareOutIcon,
 	CaretLeftIcon,
@@ -40,7 +47,7 @@ import {
 	useState,
 } from "react";
 import { toast } from "sonner";
-import { formatUnits, getAddress } from "viem";
+import { formatUnits } from "viem";
 import {
 	defaultChain,
 	erc20DisplayForChain,
@@ -50,6 +57,7 @@ import { CopyButton } from "@/src/lib/components/custom/CopyButton";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
 import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
+import { buildColdInviteMagicLink } from "@/src/lib/routing/cold-invite-search";
 import { cn } from "@/src/lib/utils";
 import {
 	buildCompliancePdfOnly,
@@ -58,31 +66,56 @@ import {
 	fetchSignerIncentivesForCompliancePdf,
 	sha256HexOfBytes,
 } from "@/src/lib/utils/compliance-pdf";
+import {
+	ColdShareDialog,
+	type ColdSharePackage,
+} from "../../envelope/create/add-sign/_components/ColdShareDialog";
+import { ColdInviteSignDocument } from "./ColdInviteSignDocument";
 
 const LazyPdfJsPreview = lazy(
 	() => import("@/src/lib/components/custom/PdfJsPreview.lazy"),
 );
 
-export default function SignDocumentPage() {
+function WarmSignDocumentPage() {
 	const navigate = useNavigate();
 	const search = useSearch({ from: "/dashboard/document/sign/" });
 	const pieceCid = search.pieceCid;
 
 	const { user } = usePrivy();
 	const { contracts } = useFilosignContext();
-	const signerAddress = user?.wallet?.address as `0x${string}` | undefined;
-
 	const {
 		data: file,
 		isLoading: fileLoading,
 		error: fileError,
 	} = useFileInfo({ pieceCid });
+	const { data: userProfile } = useUserProfile();
+	const signerAddress = user?.wallet?.address as `0x${string}` | undefined;
+
+	const signerPlacementEmail = useMemo(() => {
+		const fromProfile = userProfile?.email?.trim();
+		if (fromProfile) return normalizePlacementRecipientEmail(fromProfile);
+		const row = file?.signers?.find((s) => {
+			if (typeof s === "string" || !signerAddress) return false;
+			return s.wallet.toLowerCase() === signerAddress.toLowerCase();
+		});
+		if (row && typeof row === "object" && row.email?.trim()) {
+			return normalizePlacementRecipientEmail(row.email);
+		}
+		const privy = user?.email?.address?.trim();
+		if (privy) return normalizePlacementRecipientEmail(privy);
+		return null;
+	}, [userProfile?.email, file?.signers, signerAddress, user?.email?.address]);
+
+	const signerEmailCommitment = useMemo(() => {
+		if (!signerPlacementEmail) return undefined;
+		return hashNormalizedSignerEmail(signerPlacementEmail);
+	}, [signerPlacementEmail]);
 
 	const acknowledgeFile = useAckFile();
 
 	const { data: incentive } = useDocumentIncentive({
 		pieceCid,
-		signerAddress,
+		signerEmailCommitment,
 	});
 
 	const tokenInfo = useMemo(() => {
@@ -137,6 +170,10 @@ export default function SignDocumentPage() {
 	const draftSaveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(
 		undefined,
 	);
+
+	const [coldShareDialogOpen, setColdShareDialogOpen] = useState(false);
+	const [coldShare, setColdShare] = useState<ColdSharePackage | null>(null);
+	const regenerateColdInvite = useRegenerateColdInvite();
 
 	useEffect(() => {
 		hasHydratedDraftForPieceCid.current = null;
@@ -218,17 +255,15 @@ export default function SignDocumentPage() {
 	const documentRef = useRef<HTMLDivElement>(null);
 
 	const myPlacementFields = useMemo(() => {
-		if (!signerAddress || !fileData?.placementManifest) return [];
+		if (!signerPlacementEmail || !fileData?.placementManifest) return [];
 		const parsed = zPlacementManifest.safeParse(fileData.placementManifest);
 		if (!parsed.success) {
 			return [];
 		}
-		const me = getAddress(signerAddress);
-		const fields = parsed.data.fields.filter(
-			(f) => getAddress(f.assignedSigner) === me,
+		return parsed.data.fields.filter(
+			(f) => f.assignedRecipientEmail === signerPlacementEmail,
 		);
-		return fields;
-	}, [fileData?.placementManifest, signerAddress]);
+	}, [fileData?.placementManifest, signerPlacementEmail]);
 
 	/** Hint for page count from placement manifest until pdf.js reports the real total. */
 	const signPdfPageCountHint = useMemo(() => {
@@ -870,6 +905,84 @@ export default function SignDocumentPage() {
 		);
 	}
 
+	const handleRotateInvite = async () => {
+		if (!pieceCid || !file || !user?.wallet?.address) return;
+		const confirmed = window.confirm(
+			"Rotate invite now? Existing magic links and codes will stop working.",
+		);
+		if (!confirmed) return;
+
+		try {
+			const {
+				generateColdInvitePhrase,
+				wrapColdInviteDek,
+				KEM,
+				encryption,
+				toBytes,
+			} = await import("@filosign/crypto-utils");
+			const { getSessionSeed } = await import("@filosign/react/hooks");
+
+			const phrase = generateColdInvitePhrase();
+			const inviteToken = `0x${Array.from(
+				crypto.getRandomValues(new Uint8Array(32)),
+			)
+				.map((b) => b.toString(16).padStart(2, "0"))
+				.join("")}` as `0x${string}`;
+
+			const keySeed = getSessionSeed(user.wallet.address as `0x${string}`);
+			if (!keySeed) {
+				toast.error("Please unlock your wallet first");
+				return;
+			}
+
+			const { privateKey } = await KEM.keyGen({
+				seed: new Uint8Array(Array.from(keySeed)),
+			});
+
+			const { sharedSecret: ssE } = await KEM.decapsulate({
+				ciphertext: toBytes(file.kemCiphertext as `0x${string}`),
+				privateKeySelf: privateKey,
+			});
+
+			const dek = await encryption.decrypt({
+				ciphertext: toBytes(file.encryptedEncryptionKey as `0x${string}`),
+				secretKey: ssE,
+				info: `${pieceCid}:${user.wallet.address}`,
+			});
+
+			const wrapped = await wrapColdInviteDek({
+				encryptionKey: dek,
+				phrase,
+			});
+
+			const wrappedHex = `0x${Array.from(wrapped)
+				.map((b) => b.toString(16).padStart(2, "0"))
+				.join("")}` as `0x${string}`;
+
+			const result = await regenerateColdInvite.mutateAsync({
+				pieceCid,
+				inviteToken,
+				wrappedEncryptionKey: wrappedHex,
+			});
+
+			const magicLink = buildColdInviteMagicLink(window.location.origin, {
+				pieceCid,
+				inviteToken: result.inviteToken,
+			});
+			setColdShare({
+				emails: result.recipientEmails,
+				phrase,
+				magicLink,
+			});
+			setColdShareDialogOpen(true);
+			toast.success("Invite rotated. Old links are now invalid.");
+		} catch (err) {
+			toast.error(
+				err instanceof Error ? err.message : "Failed to rotate invite",
+			);
+		}
+	};
+
 	return (
 		<div className="fixed inset-0 bg-background flex flex-col">
 			<div className="shrink-0 sticky top-0 z-50 bg-background border-b border-border">
@@ -1015,6 +1128,18 @@ export default function SignDocumentPage() {
 							>
 								<DownloadIcon className="size-5" />
 							</Button>
+							{isSender && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => void handleRotateInvite()}
+									disabled={regenerateColdInvite.isPending}
+									className="h-8 px-2 text-xs"
+								>
+									<ArrowClockwiseIcon className="mr-1 size-3.5" />
+									Rotate
+								</Button>
+							)}
 
 							{canSign && signerAddress && (
 								<Button
@@ -1226,6 +1351,21 @@ export default function SignDocumentPage() {
 							>
 								<DownloadIcon className="size-5" />
 							</Button>
+
+							{/* Rotate Invite - only visible to sender */}
+							{isSender && (
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => void handleRotateInvite()}
+									disabled={regenerateColdInvite.isPending}
+									className="h-8 gap-1.5"
+									title="Rotate invite"
+								>
+									<ArrowClockwiseIcon className="size-4" />
+									Rotate Invite
+								</Button>
+							)}
 						</div>
 
 						{canSign && signerAddress && (
@@ -1495,6 +1635,36 @@ export default function SignDocumentPage() {
 					</div>
 				</aside>
 			</div>
+			<ColdShareDialog
+				open={coldShareDialogOpen}
+				share={coldShare}
+				onDone={() => {
+					setColdShareDialogOpen(false);
+					setColdShare(null);
+				}}
+			/>
 		</div>
 	);
+}
+
+export default function SignDocumentPage() {
+	const search = useSearch({ from: "/dashboard/document/sign/" });
+	const invite = search.invite?.trim() ?? "";
+	const pieceCid = search.pieceCid?.trim() ?? "";
+	if (invite) {
+		if (!pieceCid) {
+			return (
+				<div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4">
+					<FileTextIcon className="size-14 text-muted-foreground" />
+					<h1 className="text-lg font-semibold">Invalid document link</h1>
+					<p className="text-sm text-muted-foreground text-center max-w-sm">
+						This invite link is missing the document id. Ask the sender to
+						resend the email.
+					</p>
+				</div>
+			);
+		}
+		return <ColdInviteSignDocument pieceCid={pieceCid} inviteToken={invite} />;
+	}
+	return <WarmSignDocumentPage />;
 }
