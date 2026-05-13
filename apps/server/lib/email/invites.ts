@@ -113,6 +113,64 @@ export async function sendShareRequestEmail(args: SendShareRequestEmailArgs) {
 	}
 }
 
+type SendColdDocumentInviteEmailArgs = {
+	to: string;
+	pieceCid: string;
+	inviteToken: string;
+	senderWallet: Address;
+	senderName?: string | null;
+};
+
+export async function sendColdDocumentInviteEmail(
+	args: SendColdDocumentInviteEmailArgs,
+) {
+	if (shouldSkipEmail()) return;
+
+	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
+	const signUrl = new URL("/", appUrl);
+	signUrl.searchParams.set("coldPieceCid", args.pieceCid);
+	signUrl.searchParams.set("coldInvite", args.inviteToken);
+	const senderLabel =
+		args.senderName?.trim() || formatAddress(args.senderWallet);
+	const escapedSenderLabel = escapeHtml(senderLabel);
+
+	const subject = `${senderLabel} sent you a document`;
+	const text = [
+		`${senderLabel} sent you a document on Filosign.`,
+		"",
+		"Open the link to view or sign. The sender will share a separate six-word passphrase with you (not by email):",
+		signUrl.toString(),
+	].join("\n");
+
+	const html = `
+		<div style="font-family: Inter, Arial, sans-serif; color: #111827; line-height: 1.5; max-width: 560px;">
+			<h1 style="font-size: 22px; margin: 0 0 12px;">You have a new document</h1>
+			<p style="margin: 0 0 16px;">
+				<strong>${escapedSenderLabel}</strong> sent you a secure document.
+			</p>
+			<p style="margin: 0 0 16px; color: #374151;">
+				Use the six-word passphrase they give you out-of-band after you open the link.
+			</p>
+			<a href="${signUrl.toString()}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 12px 20px; font-weight: 600;">
+				Open document
+			</a>
+		</div>
+	`;
+
+	const { error } = await resend.emails.send({
+		from: env.RESEND_FROM_EMAIL,
+		to: args.to,
+		subject,
+		text,
+		html,
+		replyTo: env.RESEND_FROM_EMAIL,
+	});
+
+	if (error) {
+		throw new Error(error.message);
+	}
+}
+
 export async function sendInviteEmail(args: SendInviteEmailArgs) {
 	if (shouldSkipEmail()) return;
 
@@ -196,7 +254,7 @@ export async function sendDocumentReceivedEmail(
 	if (shouldSkipEmail()) return;
 
 	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
-	const documentUrl = `${appUrl}/dashboard`;
+	const documentUrl = `${appUrl}/dashboard/document/sign?pieceCid=${encodeURIComponent(args.pieceCid)}`;
 	const senderLabel =
 		args.senderName?.trim() || formatAddress(args.senderWallet);
 	const escapedSenderLabel = escapeHtml(senderLabel);
