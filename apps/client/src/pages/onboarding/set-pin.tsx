@@ -5,7 +5,7 @@ import {
 	DownloadSimpleIcon,
 } from "@phosphor-icons/react";
 import { useIdentityToken } from "@privy-io/react-auth";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -38,8 +38,14 @@ export default function OnboardingSetPinPage() {
 	const [recoveryPhrase, setRecoveryPhrase] = useState<string | null>(null);
 	const [step, setStep] = useState<"enter" | "confirm">("enter");
 	const navigate = useNavigate();
+	const search = useSearch({ from: "/onboarding/set-pin" });
 	const { onboardingForm, setOnboardingForm: _setOnboardingForm } =
 		useStorePersist();
+
+	const coldReturn =
+		search.coldPieceCid && search.coldInvite
+			? { coldPieceCid: search.coldPieceCid, coldInvite: search.coldInvite }
+			: undefined;
 	const { identityToken } = useIdentityToken();
 
 	const logout = useLogout();
@@ -49,7 +55,10 @@ export default function OnboardingSetPinPage() {
 		if (!onboardingForm) return;
 
 		try {
-			navigate({ to: "/onboarding/welcome" });
+			navigate({
+				to: "/onboarding/welcome",
+				...(coldReturn ? { search: coldReturn } : {}),
+			});
 		} catch (error) {
 			handleError(error, async () => {
 				await logout.mutateAsync();
@@ -88,7 +97,10 @@ export default function OnboardingSetPinPage() {
 			setStep("enter");
 			setConfirmPin("");
 		} else {
-			navigate({ to: "/onboarding" });
+			navigate({
+				to: "/onboarding",
+				...(coldReturn ? { search: coldReturn } : {}),
+			} as never);
 		}
 	};
 

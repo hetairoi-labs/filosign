@@ -1,5 +1,5 @@
 import { CaretRightIcon } from "@phosphor-icons/react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useState } from "react";
 import Logo from "@/src/lib/components/custom/Logo";
@@ -22,6 +22,12 @@ export default function OnboardingWelcomePage() {
 	const [lastName, setLastName] = useState("");
 	const { setOnboardingForm } = useStorePersist();
 	const navigate = useNavigate();
+	const search = useSearch({ from: "/onboarding/" });
+
+	const coldReturn =
+		search.coldPieceCid && search.coldInvite
+			? { coldPieceCid: search.coldPieceCid, coldInvite: search.coldInvite }
+			: undefined;
 
 	const handleContinue = () => {
 		setOnboardingForm({
@@ -30,7 +36,10 @@ export default function OnboardingWelcomePage() {
 			pin: "",
 			hasOnboarded: false,
 		});
-		navigate({ to: "/onboarding/set-pin" });
+		navigate({
+			to: "/onboarding/set-pin",
+			...(coldReturn ? { search: coldReturn } : {}),
+		});
 	};
 
 	const handleKeyPress = (e: React.KeyboardEvent) => {

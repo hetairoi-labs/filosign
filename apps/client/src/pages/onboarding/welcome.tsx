@@ -2,7 +2,7 @@ import { useFilosignContext } from "@filosign/react";
 import { useIsRegistered, useUpdateUserProfile } from "@filosign/react/hooks";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import Logo from "@/src/lib/components/custom/Logo";
@@ -25,6 +25,10 @@ export default function OnboardingWelcomeCompletePage() {
 	const updateUserProfile = useUpdateUserProfile();
 	const { api } = useFilosignContext();
 	const navigate = useNavigate();
+	const search = useSearch({ from: "/onboarding/welcome" });
+
+	const coldReturnToSign =
+		Boolean(search.coldPieceCid?.trim()) && Boolean(search.coldInvite?.trim());
 
 	useEffect(() => {
 		if (onboardingForm?.firstName || onboardingForm?.lastName) {
@@ -34,9 +38,26 @@ export default function OnboardingWelcomeCompletePage() {
 
 	useEffect(() => {
 		if (ready && !isRegistered.data && !isRegistered.isPending) {
-			navigate({ to: "/onboarding" });
+			navigate({
+				to: "/onboarding",
+				search:
+					coldReturnToSign && search.coldPieceCid && search.coldInvite
+						? {
+								coldPieceCid: search.coldPieceCid,
+								coldInvite: search.coldInvite,
+							}
+						: {},
+			} as never);
 		}
-	}, [ready, isRegistered.data, isRegistered.isPending, navigate]);
+	}, [
+		ready,
+		isRegistered.data,
+		isRegistered.isPending,
+		navigate,
+		coldReturnToSign,
+		search.coldPieceCid,
+		search.coldInvite,
+	]);
 
 	async function handleSubmit() {
 		if (onboardingForm?.firstName) {
@@ -67,6 +88,17 @@ export default function OnboardingWelcomeCompletePage() {
 				});
 		}
 
+		if (coldReturnToSign && search.coldPieceCid && search.coldInvite) {
+			navigate({
+				to: "/dashboard/document/sign",
+				search: {
+					pieceCid: search.coldPieceCid,
+					invite: search.coldInvite,
+				},
+			} as never);
+			return;
+		}
+
 		navigate({ to: "/dashboard" });
 	}
 
@@ -95,7 +127,7 @@ export default function OnboardingWelcomeCompletePage() {
 								}
 							}}
 						>
-							Go to Dashboard
+							{coldReturnToSign ? "Sign your document" : "Go to Dashboard"}
 							<CaretRightIcon
 								className="transition-transform duration-200 size-4 group-hover:translate-x-1"
 								weight="bold"
