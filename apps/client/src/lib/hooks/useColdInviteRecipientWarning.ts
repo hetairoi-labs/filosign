@@ -1,0 +1,79 @@
+import { useFilosignContext } from "@filosign/react";
+import { useColdInvitePayload, useUserProfile } from "@filosign/react/hooks";
+import { usePrivy } from "@privy-io/react-auth";
+import { useRouterState } from "@tanstack/react-router";
+import { useMemo } from "react";
+import {
+	coldInviteRecipientMatchesIdentity,
+	parseColdInviteFromLocationSearch,
+} from "@/src/lib/routing/cold-invite-search";
+
+/**
+ * When the URL carries a cold-invite token and the user is logged in, compares Privy
+ * (email + Google) and Filosign profile email to invite recipients (and sender wallet).
+ */
+export function useColdInviteRecipientWarning() {
+	const searchKey = useRouterState({
+		select: (s) => JSON.stringify(s.location.search ?? {}),
+	});
+	const cold = useMemo(() => {
+		try {
+			const raw = JSON.parse(searchKey) as Record<string, unknown>;
+			const coldPieceCid = String(raw.coldPieceCid ?? "").trim();
+			const coldInvite = String(raw.coldInvite ?? "").trim();
+			if (coldPieceCid && coldInvite) {
+				return { coldPieceCid, coldInvite };
+			}
+			const pieceCid = String(raw.pieceCid ?? "").trim();
+			const invite = String(raw.invite ?? "").trim();
+			if (pieceCid && invite) {
+				return { coldPieceCid: pieceCid, coldInvite: invite };
+			}
+		} catch {
+			/* fall through */
+		}
+		return parseColdInviteFromLocationSearch(
+			typeof window !== "undefined" ? window.location.search : "",
+		);
+	}, [searchKey]);
+	const inviteToken = cold?.coldInvite;
+
+	const { authenticated, user } = usePrivy();
+	const { data: userProfile } = useUserProfile();
+	const { wallet } = useFilosignContext();
+
+	const { data: invite, isSuccess } = useColdInvitePayload(inviteToken);
+
+	const loggedInEmail = useMemo(
+		() => user?.email?.address?.trim() || user?.google?.email?.trim() || "",
+		[user?.email?.address, user?.google?.email],
+	);
+
+	const signedInEmailForUi = loggedInEmail || userProfile?.email?.trim() || "";
+
+	const inviteMatches = useMemo(() => {
+		if (!invite) return false;
+		return coldInviteRecipientMatchesIdentity({
+			recipientEmails: invite.recipientEmails,
+			loggedInEmail,
+			profileEmail: userProfile?.email,
+			senderWallet: wallet?.account?.address,
+			inviteSender: invite.sender,
+		});
+	}, [invite, loggedInEmail, userProfile?.email, wallet?.account?.address]);
+
+	const showWarning =
+		Boolean(inviteToken && inviteToken.length >= 8) &&
+		authenticated &&
+		isSuccess &&
+		!!invite &&
+		invite.recipientEmails.length > 0 &&
+		!inviteMatches;
+
+	return {
+		showWarning,
+		invite,
+		signedInEmailForUi,
+		recipientEmails: invite?.recipientEmails ?? [],
+	};
+}
