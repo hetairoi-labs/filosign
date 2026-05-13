@@ -10,3 +10,4 @@ error ApproveSignatureExpired();
 error NotAllSigned();
 error IncentiveAlreadyClaimed();
 error OnlyServerOrFileRegistry();
+error IncentiveReleaseLengthMismatch();
