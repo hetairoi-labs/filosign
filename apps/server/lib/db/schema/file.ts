@@ -51,6 +51,32 @@ export const fileParticipants = t.pgTable(
 	],
 );
 
+export const fileColdInvites = t.pgTable(
+	"file_cold_invites",
+	{
+		inviteToken: t.text().notNull(),
+		filePieceCid: t
+			.text()
+			.notNull()
+			.references(() => files.pieceCid, { onDelete: "cascade" }),
+		email: t.text().notNull(),
+		wrappedEncryptionKey: tHex().notNull(),
+		isSigner: t.boolean().notNull().default(false),
+		expiresAt: t.timestamp({ withTimezone: true }).notNull(),
+		...timestamps,
+	},
+	(table) => [
+		t.primaryKey({
+			columns: [table.inviteToken, table.email],
+			name: "pk_file_cold_invites",
+		}),
+		t.index("idx_file_cold_invites_piece").on(table.filePieceCid),
+		t.index("idx_file_cold_invites_token").on(table.inviteToken),
+		t.index("idx_file_cold_invites_email").on(table.email),
+		t.index("idx_file_cold_invites_expires").on(table.expiresAt),
+	],
+);
+
 export const fileAcknowledgements = t.pgTable(
 	"file_acknowledgements",
 	{
