@@ -19,14 +19,16 @@ import {
 	useViewFile,
 } from "@filosign/react/hooks";
 import type { PlacementManifest } from "@filosign/shared";
+import {
+	hashNormalizedSignerEmail,
+	normalizePlacementRecipientEmail,
+} from "@filosign/shared";
 import { memo, useId, useMemo, useRef, useState } from "react";
-import { getAddress } from "viem";
 import {
 	useCurrentWalletAddress,
 	useOtherAddress,
 	useOtherReload,
 } from "./App";
-import Button from "./Button";
 import { SectionHeading } from "./components/SectionHeading";
 import { dummyBytes } from "./dumy";
 import { useEffectOnce } from "./hooks/useEffectOnce";
@@ -512,19 +514,21 @@ function TestFileSend(props: { notify: NotifierFn }) {
 
 	const testPlacementManifest: PlacementManifest = useMemo(
 		() => ({
-			version: 1,
+			version: 2,
 			fields: [
 				{
 					id: "test-signature-1",
 					pageIndex: 0,
 					rect: { x: 0.1, y: 0.1, width: 0.2, height: 0.05 },
-					assignedSigner: getAddress(otherAddress),
+					assignedRecipientEmail: normalizePlacementRecipientEmail(
+						otherProfile?.email ?? "other.signer@test.example",
+					),
 					required: true,
 					type: "signature",
 				},
 			],
 		}),
-		[otherAddress],
+		[otherAddress, otherProfile?.email],
 	);
 
 	if (!otherProfile) {
@@ -633,6 +637,7 @@ function TestFileSend(props: { notify: NotifierFn }) {
 						name: selectedFile ? selectedFile.name : "Test File",
 					},
 					placementManifest: testPlacementManifest,
+					viewerEmails: [],
 				}}
 			>
 				Send {displayFileName}
@@ -972,24 +977,29 @@ const SentFileItem = memo(function SentFileItem(props: { pieceCid: string }) {
 			{file.signers.length > 0 && (
 				<div className="mt-3 space-y-2">
 					<h4 className="text-sm font-medium">Attach Incentives</h4>
-					{file.signers.map((signerAddress) => (
-						<TestAttachIncentive
-							key={signerAddress}
-							pieceCid={pieceCid}
-							signer={signerAddress as `0x${string}`}
-						/>
-					))}
+					{file.signers.map((s) => {
+						const email =
+							typeof s === "object" && s.email?.trim()
+								? normalizePlacementRecipientEmail(s.email)
+								: null;
+						if (!email) return null;
+						const key = typeof s === "string" ? s : (s.wallet ?? email);
+						return (
+							<TestAttachIncentive
+								key={key}
+								pieceCid={pieceCid}
+								signerEmail={email}
+							/>
+						);
+					})}
 				</div>
 			)}
 		</article>
 	);
 });
 
-function TestAttachIncentive(props: {
-	pieceCid: string;
-	signer: `0x${string}`;
-}) {
-	const { pieceCid, signer } = props;
+function TestAttachIncentive(props: { pieceCid: string; signerEmail: string }) {
+	const { pieceCid, signerEmail } = props;
 	const attachIncentive = useAttachIncentiveToFile();
 	const tokenRef = useRef<HTMLInputElement>(null);
 	const amountRef = useRef<HTMLInputElement>(null);
@@ -1002,7 +1012,7 @@ function TestAttachIncentive(props: {
 		if (!token || !rawAmount) return;
 		attachIncentive.mutate({
 			pieceCid,
-			signer,
+			signerEmailCommitment: hashNormalizedSignerEmail(signerEmail),
 			token,
 			amount: BigInt(rawAmount),
 		});
@@ -1018,7 +1028,7 @@ function TestAttachIncentive(props: {
 				id={`${formId}-heading`}
 				className="font-mono text-xs text-muted-foreground break-all"
 			>
-				Signer: {signer}
+				Signer email: {signerEmail}
 			</p>
 
 			<div className="flex flex-col sm:flex-row gap-2">
