@@ -52,6 +52,11 @@ export const definitions = {
         },
         {
           "inputs": [],
+          "name": "IncentiveReleaseLengthMismatch",
+          "type": "error"
+        },
+        {
+          "inputs": [],
           "name": "InvalidApproveNonce",
           "type": "error"
         },
@@ -123,9 +128,9 @@ export const definitions = {
             },
             {
               "indexed": true,
-              "internalType": "address",
-              "name": "signer",
-              "type": "address"
+              "internalType": "bytes32",
+              "name": "signerEmailCommitment",
+              "type": "bytes32"
             },
             {
               "indexed": false,
@@ -278,9 +283,9 @@ export const definitions = {
               "type": "string"
             },
             {
-              "internalType": "address",
-              "name": "signer_",
-              "type": "address"
+              "internalType": "bytes32",
+              "name": "signerEmailCommitment_",
+              "type": "bytes32"
             },
             {
               "internalType": "address",
@@ -306,9 +311,9 @@ export const definitions = {
               "type": "string"
             },
             {
-              "internalType": "address",
-              "name": "signer_",
-              "type": "address"
+              "internalType": "bytes32",
+              "name": "signerEmailCommitment_",
+              "type": "bytes32"
             },
             {
               "internalType": "address",
@@ -468,8 +473,13 @@ export const definitions = {
               "type": "string"
             },
             {
+              "internalType": "bytes32[]",
+              "name": "signerEmailCommitments_",
+              "type": "bytes32[]"
+            },
+            {
               "internalType": "address[]",
-              "name": "signers_",
+              "name": "payoutWallets_",
               "type": "address[]"
             }
           ],
@@ -751,7 +761,7 @@ export const definitions = {
             {
               "indexed": true,
               "internalType": "address",
-              "name": "signer",
+              "name": "signerWallet",
               "type": "address"
             },
             {
@@ -805,12 +815,12 @@ export const definitions = {
         {
           "inputs": [
             {
-              "internalType": "address[]",
-              "name": "signers_",
-              "type": "address[]"
+              "internalType": "bytes32[]",
+              "name": "commitments_",
+              "type": "bytes32[]"
             }
           ],
-          "name": "computeSignersCommitment",
+          "name": "computeEmailSignerCommitment",
           "outputs": [
             {
               "internalType": "bytes20",
@@ -892,6 +902,11 @@ export const definitions = {
                   "type": "bytes20"
                 },
                 {
+                  "internalType": "bytes20",
+                  "name": "viewersCommitment",
+                  "type": "bytes20"
+                },
+                {
                   "internalType": "bytes32",
                   "name": "placementCommitment",
                   "type": "bytes32"
@@ -928,9 +943,9 @@ export const definitions = {
               "type": "bytes32"
             },
             {
-              "internalType": "address",
-              "name": "signer",
-              "type": "address"
+              "internalType": "bytes32",
+              "name": "signerEmailCommitment_",
+              "type": "bytes32"
             }
           ],
           "name": "getSignerIncentive",
@@ -962,9 +977,9 @@ export const definitions = {
               "type": "bytes32"
             },
             {
-              "internalType": "address",
-              "name": "who",
-              "type": "address"
+              "internalType": "bytes32",
+              "name": "signerEmailCommitment_",
+              "type": "bytes32"
             }
           ],
           "name": "hasSigned",
@@ -986,9 +1001,9 @@ export const definitions = {
               "type": "bytes32"
             },
             {
-              "internalType": "address",
-              "name": "who",
-              "type": "address"
+              "internalType": "bytes32",
+              "name": "signerEmailCommitment_",
+              "type": "bytes32"
             }
           ],
           "name": "isSigner",
@@ -1023,9 +1038,9 @@ export const definitions = {
               "type": "bytes32"
             },
             {
-              "internalType": "address",
-              "name": "signer",
-              "type": "address"
+              "internalType": "bytes32",
+              "name": "signerEmailCommitment_",
+              "type": "bytes32"
             }
           ],
           "name": "markIncentiveClaimed",
@@ -1065,9 +1080,14 @@ export const definitions = {
               "type": "address"
             },
             {
-              "internalType": "address[]",
-              "name": "signers_",
-              "type": "address[]"
+              "internalType": "bytes32[]",
+              "name": "signerEmailCommitments_",
+              "type": "bytes32[]"
+            },
+            {
+              "internalType": "bytes32[]",
+              "name": "viewerEmailCommitments_",
+              "type": "bytes32[]"
             },
             {
               "internalType": "uint256",
@@ -1104,8 +1124,13 @@ export const definitions = {
             },
             {
               "internalType": "address",
-              "name": "signer_",
+              "name": "signerWallet_",
               "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "signerEmailCommitment_",
+              "type": "bytes32"
             },
             {
               "internalType": "bytes20",
@@ -1123,8 +1148,13 @@ export const definitions = {
               "type": "bytes"
             },
             {
+              "internalType": "bytes32[]",
+              "name": "allSignerEmailCommitments_",
+              "type": "bytes32[]"
+            },
+            {
               "internalType": "address[]",
-              "name": "allSigners_",
+              "name": "payoutWallets_",
               "type": "address[]"
             },
             {
@@ -1151,9 +1181,9 @@ export const definitions = {
               "type": "bytes32"
             },
             {
-              "internalType": "address",
-              "name": "signer",
-              "type": "address"
+              "internalType": "bytes32",
+              "name": "signerEmailCommitment_",
+              "type": "bytes32"
             },
             {
               "internalType": "address",
@@ -1185,8 +1215,13 @@ export const definitions = {
             },
             {
               "internalType": "address",
-              "name": "viewer_",
+              "name": "viewerWallet_",
               "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "viewerEmailCommitment_",
+              "type": "bytes32"
             },
             {
               "internalType": "uint256",
@@ -1223,9 +1258,14 @@ export const definitions = {
               "type": "address"
             },
             {
-              "internalType": "address[]",
-              "name": "signers_",
-              "type": "address[]"
+              "internalType": "bytes32[]",
+              "name": "signerEmailCommitments_",
+              "type": "bytes32[]"
+            },
+            {
+              "internalType": "bytes32[]",
+              "name": "viewerEmailCommitments_",
+              "type": "bytes32[]"
             },
             {
               "internalType": "uint256",
@@ -1268,8 +1308,13 @@ export const definitions = {
             },
             {
               "internalType": "address",
-              "name": "signer_",
+              "name": "signerWallet_",
               "type": "address"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "signerEmailCommitment_",
+              "type": "bytes32"
             },
             {
               "internalType": "bytes20",
