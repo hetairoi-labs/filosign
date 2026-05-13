@@ -1,12 +1,16 @@
 import { useIsRegistered } from "@filosign/react/hooks";
 import { SpinnerBallIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
-import { useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useEffect, useMemo } from "react";
 import { useWalletClient } from "wagmi";
 import env from "@/src/env";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
+import {
+	hasColdReturn,
+	toSignDocumentSearch,
+} from "@/src/lib/routing/cold-invite-search";
 import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
 
 export default function SignInPage() {
@@ -14,19 +18,36 @@ export default function SignInPage() {
 	const { data: walletClient } = useWalletClient();
 	const isRegistered = useIsRegistered();
 	const navigate = useNavigate();
+	const coldSearch = useSearch({ from: "/" });
+	const coldReturn = useMemo(
+		() => hasColdReturn(coldSearch),
+		[coldSearch.coldPieceCid, coldSearch.coldInvite],
+	);
+	const signSearch = useMemo(
+		() => toSignDocumentSearch(coldSearch),
+		[coldSearch.coldPieceCid, coldSearch.coldInvite],
+	);
 
 	useEffect(() => {
 		if (!ready || !authenticated) return;
 		if (isRegistered.isPending) return;
-		if (isRegistered.data === true) {
-			void navigate({ to: "/dashboard" });
+		if (isRegistered.data !== true) return;
+		if (signSearch) {
+			void navigate({
+				to: "/dashboard/document/sign",
+				search: signSearch,
+				replace: true,
+			});
+			return;
 		}
+		void navigate({ to: "/dashboard", replace: true });
 	}, [
 		ready,
 		authenticated,
 		isRegistered.isPending,
 		isRegistered.data,
 		navigate,
+		signSearch,
 	]);
 
 	const walletReady = Boolean(walletClient?.account.address);
@@ -110,7 +131,19 @@ export default function SignInPage() {
 									variant="default"
 									size="lg"
 									className="w-full"
-									onClick={() => void navigate({ to: "/onboarding" })}
+									onClick={() =>
+										void navigate({
+											to: "/onboarding",
+											...(coldReturn
+												? {
+														search: {
+															coldPieceCid: coldSearch.coldPieceCid,
+															coldInvite: coldSearch.coldInvite,
+														},
+													}
+												: {}),
+										})
+									}
 								>
 									Continue account setup
 								</Button>
