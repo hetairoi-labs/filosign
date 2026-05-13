@@ -4,7 +4,6 @@ import {
 	type Address,
 	type Chain,
 	encodePacked,
-	getAddress,
 	type Hex,
 	isAddress,
 	ripemd160,
@@ -65,11 +64,6 @@ export function generateRegisterChallenge(
 ) {
 	const challenge = `filosign:${userAddress}:${salt}:${info}`;
 	return challenge;
-}
-
-export function computeSignersCommitment(signers: Address[]) {
-	const sortedSigners = signers.map((s) => getAddress(s)).sort();
-	return ripemd160(encodePacked(["address[]"], [sortedSigners]));
 }
 
 export function computeCommitment(
