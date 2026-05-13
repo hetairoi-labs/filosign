@@ -19,6 +19,10 @@ contract FSFileRegistry is EIP712 {
         bytes20 signersCommitment;
         bytes20 viewersCommitment;
         bytes32 placementCommitment;
+        /// @notice Domain-separated hash of sender's normalized primary email.
+        bytes32 senderEmailCommitment;
+        /// @notice Domain-separated hash of sender's Privy subject id.
+        bytes32 senderPrivySubjectCommitment;
         mapping(bytes32 => bool) signerEmailRegistered;
         mapping(bytes32 => bool) viewerEmailRegistered;
         uint8 signersCount;
@@ -36,6 +40,8 @@ contract FSFileRegistry is EIP712 {
         bytes20 signersCommitment;
         bytes20 viewersCommitment;
         bytes32 placementCommitment;
+        bytes32 senderEmailCommitment;
+        bytes32 senderPrivySubjectCommitment;
         uint8 signersCount;
         uint8 signaturesCount;
         uint256 timestamp;
@@ -74,15 +80,15 @@ contract FSFileRegistry is EIP712 {
 
     bytes32 private constant REGISTER_FILE_TYPEHASH =
         keccak256(
-            "RegisterFile(bytes32 cidIdentifier,address sender,bytes20 signersCommitment,bytes20 viewersCommitment,bytes32 placementCommitment,uint256 timestamp,uint256 nonce)"
+            "RegisterFile(bytes32 cidIdentifier,address sender,bytes20 signersCommitment,bytes20 viewersCommitment,bytes32 placementCommitment,bytes32 senderEmailCommitment,bytes32 senderPrivySubjectCommitment,uint256 timestamp,uint256 nonce)"
         );
     bytes32 private constant ACK_FILE_TYPEHASH =
         keccak256(
-            "AckFile(bytes32 cidIdentifier,address sender,address viewerWallet,bytes32 viewerEmailCommitment,uint256 timestamp)"
+            "AckFile(bytes32 cidIdentifier,address sender,address viewerWallet,bytes32 viewerEmailCommitment,bytes32 privySubjectCommitment,uint256 timestamp)"
         );
     bytes32 private constant SIGN_FILE_TYPEHASH =
         keccak256(
-            "SignFile(bytes32 cidIdentifier,address sender,address signerWallet,bytes32 signerEmailCommitment,bytes20 dl3SignatureCommitment,bytes32 completionsRoot,uint8 leafSchemaVersion,uint256 timestamp,uint256 nonce)"
+            "SignFile(bytes32 cidIdentifier,address sender,address signerWallet,bytes32 signerEmailCommitment,bytes32 privySubjectCommitment,bytes20 dl3SignatureCommitment,bytes32 completionsRoot,uint8 leafSchemaVersion,uint256 timestamp,uint256 nonce)"
         );
 
     /// @notice Sorted unique `bytes32` commitments (ascending); `ripemd160` of packed words; empty => zero `bytes20`.
@@ -116,6 +122,8 @@ contract FSFileRegistry is EIP712 {
                 signersCommitment: file.signersCommitment,
                 viewersCommitment: file.viewersCommitment,
                 placementCommitment: file.placementCommitment,
+                senderEmailCommitment: file.senderEmailCommitment,
+                senderPrivySubjectCommitment: file.senderPrivySubjectCommitment,
                 signersCount: file.signersCount,
                 signaturesCount: file.signaturesCount,
                 timestamp: file.timestamp
@@ -127,6 +135,8 @@ contract FSFileRegistry is EIP712 {
         address sender_,
         bytes32[] calldata signerEmailCommitments_,
         bytes32[] calldata viewerEmailCommitments_,
+        bytes32 senderEmailCommitment_,
+        bytes32 senderPrivySubjectCommitment_,
         uint256 timestamp_,
         bytes calldata signature_,
         bytes32 placementCommitment_
@@ -137,6 +147,8 @@ contract FSFileRegistry is EIP712 {
                 sender_,
                 signerEmailCommitments_,
                 viewerEmailCommitments_,
+                senderEmailCommitment_,
+                senderPrivySubjectCommitment_,
                 timestamp_,
                 signature_,
                 placementCommitment_
@@ -165,6 +177,8 @@ contract FSFileRegistry is EIP712 {
         file.signersCommitment = sc;
         file.viewersCommitment = vc;
         file.placementCommitment = placementCommitment_;
+        file.senderEmailCommitment = senderEmailCommitment_;
+        file.senderPrivySubjectCommitment = senderPrivySubjectCommitment_;
         file.signersCount = uint8(signerEmailCommitments_.length);
         file.timestamp = timestamp_;
 
@@ -184,6 +198,7 @@ contract FSFileRegistry is EIP712 {
         address sender_,
         address signerWallet_,
         bytes32 signerEmailCommitment_,
+        bytes32 privySubjectCommitment_,
         bytes20 dl3SignatureCommitment_,
         uint256 timestamp_,
         bytes calldata signature_,
@@ -205,6 +220,7 @@ contract FSFileRegistry is EIP712 {
                 sender_,
                 signerWallet_,
                 signerEmailCommitment_,
+                privySubjectCommitment_,
                 dl3SignatureCommitment_,
                 timestamp_,
                 signature_,
@@ -253,8 +269,9 @@ contract FSFileRegistry is EIP712 {
         bytes32 signerEmailCommitment_
     ) external view returns (bool) {
         return
-            _fileRegistrations[cidId].signatures[signerEmailCommitment_].length !=
-            0;
+            _fileRegistrations[cidId]
+                .signatures[signerEmailCommitment_]
+                .length != 0;
     }
 
     function validateFileRegistrationSignature(
@@ -262,6 +279,8 @@ contract FSFileRegistry is EIP712 {
         address sender_,
         bytes32[] calldata signerEmailCommitments_,
         bytes32[] calldata viewerEmailCommitments_,
+        bytes32 senderEmailCommitment_,
+        bytes32 senderPrivySubjectCommitment_,
         uint256 timestamp_,
         bytes calldata signature_,
         bytes32 placementCommitment_
@@ -272,6 +291,10 @@ contract FSFileRegistry is EIP712 {
         );
 
         if (!manager.isRegistered(sender_)) revert SenderNotRegistered();
+        if (
+            senderEmailCommitment_ == bytes32(0) ||
+            senderPrivySubjectCommitment_ == bytes32(0)
+        ) revert InvalidSignature();
 
         bytes20 signersCommitment = computeEmailSignerCommitment(
             signerEmailCommitments_
@@ -289,6 +312,8 @@ contract FSFileRegistry is EIP712 {
                 signersCommitment,
                 viewersCommitment,
                 placementCommitment_,
+                senderEmailCommitment_,
+                senderPrivySubjectCommitment_,
                 timestamp_,
                 nonce[sender_]
             )
@@ -303,6 +328,7 @@ contract FSFileRegistry is EIP712 {
         address sender_,
         address signerWallet_,
         bytes32 signerEmailCommitment_,
+        bytes32 privySubjectCommitment_,
         bytes20 dl3SignatureCommitment_,
         uint256 timestamp_,
         bytes calldata signature_,
@@ -329,6 +355,7 @@ contract FSFileRegistry is EIP712 {
                 sender_,
                 signerWallet_,
                 signerEmailCommitment_,
+                privySubjectCommitment_,
                 dl3SignatureCommitment_,
                 completionsRoot_,
                 leafSchemaVersion_,
@@ -346,6 +373,7 @@ contract FSFileRegistry is EIP712 {
         address sender_,
         address viewerWallet_,
         bytes32 viewerEmailCommitment_,
+        bytes32 privySubjectCommitment_,
         uint256 timestamp_,
         bytes calldata signature_
     ) public view returns (bool) {
@@ -356,8 +384,10 @@ contract FSFileRegistry is EIP712 {
         FileRegistration storage file = _fileRegistrations[
             cidIdentifier(pieceCid_)
         ];
-        if (!file.viewerEmailRegistered[viewerEmailCommitment_])
-            revert InvalidSigner();
+        if (
+            !file.viewerEmailRegistered[viewerEmailCommitment_] &&
+            !file.signerEmailRegistered[viewerEmailCommitment_]
+        ) revert InvalidSigner();
         if (file.sender != sender_) revert InvalidSender();
 
         bytes32 cidId = cidIdentifier(pieceCid_);
@@ -368,6 +398,7 @@ contract FSFileRegistry is EIP712 {
                 sender_,
                 viewerWallet_,
                 viewerEmailCommitment_,
+                privySubjectCommitment_,
                 timestamp_
             )
         );
@@ -416,7 +447,9 @@ contract FSFileRegistry is EIP712 {
         bytes32 cidId,
         bytes32 signerEmailCommitment_
     ) external onlyManager {
-        _fileRegistrations[cidId].incentiveClaimed[signerEmailCommitment_] = true;
+        _fileRegistrations[cidId].incentiveClaimed[
+            signerEmailCommitment_
+        ] = true;
     }
 
     function allSigned(bytes32 cidId) external view returns (bool) {
