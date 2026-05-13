@@ -1,4 +1,9 @@
 import { describe, expect, it } from "bun:test";
+import { long as EFF_WORDLIST } from "@wordlist/english-eff/long";
+import {
+	generateColdInvitePhrase,
+	normalizeColdInvitePhrase,
+} from "./src/cold-invite";
 import {
 	computeCommitment,
 	deriveDeterministicSeed32FromSignature,
@@ -134,6 +139,26 @@ describe("Encryption (AES-GCM)", async () => {
 		});
 
 		expect(decryptedMessage).toEqual(message);
+	});
+});
+
+describe("Cold invite phrase", () => {
+	const wordSet = new Set(EFF_WORDLIST);
+
+	it("generates six known EFF words joined by hyphens", () => {
+		const phrase = generateColdInvitePhrase();
+		const parts = phrase.split("-");
+		expect(parts.length).toBe(6);
+		for (const w of parts) {
+			expect(wordSet.has(w)).toBe(true);
+		}
+	});
+
+	it("normalizes spacing and case for comparison", () => {
+		expect(normalizeColdInvitePhrase("  Abandon ABLE ")).toBe("abandon-able");
+		expect(normalizeColdInvitePhrase("word__word___word_word")).toBe(
+			"word-word-word-word",
+		);
 	});
 });
 

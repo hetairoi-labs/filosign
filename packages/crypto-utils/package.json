@@ -21,6 +21,7 @@
 		"@types/node": "catalog:"
 	},
 	"dependencies": {
+		"@wordlist/english-eff": "^1.0.1",
 		"argon2": "^0.44.0",
 		"argon2-browser": "catalog:",
 		"crystals-kyber-js": "2.5.0",
