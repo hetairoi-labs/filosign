@@ -6,13 +6,13 @@ import {
 } from "./placement-manifest";
 
 const minimalManifest = zPlacementManifest.parse({
-	version: 1,
+	version: 2,
 	fields: [
 		{
 			id: "f1",
 			pageIndex: 0,
 			rect: { x: 0.1, y: 0.2, width: 0.3, height: 0.05 },
-			assignedSigner: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+			assignedRecipientEmail: "signer@example.com",
 			required: true,
 			type: "signature",
 		},

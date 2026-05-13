@@ -8,6 +8,7 @@ export * from "./completions-merkle";
 export * from "./compliance-bundle";
 export { zFileData } from "./file-data";
 export * from "./placement-manifest";
+export * from "./signer-email-commitment";
 
 export function base64ToUint8(base64: string): Uint8Array {
 	const binary = atob(base64);

@@ -1,8 +1,7 @@
 import { jsonStringify } from "@filosign/crypto-utils/node";
-import type { Address, Hex } from "viem";
+import type { Hex } from "viem";
 import { keccak256, stringToBytes } from "viem";
 import z from "zod";
-import { zEvmAddress } from "./helpers/zod";
 
 /** Normalized coordinates on the page (0–1). */
 export const zRectNormalized = z.object({
@@ -12,11 +11,18 @@ export const zRectNormalized = z.object({
 	height: z.number().min(0).max(1),
 });
 
+export function normalizePlacementRecipientEmail(email: string): string {
+	return email.trim().toLowerCase();
+}
+
 export const zPlacementField = z.object({
 	id: z.string().min(1),
 	pageIndex: z.number().int().min(0),
 	rect: zRectNormalized,
-	assignedSigner: zEvmAddress(),
+	/** Canonical recipient identity for this field (normalized lowercase). */
+	assignedRecipientEmail: z
+		.email()
+		.transform((e) => normalizePlacementRecipientEmail(e)),
 	required: z.boolean(),
 	type: z.enum([
 		"signature",
@@ -30,7 +36,7 @@ export const zPlacementField = z.object({
 });
 
 export const zPlacementManifest = z.object({
-	version: z.literal(1),
+	version: z.literal(2),
 	fields: z.array(zPlacementField).min(1),
 });
 
@@ -64,21 +70,20 @@ export function computePlacementCommitment(manifest: PlacementManifest): Hex {
 	return keccak256(stringToBytes(canonicalPlacementManifestJson(manifest)));
 }
 
-export function fieldIdsForSigner(
+export function fieldIdsForRecipientEmail(
 	manifest: PlacementManifest,
-	signer: Address,
+	recipientEmail: string,
 ): PlacementField[] {
-	return manifest.fields.filter(
-		(f) => f.assignedSigner.toLowerCase() === signer.toLowerCase(),
-	);
+	const key = normalizePlacementRecipientEmail(recipientEmail);
+	return manifest.fields.filter((f) => f.assignedRecipientEmail === key);
 }
 
-/** Distinct field ids assigned to `signer` that are marked required. */
-export function requiredFieldIdsForSigner(
+/** Distinct field ids assigned to this recipient email that are marked required. */
+export function requiredFieldIdsForRecipientEmail(
 	manifest: PlacementManifest,
-	signer: Address,
+	recipientEmail: string,
 ): string[] {
-	return fieldIdsForSigner(manifest, signer)
+	return fieldIdsForRecipientEmail(manifest, recipientEmail)
 		.filter((f) => f.required)
 		.map((f) => f.id);
 }
