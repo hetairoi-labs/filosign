@@ -37,15 +37,7 @@ import {
 } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import {
-	lazy,
-	Suspense,
-	useCallback,
-	useEffect,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { formatUnits } from "viem";
 import {
@@ -70,11 +62,10 @@ import {
 	ColdShareDialog,
 	type ColdSharePackage,
 } from "../../envelope/create/add-sign/_components/ColdShareDialog";
+import { SignDocumentPdfPreview } from "./_components/SignDocumentPdfPreview";
+import { SignDocumentShell } from "./_components/SignDocumentShell";
 import { ColdInviteSignDocument } from "./ColdInviteSignDocument";
-
-const LazyPdfJsPreview = lazy(
-	() => import("@/src/lib/components/custom/PdfJsPreview.lazy"),
-);
+import { useSignDocumentMode } from "./useSignDocumentMode";
 
 function WarmSignDocumentPage() {
 	const navigate = useNavigate();
@@ -681,63 +672,55 @@ function WarmSignDocumentPage() {
 						}}
 					>
 						<div className="absolute inset-0 overflow-hidden bg-white">
-							<Suspense
-								fallback={
-									<div className="flex min-h-[240px] items-center justify-center bg-white">
-										<InlineLoader size="md" />
-									</div>
-								}
-							>
-								<LazyPdfJsPreview
-									className="absolute inset-0 z-0"
-									documentKey={pieceCid ?? "sign"}
-									file={previewPdfBytes}
-									pageNumber={signPdfPage}
-									width={600}
-									maxHeight={800}
-									onNumPagesLoaded={(n) => {
-										setSignPdfNumPages(n);
-										setSignPdfPage((p) => Math.min(p, n));
-									}}
-									renderPageOverlay={(pageIndex) => (
-										<>
-											{myPlacementFields
-												.filter((f) => f.pageIndex === pageIndex)
-												.map((field) => {
-													const done = isMyPlacementFieldDone(field.id);
-													return (
-														<button
-															key={field.id}
-															type="button"
-															disabled={alreadySigned}
-															className={cn(
-																"pointer-events-auto absolute z-10 flex items-center justify-center rounded border-2 px-0.5 text-[9px] font-semibold uppercase tracking-tight transition-colors",
-																done
-																	? "border-emerald-600 bg-emerald-500/25 text-emerald-950"
-																	: "border-amber-500 bg-amber-400/20 text-amber-950 hover:bg-amber-400/35",
-															)}
-															style={{
-																left: `${field.rect.x * 100}%`,
-																top: `${field.rect.y * 100}%`,
-																width: `${Math.max(field.rect.width * 100, 8)}%`,
-																height: `${Math.max(field.rect.height * 100, 5)}%`,
-															}}
-															onClick={() => togglePlacementField(field.id)}
-														>
-															{alreadySigned
-																? "Signed"
-																: done
-																	? "Selected"
-																	: field.required
-																		? "Required"
-																		: "Optional"}
-														</button>
-													);
-												})}
-										</>
-									)}
-								/>
-							</Suspense>
+							<SignDocumentPdfPreview
+								className="absolute inset-0 z-0"
+								documentKey={pieceCid ?? "sign"}
+								file={previewPdfBytes}
+								pageNumber={signPdfPage}
+								width={600}
+								maxHeight={800}
+								onNumPagesLoaded={(n) => {
+									setSignPdfNumPages(n);
+									setSignPdfPage((p) => Math.min(p, n));
+								}}
+								renderPageOverlay={(pageIndex) => (
+									<>
+										{myPlacementFields
+											.filter((f) => f.pageIndex === pageIndex)
+											.map((field) => {
+												const done = isMyPlacementFieldDone(field.id);
+												return (
+													<button
+														key={field.id}
+														type="button"
+														disabled={alreadySigned}
+														className={cn(
+															"pointer-events-auto absolute z-10 flex items-center justify-center rounded border-2 px-0.5 text-[9px] font-semibold uppercase tracking-tight transition-colors",
+															done
+																? "border-emerald-600 bg-emerald-500/25 text-emerald-950"
+																: "border-amber-500 bg-amber-400/20 text-amber-950 hover:bg-amber-400/35",
+														)}
+														style={{
+															left: `${field.rect.x * 100}%`,
+															top: `${field.rect.y * 100}%`,
+															width: `${Math.max(field.rect.width * 100, 8)}%`,
+															height: `${Math.max(field.rect.height * 100, 5)}%`,
+														}}
+														onClick={() => togglePlacementField(field.id)}
+													>
+														{alreadySigned
+															? "Signed"
+															: done
+																? "Selected"
+																: field.required
+																	? "Required"
+																	: "Optional"}
+													</button>
+												);
+											})}
+									</>
+								)}
+							/>
 						</div>
 					</div>
 				</div>
@@ -984,657 +967,667 @@ function WarmSignDocumentPage() {
 	};
 
 	return (
-		<div className="fixed inset-0 bg-background flex flex-col">
-			<div className="shrink-0 sticky top-0 z-50 bg-background border-b border-border">
-				<div className="md:hidden">
-					<div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => navigate({ to: "/dashboard" })}
-							className="text-muted-foreground hover:text-foreground hover:bg-accent/50 -ml-2"
-						>
-							<ArrowLeftIcon className="size-4 mr-1.5" />
-							<span className="text-sm">Back</span>
-						</Button>
-						<h2 className="text-sm flex items-center font-semibold truncate text-foreground max-w-[60%]">
-							<span className="truncate">{pieceCid}</span>
-							<CopyButton text={pieceCid} />
-						</h2>
+		<SignDocumentShell
+			stickyHeader={
+				<>
+					<div className="md:hidden">
+						<div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => navigate({ to: "/dashboard" })}
+								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 -ml-2"
+							>
+								<ArrowLeftIcon className="size-4 mr-1.5" />
+								<span className="text-sm">Back</span>
+							</Button>
+							<h2 className="text-sm flex items-center font-semibold truncate text-foreground max-w-[60%]">
+								<span className="truncate">{pieceCid}</span>
+								<CopyButton text={pieceCid} />
+							</h2>
+						</div>
+
+						{alreadySigned && (
+							<div className="flex flex-wrap items-center justify-center gap-2 px-3 py-2 border-b border-border bg-secondary/40">
+								<Badge
+									variant="secondary"
+									className="gap-1.5 border-border bg-secondary/90 text-secondary-foreground shadow-none"
+								>
+									<CheckCircleIcon
+										className="size-3.5 text-chart-2"
+										weight="fill"
+									/>
+									Signed
+								</Badge>
+								{signedTxExplorerUrl ? (
+									<a
+										href={signedTxExplorerUrl}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="inline-flex items-center gap-1 text-xs font-medium text-ring hover:text-ring/90 hover:underline"
+									>
+										{explorerLabel}
+										<ArrowSquareOutIcon className="size-3.5" />
+									</a>
+								) : (
+									<span className="text-xs text-muted-foreground">
+										On-chain proof recorded
+									</span>
+								)}
+							</div>
+						)}
+
+						{incentive && incentive.amount > 0n && (
+							<div className="flex flex-wrap items-center justify-center gap-2 px-3 py-2 border-b border-border bg-accent/30">
+								<pre className="font-medium">
+									{formatUnits(incentive.amount, tokenInfo?.decimals ?? 18)}
+								</pre>
+								<pre className="font-medium">
+									{tokenInfo?.symbol ?? "Tokens"}
+								</pre>
+								<img
+									src={tokenInfo?.icon}
+									alt={tokenInfo?.symbol}
+									className="size-4"
+								/>
+								{incentive.claimed && (
+									<span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
+										(Distributed)
+									</span>
+								)}
+							</div>
+						)}
+
+						{/* Row 2: Action buttons */}
+						<div className="flex items-center justify-between px-3 py-2">
+							<div className="flex items-center gap-1">
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleZoomOut}
+									className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
+								>
+									<MagnifyingGlassMinusIcon className="size-4" />
+								</Button>
+								<span className="text-xs font-medium min-w-10 text-center text-foreground">
+									{zoom}%
+								</span>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleZoomIn}
+									className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
+								>
+									<MagnifyingGlassPlusIcon className="size-4" />
+								</Button>
+								{isSigningPdf && (
+									<>
+										<div className="mx-0.5 h-5 w-px self-center bg-border/70" />
+										<Button
+											variant="ghost"
+											size="sm"
+											type="button"
+											onClick={() => setSignPdfPage((p) => Math.max(1, p - 1))}
+											disabled={signPdfPage <= 1}
+											className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
+											title="Previous page"
+										>
+											<CaretLeftIcon className="size-4" />
+										</Button>
+										<span className="min-w-10 text-center text-[10px] font-medium tabular-nums text-muted-foreground">
+											{signPdfTotalDisplay == null
+												? `${signPdfPage} / …`
+												: `${signPdfPage} / ${signPdfTotalDisplay}`}
+										</span>
+										<Button
+											variant="ghost"
+											size="sm"
+											type="button"
+											onClick={() =>
+												setSignPdfPage((p) =>
+													signPdfTotalDisplay == null
+														? p + 1
+														: Math.min(signPdfTotalDisplay, p + 1),
+												)
+											}
+											disabled={
+												signPdfTotalDisplay != null &&
+												signPdfPage >= signPdfTotalDisplay
+											}
+											className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
+											title="Next page"
+										>
+											<CaretRightIcon className="size-4" />
+										</Button>
+									</>
+								)}
+							</div>
+
+							<div className="flex items-center gap-2">
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleDownloadDocumentWithCompliancePdf}
+									disabled={!fileData || pdfExportBusy}
+									className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+									title="Download document with proof"
+								>
+									<DownloadIcon className="size-5" />
+								</Button>
+								{isSender && (
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => void handleRotateInvite()}
+										disabled={regenerateColdInvite.isPending}
+										className="h-8 px-2 text-xs"
+									>
+										<ArrowClockwiseIcon className="mr-1 size-3.5" />
+										Rotate
+									</Button>
+								)}
+
+								{canSign && signerAddress && (
+									<Button
+										variant="primary"
+										size="sm"
+										onClick={() => void handleSign()}
+										disabled={signFile.isPending || !canSubmitPlacementSign}
+									>
+										{signFile.isPending ? (
+											<>
+												<SpinnerIcon className="size-4 animate-spin" />
+												Signing…
+											</>
+										) : (
+											"Sign"
+										)}
+									</Button>
+								)}
+							</div>
+						</div>
 					</div>
 
-					{alreadySigned && (
-						<div className="flex flex-wrap items-center justify-center gap-2 px-3 py-2 border-b border-border bg-secondary/40">
-							<Badge
-								variant="secondary"
-								className="gap-1.5 border-border bg-secondary/90 text-secondary-foreground shadow-none"
+					{/* Desktop Header - Single row */}
+					<div className="hidden md:flex items-center justify-between w-full px-6 py-3">
+						<div className="flex items-center gap-4">
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => navigate({ to: "/dashboard" })}
+								className="text-muted-foreground hover:text-foreground hover:bg-accent/50"
 							>
-								<CheckCircleIcon
-									className="size-3.5 text-chart-2"
-									weight="fill"
-								/>
-								Signed
-							</Badge>
-							{signedTxExplorerUrl ? (
-								<a
-									href={signedTxExplorerUrl}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="inline-flex items-center gap-1 text-xs font-medium text-ring hover:text-ring/90 hover:underline"
+								<ArrowLeftIcon className="size-4 mr-2" />
+								Back
+							</Button>
+							<div className="flex gap-4">
+								<div className="flex flex-col">
+									<h2 className="text-sm flex items-center gap-1 font-semibold truncate text-foreground">
+										<span className="truncate max-w-xs">{pieceCid}</span>
+										<CopyButton text={pieceCid} />
+									</h2>
+									<p className="text-xs text-muted-foreground flex items-center gap-1">
+										From {formatAddress(file.sender)}
+										<CopyButton text={formatAddress(file.sender)} />
+									</p>
+								</div>
+								{alreadySigned && (
+									<div className="flex flex-wrap items-center gap-2 mt-2">
+										<Badge
+											variant="secondary"
+											className="gap-1.5 border-border bg-secondary/90 text-secondary-foreground shadow-none"
+										>
+											<CheckCircleIcon
+												className="size-3.5 text-chart-2"
+												weight="fill"
+											/>
+											Signed
+										</Badge>
+										{signedTxExplorerUrl ? (
+											<a
+												href={signedTxExplorerUrl}
+												target="_blank"
+												rel="noopener noreferrer"
+												className="inline-flex items-center gap-1 text-xs font-medium text-ring hover:text-ring/90 hover:underline"
+											>
+												{explorerLabel}
+												<ArrowSquareOutIcon className="size-3.5" />
+											</a>
+										) : (
+											<span className="text-xs text-muted-foreground">
+												On-chain proof recorded
+											</span>
+										)}
+									</div>
+								)}
+								{incentive && incentive.amount > 0n && (
+									<div className="flex flex-wrap items-center gap-2 mt-2">
+										<Badge
+											variant="default"
+											className={cn(
+												incentive.claimed ? "bg-accent" : "bg-chart-1",
+											)}
+										>
+											<pre className="font-medium">
+												{formatUnits(
+													incentive.amount,
+													tokenInfo?.decimals ?? 18,
+												)}
+											</pre>
+											<pre className="font-medium">
+												{tokenInfo?.symbol ?? "Tokens"}
+											</pre>
+											<img
+												src={tokenInfo?.icon}
+												alt={tokenInfo?.symbol}
+												className="size-4"
+											/>
+										</Badge>
+										<div className="items-center text-xs font-medium text-ring hover:text-ring/90">
+											{incentive.claimed ? (
+												<span className="inline-flex items-center gap-1">
+													Distributed
+													<CheckIcon className="size-3.5" />
+												</span>
+											) : (
+												<span className="inline-flex items-center gap-1 text-chart-1">
+													Pending
+													<ClockIcon className="size-3.5" />
+												</span>
+											)}
+										</div>
+									</div>
+								)}
+							</div>
+						</div>
+
+						<div className="flex items-center gap-2">
+							{/* Zoom controls */}
+							<div className="flex items-center gap-2">
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleZoomOut}
+									className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
 								>
-									{explorerLabel}
-									<ArrowSquareOutIcon className="size-3.5" />
-								</a>
-							) : (
-								<span className="text-xs text-muted-foreground">
-									On-chain proof recorded
+									<MagnifyingGlassMinusIcon className="size-5" />
+								</Button>
+								<span className="text-sm font-medium min-w-12 text-center text-foreground tabular-nums">
+									{zoom}%
 								</span>
-							)}
-						</div>
-					)}
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleZoomIn}
+									className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+								>
+									<MagnifyingGlassPlusIcon className="size-5" />
+								</Button>
+								{isSigningPdf && (
+									<>
+										<div className="mx-1 h-6 w-px bg-border" />
+										<Button
+											variant="ghost"
+											size="sm"
+											type="button"
+											onClick={() => setSignPdfPage((p) => Math.max(1, p - 1))}
+											disabled={signPdfPage <= 1}
+											className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+											title="Previous page"
+										>
+											<CaretLeftIcon className="size-5" />
+										</Button>
+										<span className="min-w-11 text-center text-xs font-medium tabular-nums text-muted-foreground">
+											{signPdfTotalDisplay == null
+												? `${signPdfPage} / …`
+												: `${signPdfPage} / ${signPdfTotalDisplay}`}
+										</span>
+										<Button
+											variant="ghost"
+											size="sm"
+											type="button"
+											onClick={() =>
+												setSignPdfPage((p) =>
+													signPdfTotalDisplay == null
+														? p + 1
+														: Math.min(signPdfTotalDisplay, p + 1),
+												)
+											}
+											disabled={
+												signPdfTotalDisplay != null &&
+												signPdfPage >= signPdfTotalDisplay
+											}
+											className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+											title="Next page"
+										>
+											<CaretRightIcon className="size-5" />
+										</Button>
+									</>
+								)}
+							</div>
 
-					{incentive && incentive.amount > 0n && (
-						<div className="flex flex-wrap items-center justify-center gap-2 px-3 py-2 border-b border-border bg-accent/30">
-							<pre className="font-medium">
-								{formatUnits(incentive.amount, tokenInfo?.decimals ?? 18)}
-							</pre>
-							<pre className="font-medium">{tokenInfo?.symbol ?? "Tokens"}</pre>
-							<img
-								src={tokenInfo?.icon}
-								alt={tokenInfo?.symbol}
-								className="size-4"
-							/>
-							{incentive.claimed && (
-								<span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">
-									(Distributed)
-								</span>
-							)}
-						</div>
-					)}
+							<div className="w-px h-6 bg-border mx-2" />
 
-					{/* Row 2: Action buttons */}
-					<div className="flex items-center justify-between px-3 py-2">
-						<div className="flex items-center gap-1">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleZoomOut}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
-							>
-								<MagnifyingGlassMinusIcon className="size-4" />
-							</Button>
-							<span className="text-xs font-medium min-w-10 text-center text-foreground">
-								{zoom}%
-							</span>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleZoomIn}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
-							>
-								<MagnifyingGlassPlusIcon className="size-4" />
-							</Button>
-							{isSigningPdf && (
-								<>
-									<div className="mx-0.5 h-5 w-px self-center bg-border/70" />
+							{/* Action tools */}
+							<div className="flex items-center gap-3">
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleDownload}
+									disabled={!fileData}
+									className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+									title="Download file"
+								>
+									<FileArrowDownIcon className="size-5" />
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleDownloadCompliancePdf}
+									disabled={pdfExportBusy}
+									className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+									title="Download compliance report"
+								>
+									<ScrollIcon className="size-5" />
+								</Button>
+								<Button
+									variant="ghost"
+									size="sm"
+									onClick={handleDownloadDocumentWithCompliancePdf}
+									disabled={!fileData || pdfExportBusy}
+									className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
+									title="Download document with proof"
+								>
+									<DownloadIcon className="size-5" />
+								</Button>
+
+								{/* Rotate Invite - only visible to sender */}
+								{isSender && (
 									<Button
-										variant="ghost"
+										variant="outline"
 										size="sm"
-										type="button"
-										onClick={() => setSignPdfPage((p) => Math.max(1, p - 1))}
-										disabled={signPdfPage <= 1}
-										className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
-										title="Previous page"
+										onClick={() => void handleRotateInvite()}
+										disabled={regenerateColdInvite.isPending}
+										className="h-8 gap-1.5"
+										title="Rotate invite"
 									>
-										<CaretLeftIcon className="size-4" />
+										<ArrowClockwiseIcon className="size-4" />
+										Rotate Invite
 									</Button>
-									<span className="min-w-10 text-center text-[10px] font-medium tabular-nums text-muted-foreground">
-										{signPdfTotalDisplay == null
-											? `${signPdfPage} / …`
-											: `${signPdfPage} / ${signPdfTotalDisplay}`}
-									</span>
+								)}
+							</div>
+
+							{canSign && signerAddress && (
+								<>
+									<div className="w-px h-6 bg-border mx-2" />
 									<Button
-										variant="ghost"
+										variant="primary"
 										size="sm"
-										type="button"
-										onClick={() =>
-											setSignPdfPage((p) =>
-												signPdfTotalDisplay == null
-													? p + 1
-													: Math.min(signPdfTotalDisplay, p + 1),
-											)
-										}
-										disabled={
-											signPdfTotalDisplay != null &&
-											signPdfPage >= signPdfTotalDisplay
-										}
-										className="text-muted-foreground hover:text-foreground hover:bg-accent/50 size-8 p-0"
-										title="Next page"
+										onClick={() => void handleSign()}
+										disabled={signFile.isPending || !canSubmitPlacementSign}
 									>
-										<CaretRightIcon className="size-4" />
+										{signFile.isPending ? (
+											<>
+												<SpinnerIcon className="size-4 animate-spin" />
+												Signing…
+											</>
+										) : (
+											"Sign document"
+										)}
 									</Button>
 								</>
 							)}
 						</div>
-
-						<div className="flex items-center gap-2">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleDownloadDocumentWithCompliancePdf}
-								disabled={!fileData || pdfExportBusy}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-								title="Download document with proof"
-							>
-								<DownloadIcon className="size-5" />
-							</Button>
-							{isSender && (
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => void handleRotateInvite()}
-									disabled={regenerateColdInvite.isPending}
-									className="h-8 px-2 text-xs"
-								>
-									<ArrowClockwiseIcon className="mr-1 size-3.5" />
-									Rotate
-								</Button>
-							)}
-
-							{canSign && signerAddress && (
-								<Button
-									variant="primary"
-									size="sm"
-									onClick={() => void handleSign()}
-									disabled={signFile.isPending || !canSubmitPlacementSign}
-								>
-									{signFile.isPending ? (
-										<>
-											<SpinnerIcon className="size-4 animate-spin" />
-											Signing…
-										</>
-									) : (
-										"Sign"
-									)}
-								</Button>
-							)}
+					</div>
+				</>
+			}
+			body={
+				<>
+					{/* Document viewer */}
+					<div ref={containerRef} className="flex-1 h-full overflow-auto">
+						<div
+							ref={documentRef}
+							className="relative w-full h-full bg-background"
+						>
+							{renderFileContent()}
 						</div>
 					</div>
-				</div>
 
-				{/* Desktop Header - Single row */}
-				<div className="hidden md:flex items-center justify-between w-full px-6 py-3">
-					<div className="flex items-center gap-4">
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => navigate({ to: "/dashboard" })}
-							className="text-muted-foreground hover:text-foreground hover:bg-accent/50"
-						>
-							<ArrowLeftIcon className="size-4 mr-2" />
-							Back
-						</Button>
-						<div className="flex gap-4">
-							<div className="flex flex-col">
-								<h2 className="text-sm flex items-center gap-1 font-semibold truncate text-foreground">
-									<span className="truncate max-w-xs">{pieceCid}</span>
-									<CopyButton text={pieceCid} />
-								</h2>
-								<p className="text-xs text-muted-foreground flex items-center gap-1">
-									From {formatAddress(file.sender)}
-									<CopyButton text={formatAddress(file.sender)} />
-								</p>
+					{/* Signature Status Aside */}
+					<aside className="hidden lg:block w-72 border-l border-border bg-background overflow-y-auto">
+						<div className="p-4 space-y-4">
+							<h3 className="font-semibold text-sm flex items-center gap-2">
+								<ScrollIcon className="size-4" />
+								Signature Status
+							</h3>
+
+							{/* Progress summary */}
+							<div className="flex items-center justify-between text-sm">
+								<span className="text-muted-foreground">Progress</span>
+								<span className="font-medium">
+									{file.signatures?.length || 0} of {file.signers?.length || 0}{" "}
+									signed
+								</span>
 							</div>
-							{alreadySigned && (
-								<div className="flex flex-wrap items-center gap-2 mt-2">
-									<Badge
-										variant="secondary"
-										className="gap-1.5 border-border bg-secondary/90 text-secondary-foreground shadow-none"
-									>
-										<CheckCircleIcon
-											className="size-3.5 text-chart-2"
-											weight="fill"
-										/>
-										Signed
-									</Badge>
-									{signedTxExplorerUrl ? (
-										<a
-											href={signedTxExplorerUrl}
-											target="_blank"
-											rel="noopener noreferrer"
-											className="inline-flex items-center gap-1 text-xs font-medium text-ring hover:text-ring/90 hover:underline"
-										>
-											{explorerLabel}
-											<ArrowSquareOutIcon className="size-3.5" />
-										</a>
-									) : (
-										<span className="text-xs text-muted-foreground">
-											On-chain proof recorded
-										</span>
+							<div className="h-2 bg-muted rounded-full overflow-hidden">
+								<div
+									className="h-full bg-chart-2 transition-all duration-500"
+									style={{
+										width: `${file.signers?.length ? ((file.signatures?.length || 0) / file.signers.length) * 100 : 0}%`,
+									}}
+								/>
+							</div>
+
+							{(canSign || alreadySigned) && myPlacementFields.length > 0 && (
+								<div className="space-y-2 rounded-lg border border-border bg-muted/25 p-3">
+									<h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+										Your fields
+									</h4>
+									<p className="text-[11px] leading-snug text-muted-foreground">
+										{alreadySigned
+											? "Your signature is recorded. Field markers show where you signed."
+											: "Tap the highlighted regions on the document (or the list below for other pages). Every required field must be marked before you can sign."}
+									</p>
+									<ul className="space-y-1.5">
+										{myPlacementFields.map((field) => {
+											const done = isMyPlacementFieldDone(field.id);
+											return (
+												<li
+													key={field.id}
+													className="flex items-center justify-between gap-2 text-xs"
+												>
+													<button
+														type="button"
+														disabled={alreadySigned}
+														className={cn(
+															"min-w-0 flex-1 truncate text-left underline-offset-2 hover:underline disabled:cursor-default disabled:no-underline disabled:opacity-100",
+															done &&
+																(alreadySigned
+																	? "font-medium text-emerald-700 dark:text-emerald-400"
+																	: "text-muted-foreground line-through"),
+														)}
+														onClick={() => togglePlacementField(field.id)}
+													>
+														{field.type} · p.{field.pageIndex + 1}
+														{field.required ? " · required" : ""}
+														{alreadySigned && done ? " · signed" : ""}
+													</button>
+													{done ? (
+														<CheckIcon
+															className="size-3.5 shrink-0 text-emerald-600"
+															weight="bold"
+														/>
+													) : (
+														<ClockIcon className="size-3.5 shrink-0 text-muted-foreground" />
+													)}
+												</li>
+											);
+										})}
+									</ul>
+									{canSign && !canSubmitPlacementSign && (
+										<p className="text-[11px] text-amber-800 dark:text-amber-200">
+											Complete every required field to enable Sign.
+										</p>
 									)}
 								</div>
 							)}
-							{incentive && incentive.amount > 0n && (
-								<div className="flex flex-wrap items-center gap-2 mt-2">
-									<Badge
-										variant="default"
-										className={cn(
-											incentive.claimed ? "bg-accent" : "bg-chart-1",
-										)}
-									>
-										<pre className="font-medium">
-											{formatUnits(incentive.amount, tokenInfo?.decimals ?? 18)}
-										</pre>
-										<pre className="font-medium">
-											{tokenInfo?.symbol ?? "Tokens"}
-										</pre>
-										<img
-											src={tokenInfo?.icon}
-											alt={tokenInfo?.symbol}
-											className="size-4"
-										/>
-									</Badge>
-									<div className="items-center text-xs font-medium text-ring hover:text-ring/90">
-										{incentive.claimed ? (
-											<span className="inline-flex items-center gap-1">
-												Distributed
-												<CheckIcon className="size-3.5" />
-											</span>
-										) : (
-											<span className="inline-flex items-center gap-1 text-chart-1">
-												Pending
-												<ClockIcon className="size-3.5" />
-											</span>
+
+							{/* Signer list */}
+							<div className="space-y-2 pt-2">
+								{(file.signers || []).map(
+									(
+										signer:
+											| string
+											| {
+													wallet: string;
+													name: string | null;
+													email: string | null;
+											  },
+									) => {
+										const signerWallet =
+											typeof signer === "string" ? signer : signer.wallet;
+										const signature = file.signatures?.find(
+											(s) =>
+												s.signer.toLowerCase() === signerWallet.toLowerCase(),
+										);
+										const hasSigned = Boolean(signature);
+										const isYou =
+											signerAddress?.toLowerCase() ===
+											signerWallet.toLowerCase();
+										const signerName =
+											typeof signer === "string" ? null : signer.name;
+										const signerEmail =
+											typeof signer === "string" ? null : signer.email;
+										const displayName =
+											signerName || formatAddress(signerWallet);
+
+										return (
+											<div
+												key={signerWallet}
+												className={cn(
+													"flex items-center gap-3 p-3 rounded-lg border",
+													hasSigned
+														? "bg-chart-2/10 border-chart-2/30"
+														: "bg-muted/30 border-border",
+												)}
+											>
+												<div
+													className={cn(
+														"size-8 rounded-full flex items-center justify-center shrink-0",
+														hasSigned ? "bg-chart-2" : "bg-muted",
+													)}
+												>
+													{hasSigned ? (
+														<CheckIcon
+															className="size-4 text-white"
+															weight="bold"
+														/>
+													) : (
+														<ClockIcon className="size-4 text-muted-foreground" />
+													)}
+												</div>
+												<div className="flex-1 min-w-0">
+													<p className="text-sm font-medium truncate">
+														{displayName}
+														{isYou && (
+															<span className="text-xs text-muted-foreground ml-1">
+																(You)
+															</span>
+														)}
+													</p>
+													{signerEmail && (
+														<p className="text-xs text-muted-foreground truncate">
+															{signerEmail}
+														</p>
+													)}
+													<p
+														className={cn(
+															"text-xs",
+															hasSigned
+																? "text-chart-2"
+																: "text-muted-foreground",
+														)}
+													>
+														{hasSigned ? "Signed" : "Pending"}
+													</p>
+												</div>
+												{signature?.onchainTxHash && (
+													<a
+														href={`${defaultChain.blockExplorers?.default?.url}/tx/${signature.onchainTxHash}`}
+														target="_blank"
+														rel="noopener noreferrer"
+														className="text-muted-foreground hover:text-foreground"
+														title="View on explorer"
+													>
+														<ArrowSquareOutIcon className="size-4" />
+													</a>
+												)}
+											</div>
+										);
+									},
+								)}
+							</div>
+
+							{/* Viewers section */}
+							{file.viewers && file.viewers.length > 0 && (
+								<div className="pt-4 border-t border-border">
+									<h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+										Viewers ({file.viewers.length})
+									</h4>
+									<div className="space-y-2">
+										{file.viewers.map(
+											(
+												viewer:
+													| string
+													| {
+															wallet: string;
+															name: string | null;
+															email: string | null;
+													  },
+											) => {
+												const viewerWallet =
+													typeof viewer === "string" ? viewer : viewer.wallet;
+												const viewerName =
+													typeof viewer === "string" ? null : viewer.name;
+												const viewerEmail =
+													typeof viewer === "string" ? null : viewer.email;
+												const displayName =
+													viewerName || formatAddress(viewerWallet);
+
+												return (
+													<div
+														key={viewerWallet}
+														className="flex items-center gap-3 p-2 rounded-lg bg-muted/20"
+													>
+														<div className="size-6 rounded-full bg-muted flex items-center justify-center shrink-0">
+															<UserIcon className="size-3 text-muted-foreground" />
+														</div>
+														<div className="flex-1 min-w-0">
+															<p className="text-sm text-muted-foreground truncate">
+																{displayName}
+																{signerAddress?.toLowerCase() ===
+																	viewerWallet.toLowerCase() && (
+																	<span className="text-xs ml-1">(You)</span>
+																)}
+															</p>
+															{viewerEmail && (
+																<p className="text-xs text-muted-foreground/70 truncate">
+																	{viewerEmail}
+																</p>
+															)}
+														</div>
+													</div>
+												);
+											},
 										)}
 									</div>
 								</div>
 							)}
 						</div>
-					</div>
-
-					<div className="flex items-center gap-2">
-						{/* Zoom controls */}
-						<div className="flex items-center gap-2">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleZoomOut}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-							>
-								<MagnifyingGlassMinusIcon className="size-5" />
-							</Button>
-							<span className="text-sm font-medium min-w-12 text-center text-foreground tabular-nums">
-								{zoom}%
-							</span>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleZoomIn}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-							>
-								<MagnifyingGlassPlusIcon className="size-5" />
-							</Button>
-							{isSigningPdf && (
-								<>
-									<div className="mx-1 h-6 w-px bg-border" />
-									<Button
-										variant="ghost"
-										size="sm"
-										type="button"
-										onClick={() => setSignPdfPage((p) => Math.max(1, p - 1))}
-										disabled={signPdfPage <= 1}
-										className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-										title="Previous page"
-									>
-										<CaretLeftIcon className="size-5" />
-									</Button>
-									<span className="min-w-11 text-center text-xs font-medium tabular-nums text-muted-foreground">
-										{signPdfTotalDisplay == null
-											? `${signPdfPage} / …`
-											: `${signPdfPage} / ${signPdfTotalDisplay}`}
-									</span>
-									<Button
-										variant="ghost"
-										size="sm"
-										type="button"
-										onClick={() =>
-											setSignPdfPage((p) =>
-												signPdfTotalDisplay == null
-													? p + 1
-													: Math.min(signPdfTotalDisplay, p + 1),
-											)
-										}
-										disabled={
-											signPdfTotalDisplay != null &&
-											signPdfPage >= signPdfTotalDisplay
-										}
-										className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-										title="Next page"
-									>
-										<CaretRightIcon className="size-5" />
-									</Button>
-								</>
-							)}
-						</div>
-
-						<div className="w-px h-6 bg-border mx-2" />
-
-						{/* Action tools */}
-						<div className="flex items-center gap-3">
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleDownload}
-								disabled={!fileData}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-								title="Download file"
-							>
-								<FileArrowDownIcon className="size-5" />
-							</Button>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleDownloadCompliancePdf}
-								disabled={pdfExportBusy}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-								title="Download compliance report"
-							>
-								<ScrollIcon className="size-5" />
-							</Button>
-							<Button
-								variant="ghost"
-								size="sm"
-								onClick={handleDownloadDocumentWithCompliancePdf}
-								disabled={!fileData || pdfExportBusy}
-								className="text-muted-foreground hover:text-foreground hover:bg-accent/50 h-8 w-8 p-0"
-								title="Download document with proof"
-							>
-								<DownloadIcon className="size-5" />
-							</Button>
-
-							{/* Rotate Invite - only visible to sender */}
-							{isSender && (
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => void handleRotateInvite()}
-									disabled={regenerateColdInvite.isPending}
-									className="h-8 gap-1.5"
-									title="Rotate invite"
-								>
-									<ArrowClockwiseIcon className="size-4" />
-									Rotate Invite
-								</Button>
-							)}
-						</div>
-
-						{canSign && signerAddress && (
-							<>
-								<div className="w-px h-6 bg-border mx-2" />
-								<Button
-									variant="primary"
-									size="sm"
-									onClick={() => void handleSign()}
-									disabled={signFile.isPending || !canSubmitPlacementSign}
-								>
-									{signFile.isPending ? (
-										<>
-											<SpinnerIcon className="size-4 animate-spin" />
-											Signing…
-										</>
-									) : (
-										"Sign document"
-									)}
-								</Button>
-							</>
-						)}
-					</div>
-				</div>
-			</div>
-
-			{/* Main content area with aside for signature status */}
-			<div className="flex-1 flex overflow-hidden bg-muted/5">
-				{/* Document viewer */}
-				<div ref={containerRef} className="flex-1 h-full overflow-auto">
-					<div
-						ref={documentRef}
-						className="relative w-full h-full bg-background"
-					>
-						{renderFileContent()}
-					</div>
-				</div>
-
-				{/* Signature Status Aside */}
-				<aside className="hidden lg:block w-72 border-l border-border bg-background overflow-y-auto">
-					<div className="p-4 space-y-4">
-						<h3 className="font-semibold text-sm flex items-center gap-2">
-							<ScrollIcon className="size-4" />
-							Signature Status
-						</h3>
-
-						{/* Progress summary */}
-						<div className="flex items-center justify-between text-sm">
-							<span className="text-muted-foreground">Progress</span>
-							<span className="font-medium">
-								{file.signatures?.length || 0} of {file.signers?.length || 0}{" "}
-								signed
-							</span>
-						</div>
-						<div className="h-2 bg-muted rounded-full overflow-hidden">
-							<div
-								className="h-full bg-chart-2 transition-all duration-500"
-								style={{
-									width: `${file.signers?.length ? ((file.signatures?.length || 0) / file.signers.length) * 100 : 0}%`,
-								}}
-							/>
-						</div>
-
-						{(canSign || alreadySigned) && myPlacementFields.length > 0 && (
-							<div className="space-y-2 rounded-lg border border-border bg-muted/25 p-3">
-								<h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-									Your fields
-								</h4>
-								<p className="text-[11px] leading-snug text-muted-foreground">
-									{alreadySigned
-										? "Your signature is recorded. Field markers show where you signed."
-										: "Tap the highlighted regions on the document (or the list below for other pages). Every required field must be marked before you can sign."}
-								</p>
-								<ul className="space-y-1.5">
-									{myPlacementFields.map((field) => {
-										const done = isMyPlacementFieldDone(field.id);
-										return (
-											<li
-												key={field.id}
-												className="flex items-center justify-between gap-2 text-xs"
-											>
-												<button
-													type="button"
-													disabled={alreadySigned}
-													className={cn(
-														"min-w-0 flex-1 truncate text-left underline-offset-2 hover:underline disabled:cursor-default disabled:no-underline disabled:opacity-100",
-														done &&
-															(alreadySigned
-																? "font-medium text-emerald-700 dark:text-emerald-400"
-																: "text-muted-foreground line-through"),
-													)}
-													onClick={() => togglePlacementField(field.id)}
-												>
-													{field.type} · p.{field.pageIndex + 1}
-													{field.required ? " · required" : ""}
-													{alreadySigned && done ? " · signed" : ""}
-												</button>
-												{done ? (
-													<CheckIcon
-														className="size-3.5 shrink-0 text-emerald-600"
-														weight="bold"
-													/>
-												) : (
-													<ClockIcon className="size-3.5 shrink-0 text-muted-foreground" />
-												)}
-											</li>
-										);
-									})}
-								</ul>
-								{canSign && !canSubmitPlacementSign && (
-									<p className="text-[11px] text-amber-800 dark:text-amber-200">
-										Complete every required field to enable Sign.
-									</p>
-								)}
-							</div>
-						)}
-
-						{/* Signer list */}
-						<div className="space-y-2 pt-2">
-							{(file.signers || []).map(
-								(
-									signer:
-										| string
-										| {
-												wallet: string;
-												name: string | null;
-												email: string | null;
-										  },
-								) => {
-									const signerWallet =
-										typeof signer === "string" ? signer : signer.wallet;
-									const signature = file.signatures?.find(
-										(s) =>
-											s.signer.toLowerCase() === signerWallet.toLowerCase(),
-									);
-									const hasSigned = Boolean(signature);
-									const isYou =
-										signerAddress?.toLowerCase() === signerWallet.toLowerCase();
-									const signerName =
-										typeof signer === "string" ? null : signer.name;
-									const signerEmail =
-										typeof signer === "string" ? null : signer.email;
-									const displayName = signerName || formatAddress(signerWallet);
-
-									return (
-										<div
-											key={signerWallet}
-											className={cn(
-												"flex items-center gap-3 p-3 rounded-lg border",
-												hasSigned
-													? "bg-chart-2/10 border-chart-2/30"
-													: "bg-muted/30 border-border",
-											)}
-										>
-											<div
-												className={cn(
-													"size-8 rounded-full flex items-center justify-center shrink-0",
-													hasSigned ? "bg-chart-2" : "bg-muted",
-												)}
-											>
-												{hasSigned ? (
-													<CheckIcon
-														className="size-4 text-white"
-														weight="bold"
-													/>
-												) : (
-													<ClockIcon className="size-4 text-muted-foreground" />
-												)}
-											</div>
-											<div className="flex-1 min-w-0">
-												<p className="text-sm font-medium truncate">
-													{displayName}
-													{isYou && (
-														<span className="text-xs text-muted-foreground ml-1">
-															(You)
-														</span>
-													)}
-												</p>
-												{signerEmail && (
-													<p className="text-xs text-muted-foreground truncate">
-														{signerEmail}
-													</p>
-												)}
-												<p
-													className={cn(
-														"text-xs",
-														hasSigned
-															? "text-chart-2"
-															: "text-muted-foreground",
-													)}
-												>
-													{hasSigned ? "Signed" : "Pending"}
-												</p>
-											</div>
-											{signature?.onchainTxHash && (
-												<a
-													href={`${defaultChain.blockExplorers?.default?.url}/tx/${signature.onchainTxHash}`}
-													target="_blank"
-													rel="noopener noreferrer"
-													className="text-muted-foreground hover:text-foreground"
-													title="View on explorer"
-												>
-													<ArrowSquareOutIcon className="size-4" />
-												</a>
-											)}
-										</div>
-									);
-								},
-							)}
-						</div>
-
-						{/* Viewers section */}
-						{file.viewers && file.viewers.length > 0 && (
-							<div className="pt-4 border-t border-border">
-								<h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-									Viewers ({file.viewers.length})
-								</h4>
-								<div className="space-y-2">
-									{file.viewers.map(
-										(
-											viewer:
-												| string
-												| {
-														wallet: string;
-														name: string | null;
-														email: string | null;
-												  },
-										) => {
-											const viewerWallet =
-												typeof viewer === "string" ? viewer : viewer.wallet;
-											const viewerName =
-												typeof viewer === "string" ? null : viewer.name;
-											const viewerEmail =
-												typeof viewer === "string" ? null : viewer.email;
-											const displayName =
-												viewerName || formatAddress(viewerWallet);
-
-											return (
-												<div
-													key={viewerWallet}
-													className="flex items-center gap-3 p-2 rounded-lg bg-muted/20"
-												>
-													<div className="size-6 rounded-full bg-muted flex items-center justify-center shrink-0">
-														<UserIcon className="size-3 text-muted-foreground" />
-													</div>
-													<div className="flex-1 min-w-0">
-														<p className="text-sm text-muted-foreground truncate">
-															{displayName}
-															{signerAddress?.toLowerCase() ===
-																viewerWallet.toLowerCase() && (
-																<span className="text-xs ml-1">(You)</span>
-															)}
-														</p>
-														{viewerEmail && (
-															<p className="text-xs text-muted-foreground/70 truncate">
-																{viewerEmail}
-															</p>
-														)}
-													</div>
-												</div>
-											);
-										},
-									)}
-								</div>
-							</div>
-						)}
-					</div>
-				</aside>
-			</div>
+					</aside>
+				</>
+			}
+		>
 			<ColdShareDialog
 				open={coldShareDialogOpen}
 				share={coldShare}
@@ -1643,28 +1636,31 @@ function WarmSignDocumentPage() {
 					setColdShare(null);
 				}}
 			/>
-		</div>
+		</SignDocumentShell>
 	);
 }
 
 export default function SignDocumentPage() {
-	const search = useSearch({ from: "/dashboard/document/sign/" });
-	const invite = search.invite?.trim() ?? "";
-	const pieceCid = search.pieceCid?.trim() ?? "";
-	if (invite) {
-		if (!pieceCid) {
-			return (
-				<div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4">
-					<FileTextIcon className="size-14 text-muted-foreground" />
-					<h1 className="text-lg font-semibold">Invalid document link</h1>
-					<p className="text-sm text-muted-foreground text-center max-w-sm">
-						This invite link is missing the document id. Ask the sender to
-						resend the email.
-					</p>
-				</div>
-			);
-		}
-		return <ColdInviteSignDocument pieceCid={pieceCid} inviteToken={invite} />;
+	const mode = useSignDocumentMode();
+	if (mode.mode === "invalid") {
+		return (
+			<div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4">
+				<FileTextIcon className="size-14 text-muted-foreground" />
+				<h1 className="text-lg font-semibold">Invalid document link</h1>
+				<p className="text-sm text-muted-foreground text-center max-w-sm">
+					This invite link is missing the document id. Ask the sender to resend
+					the email.
+				</p>
+			</div>
+		);
+	}
+	if (mode.mode === "cold") {
+		return (
+			<ColdInviteSignDocument
+				pieceCid={mode.pieceCid}
+				inviteToken={mode.inviteToken}
+			/>
+		);
 	}
 	return <WarmSignDocumentPage />;
 }
