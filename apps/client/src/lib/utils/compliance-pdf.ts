@@ -1,6 +1,10 @@
 import type { ViewFileResult } from "@filosign/react/hooks";
 import type { ComplianceBundleV1 } from "@filosign/shared";
 import {
+	hashNormalizedSignerEmail,
+	normalizePlacementRecipientEmail,
+} from "@filosign/shared";
+import {
 	breakTextIntoLines,
 	PDFDict,
 	PDFDocument,
@@ -115,9 +119,27 @@ export async function fetchSignerIncentivesForCompliancePdf(
 			continue;
 		}
 
+		const emailRaw =
+			typeof s === "object" && s.email?.trim()
+				? normalizePlacementRecipientEmail(s.email)
+				: null;
+		if (!emailRaw) {
+			result.push({
+				address: addr,
+				hasIncentive: false,
+				amount: 0n,
+				claimed: false,
+				tokenLabel: "",
+				decimals: 18,
+			});
+			continue;
+		}
+
+		const signerCommitment = hashNormalizedSignerEmail(emailRaw);
+
 		const [token, amount, claimed] = await registryRead.getSignerIncentive([
 			cidId,
-			addr,
+			signerCommitment,
 		]);
 
 		const noToken =
@@ -176,10 +198,11 @@ function incentiveSuffixForAddress(
 function fieldPlacementStatus(
 	bundle: ComplianceBundleV1,
 	fieldId: string,
-	assignedWallet: string,
+	assignedRecipientEmail: string,
 ): "signed" | "draft" | "pending" {
+	const key = assignedRecipientEmail.trim().toLowerCase();
 	const row = bundle.signers.find(
-		(s) => s.wallet.toLowerCase() === assignedWallet.toLowerCase(),
+		(s) => s.email && s.email.trim().toLowerCase() === key,
 	);
 	if (!row) return "pending";
 	if (row.signed && row.completedFieldIds.includes(fieldId)) return "signed";
@@ -345,9 +368,12 @@ export function buildCompliancePdfSummaryFromBundle(
 
 	for (let i = 0; i < bundle.placementManifest.fields.length; i++) {
 		const f = bundle.placementManifest.fields[i];
-		const st = fieldPlacementStatus(bundle, f.id, f.assignedSigner);
+		const st = fieldPlacementStatus(bundle, f.id, f.assignedRecipientEmail);
 		const signerRow = bundle.signers.find(
-			(s) => s.wallet.toLowerCase() === f.assignedSigner.toLowerCase(),
+			(s) =>
+				s.email &&
+				s.email.trim().toLowerCase() ===
+					f.assignedRecipientEmail.trim().toLowerCase(),
 		);
 		const name = signerRow?.displayName?.trim();
 		const email = signerRow?.email?.trim();
@@ -367,7 +393,7 @@ export function buildCompliancePdfSummaryFromBundle(
 		const signerParts: string[] = [];
 		if (name) signerParts.push(name);
 		if (email) signerParts.push(email);
-		signerParts.push(f.assignedSigner);
+		signerParts.push(f.assignedRecipientEmail);
 		placementRef.push({ text: `   -> ${signerParts.join(" | ")}` });
 
 		// Compact separator
@@ -834,7 +860,7 @@ async function drawPlacementOverlaysOnDocumentPdf(
 		const yTop = f.rect.y * h;
 		const yPdf = h - yTop - rh;
 
-		const st = fieldPlacementStatus(bundle, f.id, f.assignedSigner);
+		const st = fieldPlacementStatus(bundle, f.id, f.assignedRecipientEmail);
 		const border =
 			st === "signed"
 				? rgb(0.1, 0.55, 0.25)
@@ -860,7 +886,10 @@ async function drawPlacementOverlaysOnDocumentPdf(
 		});
 
 		const signerRow = bundle.signers.find(
-			(s) => s.wallet.toLowerCase() === f.assignedSigner.toLowerCase(),
+			(s) =>
+				s.email &&
+				s.email.trim().toLowerCase() ===
+					f.assignedRecipientEmail.trim().toLowerCase(),
 		);
 		const displayName = (signerRow?.displayName ?? "").trim() || "Signer";
 		const email = (signerRow?.email ?? "").trim() || "-";
