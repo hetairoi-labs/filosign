@@ -1,11 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
+import { coldInviteEntrySearchSchema } from "@/src/lib/routing/cold-invite-search";
 import OnboardingWelcomeCompletePage from "@/src/pages/onboarding/welcome";
 
 export const Route = createFileRoute("/onboarding/welcome")({
-	validateSearch: z.object({
-		coldPieceCid: z.string().optional(),
-		coldInvite: z.string().optional(),
-	}),
+	validateSearch: coldInviteEntrySearchSchema,
 	component: OnboardingWelcomeCompletePage,
 });

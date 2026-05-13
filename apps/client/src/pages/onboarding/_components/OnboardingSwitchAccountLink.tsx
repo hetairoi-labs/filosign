@@ -5,6 +5,10 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Button } from "@/src/lib/components/ui/button";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
+import {
+	extractColdInviteSearchFromLocation,
+	SKIP_COLD_SIGN_AFTER_MISMATCH,
+} from "@/src/lib/routing/cold-invite-search";
 import { cn } from "@/src/lib/utils";
 import { logger } from "@/src/lib/utils/logger";
 import { safeAsync } from "@/src/lib/utils/safe";
@@ -24,6 +28,7 @@ export type ExecuteSwitchAccountLogoutArgs = {
 export async function executeSwitchAccountLogout(
 	args: ExecuteSwitchAccountLogoutArgs,
 ): Promise<void> {
+	const preservedColdSearch = extractColdInviteSearchFromLocation();
 	args.clearOnboardingForm();
 	if (args.wallet) {
 		const [, err] = await safeAsync(() => args.logoutFilosign.mutateAsync());
@@ -37,6 +42,8 @@ export async function executeSwitchAccountLogout(
 	}
 	if (args.stayAfterLogout) {
 		args.onStayAfterLogout?.();
+	} else if (preservedColdSearch) {
+		await args.navigate({ to: "/", search: preservedColdSearch });
 	} else {
 		await args.navigate({ to: "/" });
 	}
@@ -46,18 +53,30 @@ export function OnboardingSwitchAccountLink({
 	className,
 	stayAfterLogout = false,
 	onStayAfterLogout,
+	coldInviteMismatch = false,
+	continueAnywayColdSearch,
 }: {
 	className?: string;
 	/** If true, do not navigate away after logout (e.g. cold-invite sign URL should show intro again). */
 	stayAfterLogout?: boolean;
 	onStayAfterLogout?: () => void;
+	/** When true with cold search, show “Continue anyway” to onboarding (skips opening the cold document after setup). */
+	coldInviteMismatch?: boolean;
+	continueAnywayColdSearch?: { coldPieceCid: string; coldInvite: string };
 }) {
 	const { wallet } = useFilosignContext();
-	const { logout: logoutPrivy } = usePrivy();
+	const { logout: logoutPrivy, user } = usePrivy();
+	const loggedInEmail =
+		user?.email?.address?.trim() || user?.google?.email?.trim() || "";
 	const logoutFilosign = useLogout();
 	const clearOnboardingForm = useStorePersist((s) => s.clearOnboardingForm);
 	const navigate = useNavigate();
 	const [pending, setPending] = useState(false);
+
+	const showContinueAnyway =
+		coldInviteMismatch &&
+		Boolean(continueAnywayColdSearch?.coldPieceCid?.trim()) &&
+		Boolean(continueAnywayColdSearch?.coldInvite?.trim());
 
 	const handleClick = async () => {
 		setPending(true);
@@ -76,17 +95,58 @@ export function OnboardingSwitchAccountLink({
 		}
 	};
 
+	const handleContinueAnyway = () => {
+		if (!continueAnywayColdSearch) return;
+		void navigate({
+			to: "/onboarding",
+			search: {
+				coldPieceCid: continueAnywayColdSearch.coldPieceCid,
+				coldInvite: continueAnywayColdSearch.coldInvite,
+				skipColdSign: SKIP_COLD_SIGN_AFTER_MISMATCH,
+			},
+		});
+	};
+
 	return (
-		<div className={cn("flex mt-2 w-full justify-center pt-2", className)}>
-			<Button
-				type="button"
-				variant="link"
-				className="text-muted-foreground h-auto min-h-0 px-2 py-1 text-sm"
-				disabled={pending}
-				onClick={() => void handleClick()}
-			>
-				{pending ? "Switching…" : "Switch account"}
-			</Button>
+		<div
+			className={cn("flex w-full flex-col items-center text-center", className)}
+		>
+			{showContinueAnyway ? (
+				<>
+					<p className="text-muted-foreground max-w-full px-2 text-sm break-all">
+						You may still continue to your dashboard anyway.
+					</p>
+					<Button
+						type="button"
+						variant="link"
+						className="text-muted-foreground h-auto min-h-0 px-2 py-1 text-sm"
+						disabled={pending}
+						onClick={handleContinueAnyway}
+					>
+						Continue to dashboard
+					</Button>
+				</>
+			) : (
+				<div className="mt-4">
+					{loggedInEmail ? (
+						<p className="text-muted-foreground max-w-full px-2 text-sm break-all">
+							You&apos;re signed in as{" "}
+							<span className="font-medium text-foreground">
+								{loggedInEmail}
+							</span>
+						</p>
+					) : null}
+					<Button
+						type="button"
+						variant="link"
+						className="text-muted-foreground h-auto min-h-0 px-2 py-1 text-sm"
+						disabled={pending}
+						onClick={() => void handleClick()}
+					>
+						{pending ? "Switching…" : "Switch account"}
+					</Button>
+				</div>
+			)}
 		</div>
 	);
 }

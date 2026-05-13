@@ -14,6 +14,10 @@ import {
 import { Input } from "@/src/lib/components/ui/input";
 import { Label } from "@/src/lib/components/ui/label";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
+import {
+	SKIP_COLD_SIGN_AFTER_MISMATCH,
+	shouldSkipColdDocumentAfterMismatch,
+} from "@/src/lib/routing/cold-invite-search";
 import OnboardingProtector from "./_components/OnboardingProtector";
 import { OnboardingSwitchAccountLink } from "./_components/OnboardingSwitchAccountLink";
 
@@ -29,6 +33,13 @@ export default function OnboardingWelcomePage() {
 			? { coldPieceCid: search.coldPieceCid, coldInvite: search.coldInvite }
 			: undefined;
 
+	const setPinSearch = {
+		...(coldReturn ?? {}),
+		...(shouldSkipColdDocumentAfterMismatch(search)
+			? { skipColdSign: SKIP_COLD_SIGN_AFTER_MISMATCH }
+			: {}),
+	};
+
 	const handleContinue = () => {
 		setOnboardingForm({
 			firstName: firstName.trim(),
@@ -38,7 +49,7 @@ export default function OnboardingWelcomePage() {
 		});
 		navigate({
 			to: "/onboarding/set-pin",
-			...(coldReturn ? { search: coldReturn } : {}),
+			search: setPinSearch,
 		});
 	};
 

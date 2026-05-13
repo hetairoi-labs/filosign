@@ -27,6 +27,10 @@ import {
 	DialogTitle,
 } from "@/src/lib/components/ui/dialog";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
+import {
+	SKIP_COLD_SIGN_AFTER_MISMATCH,
+	shouldSkipColdDocumentAfterMismatch,
+} from "@/src/lib/routing/cold-invite-search";
 import { handleError } from "@/src/lib/utils";
 import OnboardingProtector from "./_components/OnboardingProtector";
 import { OnboardingSwitchAccountLink } from "./_components/OnboardingSwitchAccountLink";
@@ -46,6 +50,13 @@ export default function OnboardingSetPinPage() {
 		search.coldPieceCid && search.coldInvite
 			? { coldPieceCid: search.coldPieceCid, coldInvite: search.coldInvite }
 			: undefined;
+
+	const forwardColdSearch = {
+		...(coldReturn ?? {}),
+		...(shouldSkipColdDocumentAfterMismatch(search)
+			? { skipColdSign: SKIP_COLD_SIGN_AFTER_MISMATCH }
+			: {}),
+	};
 	const { identityToken } = useIdentityToken();
 
 	const logout = useLogout();
@@ -57,7 +68,7 @@ export default function OnboardingSetPinPage() {
 		try {
 			navigate({
 				to: "/onboarding/welcome",
-				...(coldReturn ? { search: coldReturn } : {}),
+				search: forwardColdSearch,
 			});
 		} catch (error) {
 			handleError(error, async () => {
@@ -99,7 +110,7 @@ export default function OnboardingSetPinPage() {
 		} else {
 			navigate({
 				to: "/onboarding",
-				...(coldReturn ? { search: coldReturn } : {}),
+				search: forwardColdSearch,
 			} as never);
 		}
 	};

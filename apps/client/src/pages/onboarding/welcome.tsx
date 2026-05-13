@@ -15,6 +15,10 @@ import {
 	CardTitle,
 } from "@/src/lib/components/ui/card";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
+import {
+	SKIP_COLD_SIGN_AFTER_MISMATCH,
+	shouldSkipColdDocumentAfterMismatch,
+} from "@/src/lib/routing/cold-invite-search";
 import { logger } from "@/src/lib/utils/logger";
 
 export default function OnboardingWelcomeCompletePage() {
@@ -29,6 +33,7 @@ export default function OnboardingWelcomeCompletePage() {
 
 	const coldReturnToSign =
 		Boolean(search.coldPieceCid?.trim()) && Boolean(search.coldInvite?.trim());
+	const skipColdDocument = shouldSkipColdDocumentAfterMismatch(search);
 
 	useEffect(() => {
 		if (onboardingForm?.firstName || onboardingForm?.lastName) {
@@ -45,6 +50,9 @@ export default function OnboardingWelcomeCompletePage() {
 						? {
 								coldPieceCid: search.coldPieceCid,
 								coldInvite: search.coldInvite,
+								...(skipColdDocument
+									? { skipColdSign: SKIP_COLD_SIGN_AFTER_MISMATCH }
+									: {}),
 							}
 						: {},
 			} as never);
@@ -57,6 +65,7 @@ export default function OnboardingWelcomeCompletePage() {
 		coldReturnToSign,
 		search.coldPieceCid,
 		search.coldInvite,
+		skipColdDocument,
 	]);
 
 	async function handleSubmit() {
@@ -88,7 +97,12 @@ export default function OnboardingWelcomeCompletePage() {
 				});
 		}
 
-		if (coldReturnToSign && search.coldPieceCid && search.coldInvite) {
+		if (
+			coldReturnToSign &&
+			!skipColdDocument &&
+			search.coldPieceCid &&
+			search.coldInvite
+		) {
 			navigate({
 				to: "/dashboard/document/sign",
 				search: {
@@ -127,7 +141,9 @@ export default function OnboardingWelcomeCompletePage() {
 								}
 							}}
 						>
-							{coldReturnToSign ? "Sign your document" : "Go to Dashboard"}
+							{coldReturnToSign && !skipColdDocument
+								? "Sign your document"
+								: "Go to Dashboard"}
 							<CaretRightIcon
 								className="transition-transform duration-200 size-4 group-hover:translate-x-1"
 								weight="bold"
