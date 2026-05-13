@@ -1,22 +1,34 @@
 import type { PlacementManifest } from "@filosign/shared";
-import { type Address, getAddress } from "viem";
-import type { StoredDocument } from "../types";
+import { normalizePlacementRecipientEmail } from "@filosign/shared";
+import { type Address, getAddress, isAddress } from "viem";
+import type { Recipient, StoredDocument } from "../types";
 import type { SignatureField } from "./mock";
 
-/** Thrown from {@link loadDocumentFileBytes}; match in `handleSend` catch. */
+export function recipientResolvedSignerAddress(
+	recipient: Pick<Recipient, "walletAddress">,
+): Address | null {
+	const w = recipient.walletAddress?.trim();
+	if (!w || !isAddress(w)) return null;
+	try {
+		return getAddress(w);
+	} catch {
+		return null;
+	}
+}
+
+/** Email-only recipient (no resolved wallet) — cold invite + passphrase path. */
+export function isColdRecipient(recipient: Recipient): boolean {
+	const email = recipient.email?.trim();
+	if (!email) return false;
+	return recipientResolvedSignerAddress(recipient) === null;
+}
+
 export const SendEnvelopeError = {
 	MISSING_DATA_URL: "MISSING_DATA_URL",
-	NO_SIGNERS: "NO_SIGNERS",
 } as const;
 
-/** Matches persisted create-form map entries (role may be typed as `string` in UI state). */
 export type RecipientWithEncryptionProfile = {
-	recipient: {
-		name: string;
-		email: string;
-		walletAddress: string;
-		role: string;
-	};
+	recipient: Recipient;
 	profile: { encryptionPublicKey: string; [key: string]: unknown };
 };
 
@@ -34,22 +46,18 @@ function clamp01(n: number): number {
 	return Math.min(1, Math.max(0, n));
 }
 
-/**
- * Build v1 {@link PlacementManifest} for a document: normalized rects and
- * per-field {@link SignatureField.assignedSignerWallet} / {@link SignatureField.required}.
- */
 export function buildPlacementManifestForDocument(args: {
 	docId: string;
-	signersOrder: Address[];
+	/** Signer emails in routing order (normalized). */
+	signerEmailsInOrder: string[];
 	signatureFields: SignatureField[];
 	docWidth: number;
 	docHeight: number;
-	/** Pixel size of field boxes on the authoring canvas (must match add-sign UI). */
 	fieldBox: { width: number; height: number };
 }): PlacementManifest {
 	const {
 		docId,
-		signersOrder,
+		signerEmailsInOrder,
 		signatureFields,
 		docWidth,
 		docHeight,
@@ -60,8 +68,8 @@ export function buildPlacementManifestForDocument(args: {
 	const fw = Math.max(fieldBox.width, 1);
 	const fh = Math.max(fieldBox.height, 1);
 
-	if (signersOrder.length === 0) {
-		throw new Error("At least one signer is required for placement");
+	if (signerEmailsInOrder.length === 0) {
+		throw new Error("At least one signer email is required for placement");
 	}
 
 	const fieldsForDoc = signatureFields.filter((f) => f.documentId === docId);
@@ -70,16 +78,18 @@ export function buildPlacementManifestForDocument(args: {
 	}
 
 	const signerSet = new Set(
-		signersOrder.map((a) => getAddress(a).toLowerCase() as string),
+		signerEmailsInOrder.map((e) => normalizePlacementRecipientEmail(e)),
 	);
 
 	const manifestFields: PlacementManifest["fields"] = [];
 
 	for (const field of fieldsForDoc) {
-		const assigned = getAddress(field.assignedSignerWallet);
-		if (!signerSet.has(assigned.toLowerCase())) {
+		const assigned = normalizePlacementRecipientEmail(
+			field.assignedSignerEmail,
+		);
+		if (!signerSet.has(assigned)) {
 			throw new Error(
-				`Field ${field.id}: assigned signer ${assigned} is not in this envelope's signer list`,
+				`Field ${field.id}: assigned signer email ${assigned} is not in this envelope's signer list`,
 			);
 		}
 
@@ -92,16 +102,15 @@ export function buildPlacementManifestForDocument(args: {
 				width: clamp01(fw / dw),
 				height: clamp01(fh / dh),
 			},
-			assignedSigner: assigned,
+			assignedRecipientEmail: assigned,
 			required: field.required,
 			type: field.type,
 		});
 	}
 
-	return { version: 1, fields: manifestFields };
+	return { version: 2, fields: manifestFields };
 }
 
-/** Data URL → bytes for {@link useSendFile}. Parses directly (no fetch) to satisfy strict CSP. */
 export async function loadDocumentFileBytes(
 	doc: StoredDocument,
 ): Promise<Uint8Array> {
@@ -112,7 +121,7 @@ export async function loadDocumentFileBytes(
 	if (url.startsWith("data:")) {
 		const commaIdx = url.indexOf(",");
 		if (commaIdx === -1) throw new Error("Invalid data URL");
-		const meta = url.slice(5, commaIdx); // e.g., "application/pdf;base64"
+		const meta = url.slice(5, commaIdx);
 		const payload = url.slice(commaIdx + 1);
 		if (meta.includes("base64")) {
 			const binaryStr = atob(payload);
@@ -122,21 +131,15 @@ export async function loadDocumentFileBytes(
 			}
 			return bytes;
 		}
-		// URL-encoded fallback (not base64)
 		const decoded = decodeURIComponent(payload);
 		return new Uint8Array(Array.from(decoded).map((c) => c.charCodeAt(0)));
 	}
-	// For non-data URLs, fetch is still allowed by CSP (http/https)
 	const response = await fetch(url);
 	const blob = await response.blob();
 	const file = new File([blob], doc.name, { type: doc.type });
 	return new Uint8Array(await file.arrayBuffer());
 }
 
-/**
- * Splits envelope recipients into signers vs viewers (recipient order among
- * signers is stable for placement assignment).
- */
 export function buildSignersAndViewersForDocument(args: {
 	recipients: RecipientWithEncryptionProfile["recipient"][];
 	recipientMap: Map<Address, RecipientWithEncryptionProfile>;
@@ -147,11 +150,13 @@ export function buildSignersAndViewersForDocument(args: {
 	const viewers: EnvelopeViewer[] = [];
 
 	for (const recipient of recipients) {
-		const recipientData = recipientMap.get(recipient.walletAddress as Address);
+		const address = recipientResolvedSignerAddress(recipient);
+		if (!address) continue;
+
+		const recipientData = recipientMap.get(address);
 		if (!recipientData) continue;
 
 		const { profile } = recipientData;
-		const address = recipient.walletAddress as Address;
 		const encryptionPublicKey = profile.encryptionPublicKey as `0x${string}`;
 
 		if (recipient.role === "signer") {
