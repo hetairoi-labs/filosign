@@ -1,32 +1,55 @@
-import { useIsRegistered } from "@filosign/react/hooks";
+import { useFilosignContext } from "@filosign/react";
+import { useIsRegistered, useLogout } from "@filosign/react/hooks";
 import { SpinnerBallIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useWalletClient } from "wagmi";
 import env from "@/src/env";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
+import { useStorePersist } from "@/src/lib/hooks/use-store";
+import { useColdInviteRecipientWarning } from "@/src/lib/hooks/useColdInviteRecipientWarning";
 import {
 	hasColdReturn,
-	toSignDocumentSearch,
+	signDocumentSearchFromColdEntry,
 } from "@/src/lib/routing/cold-invite-search";
-import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
+import { ColdInviteNotForYouCallout } from "@/src/pages/onboarding/_components/ColdInviteNotForYouCallout";
+import {
+	executeSwitchAccountLogout,
+	OnboardingSwitchAccountLink,
+} from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
 
 export default function SignInPage() {
-	const { ready, authenticated, login } = usePrivy();
+	const { ready, authenticated, login, logout: logoutPrivy } = usePrivy();
 	const { data: walletClient } = useWalletClient();
+	const { wallet } = useFilosignContext();
+	const logoutFilosign = useLogout();
+	const clearOnboardingForm = useStorePersist((s) => s.clearOnboardingForm);
 	const isRegistered = useIsRegistered();
 	const navigate = useNavigate();
+	const [switchAccountPending, setSwitchAccountPending] = useState(false);
 	const coldSearch = useSearch({ from: "/" });
 	const coldReturn = useMemo(
 		() => hasColdReturn(coldSearch),
 		[coldSearch.coldPieceCid, coldSearch.coldInvite],
 	);
 	const signSearch = useMemo(
-		() => toSignDocumentSearch(coldSearch),
-		[coldSearch.coldPieceCid, coldSearch.coldInvite],
+		() => signDocumentSearchFromColdEntry(coldSearch),
+		[coldSearch.coldPieceCid, coldSearch.coldInvite, coldSearch.skipColdSign],
 	);
+
+	const continueAnywayColdSearch = useMemo(() => {
+		if (!coldReturn) return undefined;
+		const piece = coldSearch.coldPieceCid?.trim();
+		const inv = coldSearch.coldInvite?.trim();
+		if (!piece || !inv) return undefined;
+		return { coldPieceCid: piece, coldInvite: inv };
+	}, [coldReturn, coldSearch.coldPieceCid, coldSearch.coldInvite]);
+
+	const coldInviteWarning = useColdInviteRecipientWarning();
+	const showColdInviteMismatch =
+		authenticated && coldReturn && coldInviteWarning.showWarning;
 
 	useEffect(() => {
 		if (!ready || !authenticated) return;
@@ -60,6 +83,22 @@ export default function SignInPage() {
 	const signingIn = authenticated && (!walletReady || isRegistered.isPending);
 	const buttonLoading = !ready;
 
+	const handleSwitchAccountFromSignIn = async () => {
+		setSwitchAccountPending(true);
+		try {
+			await executeSwitchAccountLogout({
+				clearOnboardingForm,
+				wallet,
+				logoutFilosign,
+				logoutPrivy,
+				navigate,
+				stayAfterLogout: false,
+			});
+		} finally {
+			setSwitchAccountPending(false);
+		}
+	};
+
 	return (
 		<main className="min-h-dvh grid lg:grid-cols-2 bg-background">
 			<div className="relative hidden overflow-hidden lg:block">
@@ -80,12 +119,12 @@ export default function SignInPage() {
 					/>
 					<blockquote className="max-w-md space-y-3 text-pretty">
 						<p className="font-manrope text-xl font-medium leading-snug text-foreground md:text-2xl">
-							Sign documents you can trust—with cryptography built for how teams
-							work today.
+							Envelopes and signatures your team can verify—without chasing
+							status in email threads.
 						</p>
 						<footer className="text-sm text-muted-foreground">
-							Secure envelopes, verifiable signatures, one place to manage it
-							all.
+							One workspace for drafts, recipients, and the paper trail when it
+							matters.
 						</footer>
 					</blockquote>
 				</div>
@@ -103,6 +142,20 @@ export default function SignInPage() {
 
 					{signingIn ? (
 						<div className="flex flex-col items-center gap-4 py-8 text-center">
+							{showColdInviteMismatch ? (
+								<>
+									<ColdInviteNotForYouCallout
+										className="w-full max-w-md text-left"
+										recipientEmails={coldInviteWarning.recipientEmails}
+										signedInEmailForUi={coldInviteWarning.signedInEmailForUi}
+									/>
+									<OnboardingSwitchAccountLink
+										className="w-full max-w-md"
+										coldInviteMismatch={showColdInviteMismatch}
+										continueAnywayColdSearch={continueAnywayColdSearch}
+									/>
+								</>
+							) : null}
 							<SpinnerBallIcon
 								className="size-10 animate-spin text-muted-foreground"
 								aria-hidden
@@ -110,7 +163,7 @@ export default function SignInPage() {
 							<div className="space-y-1">
 								<p className="font-medium text-foreground">Signing you in…</p>
 								<p className="text-sm text-muted-foreground">
-									Preparing your workspace
+									Connecting your wallet and checking your Filosign account.
 								</p>
 							</div>
 						</div>
@@ -118,50 +171,95 @@ export default function SignInPage() {
 						<div className="">
 							<div className="space-y-2">
 								<h1 className="font-manrope text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-									Finish setting up
+									Almost there
 								</h1>
 								<p className="text-muted-foreground">
-									You&apos;re signed in. Continue to create your Filosign
-									account.
+									{coldReturn
+										? "Finish onboarding to sign the document."
+										: "Finish onboarding so you can send and sign envelopes."}
 								</p>
 							</div>
-							<div className="rounded-2xl border bg-card p-6 shadow-xs mt-8">
+							<div className="mt-8 flex flex-col gap-4 rounded-2xl border bg-card p-6 shadow-xs">
+								{showColdInviteMismatch ? (
+									<ColdInviteNotForYouCallout
+										embedded
+										className="border-b border-border pb-4"
+										recipientEmails={coldInviteWarning.recipientEmails}
+										signedInEmailForUi={coldInviteWarning.signedInEmailForUi}
+									/>
+								) : (
+									<div className="border-b border-border pb-4 text-left">
+										<p className="font-manrope font-semibold tracking-tight text-foreground">
+											Finish setting up your account
+										</p>
+										<p className="mt-2 text-sm leading-relaxed text-pretty text-muted-foreground">
+											Setting up your account will take less than a minute.
+										</p>
+									</div>
+								)}
 								<Button
 									type="button"
 									variant="default"
 									size="lg"
 									className="w-full"
+									disabled={
+										showColdInviteMismatch ? switchAccountPending : false
+									}
+									isLoading={
+										showColdInviteMismatch ? switchAccountPending : false
+									}
 									onClick={() =>
-										void navigate({
-											to: "/onboarding",
-											...(coldReturn
-												? {
-														search: {
-															coldPieceCid: coldSearch.coldPieceCid,
-															coldInvite: coldSearch.coldInvite,
-														},
-													}
-												: {}),
-										})
+										showColdInviteMismatch
+											? void handleSwitchAccountFromSignIn()
+											: void navigate({
+													to: "/onboarding",
+													...(coldReturn
+														? {
+																search: {
+																	coldPieceCid: coldSearch.coldPieceCid,
+																	coldInvite: coldSearch.coldInvite,
+																},
+															}
+														: {}),
+												})
 									}
 								>
-									Continue account setup
+									{showColdInviteMismatch
+										? "Switch account"
+										: "Continue to onboarding"}
 								</Button>
 							</div>
-							<OnboardingSwitchAccountLink />
+							{showColdInviteMismatch ? (
+								<OnboardingSwitchAccountLink
+									className="mt-6"
+									coldInviteMismatch
+									continueAnywayColdSearch={continueAnywayColdSearch}
+								/>
+							) : (
+								<OnboardingSwitchAccountLink />
+							)}
 						</div>
 					) : (
 						<div className="space-y-8">
 							<div className="space-y-2">
 								<h1 className="font-manrope text-2xl font-semibold tracking-tight text-foreground md:text-3xl">
-									Welcome back
+									Welcome to Filosign
 								</h1>
 								<p className="text-muted-foreground">
-									Sign in with your preferred wallet or email to continue.
+									Send envelopes, collect signatures, and keep a clear record
+									when deals close.
 								</p>
 							</div>
 
-							<div className="rounded-2xl border bg-card p-6 shadow-xs">
+							<div className="flex flex-col gap-4 rounded-2xl border bg-card p-6 shadow-xs">
+								<div className="border-b border-border pb-4 text-left">
+									<p className="font-manrope font-semibold tracking-tight text-foreground">
+										Login to Filosign
+									</p>
+									<p className="mt-2 text-sm leading-relaxed text-pretty text-muted-foreground">
+										Continue with your email or social account.
+									</p>
+								</div>
 								<Button
 									type="button"
 									variant="default"
@@ -173,7 +271,7 @@ export default function SignInPage() {
 								>
 									Continue with Privy
 								</Button>
-								<p className="mt-4 text-center text-xs text-muted-foreground">
+								<p className="text-center text-xs text-muted-foreground">
 									By continuing you agree to Filosign&apos;s terms and privacy
 									practices.
 								</p>
