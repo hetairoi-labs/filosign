@@ -21,7 +21,7 @@ interface IFSManager {
     function approveSender(address recipient_, address sender_, uint256 nonce_, uint256 deadline_, bytes calldata signature_) external;
     function validateApproveSenderSignature(address recipient_, address sender_, uint256 nonce_, uint256 deadline_, bytes calldata signature_) external view returns (bool);
     function revokeSender(address sender_) external;
-    function attachIncentive(string calldata pieceCid_, address signer_, address token_, uint256 amount_) external;
-    function attachIncentiveWithPermit(string calldata pieceCid_, address signer_, address token_, uint256 amount_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external;
-    function releaseIncentives(string calldata pieceCid_, address[] calldata signers_) external;
+    function attachIncentive(string calldata pieceCid_, bytes32 signerEmailCommitment_, address token_, uint256 amount_) external;
+    function attachIncentiveWithPermit(string calldata pieceCid_, bytes32 signerEmailCommitment_, address token_, uint256 amount_, uint256 deadline_, uint8 v_, bytes32 r_, bytes32 s_) external;
+    function releaseIncentives(string calldata pieceCid_, bytes32[] calldata signerEmailCommitments_, address[] calldata payoutWallets_) external;
 }

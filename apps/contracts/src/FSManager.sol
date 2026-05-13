@@ -34,7 +34,7 @@ contract FSManager is EIP712 {
     event SenderRevoked(address indexed recipient, address indexed sender);
     event IncentiveAttached(
         bytes32 indexed cidId,
-        address indexed signer,
+        bytes32 indexed signerEmailCommitment,
         address token,
         uint256 amount
     );
@@ -127,7 +127,7 @@ contract FSManager is EIP712 {
 
     function attachIncentive(
         string calldata pieceCid_,
-        address signer_,
+        bytes32 signerEmailCommitment_,
         address token_,
         uint256 amount_
     ) external onlyServer {
@@ -138,17 +138,17 @@ contract FSManager is EIP712 {
 
         FSFileRegistry(fileRegistry).setSignerIncentive(
             cidId,
-            signer_,
+            signerEmailCommitment_,
             token_,
             amount_
         );
         FSEscrow(escrow).deposit(token_, sender, amount_);
-        emit IncentiveAttached(cidId, signer_, token_, amount_);
+        emit IncentiveAttached(cidId, signerEmailCommitment_, token_, amount_);
     }
 
     function attachIncentiveWithPermit(
         string calldata pieceCid_,
-        address signer_,
+        bytes32 signerEmailCommitment_,
         address token_,
         uint256 amount_,
         uint256 deadline_,
@@ -162,7 +162,7 @@ contract FSManager is EIP712 {
             .sender;
         FSFileRegistry(fileRegistry).setSignerIncentive(
             cidId,
-            signer_,
+            signerEmailCommitment_,
             token_,
             amount_
         );
@@ -175,33 +175,37 @@ contract FSManager is EIP712 {
             r_,
             s_
         );
-        emit IncentiveAttached(cidId, signer_, token_, amount_);
+        emit IncentiveAttached(cidId, signerEmailCommitment_, token_, amount_);
     }
 
     function releaseIncentives(
         string calldata pieceCid_,
-        address[] calldata signers_
+        bytes32[] calldata signerEmailCommitments_,
+        address[] calldata payoutWallets_
     ) external onlyServerOrFileRegistry {
         bytes32 cidId = FSFileRegistry(fileRegistry).cidIdentifier(pieceCid_);
         require(FSFileRegistry(fileRegistry).allSigned(cidId), NotAllSigned());
+        if (signerEmailCommitments_.length != payoutWallets_.length)
+            revert IncentiveReleaseLengthMismatch();
 
         address sender = FSFileRegistry(fileRegistry)
             .fileRegistrations(cidId)
             .sender;
 
-        for (uint256 i = 0; i < signers_.length; ) {
-            address signer = signers_[i];
+        for (uint256 i = 0; i < signerEmailCommitments_.length; ) {
+            bytes32 commitment = signerEmailCommitments_[i];
+            address payout = payoutWallets_[i];
             (address token, uint256 amount, bool claimed) = FSFileRegistry(
                 fileRegistry
-            ).getSignerIncentive(cidId, signer);
+            ).getSignerIncentive(cidId, commitment);
 
             if (amount > 0) {
                 if (claimed) revert IncentiveAlreadyClaimed();
                 FSFileRegistry(fileRegistry).markIncentiveClaimed(
                     cidId,
-                    signer
+                    commitment
                 );
-                FSEscrow(escrow).release(token, sender, amount, signer);
+                FSEscrow(escrow).release(token, sender, amount, payout);
             }
 
             unchecked {
