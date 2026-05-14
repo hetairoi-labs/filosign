@@ -8,6 +8,9 @@
 		},
 		"./hooks": {
 			"default": "./hooks.ts"
+		},
+		"./utils": {
+			"default": "./utils/index.ts"
 		}
 	},
 	"scripts": {},

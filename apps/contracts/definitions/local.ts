@@ -1,5 +1,5 @@
 export const definitions = {
-  "0x7a69": {
+	"0x7a69": {
 		FSManager: {
 			address: "0x73511669fd4dE447feD18BB79bAFeAC93aB7F31f",
 			abi: [

@@ -1,4 +1,3 @@
-import { encryption, KEM, toBytes, toHex } from "@filosign/crypto-utils";
 import { useFilosignContext } from "@filosign/react";
 import {
 	fetchUserProfile,
@@ -13,6 +12,7 @@ import {
 	useUserProfile,
 	type ViewFileResult,
 } from "@filosign/react/hooks";
+import { buildClaimKemPayload } from "@filosign/react/utils";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -226,21 +226,18 @@ export function useColdInviteSignFlow(args: {
 			}
 
 			const recipientWallet = getAddress(wallet.account.address);
-			const { ciphertext: kemCiphertext, sharedSecret } = await KEM.encapsulate(
-				{
-					publicKeyOther: toBytes(recipientEncryptionPk),
-				},
-			);
-			const encryptedEncryptionKey = await encryption.encrypt({
-				message: dek,
-				secretKey: sharedSecret,
-				info: `${pieceCid}:${recipientWallet}`,
-			});
+			const { kemCiphertext, encryptedEncryptionKey } =
+				await buildClaimKemPayload({
+					dek,
+					recipientEncryptionPk,
+					pieceCid,
+					recipientWalletAddress: recipientWallet,
+				});
 
 			await claimColdInvite.mutateAsync({
 				inviteToken,
-				kemCiphertext: toHex(kemCiphertext),
-				encryptedEncryptionKey: toHex(encryptedEncryptionKey),
+				kemCiphertext,
+				encryptedEncryptionKey,
 			});
 		},
 		[wallet?.account?.address, pieceCid, claimColdInvite, inviteToken],

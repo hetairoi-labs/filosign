@@ -12,6 +12,7 @@ import {
 	useViewFile,
 	type ViewFileResult,
 } from "@filosign/react/hooks";
+import { buildRotatedInviteEnvelope } from "@filosign/react/utils";
 import {
 	hashNormalizedSignerEmail,
 	normalizePlacementRecipientEmail,
@@ -485,56 +486,18 @@ export function useWarmSignDocument() {
 		if (!confirmed) return;
 
 		try {
-			const {
-				generateColdInvitePhrase,
-				wrapColdInviteDek,
-				KEM,
-				encryption,
-				toBytes,
-			} = await import("@filosign/crypto-utils");
-			const { getSessionSeed } = await import("@filosign/react/hooks");
-
-			const phrase = generateColdInvitePhrase();
-			const inviteToken = `0x${Array.from(
-				crypto.getRandomValues(new Uint8Array(32)),
-			)
-				.map((b) => b.toString(16).padStart(2, "0"))
-				.join("")}` as `0x${string}`;
-
-			const keySeed = getSessionSeed(user.wallet.address as `0x${string}`);
-			if (!keySeed) {
-				toast.error("Please unlock your wallet first");
-				return;
-			}
-
-			const { privateKey } = await KEM.keyGen({
-				seed: new Uint8Array(Array.from(keySeed)),
-			});
-
-			const { sharedSecret: ssE } = await KEM.decapsulate({
-				ciphertext: toBytes(file.kemCiphertext as `0x${string}`),
-				privateKeySelf: privateKey,
-			});
-
-			const dek = await encryption.decrypt({
-				ciphertext: toBytes(file.encryptedEncryptionKey as `0x${string}`),
-				secretKey: ssE,
-				info: `${pieceCid}:${user.wallet.address}`,
-			});
-
-			const wrapped = await wrapColdInviteDek({
-				encryptionKey: dek,
-				phrase,
-			});
-
-			const wrappedHex = `0x${Array.from(wrapped)
-				.map((b) => b.toString(16).padStart(2, "0"))
-				.join("")}` as `0x${string}`;
+			const { phrase, inviteToken, wrappedEncryptionKey } =
+				await buildRotatedInviteEnvelope({
+					pieceCid,
+					walletAddress: user.wallet.address as `0x${string}`,
+					kemCiphertext: file.kemCiphertext as `0x${string}`,
+					encryptedEncryptionKey: file.encryptedEncryptionKey as `0x${string}`,
+				});
 
 			const result = await regenerateColdInvite.mutateAsync({
 				pieceCid,
 				inviteToken,
-				wrappedEncryptionKey: wrappedHex,
+				wrappedEncryptionKey,
 			});
 
 			const magicLink = buildColdInviteMagicLink(window.location.origin, {
