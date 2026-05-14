@@ -94,22 +94,59 @@ leaf = keccak256(abi.encode(
 
 ## The Compliance Bundle: A Complete Audit Record
 
-For legal proceedings or compliance audits, we generate a **Compliance Bundle** — a server-signed JSON document containing everything needed to verify the signing ceremony:
+For legal proceedings or compliance audits, we generate a **Compliance Bundle** — a server-built JSON document containing everything needed to verify the signing ceremony:
 
 ```typescript
-interface ComplianceBundleV1 {
-  version: 1;
-  pieceCid: string;              // Filecoin Content ID of encrypted document
-  chainId: number;               // EVM chain (e.g., 84532 for Base Sepolia)
-  exportedAtIso: string;         // When bundle was generated
+interface ComplianceBundle {
+  version: 2;
+  pieceCid: string;
+  chainId: number;
+  exportedAtIso: string;
   executionStatus: "fully_executed" | "partially_executed";
-  placementCommitment: `0x${string}`;  // bytes32 hash of manifest
-  placementManifest: PlacementManifest;  // Full manifest JSON
+  placementCommitment: `0x${string}`;
+  placementManifest: PlacementManifest;
   registration: {
     sender: `0x${string}`;
     registrationTxHash: `0x${string}`;
     createdAtIso: string;
   };
+  parties: Array<{
+    role: "sender" | "signer" | "viewer";
+    wallet: `0x${string}`;
+    email: string;
+    displayName: string | null;
+    emailCommitment: `0x${string}`;
+    privySubjectCommitment: `0x${string}` | null;
+  }>;
+  onchainRegistration: {
+    cidIdentifier: `0x${string}`;
+    sender: `0x${string}`;
+    signersCommitment: `0x${string}`;
+    viewersCommitment: `0x${string}`;
+    placementCommitment: `0x${string}`;
+    senderEmailCommitment: `0x${string}`;
+    senderPrivySubjectCommitment: `0x${string}`;
+    signersCount: number;
+    signaturesCount: number;
+    timestamp: string;
+  } | null;
+  transactions: Array<{
+    kind:
+      | "file_registered"
+      | "file_signed"
+      | "sender_approved"
+      | "sender_revoked"
+      | "incentive_attached"
+      | "incentives_released";
+    txHash: `0x${string}`;
+    chainId: number;
+    contractAddress: `0x${string}`;
+    summary: string;
+    relatedAddresses: `0x${string}`[];
+    blockNumber: number | null;
+    timestamp: number | null;
+    fetchedAtIso: string | null;
+  }>;
   signers: Array<{
     wallet: `0x${string}`;
     displayName: string | null;
@@ -117,16 +154,32 @@ interface ComplianceBundleV1 {
     signed: boolean;
     assignedFieldIds: string[];
     requiredFieldIds: string[];
-    completedFieldIds: string[];    // Fields included in Merkle root
-    completionsRoot: `0x${string}` | null;  // Merkle root stored on-chain
+    optionalFieldIds: string[];
     onchainTxHash: `0x${string}` | null;
+    signedAtIso: string | null;
+    messageTimestampIso: string | null;
+    blockTimestampFromTx: number | null;
+    approveSenderTxHash: `0x${string}` | null;
+    completedFieldIds: string[];
+    completionsRoot: `0x${string}` | null;
+    leafSchemaVersion: number | null;
     merkleProofs: Array<{
       fieldId: string;
       leafHash: `0x${string}`;
       leafIndex: number;
-      siblings: `0x${string}`[];   // Proof path to completionsRoot
+      siblings: `0x${string}`[];
     }>;
+    draftCompletedFieldIds: string[];
   }>;
+  offChainEvidence: {
+    acknowledgements: Array<{
+      wallet: `0x${string}`;
+      createdAtIso: string;
+      emailCommitment: `0x${string}`;
+      privySubjectCommitment: `0x${string}` | null;
+      ackSha256: `0x${string}` | null;
+    }>;
+  };
 }
 ```
 
