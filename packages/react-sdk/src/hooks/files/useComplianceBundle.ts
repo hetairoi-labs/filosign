@@ -1,5 +1,5 @@
-import type { ComplianceBundleV1 } from "@filosign/shared";
-import { zComplianceBundleV1 } from "@filosign/shared";
+import type { ComplianceBundle } from "@filosign/shared";
+import { zComplianceBundle } from "@filosign/shared";
 import { zHexString } from "@filosign/shared/zod";
 import { useMutation } from "@tanstack/react-query";
 import z from "zod";
@@ -8,7 +8,7 @@ import { useAuthedApi } from "../auth/useAuthedApi";
 export type ComplianceBundleResponse = {
 	exportId: string;
 	bundleHash: `0x${string}`;
-	bundle: ComplianceBundleV1;
+	bundle: ComplianceBundle;
 };
 
 export function useComplianceBundle() {
@@ -29,7 +29,7 @@ export function useComplianceBundle() {
 				{
 					exportId: z.string().uuid(),
 					bundleHash: zHexString(),
-					bundle: zComplianceBundleV1,
+					bundle: zComplianceBundle,
 				},
 				`/files/${args.pieceCid}/compliance-bundle${q}`,
 			);

@@ -51,6 +51,7 @@ const {
 	files,
 	fileAcknowledgements,
 	fileColdInvites,
+	fileIncentiveAttaches,
 	fileParticipants,
 	fileSignatures,
 	fileSignerDrafts,
@@ -775,6 +776,7 @@ export default new Hono()
 				lastName: users.lastName,
 				email: users.email,
 				username: users.username,
+				privyDid: users.privyDid,
 			})
 			.from(fileParticipants)
 			.leftJoin(users, eq(fileParticipants.wallet, users.walletAddress))
@@ -804,6 +806,7 @@ export default new Hono()
 			lastName: p.lastName,
 			email: p.email,
 			username: p.username,
+			privyDid: p.privyDid ?? null,
 		}));
 
 		const bundleRes = await tryCatch(
@@ -1634,7 +1637,25 @@ export default new Hono()
 			);
 		}
 
-		return respond.ok(ctx, {}, "Incentive attached successfully", 201);
+		const txHash = attachResult.data as `0x${string}`;
+		const ins = await tryCatch(
+			db.insert(fileIncentiveAttaches).values({
+				filePieceCid: pieceCid,
+				signerEmailCommitment: signerEmailCommitment as string,
+				token: getAddress(token),
+				amount,
+				txHash,
+			}),
+		);
+		if (ins.error) {
+			return respond.err(
+				ctx,
+				`Incentive attached on-chain but failed to record tx: ${ins.error}`,
+				500,
+			);
+		}
+
+		return respond.ok(ctx, { txHash }, "Incentive attached successfully", 201);
 	})
 
 	.get("/:pieceCid/s3", authenticated, async (ctx) => {

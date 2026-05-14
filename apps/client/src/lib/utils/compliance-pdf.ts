@@ -1,7 +1,8 @@
 import type { ViewFileResult } from "@filosign/react/hooks";
-import type { ComplianceBundleV1 } from "@filosign/shared";
+import type { ComplianceBundle, PlacementManifest } from "@filosign/shared";
 import {
 	hashNormalizedSignerEmail,
+	LEAF_SCHEMA_VERSION_V1,
 	normalizePlacementRecipientEmail,
 } from "@filosign/shared";
 import {
@@ -33,12 +34,12 @@ export type SignerIncentiveForPdf = {
 };
 
 export type CompliancePdfBundleOptions = {
-	bundle: ComplianceBundleV1;
+	bundle: ComplianceBundle;
 	bundleHash: `0x${string}`;
 	exportId: string;
 	chainName: string;
 	explorerBaseUrl: string | null;
-	/** Optional mapping of wallet address → Privy User ID */
+	/** @deprecated Not shown on the compliance PDF. */
 	privyIdMap?: Record<string, string>;
 	signerIncentives?: SignerIncentiveForPdf[];
 	/** Client-computed digest of decrypted bytes, if available (sent to export logging). */
@@ -195,13 +196,18 @@ function incentiveSuffixForAddress(
 	return ` - Incentive: ${amt} ${inc.tokenLabel} / ${paid}`;
 }
 
-function fieldPlacementStatus(
-	bundle: ComplianceBundleV1,
+function fieldPlacementStatusFromSigners(
+	signers: Array<{
+		email: string | null;
+		signed: boolean;
+		completedFieldIds: string[];
+		draftCompletedFieldIds: string[];
+	}>,
 	fieldId: string,
 	assignedRecipientEmail: string,
 ): "signed" | "draft" | "pending" {
 	const key = assignedRecipientEmail.trim().toLowerCase();
-	const row = bundle.signers.find(
+	const row = signers.find(
 		(s) => s.email && s.email.trim().toLowerCase() === key,
 	);
 	if (!row) return "pending";
@@ -210,13 +216,16 @@ function fieldPlacementStatus(
 	return "pending";
 }
 
-function shortId(uuid: string): string {
-	return uuid.slice(0, 8);
-}
-
-function truncateHash(hash: string, head: number, tail: number): string {
-	if (hash.length <= head + tail + 3) return hash;
-	return `${hash.slice(0, head)}...${hash.slice(-tail)}`;
+function fieldPlacementStatus(
+	bundle: ComplianceBundle,
+	fieldId: string,
+	assignedRecipientEmail: string,
+): "signed" | "draft" | "pending" {
+	return fieldPlacementStatusFromSigners(
+		bundle.signers,
+		fieldId,
+		assignedRecipientEmail,
+	);
 }
 
 export function buildCompliancePdfSummaryFromBundle(
@@ -228,7 +237,6 @@ export function buildCompliancePdfSummaryFromBundle(
 		exportId,
 		chainName,
 		explorerBaseUrl,
-		privyIdMap,
 		signerIncentives,
 		documentSha256,
 		decryptedDocumentMeta,
@@ -278,7 +286,7 @@ export function buildCompliancePdfSummaryFromBundle(
 
 	const hasExplorerLinks = Boolean(explorerBaseUrl);
 	const explorerNote = hasExplorerLinks
-		? "Registration and signature transaction links are provided below for blockchain verification."
+		? "Registration, signature, and related FSManager transaction links appear in the transaction index below."
 		: "No blockchain explorer configured for this network - verify transactions manually using the chain ID and transaction hashes provided.";
 
 	const plainLines: CompliancePdfLine[] = [
@@ -287,7 +295,82 @@ export function buildCompliancePdfSummaryFromBundle(
 		},
 		{ text: "" },
 		{ text: execPlain },
+		{ text: "" },
+		{
+			text: "Timestamps: FileRegistered on-chain uses the signed registration message time. FileSigned log uses the block timestamp at inclusion. Signed-at (message) in the signer matrix matches the EIP-712 payload time stored when the signature was submitted.",
+		},
 	];
+
+	const partiesLines: CompliancePdfLine[] = [
+		{ text: "Parties on this file (sender, signers, viewers):" },
+		{ text: "" },
+	];
+	for (let i = 0; i < bundle.parties.length; i++) {
+		const p = bundle.parties[i];
+		const name = p.displayName?.trim() || "(no display name)";
+		partiesLines.push({
+			text: `${i + 1}. [${p.role}] ${name} / ${p.email} / ${p.wallet}`,
+		});
+		partiesLines.push({
+			text: `   emailCommitment: ${p.emailCommitment}`,
+		});
+		if (p.privySubjectCommitment) {
+			partiesLines.push({
+				text: `   privySubjectCommitment: ${p.privySubjectCommitment}`,
+			});
+		}
+		if (i < bundle.parties.length - 1) partiesLines.push({ text: "" });
+	}
+
+	const onchainLines: CompliancePdfLine[] = [];
+	if (bundle.onchainRegistration) {
+		const o = bundle.onchainRegistration;
+		onchainLines.push(
+			{
+				text: "Snapshot of FSFileRegistry.fileRegistrations(cid) at export time:",
+			},
+			{ text: "" },
+			{ text: `cidIdentifier: ${o.cidIdentifier}` },
+			{ text: `sender: ${o.sender}` },
+			{ text: `placementCommitment: ${o.placementCommitment}` },
+			{ text: `signersCommitment: ${o.signersCommitment}` },
+			{ text: `viewersCommitment: ${o.viewersCommitment}` },
+			{ text: `senderEmailCommitment: ${o.senderEmailCommitment}` },
+			{
+				text: `senderPrivySubjectCommitment: ${o.senderPrivySubjectCommitment}`,
+			},
+			{
+				text: `signersCount: ${o.signersCount} / signaturesCount: ${o.signaturesCount}`,
+			},
+			{ text: `registration timestamp (uint256): ${o.timestamp}` },
+		);
+	} else {
+		onchainLines.push({
+			text: "On-chain registration snapshot was unavailable (RPC); verify via explorer using registration tx and piece CID.",
+		});
+	}
+
+	const txIndexLines: CompliancePdfLine[] = [
+		{ text: "Transaction index (file lifecycle on this chain):" },
+		{ text: "" },
+	];
+	for (let i = 0; i < bundle.transactions.length; i++) {
+		const t = bundle.transactions[i];
+		const head = `${i + 1}. [${t.kind}] ${t.txHash}`;
+		txIndexLines.push({ text: head });
+		txIndexLines.push({ text: `   Contract: ${t.contractAddress}` });
+		txIndexLines.push({ text: `   ${t.summary}` });
+		if (t.blockNumber != null) {
+			txIndexLines.push({
+				text: `   block: ${t.blockNumber}${t.timestamp != null ? ` / blockTime(utc approx): ${new Date(t.timestamp * 1000).toISOString()}` : ""}`,
+			});
+		}
+		if (explorerBaseUrl) {
+			const link = explorerTxUrl(explorerBaseUrl, t.txHash);
+			txIndexLines.push({ text: `   Link: ${link}`, linkUri: link });
+		}
+		if (i < bundle.transactions.length - 1) txIndexLines.push({ text: "" });
+	}
 
 	const signerMatrix: CompliancePdfLine[] = [
 		{ text: "Each required participant and their on-chain status:" },
@@ -296,14 +379,12 @@ export function buildCompliancePdfSummaryFromBundle(
 
 	for (let i = 0; i < bundle.signers.length; i++) {
 		const s = bundle.signers[i];
-		const privy = privyIdMap?.[s.wallet];
 
 		// Build identity line
 		const parts: string[] = [];
 		if (s.displayName) parts.push(s.displayName);
 		if (s.email) parts.push(s.email);
 		parts.push(s.wallet);
-		if (privy) parts.push(`(ID: ${privy})`);
 
 		const identityLine = parts.join(" / ");
 		const incentiveInfo = incentiveSuffixForAddress(s.wallet, signerIncentives);
@@ -315,9 +396,31 @@ export function buildCompliancePdfSummaryFromBundle(
 
 		if (s.signed) {
 			signerMatrix.push({ text: `   Status: ${statusLabel}` });
+			if (s.signedAtIso) {
+				signerMatrix.push({
+					text: `   Signed at (EIP-712 message time, UTC): ${s.signedAtIso}`,
+				});
+			}
+			if (s.blockTimestampFromTx != null) {
+				signerMatrix.push({
+					text: `   Block time from sign tx receipt (UTC): ${new Date(s.blockTimestampFromTx * 1000).toISOString()}`,
+				});
+			}
+			if (s.approveSenderTxHash) {
+				signerMatrix.push({
+					text: `   approveSender tx: ${s.approveSenderTxHash}`,
+				});
+				if (explorerBaseUrl) {
+					const al = explorerTxUrl(explorerBaseUrl, s.approveSenderTxHash);
+					signerMatrix.push({
+						text: `   approveSender link: ${al}`,
+						linkUri: al,
+					});
+				}
+			}
 			if (s.completionsRoot) {
 				signerMatrix.push({
-					text: `   Root: ${s.completionsRoot.slice(0, 32)}...${s.completionsRoot.slice(-16)}`,
+					text: `   Root: ${s.completionsRoot}`,
 				});
 			}
 			if (s.onchainTxHash) {
@@ -415,7 +518,7 @@ export function buildCompliancePdfSummaryFromBundle(
 
 	const cryptoDetail: CompliancePdfLine[] = [
 		{
-			text: "Merkle proofs verify each field completion on-chain. Each leaf hashes: field ID + placement commitment + piece CID digest + signer address. Siblings reconstruct the completions root.",
+			text: `Merkle completion leaves (v1): keccak256(abi.encode(uint8 leafSchemaVersion=${LEAF_SCHEMA_VERSION_V1}, bytes32 fieldKey, bytes32 placementCommitment, bytes32 pieceCidDigest, address signer)) where fieldKey = keccak256(utf8 bytes of the manifest field id string) and pieceCidDigest = keccak256(utf8 bytes of the piece CID). Implementation: @filosign/shared computeLeafHashV1.`,
 		},
 		{ text: "" },
 	];
@@ -427,11 +530,11 @@ export function buildCompliancePdfSummaryFromBundle(
 		// Visual header for signer
 		const statusBadge = s.signed ? "SIGNED" : "NOT SIGNED";
 		cryptoDetail.push({ text: `+-- Signer ${signerNum} ${statusBadge}` });
-		cryptoDetail.push({ text: `| Wallet: ${truncateHash(s.wallet, 20, 12)}` });
+		cryptoDetail.push({ text: `| Wallet: ${s.wallet}` });
 
 		if (s.completionsRoot) {
 			cryptoDetail.push({
-				text: `| Root:   ${truncateHash(s.completionsRoot, 20, 12)}`,
+				text: `| Root:   ${s.completionsRoot}`,
 			});
 		}
 
@@ -454,7 +557,7 @@ export function buildCompliancePdfSummaryFromBundle(
 
 				// Field ID and leaf hash on one compact line
 				cryptoDetail.push({
-					text: `| ${proofPrefix} [${shortId(pr.fieldId)}] leaf ${pr.leafIndex}: ${truncateHash(pr.leafHash, 14, 10)}`,
+					text: `| ${proofPrefix} [${pr.fieldId}] leaf ${pr.leafIndex}: ${pr.leafHash}`,
 				});
 
 				// Siblings display
@@ -464,7 +567,7 @@ export function buildCompliancePdfSummaryFromBundle(
 					});
 				} else if (pr.siblings.length === 1) {
 					cryptoDetail.push({
-						text: `| ${childPrefix}\`-- ${truncateHash(pr.siblings[0], 14, 10)}`,
+						text: `| ${childPrefix}\`-- ${pr.siblings[0]}`,
 					});
 				} else {
 					cryptoDetail.push({
@@ -474,7 +577,7 @@ export function buildCompliancePdfSummaryFromBundle(
 						const isLastSib = sIdx === pr.siblings.length - 1;
 						const sibPrefix = isLastSib ? "`--" : "|--";
 						cryptoDetail.push({
-							text: `| ${childPrefix}   ${sibPrefix} ${truncateHash(pr.siblings[sIdx], 14, 10)}`,
+							text: `| ${childPrefix}   ${sibPrefix} ${pr.siblings[sIdx]}`,
 						});
 					}
 				}
@@ -489,17 +592,49 @@ export function buildCompliancePdfSummaryFromBundle(
 		}
 	}
 
+	const ackLines: CompliancePdfLine[] = [];
+	if (bundle.offChainEvidence.acknowledgements.length > 0) {
+		ackLines.push(
+			{ text: "Off-chain acknowledgements (EIP-712 validated; no chain tx):" },
+			{ text: "" },
+		);
+		for (let i = 0; i < bundle.offChainEvidence.acknowledgements.length; i++) {
+			const a = bundle.offChainEvidence.acknowledgements[i];
+			ackLines.push({
+				text: `${i + 1}. Wallet ${a.wallet} at ${a.createdAtIso}`,
+			});
+			ackLines.push({ text: `   emailCommitment: ${a.emailCommitment}` });
+			if (a.privySubjectCommitment) {
+				ackLines.push({
+					text: `   privySubjectCommitment: ${a.privySubjectCommitment}`,
+				});
+			}
+			if (a.ackSha256) {
+				ackLines.push({ text: `   ackSha256: ${a.ackSha256}` });
+			}
+			if (i < bundle.offChainEvidence.acknowledgements.length - 1) {
+				ackLines.push({ text: "" });
+			}
+		}
+	}
+
 	return {
 		explorerBaseUrl,
 		headerSubtitleLinkUri: explorerBaseUrl,
 		fields,
 		sections: [
 			{ title: "Summary for reviewers", lines: plainLines },
+			{ title: "Parties", lines: partiesLines },
+			{ title: "On-chain registration snapshot", lines: onchainLines },
+			{ title: "Transaction index", lines: txIndexLines },
 			{ title: "Signer matrix", lines: signerMatrix },
 			{ title: "Document content metadata", lines: docMetaLines },
 			{ title: "Field placements", lines: placementRef },
 			{ title: "Placement manifest (JSON)", lines: manifestLines },
 			{ title: "Technical - Merkle / completions", lines: cryptoDetail },
+			...(ackLines.length > 0
+				? [{ title: "Off-chain acknowledgements", lines: ackLines }]
+				: []),
 		],
 	};
 }
@@ -842,13 +977,14 @@ function overlaySegTotalHeight(segments: OverlayTextSeg[]): number {
 
 async function drawPlacementOverlaysOnDocumentPdf(
 	doc: PDFDocument,
-	bundle: ComplianceBundleV1,
+	placementManifest: PlacementManifest,
+	signers: ComplianceBundle["signers"],
 ): Promise<void> {
 	const font = await doc.embedFont(StandardFonts.Helvetica);
 	const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
 	const n = doc.getPageCount();
 
-	for (const f of bundle.placementManifest.fields) {
+	for (const f of placementManifest.fields) {
 		const pi = f.pageIndex;
 		if (pi < 0 || pi >= n) continue;
 		const page = doc.getPage(pi);
@@ -860,7 +996,11 @@ async function drawPlacementOverlaysOnDocumentPdf(
 		const yTop = f.rect.y * h;
 		const yPdf = h - yTop - rh;
 
-		const st = fieldPlacementStatus(bundle, f.id, f.assignedRecipientEmail);
+		const st = fieldPlacementStatusFromSigners(
+			signers,
+			f.id,
+			f.assignedRecipientEmail,
+		);
 		const border =
 			st === "signed"
 				? rgb(0.1, 0.55, 0.25)
@@ -885,7 +1025,7 @@ async function drawPlacementOverlaysOnDocumentPdf(
 			opacity: 0.38,
 		});
 
-		const signerRow = bundle.signers.find(
+		const signerRow = signers.find(
 			(s) =>
 				s.email &&
 				s.email.trim().toLowerCase() ===
@@ -1147,7 +1287,11 @@ export async function buildDocumentPlusCompliancePdf(
 			for (const p of copied) {
 				out.addPage(p);
 			}
-			await drawPlacementOverlaysOnDocumentPdf(out, options.bundle);
+			await drawPlacementOverlaysOnDocumentPdf(
+				out,
+				options.bundle.placementManifest,
+				options.bundle.signers,
+			);
 		} catch {
 			throw new Error(
 				"The PDF could not be read. Try downloading the original file separately.",
@@ -1165,7 +1309,11 @@ export async function buildDocumentPlusCompliancePdf(
 			);
 		}
 		await embedImagePage(out, fileData.fileBytes, resolved);
-		await drawPlacementOverlaysOnDocumentPdf(out, options.bundle);
+		await drawPlacementOverlaysOnDocumentPdf(
+			out,
+			options.bundle.placementManifest,
+			options.bundle.signers,
+		);
 	}
 
 	await drawComplianceReport(out, {

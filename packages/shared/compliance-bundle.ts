@@ -3,14 +3,14 @@ import { zEvmAddress, zHexString } from "./helpers/zod";
 import { zPlacementManifest } from "./placement-manifest";
 
 /** Single leaf inclusion proof (matches {@link completionsMerkleProofsV1}). */
-export const zMerkleLeafProofV1 = z.object({
+export const zMerkleLeafProof = z.object({
 	fieldId: z.string(),
 	leafHash: zHexString(),
 	leafIndex: z.number().int().min(0),
 	siblings: z.array(zHexString()),
 });
 
-export const zSignerComplianceRowV1 = z.object({
+export const zSignerComplianceRow = z.object({
 	wallet: zEvmAddress(),
 	displayName: z.string().nullable(),
 	email: z.string().nullable(),
@@ -23,13 +23,78 @@ export const zSignerComplianceRowV1 = z.object({
 	completedFieldIds: z.array(z.string()),
 	completionsRoot: zHexString().nullable(),
 	leafSchemaVersion: z.number().int().nullable(),
-	merkleProofs: z.array(zMerkleLeafProofV1),
+	merkleProofs: z.array(zMerkleLeafProof),
 	/** In-progress selections when `signed` is false (from sign draft). */
 	draftCompletedFieldIds: z.array(z.string()),
+	/** Same as EIP-712 / DB message time when signed. */
+	messageTimestampIso: z.string().nullable(),
+	/** Block time from `FileSigned` tx receipt when fetched. */
+	blockTimestampFromTx: z.number().int().nonnegative().nullable(),
+	approveSenderTxHash: zHexString().nullable(),
 });
 
-export const zComplianceBundleV1 = z.object({
-	version: z.literal(1),
+export const zPartyRole = z.enum(["sender", "signer", "viewer"]);
+
+export const zPartyRow = z.object({
+	role: zPartyRole,
+	wallet: zEvmAddress(),
+	email: z.string(),
+	displayName: z.string().nullable(),
+	emailCommitment: zHexString(),
+	privySubjectCommitment: zHexString().nullable(),
+});
+
+/** On-chain file registration view (ABI-shaped, JSON-serializable). */
+export const zOnchainRegistrationSnapshot = z.object({
+	cidIdentifier: zHexString(),
+	sender: zEvmAddress(),
+	signersCommitment: zHexString(),
+	viewersCommitment: zHexString(),
+	placementCommitment: zHexString(),
+	senderEmailCommitment: zHexString(),
+	senderPrivySubjectCommitment: zHexString(),
+	signersCount: z.number().int().min(0).max(255),
+	signaturesCount: z.number().int().min(0).max(255),
+	/** Registration `timestamp` from contract (`uint256` as decimal string). */
+	timestamp: z.string(),
+});
+
+export const zChainTxKind = z.enum([
+	"file_registered",
+	"file_signed",
+	"sender_approved",
+	"sender_revoked",
+	"incentive_attached",
+	"incentives_released",
+]);
+
+export const zChainTxRef = z.object({
+	kind: zChainTxKind,
+	txHash: zHexString(),
+	chainId: z.number().int(),
+	contractAddress: zEvmAddress(),
+	summary: z.string(),
+	relatedAddresses: z.array(zEvmAddress()),
+	blockNumber: z.number().int().nonnegative().nullable(),
+	/** Block timestamp (unix seconds) when known. */
+	timestamp: z.number().int().nonnegative().nullable(),
+	fetchedAtIso: z.string().nullable(),
+});
+
+export const zAckEvidenceRow = z.object({
+	wallet: zEvmAddress(),
+	createdAtIso: z.string(),
+	emailCommitment: zHexString(),
+	privySubjectCommitment: zHexString().nullable(),
+	ackSha256: zHexString().nullable(),
+});
+
+export const zOffChainEvidence = z.object({
+	acknowledgements: z.array(zAckEvidenceRow),
+});
+
+export const zComplianceBundle = z.object({
+	version: z.literal(2),
 	pieceCid: z.string(),
 	chainId: z.number().int(),
 	exportedAtIso: z.string(),
@@ -41,12 +106,19 @@ export const zComplianceBundleV1 = z.object({
 		registrationTxHash: zHexString(),
 		createdAtIso: z.string(),
 	}),
-	signers: z.array(zSignerComplianceRowV1),
+	parties: z.array(zPartyRow),
+	/** Present when `fileRegistrations` could be read; otherwise null. */
+	onchainRegistration: zOnchainRegistrationSnapshot.nullable(),
+	transactions: z.array(zChainTxRef),
+	signers: z.array(zSignerComplianceRow),
+	offChainEvidence: zOffChainEvidence,
 });
 
-export type ComplianceBundleV1 = z.infer<typeof zComplianceBundleV1>;
-export type SignerComplianceRowV1 = z.infer<typeof zSignerComplianceRowV1>;
-export type MerkleLeafProofV1 = z.infer<typeof zMerkleLeafProofV1>;
+export type ComplianceBundle = z.infer<typeof zComplianceBundle>;
+export type SignerComplianceRow = z.infer<typeof zSignerComplianceRow>;
+export type MerkleLeafProof = z.infer<typeof zMerkleLeafProof>;
+export type PartyRow = z.infer<typeof zPartyRow>;
+export type ChainTxRef = z.infer<typeof zChainTxRef>;
 
 function sortKeysDeep(value: unknown): unknown {
 	if (value === null || typeof value !== "object") {
@@ -65,8 +137,8 @@ function sortKeysDeep(value: unknown): unknown {
 
 /** Stable JSON for hashing / audit storage. */
 export function canonicalComplianceBundleJson(
-	bundle: ComplianceBundleV1,
+	bundle: ComplianceBundle,
 ): string {
-	const sorted = sortKeysDeep(bundle) as ComplianceBundleV1;
+	const sorted = sortKeysDeep(bundle) as ComplianceBundle;
 	return JSON.stringify(sorted);
 }
