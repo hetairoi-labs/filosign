@@ -1,22 +1,25 @@
 import { Resend } from "resend";
 import type { Address } from "viem";
 import env from "@/env";
+import { escapeHtml } from "./html";
+import {
+	buildTransactionalEmailHtml,
+	EMAIL_MUTED_COLOR,
+	emailNoteBoxHtml,
+	emailQuotedMessageHtml,
+} from "./layout";
+import { getPublicAppUrl } from "./public-url";
 
+/**
+ * All outbound product email is sent through this file (Resend). There are no
+ * other `resend.emails.send` call sites in `apps/server` or packages.
+ */
 function shouldSkipEmail(): boolean {
 	if (env.DEBUG) {
 		console.log("[DEBUG] Skipping email send (DEBUG mode is enabled)");
 		return true;
 	}
 	return false;
-}
-
-function escapeHtml(value: string) {
-	return value
-		.replaceAll("&", "&amp;")
-		.replaceAll("<", "&lt;")
-		.replaceAll(">", "&gt;")
-		.replaceAll('"', "&quot;")
-		.replaceAll("'", "&#39;");
 }
 
 function formatAddress(address: Address) {
@@ -49,10 +52,29 @@ type SendInviteEmailArgs = {
 
 const resend = new Resend(env.RESEND_API_KEY);
 
+async function deliverEmail(args: {
+	to: string;
+	subject: string;
+	text: string;
+	html: string;
+}) {
+	const { error } = await resend.emails.send({
+		from: env.RESEND_FROM_EMAIL,
+		to: args.to,
+		subject: args.subject,
+		text: args.text,
+		html: args.html,
+		replyTo: env.RESEND_FROM_EMAIL,
+	});
+	if (error) {
+		throw new Error(error.message);
+	}
+}
+
 export async function sendShareRequestEmail(args: SendShareRequestEmailArgs) {
 	if (shouldSkipEmail()) return;
 
-	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
+	const appUrl = getPublicAppUrl();
 	const requestUrl = `${appUrl}/dashboard/connections`;
 	const senderLabel =
 		args.senderName?.trim() || formatAddress(args.senderWallet);
@@ -61,56 +83,37 @@ export async function sendShareRequestEmail(args: SendShareRequestEmailArgs) {
 		? escapeHtml(args.message.trim())
 		: null;
 
-	const subject = `${senderLabel} wants to send you documents`;
+	const subject = `${senderLabel} requested to connect on Filosign`;
 	const text = [
-		`${senderLabel} wants to send you secure documents on Filosign.`,
+		`${senderLabel} sent a connection request on Filosign.`,
 		"",
 		...(args.message?.trim() ? [`"${args.message.trim()}"`, ""] : []),
-		"To start receiving their documents, approve their connection request:",
+		"Sign in and open Connections to approve or decline:",
 		requestUrl,
-		"",
-		"Go to Settings > Permissions and click Approve.",
 	].join("\n");
 
-	const html = `
-		<div style="font-family: Inter, Arial, sans-serif; color: #111827; line-height: 1.5; max-width: 560px;">
-			<h1 style="font-size: 22px; margin: 0 0 12px;">${escapedSenderLabel} wants to send you documents</h1>
-			
-			${
-				escapedMessage
-					? `<blockquote style="background: #f9fafb; border-left: 3px solid #111827; margin: 0 0 16px; padding: 12px 16px; color: #374151; font-style: italic;">"${escapedMessage}"</blockquote>`
-					: ""
-			}
-			
-			<p style="margin: 0 0 16px;">
-				<strong>${escapedSenderLabel}</strong> wants to send you secure documents. Accept their request to start receiving them.
-			</p>
-			
-			<div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 16px; margin: 0 0 20px;">
-				<p style="margin: 0 0 8px; font-weight: 600; color: #166534;">What you need to do:</p>
-				<p style="margin: 0; color: #374151;">
-					Go to Settings > Permissions and click "Approve" to allow them to send you documents.
-				</p>
-			</div>
-			
-			<a href="${requestUrl}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 12px 20px; font-weight: 600;">
-				Review Request
-			</a>
-		</div>
-	`;
+	const bodyParts: string[] = [];
+	if (escapedMessage) {
+		bodyParts.push(emailQuotedMessageHtml(escapedMessage));
+	}
+	bodyParts.push(
+		`<p style="margin:0 0 16px;">${escapedSenderLabel} requested a connection so they can send you documents. Sign in with this email address, open <strong>Connections</strong>, then approve or decline the pending request.</p>`,
+	);
+	bodyParts.push(
+		emailNoteBoxHtml(
+			`<p style="margin:0;font-size:14px;">If you do not recognize this sender, decline the request or contact support from the app.</p>`,
+		),
+	);
 
-	const { error } = await resend.emails.send({
-		from: env.RESEND_FROM_EMAIL,
-		to: args.to,
-		subject,
-		text,
-		html,
-		replyTo: env.RESEND_FROM_EMAIL,
+	const html = buildTransactionalEmailHtml({
+		title: `${senderLabel} requested to connect`,
+		preheader: `${senderLabel} sent a connection request. Open Connections to respond.`,
+		bodyHtml: bodyParts.join(""),
+		ctaHref: requestUrl,
+		ctaLabel: "Open Connections",
 	});
 
-	if (error) {
-		throw new Error(error.message);
-	}
+	await deliverEmail({ to: args.to, subject, text, html });
 }
 
 type SendColdDocumentInviteEmailArgs = {
@@ -126,55 +129,43 @@ export async function sendColdDocumentInviteEmail(
 ) {
 	if (shouldSkipEmail()) return;
 
-	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
+	const appUrl = getPublicAppUrl();
 	const signUrl = new URL("/", appUrl);
 	signUrl.searchParams.set("coldPieceCid", args.pieceCid);
 	signUrl.searchParams.set("coldInvite", args.inviteToken);
 	const senderLabel =
 		args.senderName?.trim() || formatAddress(args.senderWallet);
 	const escapedSenderLabel = escapeHtml(senderLabel);
+	const signHref = signUrl.toString();
 
 	const subject = `${senderLabel} sent you a document`;
 	const text = [
-		`${senderLabel} sent you a document on Filosign.`,
+		`${senderLabel} shared a document with you on Filosign.`,
 		"",
-		"Open the link to view or sign. The sender will share a separate six-word passphrase with you (not by email):",
-		signUrl.toString(),
+		"Open the link to view or sign. They should give you a six-word passphrase separately (not in this email):",
+		signHref,
 	].join("\n");
 
-	const html = `
-		<div style="font-family: Inter, Arial, sans-serif; color: #111827; line-height: 1.5; max-width: 560px;">
-			<h1 style="font-size: 22px; margin: 0 0 12px;">You have a new document</h1>
-			<p style="margin: 0 0 16px;">
-				<strong>${escapedSenderLabel}</strong> sent you a secure document.
-			</p>
-			<p style="margin: 0 0 16px; color: #374151;">
-				Use the six-word passphrase they give you out-of-band after you open the link.
-			</p>
-			<a href="${signUrl.toString()}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 12px 20px; font-weight: 600;">
-				Open document
-			</a>
-		</div>
-	`;
+	const bodyHtml = [
+		`<p style="margin:0 0 12px;"><strong>${escapedSenderLabel}</strong> shared a document that needs your attention.</p>`,
+		`<p style="margin:0 0 16px;color:${EMAIL_MUTED_COLOR};">After you open the link, enter the six-word passphrase they send you through another channel (for example a message or call).</p>`,
+	].join("");
 
-	const { error } = await resend.emails.send({
-		from: env.RESEND_FROM_EMAIL,
-		to: args.to,
-		subject,
-		text,
-		html,
-		replyTo: env.RESEND_FROM_EMAIL,
+	const html = buildTransactionalEmailHtml({
+		title: "Document shared with you",
+		preheader: `${senderLabel} shared a document. Open the link, then enter their passphrase.`,
+		bodyHtml,
+		ctaHref: signHref,
+		ctaLabel: "Open document",
 	});
 
-	if (error) {
-		throw new Error(error.message);
-	}
+	await deliverEmail({ to: args.to, subject, text, html });
 }
 
 export async function sendInviteEmail(args: SendInviteEmailArgs) {
 	if (shouldSkipEmail()) return;
 
-	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
+	const appUrl = getPublicAppUrl();
 	const inviteUrl = `${appUrl}/invite/${args.inviteId}`;
 	const senderLabel =
 		args.senderName?.trim() || formatAddress(args.senderWallet);
@@ -183,69 +174,46 @@ export async function sendInviteEmail(args: SendInviteEmailArgs) {
 		? escapeHtml(args.message.trim())
 		: null;
 
-	const subject = `${senderLabel} wants to send you documents securely`;
+	const subject = `${senderLabel} invited you on Filosign`;
 	const text = [
-		`${senderLabel} wants to send you secure documents on Filosign.`,
+		`${senderLabel} invited you to join Filosign so they can share documents with you.`,
 		"",
 		...(args.message?.trim() ? [`"${args.message.trim()}"`, ""] : []),
-		"Filosign is a secure document platform with legally binding signatures.",
-		"",
-		"To receive their documents:",
-		"1. Click the link below to join",
-		"2. Create your account (takes 1 minute)",
-		"3. Accept their connection request",
-		"4. Start receiving documents",
+		"What to do:",
+		"1. Open the link below",
+		"2. Create your account",
+		"3. Accept their connection request when asked",
 		"",
 		inviteUrl,
-		"",
-		"It's free to use.",
 	].join("\n");
 
-	const html = `
-		<div style="font-family: Inter, Arial, sans-serif; color: #111827; line-height: 1.5; max-width: 560px;">
-			<h1 style="font-size: 22px; margin: 0 0 12px;">${escapedSenderLabel} wants to send you documents</h1>
-			
-			${
-				escapedMessage
-					? `<blockquote style="background: #f9fafb; border-left: 3px solid #111827; margin: 0 0 16px; padding: 12px 16px; color: #374151; font-style: italic;">"${escapedMessage}"</blockquote>`
-					: ""
-			}
-			
-			<p style="margin: 0 0 16px;">
-				<strong>${escapedSenderLabel}</strong> wants to send you secure, legally binding documents on Filosign.
-			</p>
-			
-			<div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 16px; margin: 0 0 20px;">
-				<p style="margin: 0 0 12px; font-weight: 600; color: #166534;">How it works:</p>
-				<ol style="margin: 0; padding-left: 20px; color: #374151;">
-					<li style="margin-bottom: 8px;">Click below to join (takes 1 minute)</li>
-					<li style="margin-bottom: 8px;">Accept their connection request</li>
-					<li>Start receiving secure documents</li>
-				</ol>
-			</div>
-			
-			<a href="${inviteUrl}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 12px 20px; font-weight: 600;">
-				Accept Invitation
-			</a>
-			
-			<p style="margin: 16px 0 0; font-size: 12px; color: #6b7280;">
-				Free to use. Your documents are encrypted and legally binding.
-			</p>
-		</div>
-	`;
+	const bodyParts: string[] = [];
+	if (escapedMessage) {
+		bodyParts.push(emailQuotedMessageHtml(escapedMessage));
+	}
+	bodyParts.push(
+		`<p style="margin:0 0 16px;">${escapedSenderLabel} invited you to Filosign. Use the link below with this email address, finish sign-up, then accept the connection request so they can send you documents.</p>`,
+	);
+	bodyParts.push(
+		emailNoteBoxHtml(
+			`<p style="margin:0 0 8px;font-size:14px;font-weight:600;">Steps</p>
+			<ol style="margin:0;padding-left:20px;font-size:14px;line-height:1.6;">
+			<li style="margin-bottom:6px;">Open the invitation link.</li>
+			<li style="margin-bottom:6px;">Create your account.</li>
+			<li>Accept the connection request from this sender.</li>
+			</ol>`,
+		),
+	);
 
-	const { error } = await resend.emails.send({
-		from: env.RESEND_FROM_EMAIL,
-		to: args.to,
-		subject,
-		text,
-		html,
-		replyTo: env.RESEND_FROM_EMAIL,
+	const html = buildTransactionalEmailHtml({
+		title: `${senderLabel} invited you`,
+		preheader: `${senderLabel} invited you to Filosign. Open the link to finish sign-up.`,
+		bodyHtml: bodyParts.join(""),
+		ctaHref: inviteUrl,
+		ctaLabel: "Open invitation",
 	});
 
-	if (error) {
-		throw new Error(error.message);
-	}
+	await deliverEmail({ to: args.to, subject, text, html });
 }
 
 export async function sendDocumentReceivedEmail(
@@ -253,7 +221,7 @@ export async function sendDocumentReceivedEmail(
 ) {
 	if (shouldSkipEmail()) return;
 
-	const appUrl = env.FRONTEND_URL.replace(/\/$/, "");
+	const appUrl = getPublicAppUrl();
 	const documentUrl = `${appUrl}/dashboard/document/sign?pieceCid=${encodeURIComponent(args.pieceCid)}`;
 	const senderLabel =
 		args.senderName?.trim() || formatAddress(args.senderWallet);
@@ -261,39 +229,21 @@ export async function sendDocumentReceivedEmail(
 
 	const subject = `${senderLabel} sent you a document`;
 	const text = [
-		`${senderLabel} sent you a secure document on Filosign.`,
+		`${senderLabel} sent you a document on Filosign.`,
 		"",
-		"Log in to view, sign, and download it:",
+		"Sign in to view, sign, or download:",
 		documentUrl,
 	].join("\n");
 
-	const html = `
-		<div style="font-family: Inter, Arial, sans-serif; color: #111827; line-height: 1.5; max-width: 560px;">
-			<h1 style="font-size: 22px; margin: 0 0 12px;">You have a new document</h1>
-			<p style="margin: 0 0 16px;">
-				<strong>${escapedSenderLabel}</strong> sent you a secure document.
-			</p>
-			<div style="background: #f0f9ff; border: 1px solid #7dd3fc; border-radius: 12px; padding: 16px; margin: 0 0 20px;">
-				<p style="margin: 0; color: #0c4a6e;">
-					Log in to view, sign, and download your document.
-				</p>
-			</div>
-			<a href="${documentUrl}" style="display: inline-block; background: #111827; color: #ffffff; text-decoration: none; border-radius: 8px; padding: 12px 20px; font-weight: 600;">
-				View Document
-			</a>
-		</div>
-	`;
+	const bodyHtml = `<p style="margin:0 0 16px;"><strong>${escapedSenderLabel}</strong> sent you a document. Sign in with the account that uses this email address to open it.</p>`;
 
-	const { error } = await resend.emails.send({
-		from: env.RESEND_FROM_EMAIL,
-		to: args.to,
-		subject,
-		text,
-		html,
-		replyTo: env.RESEND_FROM_EMAIL,
+	const html = buildTransactionalEmailHtml({
+		title: "New document",
+		preheader: `${senderLabel} sent a document. Sign in to open it.`,
+		bodyHtml,
+		ctaHref: documentUrl,
+		ctaLabel: "Open document",
 	});
 
-	if (error) {
-		throw new Error(error.message);
-	}
+	await deliverEmail({ to: args.to, subject, text, html });
 }

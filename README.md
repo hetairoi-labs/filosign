@@ -122,7 +122,7 @@ bun run test:dev
 Server configuration is defined in `apps/server/env.ts`. The main required values are:
 
 - `CHAIN`
-- `FRONTEND_URL`
+- `FRONTEND_URL` — public HTTPS origin of the **client app** (no trailing slash). Used in email links and CORS; must not be `http://localhost` in deployed (`testnet` / `mainnet`) environments.
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
 - `PG_URI`
