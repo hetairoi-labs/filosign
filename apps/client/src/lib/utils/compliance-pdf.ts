@@ -18,6 +18,12 @@ import {
 	StandardFonts,
 } from "pdf-lib";
 import { formatUnits, getAddress, zeroAddress } from "viem";
+import {
+	buildAboutThisRecordLines,
+	buildAppendixLines,
+	buildTimestampExplainerLines,
+} from "./compliance-pdf-copy";
+import { loadCompliancePdfEmbeddedFonts } from "./compliance-pdf-fonts";
 
 // -----------------------------------------------------------------------------
 // Types (data → summary)
@@ -289,19 +295,17 @@ export function buildCompliancePdfSummaryFromBundle(
 		? "Registration, signature, and related FSManager transaction links appear in the transaction index below."
 		: "No blockchain explorer configured for this network - verify transactions manually using the chain ID and transaction hashes provided.";
 
-	const plainLines: CompliancePdfLine[] = [
-		{
-			text: `The bundle hash identifies this exact JSON snapshot. ${explorerNote}`,
-		},
+	const aboutLines: CompliancePdfLine[] = [
+		...buildAboutThisRecordLines(bundle, explorerNote, execPlain),
 		{ text: "" },
-		{ text: execPlain },
-		{ text: "" },
-		{
-			text: "Timestamps: FileRegistered on-chain uses the signed registration message time. FileSigned log uses the block timestamp at inclusion. Signed-at (message) in the signer matrix matches the EIP-712 payload time stored when the signature was submitted.",
-		},
+		...buildTimestampExplainerLines(),
 	];
 
 	const partiesLines: CompliancePdfLine[] = [
+		{
+			text: "Each row is a participant on this file. Wallet addresses are checksummed. Commitments are one-way fingerprints of email or login subject (see appendix); they allow Filosign to correlate events without storing raw identifiers in the bundle.",
+		},
+		{ text: "" },
 		{ text: "Parties on this file (sender, signers, viewers):" },
 		{ text: "" },
 	];
@@ -327,6 +331,10 @@ export function buildCompliancePdfSummaryFromBundle(
 		const o = bundle.onchainRegistration;
 		onchainLines.push(
 			{
+				text: "These fields were read from FSFileRegistry.fileRegistrations for this content id at export time. Compare them to an archive node, indexer, or explorer contract view from the same block height when you need a strict chain match.",
+			},
+			{ text: "" },
+			{
 				text: "Snapshot of FSFileRegistry.fileRegistrations(cid) at export time:",
 			},
 			{ text: "" },
@@ -351,6 +359,10 @@ export function buildCompliancePdfSummaryFromBundle(
 	}
 
 	const txIndexLines: CompliancePdfLine[] = [
+		{
+			text: "Each line is a transaction Filosign associates with this file on the stated chain. Follow explorer links to inspect input data, events, and status. Summaries are descriptive; authoritative identifiers are the hashes and contract addresses printed here.",
+		},
+		{ text: "" },
 		{ text: "Transaction index (file lifecycle on this chain):" },
 		{ text: "" },
 	];
@@ -373,6 +385,10 @@ export function buildCompliancePdfSummaryFromBundle(
 	}
 
 	const signerMatrix: CompliancePdfLine[] = [
+		{
+			text: "Human-oriented view of each signer row: identity, signature status, message times, and links to on-chain transactions when present. Cross-reference the transaction index for full contract context.",
+		},
+		{ text: "" },
 		{ text: "Each required participant and their on-chain status:" },
 		{ text: "" },
 	];
@@ -447,6 +463,10 @@ export function buildCompliancePdfSummaryFromBundle(
 
 	const docMetaLines: CompliancePdfLine[] = decryptedDocumentMeta
 		? [
+				{
+					text: "Optional file facts from the session that produced this export. They do not replace the document hash when one is present.",
+				},
+				{ text: "" },
 				{ text: "Decrypted document snapshot (this export only):" },
 				{ text: "" },
 				{
@@ -463,6 +483,10 @@ export function buildCompliancePdfSummaryFromBundle(
 			];
 
 	const placementRef: CompliancePdfLine[] = [
+		{
+			text: "Normalized coordinates (0–1) locate each field on the PDF page; page numbers are 1-based. Status reflects signer progress against the manifest at export time.",
+		},
+		{ text: "" },
 		{
 			text: "Field placements (coordinates normalized 0-1; page numbers are 1-based):",
 		},
@@ -508,6 +532,10 @@ export function buildCompliancePdfSummaryFromBundle(
 	const manifestJson = JSON.stringify(bundle.placementManifest, null, 2);
 	const manifestLines: CompliancePdfLine[] = [
 		{
+			text: "Canonical JSON for the placement commitment. Independent verification recomputes the commitment from this exact serialization (see @filosign/shared).",
+		},
+		{ text: "" },
+		{
 			text: "Full placement manifest JSON (canonical for placement commitment):",
 		},
 		{ text: "" },
@@ -517,6 +545,10 @@ export function buildCompliancePdfSummaryFromBundle(
 	}
 
 	const cryptoDetail: CompliancePdfLine[] = [
+		{
+			text: "Cryptographic evidence that each completed field contributes to the signer’s completions root. A reviewer with the manifest, piece CID, placement commitment, and signer address can recompute leaves and verify proofs against the root printed above.",
+		},
+		{ text: "" },
 		{
 			text: `Merkle completion leaves (v1): keccak256(abi.encode(uint8 leafSchemaVersion=${LEAF_SCHEMA_VERSION_V1}, bytes32 fieldKey, bytes32 placementCommitment, bytes32 pieceCidDigest, address signer)) where fieldKey = keccak256(utf8 bytes of the manifest field id string) and pieceCidDigest = keccak256(utf8 bytes of the piece CID). Implementation: @filosign/shared computeLeafHashV1.`,
 		},
@@ -595,6 +627,10 @@ export function buildCompliancePdfSummaryFromBundle(
 	const ackLines: CompliancePdfLine[] = [];
 	if (bundle.offChainEvidence.acknowledgements.length > 0) {
 		ackLines.push(
+			{
+				text: "These entries were signed with EIP-712 off-chain; they are not implied by a transaction hash alone. Verify signatures against the wallets and commitments shown.",
+			},
+			{ text: "" },
 			{ text: "Off-chain acknowledgements (EIP-712 validated; no chain tx):" },
 			{ text: "" },
 		);
@@ -618,23 +654,32 @@ export function buildCompliancePdfSummaryFromBundle(
 		}
 	}
 
+	const appendixLines: CompliancePdfLine[] = buildAppendixLines();
+
 	return {
 		explorerBaseUrl,
 		headerSubtitleLinkUri: explorerBaseUrl,
 		fields,
 		sections: [
-			{ title: "Summary for reviewers", lines: plainLines },
+			{ title: "About this record", lines: aboutLines },
 			{ title: "Parties", lines: partiesLines },
 			{ title: "On-chain registration snapshot", lines: onchainLines },
-			{ title: "Transaction index", lines: txIndexLines },
+			{ title: "On-chain transactions (index)", lines: txIndexLines },
 			{ title: "Signer matrix", lines: signerMatrix },
 			{ title: "Document content metadata", lines: docMetaLines },
 			{ title: "Field placements", lines: placementRef },
 			{ title: "Placement manifest (JSON)", lines: manifestLines },
-			{ title: "Technical - Merkle / completions", lines: cryptoDetail },
+			{
+				title: "Cryptographic completion proofs (Merkle trees)",
+				lines: cryptoDetail,
+			},
 			...(ackLines.length > 0
 				? [{ title: "Off-chain acknowledgements", lines: ackLines }]
 				: []),
+			{
+				title: "Appendix: glossary and JSON field map",
+				lines: appendixLines,
+			},
 		],
 	};
 }
@@ -645,12 +690,18 @@ export function buildCompliancePdfSummaryFromBundle(
 
 const A4 = { w: 595, h: 842 } as const;
 
-const FILOSIGN = {
-	accent: rgb(97 / 255, 140 / 255, 48 / 255),
-	foreground: rgb(33 / 255, 34 / 255, 35 / 255),
-	muted: rgb(112 / 255, 112 / 255, 112 / 255),
-	border: rgb(230 / 255, 230 / 255, 230 / 255),
-	link: rgb(0.18, 0.42, 0.72),
+// -----------------------------------------------------------------------------
+// Brand colors (aligned with apps/astro/src/styles/global.css, print sRGB)
+// -----------------------------------------------------------------------------
+
+const PDF_BRAND = {
+	pageBg: rgb(252 / 255, 253 / 255, 250 / 255),
+	foreground: rgb(32 / 255, 34 / 255, 35 / 255),
+	muted: rgb(112 / 255, 112 / 255, 113 / 255),
+	border: rgb(217 / 255, 218 / 255, 222 / 255),
+	accent: rgb(94 / 255, 143 / 255, 58 / 255),
+	accentDark: rgb(58 / 255, 76 / 255, 33 / 255),
+	link: rgb(18 / 255, 86 / 255, 120 / 255),
 } as const;
 
 const PDF_M = {
@@ -677,8 +728,9 @@ type Ctx = {
 	y: number;
 	pw: number;
 	ph: number;
-	font: PDFFont;
-	fontBold: PDFFont;
+	fontBody: PDFFont;
+	fontSectionTitle: PDFFont;
+	fontBrand: PDFFont;
 	fontMono: PDFFont;
 };
 
@@ -742,15 +794,28 @@ function addUriLink(
 function ensureSpace(ctx: Ctx, neededBelowBaseline: number): void {
 	if (ctx.y - neededBelowBaseline < PDF_M.bottomSafe) {
 		ctx.page = ctx.doc.addPage([A4.w, A4.h]);
+		ctx.page.drawRectangle({
+			x: 0,
+			y: 0,
+			width: A4.w,
+			height: A4.h,
+			color: PDF_BRAND.pageBg,
+		});
 		ctx.y = ctx.ph - PDF_M.margin;
-		ctx.page.drawText("Filosign record (continued)", {
+		ctx.page.drawLine({
+			start: { x: PDF_M.margin, y: ctx.y + 6 },
+			end: { x: ctx.pw - PDF_M.margin, y: ctx.y + 6 },
+			thickness: 2,
+			color: PDF_BRAND.accent,
+		});
+		ctx.page.drawText("filosign · compliance record (continued)", {
 			x: PDF_M.margin,
 			y: ctx.y,
 			size: 8,
-			font: ctx.fontBold,
-			color: FILOSIGN.muted,
+			font: ctx.fontBrand,
+			color: PDF_BRAND.muted,
 		});
-		ctx.y -= lineHeightAt(ctx.font, 8) + PDF_M.gap;
+		ctx.y -= lineHeightAt(ctx.fontBrand, 8) + PDF_M.gap;
 	}
 }
 
@@ -760,7 +825,7 @@ function drawWrappedLine(
 	maxW: number,
 	line: CompliancePdfLine,
 	size: number,
-	defaultColor = FILOSIGN.foreground,
+	defaultColor = PDF_BRAND.foreground,
 ): void {
 	if (line.text === "") {
 		ctx.y -= PDF_M.blankLineGap;
@@ -768,8 +833,8 @@ function drawWrappedLine(
 	}
 
 	const isHex = line.display === "hex-dump";
-	const targetFont = isHex ? ctx.fontMono : ctx.font;
-	const col = line.linkUri ? FILOSIGN.link : defaultColor;
+	const targetFont = isHex ? ctx.fontMono : ctx.fontBody;
+	const col = line.linkUri ? PDF_BRAND.link : defaultColor;
 	const lh = lineHeightAt(targetFont, size);
 
 	let lines: string[];
@@ -797,35 +862,167 @@ function drawWrappedLine(
 	}
 }
 
+async function bytesToPngBytes(
+	bytes: Uint8Array,
+	mime: string,
+): Promise<Uint8Array> {
+	const lower = mime.toLowerCase();
+	if (
+		lower === "image/png" ||
+		lower === "image/jpeg" ||
+		lower === "image/jpg"
+	) {
+		return bytes;
+	}
+	const blob = new Blob([bytes.slice()], {
+		type: mime || "application/octet-stream",
+	});
+	const bitmap = await createImageBitmap(blob);
+	const canvas = document.createElement("canvas");
+	canvas.width = bitmap.width;
+	canvas.height = bitmap.height;
+	const c2d = canvas.getContext("2d");
+	if (!c2d) throw new Error("Could not create canvas context");
+	c2d.drawImage(bitmap, 0, 0);
+	bitmap.close();
+	const pngBlob = await new Promise<Blob>((resolve, reject) => {
+		canvas.toBlob(
+			(b) => (b ? resolve(b) : reject(new Error("toBlob failed"))),
+			"image/png",
+		);
+	});
+	const buf = await pngBlob.arrayBuffer();
+	return new Uint8Array(buf);
+}
+
+async function embedComplianceLogo(doc: PDFDocument): Promise<PDFImage | null> {
+	try {
+		const res = await fetch("/logo.webp");
+		if (!res.ok) return null;
+		const raw = new Uint8Array(await res.arrayBuffer());
+		const png = await bytesToPngBytes(raw, "image/webp");
+		return await doc.embedPng(png);
+	} catch {
+		return null;
+	}
+}
+
+function drawPdfFooters(
+	doc: PDFDocument,
+	font: PDFFont,
+	color: ReturnType<typeof rgb>,
+): void {
+	const pages = doc.getPages();
+	const n = pages.length;
+	const size = 7;
+	for (let i = 0; i < n; i++) {
+		const page = pages[i];
+		const pw = page.getWidth();
+		const text = `Filosign compliance record · Page ${i + 1} of ${n}`;
+		const tw = font.widthOfTextAtSize(text, size);
+		page.drawText(text, {
+			x: (pw - tw) / 2,
+			y: 32,
+			size,
+			font,
+			color,
+		});
+	}
+}
+
 async function drawComplianceReport(
 	doc: PDFDocument,
 	options: CompliancePdfBundleOptions,
 ): Promise<void> {
 	const summary = buildCompliancePdfSummaryFromBundle(options);
-	const font = await doc.embedFont(StandardFonts.Helvetica);
-	const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
-	const fontMono = await doc.embedFont(StandardFonts.Courier);
+	const helvetica = await doc.embedFont(StandardFonts.Helvetica);
+	const helveticaBold = await doc.embedFont(StandardFonts.HelveticaBold);
+	const courier = await doc.embedFont(StandardFonts.Courier);
+
+	const embedded = await loadCompliancePdfEmbeddedFonts(doc, {
+		helvetica,
+		helveticaBold,
+		courier,
+	});
+
+	doc.setTitle("Filosign compliance and verification record");
+	doc.setSubject(`Export ${options.exportId}`);
+	doc.setCreator("Filosign");
 
 	const firstPage = doc.addPage([A4.w, A4.h]);
+	firstPage.drawRectangle({
+		x: 0,
+		y: 0,
+		width: A4.w,
+		height: A4.h,
+		color: PDF_BRAND.pageBg,
+	});
+
+	const logoImg = await embedComplianceLogo(doc);
+
 	const ctx: Ctx = {
 		doc,
 		page: firstPage,
 		y: A4.h - PDF_M.margin,
 		pw: firstPage.getWidth(),
 		ph: firstPage.getHeight(),
-		font,
-		fontBold,
-		fontMono,
+		fontBody: embedded.body,
+		fontSectionTitle: embedded.sectionTitle,
+		fontBrand: embedded.brand,
+		fontMono: embedded.mono,
 	};
 
-	ctx.page.drawText("Filosign Compliance Record", {
+	const logoH = 40;
+	if (logoImg) {
+		const sc = logoH / logoImg.height;
+		const lw = logoImg.width * sc;
+		ctx.page.drawImage(logoImg, {
+			x: PDF_M.margin,
+			y: ctx.y - logoH,
+			width: lw,
+			height: logoH,
+		});
+		ctx.page.drawText("filosign", {
+			x: PDF_M.margin + lw + 10,
+			y: ctx.y - logoH * 0.32,
+			size: 13,
+			font: ctx.fontBrand,
+			color: PDF_BRAND.accentDark,
+		});
+		ctx.y -= logoH + 10;
+	} else {
+		ctx.page.drawText("filosign", {
+			x: PDF_M.margin,
+			y: ctx.y,
+			size: 13,
+			font: ctx.fontBrand,
+			color: PDF_BRAND.accentDark,
+		});
+		ctx.y -= lineHeightAt(ctx.fontBrand, 13) + 6;
+	}
+
+	ctx.page.drawText("Compliance and verification record", {
 		x: PDF_M.margin,
 		y: ctx.y,
-		size: PDF_M.titleSize,
-		font: fontBold,
-		color: FILOSIGN.foreground,
+		size: 18,
+		font: ctx.fontSectionTitle,
+		color: PDF_BRAND.foreground,
 	});
-	ctx.y -= 22;
+	ctx.y -= lineHeightAt(ctx.fontSectionTitle, 18) + 4;
+
+	const subParts = [
+		options.chainName,
+		`chain id ${options.bundle.chainId}`,
+		`exported ${options.bundle.exportedAtIso}`,
+	];
+	ctx.page.drawText(subParts.join(" · "), {
+		x: PDF_M.margin,
+		y: ctx.y,
+		size: 9,
+		font: ctx.fontBody,
+		color: PDF_BRAND.muted,
+	});
+	ctx.y -= lineHeightAt(ctx.fontBody, 9) + 10;
 
 	if (summary.explorerBaseUrl) {
 		const subText = `Block explorer: ${summary.explorerBaseUrl}`;
@@ -833,8 +1030,8 @@ async function drawComplianceReport(
 			x: PDF_M.margin,
 			y: ctx.y,
 			size: 9,
-			font,
-			color: FILOSIGN.link,
+			font: ctx.fontBody,
+			color: PDF_BRAND.link,
 		});
 		if (summary.headerSubtitleLinkUri) {
 			addUriLink(
@@ -843,39 +1040,44 @@ async function drawComplianceReport(
 				ctx.y,
 				subText,
 				9,
-				font,
+				ctx.fontBody,
 				summary.headerSubtitleLinkUri,
 			);
 		}
+		ctx.y -= lineHeightAt(ctx.fontBody, 9) + 8;
 	}
-	ctx.y -= 16;
 
 	ctx.page.drawLine({
 		start: { x: PDF_M.margin, y: ctx.y },
 		end: { x: ctx.pw - PDF_M.margin, y: ctx.y },
-		thickness: 2,
-		color: FILOSIGN.accent,
+		thickness: 2.5,
+		color: PDF_BRAND.accent,
 	});
-	ctx.y -= PDF_M.gap + 4;
+	ctx.y -= PDF_M.gap + 6;
 
-	ctx.page.drawText("File Record", {
+	ctx.page.drawText("Key identifiers and anchors", {
 		x: PDF_M.margin,
 		y: ctx.y,
-		size: PDF_M.sectionTitleSize,
-		font: fontBold,
-		color: FILOSIGN.accent,
+		size: PDF_M.sectionTitleSize + 1,
+		font: ctx.fontSectionTitle,
+		color: PDF_BRAND.accentDark,
 	});
 	ctx.y -=
-		lineHeightAt(fontBold, PDF_M.sectionTitleSize) +
+		lineHeightAt(ctx.fontSectionTitle, PDF_M.sectionTitleSize + 1) +
 		PDF_M.sectionTitleBottomPad;
 
 	const valueMaxW = ctx.pw - PDF_M.valueX - PDF_M.margin;
 
 	for (const row of summary.fields) {
-		const vLines = wrapLines(row.value, valueMaxW, font, PDF_M.bodySize);
-		const lh = lineHeightAt(font, PDF_M.bodySize);
+		const vLines = wrapLines(
+			row.value,
+			valueMaxW,
+			ctx.fontBody,
+			PDF_M.bodySize,
+		);
+		const lh = lineHeightAt(ctx.fontBody, PDF_M.bodySize);
 		const valueTotalH = vLines.length * lh;
-		const labelH = lineHeightAt(fontBold, PDF_M.labelSize);
+		const labelH = lineHeightAt(ctx.fontSectionTitle, PDF_M.labelSize);
 		const rowH = Math.max(labelH, valueTotalH);
 		const blockPad = PDF_M.fieldLabelValueGap;
 
@@ -885,18 +1087,18 @@ async function drawComplianceReport(
 			x: PDF_M.margin,
 			y: ctx.y,
 			size: PDF_M.labelSize,
-			font: fontBold,
-			color: FILOSIGN.muted,
+			font: ctx.fontSectionTitle,
+			color: PDF_BRAND.muted,
 		});
 
 		let vy = ctx.y;
 		for (const vl of vLines) {
-			const vc = row.linkUri ? FILOSIGN.link : FILOSIGN.foreground;
+			const vc = row.linkUri ? PDF_BRAND.link : PDF_BRAND.foreground;
 			ctx.page.drawText(vl, {
 				x: PDF_M.valueX,
 				y: vy,
 				size: PDF_M.bodySize,
-				font,
+				font: ctx.fontBody,
 				color: vc,
 			});
 			if (row.linkUri) {
@@ -906,7 +1108,7 @@ async function drawComplianceReport(
 					vy,
 					vl,
 					PDF_M.bodySize,
-					font,
+					ctx.fontBody,
 					row.linkUri,
 				);
 			}
@@ -919,7 +1121,7 @@ async function drawComplianceReport(
 			start: { x: PDF_M.margin, y: ctx.y },
 			end: { x: ctx.pw - PDF_M.margin, y: ctx.y },
 			thickness: 0.5,
-			color: FILOSIGN.border,
+			color: PDF_BRAND.border,
 		});
 		ctx.y -= PDF_M.fieldRowGapAfterRule;
 	}
@@ -929,23 +1131,35 @@ async function drawComplianceReport(
 	const bodyMaxW = ctx.pw - PDF_M.margin * 2;
 
 	for (const section of summary.sections) {
-		const sectionTitleH = lineHeightAt(fontBold, PDF_M.sectionTitleSize);
+		const sectionTitleH = lineHeightAt(
+			ctx.fontSectionTitle,
+			PDF_M.sectionTitleSize + 1,
+		);
 		ensureSpace(ctx, sectionTitleH + PDF_M.sectionTitleBottomPad + 16);
 
 		ctx.page.drawText(section.title, {
 			x: PDF_M.margin,
 			y: ctx.y,
-			size: PDF_M.sectionTitleSize,
-			font: fontBold,
-			color: FILOSIGN.accent,
+			size: PDF_M.sectionTitleSize + 1,
+			font: ctx.fontSectionTitle,
+			color: PDF_BRAND.accentDark,
 		});
-		ctx.y -= sectionTitleH + PDF_M.sectionTitleBottomPad;
+		ctx.y -= sectionTitleH + 4;
+		ctx.page.drawLine({
+			start: { x: PDF_M.margin, y: ctx.y },
+			end: { x: ctx.pw - PDF_M.margin, y: ctx.y },
+			thickness: 1,
+			color: PDF_BRAND.accent,
+		});
+		ctx.y -= PDF_M.sectionTitleBottomPad + 4;
 
 		for (const line of section.lines) {
 			drawWrappedLine(ctx, PDF_M.margin, bodyMaxW, line, PDF_M.bodySize);
 		}
 		ctx.y -= PDF_M.sectionGap;
 	}
+
+	drawPdfFooters(doc, ctx.fontBody, PDF_BRAND.muted);
 }
 
 // -----------------------------------------------------------------------------
@@ -1204,39 +1418,6 @@ function resolveRasterImageMime(
 	const ext = extensionHintMime(fileName);
 	if (ext && isRasterableImageMime(ext)) return ext;
 	return null;
-}
-
-async function bytesToPngBytes(
-	bytes: Uint8Array,
-	mime: string,
-): Promise<Uint8Array> {
-	const lower = mime.toLowerCase();
-	if (
-		lower === "image/png" ||
-		lower === "image/jpeg" ||
-		lower === "image/jpg"
-	) {
-		return bytes;
-	}
-	const blob = new Blob([bytes.slice()], {
-		type: mime || "application/octet-stream",
-	});
-	const bitmap = await createImageBitmap(blob);
-	const canvas = document.createElement("canvas");
-	canvas.width = bitmap.width;
-	canvas.height = bitmap.height;
-	const ctx = canvas.getContext("2d");
-	if (!ctx) throw new Error("Could not create canvas context");
-	ctx.drawImage(bitmap, 0, 0);
-	bitmap.close();
-	const pngBlob = await new Promise<Blob>((resolve, reject) => {
-		canvas.toBlob(
-			(b) => (b ? resolve(b) : reject(new Error("toBlob failed"))),
-			"image/png",
-		);
-	});
-	const buf = await pngBlob.arrayBuffer();
-	return new Uint8Array(buf);
 }
 
 async function embedImagePage(

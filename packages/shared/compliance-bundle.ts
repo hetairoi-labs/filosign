@@ -68,6 +68,9 @@ export const zChainTxKind = z.enum([
 	"incentives_released",
 ]);
 
+/** All values of {@link zChainTxKind} (for UI, PDF glossary coverage tests, etc.). */
+export const COMPLIANCE_CHAIN_TX_KINDS = zChainTxKind.options;
+
 export const zChainTxRef = z.object({
 	kind: zChainTxKind,
 	txHash: zHexString(),

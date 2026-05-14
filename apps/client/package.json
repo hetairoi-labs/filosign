@@ -11,6 +11,7 @@
 		"check": "bunx biome check --write",
 		"lint": "bunx biome check .",
 		"check-types": "tsc --noEmit",
+		"test": "bun test ./src/lib/utils/compliance-pdf-copy.test.ts",
 		"shadcn": "bunx --bun shadcn@latest add",
 		"compress": "bun run scripts/compress-assets.ts"
 	},
@@ -19,8 +20,10 @@
 		"@filosign/react": "workspace:*",
 		"@filosign/shared": "workspace:*",
 		"@fontsource-variable/inter": "5.2.8",
+		"@fontsource-variable/manrope": "5.2.8",
 		"@hono/zod-validator": "catalog:",
 		"@hookform/resolvers": "5.2.1",
+		"@pdf-lib/fontkit": "1.1.1",
 		"@phosphor-icons/react": "2.1.10",
 		"@privy-io/react-auth": "3.0.1",
 		"@privy-io/wagmi": "4.0.6",

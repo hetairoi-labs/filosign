@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+	COMPLIANCE_CHAIN_TX_KINDS,
 	canonicalComplianceBundleJson,
 	zComplianceBundle,
 } from "./compliance-bundle";
@@ -101,5 +102,10 @@ describe("ComplianceBundle", () => {
 		expect(canonicalComplianceBundleJson(a)).toBe(
 			canonicalComplianceBundleJson(b),
 		);
+	});
+
+	it("COMPLIANCE_CHAIN_TX_KINDS covers all lifecycle labels", () => {
+		expect(COMPLIANCE_CHAIN_TX_KINDS).toContain("incentives_released");
+		expect(COMPLIANCE_CHAIN_TX_KINDS.length).toBe(6);
 	});
 });
