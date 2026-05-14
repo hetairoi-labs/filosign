@@ -6,8 +6,6 @@ import {
 } from "@/src/lib/components/ui/card";
 import { cn } from "@/src/lib/utils";
 
-const CALLOUT_TITLE = "";
-
 /**
  * Inline notice when the signed-in identity does not match a cold-invite recipient list.
  * Use `embedded` when placing inside another card or panel (no nested Card chrome).
