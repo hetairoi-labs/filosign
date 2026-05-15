@@ -5,7 +5,6 @@ import type { CreateForm } from "@/src/pages/dashboard/envelope/create/types";
 interface OnboardingForm {
 	firstName: string;
 	lastName: string;
-	pin: string;
 	hasOnboarded: boolean;
 	selectedSignature?: string;
 	image?: string;
@@ -40,7 +39,6 @@ export const useStorePersist = create<StorePersist>()(
 			onboardingForm: {
 				firstName: "",
 				lastName: "",
-				pin: "",
 				hasOnboarded: false,
 				selectedSignature: undefined,
 				image:
@@ -53,7 +51,6 @@ export const useStorePersist = create<StorePersist>()(
 					onboardingForm: {
 						firstName: "",
 						lastName: "",
-						pin: "",
 						hasOnboarded: false,
 						selectedSignature: undefined,
 						image:
