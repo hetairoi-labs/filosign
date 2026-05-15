@@ -2,6 +2,10 @@ import { $ } from "bun";
 import hre from "hardhat";
 import { getAddress, toHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import {
+	USDC_BASE_MAINNET,
+	USDC_BASE_SEPOLIA,
+} from "../../../packages/shared/invoice-usdc.ts";
 import type { ChainKey } from "../definitions/index.js";
 
 const DEFINITIONS_FILE_PREFIX = "export const definitions = ";
@@ -50,10 +54,14 @@ async function main() {
 		address: deployer.account.address,
 	});
 
-	const manager = await hre.viem.deployContract("FSManager", [], {
-		client: { wallet: deployer },
+	const manager = await hre.viem.deployContract(
+		"FSManager",
+		[deployer.account.address],
+		{ client: { wallet: deployer } },
+	);
+	console.log("FSManager deployed at:", manager.address, {
+		treasury: deployer.account.address,
 	});
-	console.log("FSManager deployed at:", manager.address);
 
 	// Wait for deployment to be confirmed
 	await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -111,6 +119,21 @@ async function main() {
 		console.log(`Wrote ${mockAddrPath}`);
 	}
 
+	const allowlist: `0x${string}`[] = [];
+	if (chainId === CHAIN_ID.mainnet) {
+		allowlist.push(getAddress(USDC_BASE_MAINNET));
+	} else if (chainId === CHAIN_ID.testnet) {
+		allowlist.push(getAddress(USDC_BASE_SEPOLIA));
+	}
+	if (mockUsdc) {
+		allowlist.push(getAddress(mockUsdc.address));
+	}
+	for (const token of allowlist) {
+		const tx = await manager.write.setTokenAllowed([token, true]);
+		await publicClient.waitForTransactionReceipt({ hash: tx });
+		console.log("Allowed invoice token:", token);
+	}
+
 	console.log("Contracts deployed");
 
 	const definitions = {
@@ -159,7 +182,7 @@ async function main() {
 	const networkName = hre.network.name;
 	if (networkName === "baseSepolia" || networkName === "base") {
 		try {
-			await $`bunx --bun hardhat verify --network ${networkName} ${manager.address} --force`;
+			await $`bunx --bun hardhat verify --network ${networkName} ${manager.address} ${deployer.account.address} --force`;
 			await sleep(1000);
 			await $`bunx --bun hardhat verify --network ${networkName} ${fileRegistry.address} --force`;
 			await sleep(1000);

@@ -18,7 +18,9 @@ async function main() {
 
 	console.log("Deploying contracts as ", deployer.account.address);
 
-	const manager = await hre.viem.deployContract("FSManager");
+	const manager = await hre.viem.deployContract("FSManager", [
+		deployer.account.address,
+	]);
 	const fileRegistry = await hre.viem.getContractAt(
 		"FSFileRegistry",
 		await manager.read.fileRegistry(),
