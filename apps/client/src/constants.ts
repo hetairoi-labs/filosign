@@ -1,3 +1,5 @@
+import { LOCAL_MOCK_USDC_ADDRESS } from "@filosign/contracts/mock-usdc";
+import { getAddress } from "viem";
 import { base, baseSepolia, hardhat } from "viem/chains";
 import env from "./env";
 
@@ -11,17 +13,40 @@ export const defaultChain =
 			? baseSepolia
 			: base;
 
+const USDC_BASE_MAINNET = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" as const;
+const USDC_BASE_SEPOLIA = "0x036CbD53842c5426634e7929541eC2318f3dCF7e" as const;
+
+/** USDC (or local MockUSDC) used for invoice UI and balance reads. */
+function invoiceUsdcTokenAddress(): `0x${string}` {
+	if (env.VITE_CHAIN === "local" && LOCAL_MOCK_USDC_ADDRESS) {
+		return getAddress(LOCAL_MOCK_USDC_ADDRESS);
+	}
+	if (defaultChain === base) {
+		return USDC_BASE_MAINNET;
+	}
+	return USDC_BASE_SEPOLIA;
+}
+
+const isLocalMockUsdc =
+	env.VITE_CHAIN === "local" && Boolean(LOCAL_MOCK_USDC_ADDRESS);
+
+export const usesLocalMockUsdc = isLocalMockUsdc;
+
 export const SUPPORTED_TOKENS = [
 	{
 		name: "USD Coin",
 		symbol: "USDC",
-		address:
-			defaultChain === base
-				? "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913" // mainnet USDC
-				: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // testnet USDC
+		address: invoiceUsdcTokenAddress(),
 		icon: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Circle_USDC_Logo.svg/1280px-Circle_USDC_Logo.svg.png?_=20220815163658",
 		decimals: 6,
-		faucets: [{ name: "Circle Faucet", url: "https://faucet.circle.com" }],
+		faucets: isLocalMockUsdc
+			? ([] as const)
+			: ([
+					{
+						name: "Circle Faucet",
+						url: "https://faucet.circle.com",
+					},
+				] as const),
 	},
 ] as const;
 

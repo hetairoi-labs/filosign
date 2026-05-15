@@ -10,6 +10,7 @@ import { ChangePinDialog } from "./ChangePinDialog";
 import { useProfileSettings } from "./hooks/use-profile-settings";
 import { LinkedAccountsSection } from "./LinkedAccountsSection";
 import { PersonalInfoSection } from "./PersonalInfoSection";
+import { WalletUsdcBalanceCard } from "./WalletUsdcBalanceCard";
 
 export default function ProfilePage() {
 	const { form, personalSection } = useProfileSettings();
@@ -51,6 +52,8 @@ export default function ProfilePage() {
 							<CaretLeftIcon className="size-5" weight="bold" />
 							<p>Back</p>
 						</Button>
+
+						<WalletUsdcBalanceCard />
 
 						<motion.div
 							initial={{ opacity: 0, y: 20 }}
