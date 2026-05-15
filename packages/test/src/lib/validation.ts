@@ -1,5 +1,4 @@
 // Constants
-export const TEST_PIN = "1234";
 export const RELOAD_DELAY_MS = 1000;
 export const MAX_FILE_SIZE_MB = 10;
 export const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;

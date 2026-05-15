@@ -42,7 +42,6 @@ import {
 	parseFileStatus,
 	parseString,
 	RELOAD_DELAY_MS,
-	TEST_PIN,
 	TRUNCATED_CID_LENGTH,
 	TRUNCATED_CONTENT_LENGTH,
 	TRUNCATED_FILE_NAME_LENGTH,
@@ -120,7 +119,7 @@ function TestLogin(props: { notify: NotifierFn }) {
 	const userAddress = useCurrentWalletAddress();
 
 	const loginMutation = {
-		mutate: () => login.mutate({ pin: TEST_PIN }),
+		mutate: () => login.mutate({}),
 		isPending: login.isPending,
 		isError: login.isError,
 		isSuccess: login.isSuccess,
