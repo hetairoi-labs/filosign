@@ -14,7 +14,6 @@ import { Route as IndexRouteImport } from "./routes/index"
 import { Route as OnboardingIndexRouteImport } from "./routes/onboarding/index"
 import { Route as DashboardIndexRouteImport } from "./routes/dashboard/index"
 import { Route as OnboardingWelcomeRouteImport } from "./routes/onboarding/welcome"
-import { Route as OnboardingSetPinRouteImport } from "./routes/onboarding/set-pin"
 import { Route as OnboardingCreateSignatureRouteImport } from "./routes/onboarding/create-signature"
 import { Route as InviteInviteIdRouteImport } from "./routes/invite/$inviteId"
 import { Route as DashboardConnectionsIndexRouteImport } from "./routes/dashboard/connections/index"
@@ -48,11 +47,6 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
 const OnboardingWelcomeRoute = OnboardingWelcomeRouteImport.update({
   id: "/onboarding/welcome",
   path: "/onboarding/welcome",
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OnboardingSetPinRoute = OnboardingSetPinRouteImport.update({
-  id: "/onboarding/set-pin",
-  path: "/onboarding/set-pin",
   getParentRoute: () => rootRouteImport,
 } as any)
 const OnboardingCreateSignatureRoute =
@@ -114,7 +108,6 @@ export interface FileRoutesByFullPath {
   "/dashboard": typeof DashboardRouteRouteWithChildren
   "/invite/$inviteId": typeof InviteInviteIdRoute
   "/onboarding/create-signature": typeof OnboardingCreateSignatureRoute
-  "/onboarding/set-pin": typeof OnboardingSetPinRoute
   "/onboarding/welcome": typeof OnboardingWelcomeRoute
   "/dashboard/": typeof DashboardIndexRoute
   "/onboarding/": typeof OnboardingIndexRoute
@@ -130,7 +123,6 @@ export interface FileRoutesByTo {
   "/": typeof IndexRoute
   "/invite/$inviteId": typeof InviteInviteIdRoute
   "/onboarding/create-signature": typeof OnboardingCreateSignatureRoute
-  "/onboarding/set-pin": typeof OnboardingSetPinRoute
   "/onboarding/welcome": typeof OnboardingWelcomeRoute
   "/dashboard": typeof DashboardIndexRoute
   "/onboarding": typeof OnboardingIndexRoute
@@ -148,7 +140,6 @@ export interface FileRoutesById {
   "/dashboard": typeof DashboardRouteRouteWithChildren
   "/invite/$inviteId": typeof InviteInviteIdRoute
   "/onboarding/create-signature": typeof OnboardingCreateSignatureRoute
-  "/onboarding/set-pin": typeof OnboardingSetPinRoute
   "/onboarding/welcome": typeof OnboardingWelcomeRoute
   "/dashboard/": typeof DashboardIndexRoute
   "/onboarding/": typeof OnboardingIndexRoute
@@ -167,7 +158,6 @@ export interface FileRouteTypes {
     | "/dashboard"
     | "/invite/$inviteId"
     | "/onboarding/create-signature"
-    | "/onboarding/set-pin"
     | "/onboarding/welcome"
     | "/dashboard/"
     | "/onboarding/"
@@ -183,7 +173,6 @@ export interface FileRouteTypes {
     | "/"
     | "/invite/$inviteId"
     | "/onboarding/create-signature"
-    | "/onboarding/set-pin"
     | "/onboarding/welcome"
     | "/dashboard"
     | "/onboarding"
@@ -200,7 +189,6 @@ export interface FileRouteTypes {
     | "/dashboard"
     | "/invite/$inviteId"
     | "/onboarding/create-signature"
-    | "/onboarding/set-pin"
     | "/onboarding/welcome"
     | "/dashboard/"
     | "/onboarding/"
@@ -218,7 +206,6 @@ export interface RootRouteChildren {
   DashboardRouteRoute: typeof DashboardRouteRouteWithChildren
   InviteInviteIdRoute: typeof InviteInviteIdRoute
   OnboardingCreateSignatureRoute: typeof OnboardingCreateSignatureRoute
-  OnboardingSetPinRoute: typeof OnboardingSetPinRoute
   OnboardingWelcomeRoute: typeof OnboardingWelcomeRoute
   OnboardingIndexRoute: typeof OnboardingIndexRoute
 }
@@ -258,13 +245,6 @@ declare module "@tanstack/react-router" {
       path: "/onboarding/welcome"
       fullPath: "/onboarding/welcome"
       preLoaderRoute: typeof OnboardingWelcomeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    "/onboarding/set-pin": {
-      id: "/onboarding/set-pin"
-      path: "/onboarding/set-pin"
-      fullPath: "/onboarding/set-pin"
-      preLoaderRoute: typeof OnboardingSetPinRouteImport
       parentRoute: typeof rootRouteImport
     }
     "/onboarding/create-signature": {
@@ -365,7 +345,6 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRouteRoute: DashboardRouteRouteWithChildren,
   InviteInviteIdRoute: InviteInviteIdRoute,
   OnboardingCreateSignatureRoute: OnboardingCreateSignatureRoute,
-  OnboardingSetPinRoute: OnboardingSetPinRoute,
   OnboardingWelcomeRoute: OnboardingWelcomeRoute,
   OnboardingIndexRoute: OnboardingIndexRoute,
 }
