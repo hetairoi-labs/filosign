@@ -18,9 +18,7 @@ export default defineConfig(({ mode, command }) => {
 		plugins: [
 			tanstackRouter({
 				target: "react",
-				// In dev, splitting route components triggers `import()` of `*.tsx?tsr-split=…`
-				// which often fails with "Failed to fetch dynamically imported module" during HMR / restarts.
-				autoCodeSplitting: mode === "production",
+				autoCodeSplitting: true,
 				quoteStyle: "double",
 			}),
 			react(),
