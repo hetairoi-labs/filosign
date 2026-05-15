@@ -10,11 +10,14 @@
 	"exports": {
 		".": {
 			"default": "./exports.ts"
+		},
+		"./mock-usdc": {
+			"default": "./definitions/mock-usdc.ts"
 		}
 	},
 	"scripts": {
 		"node": "bunx --bun hardhat node",
-		"compile": "bun gen:interfaces; bun --bun hardhat compile",
+		"compile": "bun gen:interfaces; bun --bun hardhat compile && bun run scripts/syncDefinitionsAbi.ts",
 		"tests": "bun compile; bunx --bun hardhat test",
 		"gen:interfaces": "bun run scripts/generateInterfaces.ts",
 		"deploy": "bunx --bun hardhat run scripts/deploy.ts",
