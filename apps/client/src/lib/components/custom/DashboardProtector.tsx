@@ -1,6 +1,6 @@
 import { useFilosignContext } from "@filosign/react";
 import {
-	LOGIN_PIN_REQUIRED,
+	LOGIN_RECOVERY_PHRASE_REQUIRED,
 	useIsLoggedIn,
 	useIsRegistered,
 	useLogin,
@@ -24,7 +24,6 @@ import {
 import { Label } from "@/src/lib/components/ui/label";
 import { Loader } from "@/src/lib/components/ui/loader";
 import { Textarea } from "@/src/lib/components/ui/textarea";
-import OtpInput from "@/src/pages/onboarding/_components/OtpInput";
 import Logo from "./Logo";
 
 interface DashboardProtectorProps {
@@ -43,19 +42,16 @@ export default function DashboardProtector({
 	const queryClient = useQueryClient();
 	const navigate = useNavigate();
 
-	const [showPinAuth, setShowPinAuth] = useState(false);
-	const [pin, setPin] = useState("");
-	const [error, setError] = useState("");
-	const [forgotMode, setForgotMode] = useState(false);
+	const [showRecoveryGate, setShowRecoveryGate] = useState(false);
 	const [recoveryPhrase, setRecoveryPhrase] = useState("");
-	const [newPin, setNewPin] = useState("");
+	const [error, setError] = useState("");
 	const [tryingWalletUnlock, setTryingWalletUnlock] = useState(false);
 	const walletUnlockStartedRef = useRef(false);
 
 	useEffect(() => {
 		if (isLoggedIn.data) {
-			setShowPinAuth(false);
-			setPin("");
+			setShowRecoveryGate(false);
+			setRecoveryPhrase("");
 			setError("");
 			walletUnlockStartedRef.current = false;
 			return;
@@ -104,14 +100,17 @@ export default function DashboardProtector({
 		void login
 			.mutateAsync({})
 			.catch((err: unknown) => {
-				if (err instanceof Error && err.message === LOGIN_PIN_REQUIRED) {
-					setShowPinAuth(true);
+				if (
+					err instanceof Error &&
+					err.message === LOGIN_RECOVERY_PHRASE_REQUIRED
+				) {
+					setShowRecoveryGate(true);
 					return;
 				}
 				toast.error(
 					err instanceof Error ? err.message : "Could not unlock session",
 				);
-				setShowPinAuth(true);
+				setShowRecoveryGate(true);
 			})
 			.finally(() => {
 				setTryingWalletUnlock(false);
@@ -126,76 +125,45 @@ export default function DashboardProtector({
 		login,
 	]);
 
-	const handlePinSubmit = async () => {
-		if (pin.length < 6 || pin.length > 10) return;
-
+	const handleRecover = async () => {
+		if (!recoveryPhrase.trim()) return;
 		try {
 			setError("");
-			await login.mutateAsync({ pin });
+			await recoverWithPhrase.mutateAsync({
+				phrase: recoveryPhrase,
+			});
 			await queryClient.invalidateQueries({
 				queryKey: ["fsQ-is-registered", wallet?.account.address],
 			});
 			await queryClient.invalidateQueries({
 				queryKey: ["fsQ-is-logged-in", wallet?.account.address],
 			});
-			toast.success("Successfully logged in!");
-			setShowPinAuth(false);
-			setPin("");
-		} catch (error) {
-			const errorMessage =
-				error instanceof Error
-					? error.message.includes("unlock") || error.message.includes("PIN")
-						? "Wrong PIN"
-						: error.message.includes("network") ||
-								error.message.includes("fetch")
-							? "Network error - please try again"
-							: error.message.includes("server") ||
-									error.message.includes("500")
-								? "Server error - please try again later"
-								: error.message
-					: "Something went wrong";
-			setError(errorMessage);
-			setPin("");
-		}
-	};
-
-	const handleRecover = async () => {
-		if (newPin.length < 6 || newPin.length > 10) return;
-		try {
-			setError("");
-			await recoverWithPhrase.mutateAsync({
-				phrase: recoveryPhrase,
-				newPin,
-			});
-			setForgotMode(false);
+			setShowRecoveryGate(false);
 			setRecoveryPhrase("");
-			setNewPin("");
-			setShowPinAuth(false);
-			toast.success("PIN has been reset");
-		} catch (error) {
+			toast.success("Session unlocked");
+		} catch (recoverErr) {
 			const errorMessage =
-				error instanceof Error
-					? error.message.includes("phrase") ||
-						error.message.includes("recovery")
+				recoverErr instanceof Error
+					? recoverErr.message.includes("phrase") ||
+						recoverErr.message.includes("recovery") ||
+						recoverErr.message.includes("Invalid") ||
+						recoverErr.message.includes("unlock")
 						? "Invalid recovery phrase"
-						: error.message.includes("network") ||
-								error.message.includes("fetch")
+						: recoverErr.message.includes("network") ||
+								recoverErr.message.includes("fetch")
 							? "Network error - please try again"
-							: error.message.includes("server") ||
-									error.message.includes("500")
+							: recoverErr.message.includes("server") ||
+									recoverErr.message.includes("500")
 								? "Server error - please try again later"
-								: error.message
+								: recoverErr.message
 					: "Recovery failed";
 			setError(errorMessage);
 		}
 	};
 
 	const handleCancel = () => {
-		setPin("");
-		setError("");
-		setForgotMode(false);
 		setRecoveryPhrase("");
-		setNewPin("");
+		setError("");
 		walletUnlockStartedRef.current = false;
 		navigate({ to: "/" });
 	};
@@ -210,7 +178,7 @@ export default function DashboardProtector({
 		return <Loader />;
 	}
 
-	if (showPinAuth) {
+	if (showRecoveryGate) {
 		return (
 			<div className="flex justify-center items-center min-h-screen bg-background">
 				<motion.div
@@ -231,53 +199,25 @@ export default function DashboardProtector({
 					>
 						<Card className="w-full">
 							<CardHeader>
-								<CardTitle>
-									{forgotMode ? "Recover with phrase" : "Enter your PIN"}
-								</CardTitle>
+								<CardTitle>Recover with phrase</CardTitle>
 								<CardDescription>
-									{forgotMode
-										? "Enter your 24-word recovery phrase and set a new PIN."
-										: "Please enter your PIN to access your account."}
+									Your wallet could not unlock this session automatically. Enter
+									your 24-word Filosign recovery phrase.
 								</CardDescription>
 							</CardHeader>
 							<CardContent className="space-y-4">
-								{forgotMode ? (
-									<div className="space-y-3 w-full min-w-sm max-w-sm">
-										<div className="space-y-2">
-											<Label htmlFor="recovery-phrase">Recovery phrase</Label>
-											<Textarea
-												id="recovery-phrase"
-												value={recoveryPhrase}
-												onChange={(event) =>
-													setRecoveryPhrase(event.target.value)
-												}
-												placeholder="24-word recovery phrase"
-												rows={6}
-											/>
-										</div>
-										<div className="space-y-2">
-											<p className="text-sm font-medium">
-												New PIN (6-10 digits)
-											</p>
-											<OtpInput
-												value={newPin}
-												onChange={setNewPin}
-												length={10}
-											/>
-										</div>
-									</div>
-								) : (
-									<div className="flex flex-col gap-3">
-										<OtpInput
-											value={pin}
-											onChange={setPin}
-											length={10}
-											autoFocus={true}
-											onSubmit={handlePinSubmit}
-											disabled={login.isPending}
-										/>
-									</div>
-								)}
+								<div className="space-y-2 w-full min-w-sm max-w-sm">
+									<Label htmlFor="dashboard-recovery-phrase">
+										Recovery phrase
+									</Label>
+									<Textarea
+										id="dashboard-recovery-phrase"
+										value={recoveryPhrase}
+										onChange={(event) => setRecoveryPhrase(event.target.value)}
+										placeholder="24-word recovery phrase"
+										rows={6}
+									/>
+								</div>
 
 								{error && (
 									<p className="text-destructive text-sm text-center">
@@ -290,61 +230,30 @@ export default function DashboardProtector({
 										variant="ghost"
 										onClick={handleCancel}
 										className="flex-1"
-										disabled={login.isPending}
+										disabled={login.isPending || recoverWithPhrase.isPending}
 									>
 										Cancel
 									</Button>
 
-									{forgotMode ? (
-										<Button
-											onClick={handleRecover}
-											disabled={
-												!recoveryPhrase ||
-												newPin.length < 6 ||
-												newPin.length > 10 ||
-												recoverWithPhrase.isPending
-											}
-											className="flex-1 group"
-											variant="primary"
-										>
-											{recoverWithPhrase.isPending
-												? "Recovering..."
-												: "Reset PIN"}
-										</Button>
-									) : (
-										<Button
-											onClick={handlePinSubmit}
-											onKeyDown={(e) => {
-												if (e.key === "Enter" && pin.length >= 6) {
-													handlePinSubmit();
-												}
-											}}
-											disabled={
-												pin.length < 6 || pin.length > 10 || login.isPending
-											}
-											className="flex-1 group"
-											variant="primary"
-										>
-											{login.isPending ? "Authenticating..." : "Continue"}
-											{!login.isPending && (
-												<CaretRightIcon
-													className="transition-transform duration-200 size-4 group-hover:translate-x-1"
-													weight="bold"
-												/>
-											)}
-										</Button>
-									)}
+									<Button
+										onClick={() => void handleRecover()}
+										disabled={
+											!recoveryPhrase.trim() || recoverWithPhrase.isPending
+										}
+										className="flex-1 group"
+										variant="primary"
+									>
+										{recoverWithPhrase.isPending
+											? "Recovering…"
+											: "Unlock session"}
+										{!recoverWithPhrase.isPending && (
+											<CaretRightIcon
+												className="transition-transform duration-200 size-4 group-hover:translate-x-1"
+												weight="bold"
+											/>
+										)}
+									</Button>
 								</div>
-								<Button
-									variant="link"
-									className="px-0 h-auto w-full mt-2"
-									onClick={() => {
-										setError("");
-										setForgotMode((value) => !value);
-									}}
-								>
-									{forgotMode ? "Back to PIN login" : "Forgot PIN?"}
-								</Button>
 							</CardContent>
 						</Card>
 					</motion.div>
