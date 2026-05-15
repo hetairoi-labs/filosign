@@ -1,5 +1,5 @@
 export * from "./useAckFile";
-export * from "./useAttachIncentiveToFile";
+export * from "./useAttachInvoiceToFile";
 export * from "./useClaimColdInvite";
 export * from "./useColdInviteDecrypt";
 export * from "./useColdInvitePayload";

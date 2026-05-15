@@ -41,21 +41,22 @@ const ERC20_VERSION_ABI = [
 	},
 ] as const;
 
-export type AttachIncentiveArgs = {
+export type AttachInvoiceArgs = {
 	pieceCid: string;
 	/** `keccak256("filosign:signer-email:v1:" || normalized email)` */
 	signerEmailCommitment: Hex;
 	token: Address;
 	amount: bigint;
+	memo: string;
 };
 
-export function useAttachIncentiveToFile() {
+export function useAttachInvoiceToFile() {
 	const { contracts, wallet, api } = useFilosignContext();
 
 	return useMutation({
-		mutationKey: ["fsM-attach-incentive"],
-		mutationFn: async (args: AttachIncentiveArgs) => {
-			const { pieceCid, signerEmailCommitment, token, amount } = args;
+		mutationKey: ["fsM-attach-invoice"],
+		mutationFn: async (args: AttachInvoiceArgs) => {
+			const { pieceCid, signerEmailCommitment, token, amount, memo } = args;
 
 			if (!contracts || !wallet) {
 				throw new Error("not connected");
@@ -66,9 +67,6 @@ export function useAttachIncentiveToFile() {
 				transport: http(wallet.chain?.rpcUrls.default.http[0]),
 			});
 
-			// ---------------------------------------------------------------
-			// Permit detection: ERC20Permit exposes nonces(address).
-			// ---------------------------------------------------------------
 			let supportsPermit = false;
 			try {
 				await publicClient.readContract({
@@ -83,9 +81,6 @@ export function useAttachIncentiveToFile() {
 			}
 
 			if (supportsPermit) {
-				// ---------------------------------------------------------------
-				// Permit path: sign off-chain → server calls attachIncentiveWithPermit
-				// ---------------------------------------------------------------
 				const escrowAddress = (await publicClient.readContract({
 					address: contracts.FSManager.address,
 					abi: contracts.FSManager.abi,
@@ -118,7 +113,7 @@ export function useAttachIncentiveToFile() {
 						functionName: "version",
 					});
 				} catch {
-					// Fallback implicitly remains "1" if `version()` doesn't exist
+					// keep "1"
 				}
 
 				const permitSig = await wallet.signTypedData({
@@ -150,8 +145,9 @@ export function useAttachIncentiveToFile() {
 
 				const { v, r, s } = hexToSignature(permitSig);
 
-				await api.rpc.postSafe({}, `/files/${pieceCid}/incentive`, {
+				await api.rpc.postSafe({}, `/files/${pieceCid}/invoice`, {
 					signerEmailCommitment,
+					memo,
 					token,
 					amount: amount.toString(),
 					usePermit: true,
@@ -161,9 +157,6 @@ export function useAttachIncentiveToFile() {
 					s,
 				});
 			} else {
-				// ---------------------------------------------------------------
-				// Allowance path: approve on-chain from client → server calls attachIncentive
-				// ---------------------------------------------------------------
 				const escrowAddress = (await publicClient.readContract({
 					address: contracts.FSManager.address,
 					abi: contracts.FSManager.abi,
@@ -189,8 +182,9 @@ export function useAttachIncentiveToFile() {
 					await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
 				}
 
-				await api.rpc.postSafe({}, `/files/${pieceCid}/incentive`, {
+				await api.rpc.postSafe({}, `/files/${pieceCid}/invoice`, {
 					signerEmailCommitment,
+					memo,
 					token,
 					amount: amount.toString(),
 					usePermit: false,
