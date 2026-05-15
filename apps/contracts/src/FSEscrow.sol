@@ -9,8 +9,6 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 import "./errors/EFSEscrow.sol";
 
-/// @title FSEscrow
-/// @notice ERC20 vault for signer incentives. Only FSManager may move funds.
 contract FSEscrow is ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -70,7 +68,10 @@ contract FSEscrow is ReentrancyGuard {
         defaultMaxDepositPerTx = type(uint256).max;
     }
 
-    function setAllowedToken(address token_, bool allowed_) external onlyManager {
+    function setAllowedToken(
+        address token_,
+        bool allowed_
+    ) external onlyManager {
         if (token_ == address(0)) revert ZeroAddress();
         allowedToken[token_] = allowed_;
         emit TokenAllowedUpdated(token_, allowed_);
@@ -105,12 +106,12 @@ contract FSEscrow is ReentrancyGuard {
         maxDepositOverride[sender_][token_] = maxAmount_;
     }
 
-    /// @notice Sum of escrow liabilities and platform revenue for `token`.
+    /// @notice `totalLiabilities + platformRevenue` for `token`.
     function accountedAssets(address token) public view returns (uint256) {
         return totalLiabilities[token] + platformRevenue[token];
     }
 
-    /// @notice ERC20 balance not tracked in the ledger (mistaken transfers).
+    /// @notice Untracked tokens in vault (e.g. mistaken transfer).
     function strayBalance(address token) public view returns (uint256) {
         uint256 balance = IERC20(token).balanceOf(address(this));
         uint256 accounted = accountedAssets(token);
@@ -126,22 +127,38 @@ contract FSEscrow is ReentrancyGuard {
         address account,
         uint256 amount
     ) internal view {
-        if (senderDepositBlacklisted[account]) revert SenderDepositBlacklisted();
+        if (senderDepositBlacklisted[account])
+            revert SenderDepositBlacklisted();
         uint256 cap = maxDepositOverride[account][token];
         if (cap == 0) {
             cap = defaultMaxDepositPerTx;
         }
-        if (cap != type(uint256).max && amount > cap) revert ExceedsMaxDeposit();
+        if (cap != type(uint256).max && amount > cap)
+            revert ExceedsMaxDeposit();
+    }
+
+    function _pullDepositAndCredit(
+        address token,
+        address account,
+        uint256 pullAmount
+    ) internal {
+        uint256 balBefore = IERC20(token).balanceOf(address(this));
+        IERC20(token).safeTransferFrom(account, address(this), pullAmount);
+        uint256 balAfter = IERC20(token).balanceOf(address(this));
+        if (balAfter < balBefore) revert DepositBalanceInvariantBroken();
+        uint256 received = balAfter - balBefore;
+        if (received == 0) revert ZeroAmount();
+        _creditDeposit(token, account, received);
     }
 
     function _creditDeposit(
         address token,
         address account,
-        uint256 amount
+        uint256 creditedAmount
     ) internal {
-        balances[account][token] += amount;
-        totalLiabilities[token] += amount;
-        emit Deposited(token, account, amount);
+        balances[account][token] += creditedAmount;
+        totalLiabilities[token] += creditedAmount;
+        emit Deposited(token, account, creditedAmount);
     }
 
     function depositWithPermit(
@@ -168,8 +185,7 @@ contract FSEscrow is ReentrancyGuard {
             s
         );
 
-        IERC20(token).safeTransferFrom(account, address(this), amount);
-        _creditDeposit(token, account, amount);
+        _pullDepositAndCredit(token, account, amount);
     }
 
     function deposit(
@@ -182,11 +198,10 @@ contract FSEscrow is ReentrancyGuard {
         _requireAllowedToken(token);
         _enforceDepositRules(token, account, amount);
 
-        IERC20(token).safeTransferFrom(account, address(this), amount);
-        _creditDeposit(token, account, amount);
+        _pullDepositAndCredit(token, account, amount);
     }
 
-    /// @notice Full release to recipient (refunds). No platform fee.
+    /// @notice Gross transfer to recipient; refunds; no fee.
     function release(
         address token,
         address account,
@@ -196,7 +211,7 @@ contract FSEscrow is ReentrancyGuard {
         _release(token, account, amount, recipient);
     }
 
-    /// @notice Settle incentive: debit gross from sender, pay net to payout, accrue fee.
+    /// @notice Debit gross from sender; pay net to `payout`; accrue fee to `platformRevenue`.
     function settleIncentiveRelease(
         address token,
         address account,

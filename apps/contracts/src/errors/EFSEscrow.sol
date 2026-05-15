@@ -11,3 +11,4 @@ error SenderDepositBlacklisted();
 error PayoutBlacklisted();
 error ExceedsMaxDeposit();
 error ExceedsStrayBalance();
+error DepositBalanceInvariantBroken();

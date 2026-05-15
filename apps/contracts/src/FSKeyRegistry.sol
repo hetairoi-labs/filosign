@@ -19,7 +19,6 @@ contract FSKeyRegistry is EIP712 {
     }
 
     mapping(address => KeygenData) public keygenData;
-    mapping(address => bytes32) public publicKeys;
     IFSManager public immutable manager;
 
     event KeygenDataRegistered(address indexed user);

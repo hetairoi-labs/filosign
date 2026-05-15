@@ -1,7 +1,7 @@
 export const definitions = {
   "0x14a34": {
     "FSManager": {
-      "address": "0x0115dbaf50ffE462F63C48704EeCdc63DaC50711",
+      "address": "0x3C554EEf552De5132b91fAdB56c4f2E659D4F213",
       "abi": [
         {
           "inputs": [
@@ -575,19 +575,6 @@ export const definitions = {
         },
         {
           "inputs": [],
-          "name": "cidRegistry",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
           "name": "eip712Domain",
           "outputs": [
             {
@@ -1032,7 +1019,7 @@ export const definitions = {
       ]
     },
     "FSFileRegistry": {
-      "address": "0xc4fC5602d895d4d5ffE37d82864F625e3F133DF4",
+      "address": "0x35aab5aBF9de8F7a32a6Eda2E95e73C3B99b3FC5",
       "abi": [
         {
           "inputs": [],
@@ -1935,7 +1922,7 @@ export const definitions = {
       ]
     },
     "FSKeyRegistry": {
-      "address": "0xc97f929558fF7880bE4182fFD5d80afF8758EF86",
+      "address": "0x926a9D996b5A0F1Cad3DdA376F93f25F075596F6",
       "abi": [
         {
           "inputs": [],
@@ -2156,25 +2143,6 @@ export const definitions = {
         {
           "inputs": [
             {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "name": "publicKeys",
-          "outputs": [
-            {
-              "internalType": "bytes32",
-              "name": "",
-              "type": "bytes32"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
               "internalType": "bytes16",
               "name": "salt_pin_",
               "type": "bytes16"
@@ -2267,7 +2235,7 @@ export const definitions = {
       ]
     },
     "FSEscrow": {
-      "address": "0x47FA22A86F940ea9Ebec79E6db9cf3C7fe562EF1",
+      "address": "0xc56Ad5B78AEA560922F68150B898f960263D030c",
       "abi": [
         {
           "inputs": [],

@@ -575,19 +575,6 @@ export const definitions = {
         },
         {
           "inputs": [],
-          "name": "cidRegistry",
-          "outputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [],
           "name": "eip712Domain",
           "outputs": [
             {
@@ -2148,25 +2135,6 @@ export const definitions = {
               "internalType": "contract IFSManager",
               "name": "",
               "type": "address"
-            }
-          ],
-          "stateMutability": "view",
-          "type": "function"
-        },
-        {
-          "inputs": [
-            {
-              "internalType": "address",
-              "name": "",
-              "type": "address"
-            }
-          ],
-          "name": "publicKeys",
-          "outputs": [
-            {
-              "internalType": "bytes32",
-              "name": "",
-              "type": "bytes32"
             }
           ],
           "stateMutability": "view",

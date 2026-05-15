@@ -15,7 +15,6 @@ interface IFSKeyRegistry {
     }
 
     function keygenData(address key) external view returns (KeygenData memory);
-    function publicKeys(address key) external view returns (bytes32);
     function manager() external view returns (address);
     event KeygenDataRegistered();
     function isRegistered(address user_) external view returns (bool);

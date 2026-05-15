@@ -11,7 +11,6 @@ interface IFSManager {
     function PAUSE_ADMIN() external view returns (uint8);
     function MAX_PLATFORM_FEE_BPS() external view returns (uint16);
     function BPS_DENOMINATOR() external view returns (uint16);
-    function cidRegistry() external view returns (address);
     function fileRegistry() external view returns (address);
     function keyRegistry() external view returns (address);
     function escrow() external view returns (address);

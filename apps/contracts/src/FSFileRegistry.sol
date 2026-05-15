@@ -11,7 +11,6 @@ contract FSFileRegistry is EIP712 {
     using ECDSA for bytes32;
 
     uint256 constant SIGNATURE_VALIDITY_PERIOD = 2 minutes;
-    uint256 constant SIGNATURE_MAX_DRIFT_PERIOD = 1 minutes;
     uint256 public constant INCENTIVE_REFUND_DELAY = 7 days;
 
     struct FileRegistration {
@@ -20,9 +19,7 @@ contract FSFileRegistry is EIP712 {
         bytes20 signersCommitment;
         bytes20 viewersCommitment;
         bytes32 placementCommitment;
-        /// @notice Domain-separated hash of sender's normalized primary email.
         bytes32 senderEmailCommitment;
-        /// @notice Domain-separated hash of sender's Privy subject id.
         bytes32 senderPrivySubjectCommitment;
         mapping(bytes32 => bool) signerEmailRegistered;
         mapping(bytes32 => bool) viewerEmailRegistered;
@@ -33,7 +30,6 @@ contract FSFileRegistry is EIP712 {
         mapping(bytes32 => address) incentiveToken;
         mapping(bytes32 => uint256) incentiveAmount;
         mapping(bytes32 => bool) incentiveClaimed;
-        /// @notice Refund allowed when `block.timestamp` is **strictly after** this timestamp (attach + 7 days).
         mapping(bytes32 => uint256) incentiveRefundNotBefore;
         mapping(bytes32 => bytes32) incentiveMemoHash;
     }
@@ -95,7 +91,7 @@ contract FSFileRegistry is EIP712 {
             "SignFile(bytes32 cidIdentifier,address sender,address signerWallet,bytes32 signerEmailCommitment,bytes32 privySubjectCommitment,bytes20 dl3SignatureCommitment,bytes32 completionsRoot,uint8 leafSchemaVersion,uint256 timestamp,uint256 nonce)"
         );
 
-    /// @notice Sorted unique `bytes32` commitments (ascending); `ripemd160` of packed words; empty => zero `bytes20`.
+    /// Sorted unique commitments (ascending); `ripemd160(packed)`; empty list => zero `bytes20`.
     function computeEmailSignerCommitment(
         bytes32[] calldata commitments_
     ) public pure returns (bytes20) {
@@ -257,7 +253,7 @@ contract FSFileRegistry is EIP712 {
         emit FileSigned(cidId, sender_, signerWallet_, uint48(block.timestamp));
     }
 
-    /// @notice Signer eligibility is keyed by email commitment (`bytes32`), not wallet.
+    /// Eligibility keyed by signer email commitment, not wallet address.
     function isSigner(
         bytes32 cidId,
         bytes32 signerEmailCommitment_
@@ -435,11 +431,12 @@ contract FSFileRegistry is EIP712 {
         file.incentiveToken[signerEmailCommitment_] = token;
         file.incentiveAmount[signerEmailCommitment_] = amount;
         file.incentiveRefundNotBefore[signerEmailCommitment_] =
-            block.timestamp + INCENTIVE_REFUND_DELAY;
+            block.timestamp +
+            INCENTIVE_REFUND_DELAY;
         file.incentiveMemoHash[signerEmailCommitment_] = memoHash_;
     }
 
-    /// @notice Clears incentive slot after refund to sender (manager-only).
+    /// Reset incentive slot (post-refund).
     function clearSignerIncentive(
         bytes32 cidId,
         bytes32 signerEmailCommitment_
@@ -466,7 +463,8 @@ contract FSFileRegistry is EIP712 {
         bytes32 cidId,
         bytes32 signerEmailCommitment_
     ) external view returns (bytes32) {
-        return _fileRegistrations[cidId].incentiveMemoHash[signerEmailCommitment_];
+        return
+            _fileRegistrations[cidId].incentiveMemoHash[signerEmailCommitment_];
     }
 
     function getSignerIncentive(

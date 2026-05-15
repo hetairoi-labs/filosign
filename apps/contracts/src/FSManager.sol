@@ -23,7 +23,6 @@ contract FSManager is EIP712 {
     uint16 public constant MAX_PLATFORM_FEE_BPS = 1000;
     uint16 public constant BPS_DENOMINATOR = 10_000;
 
-    address public cidRegistry;
     address public fileRegistry;
     address public keyRegistry;
     address public escrow;
