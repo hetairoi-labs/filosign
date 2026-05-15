@@ -2,6 +2,7 @@
 description: agent's log of corrections and pitfalls; append to this file when user corrects your response.
 alwaysApply: false
 ---
+
 # Learning Log
 
 <!-- Append when user corrects. Format: - [YYYY-MM-DD] Mistake: X. Fix: Y. -->
@@ -13,10 +14,6 @@ alwaysApply: false
 - [2025-02-25] Mistake: Created a separate `--brand` CSS variable when `--primary` could serve the same purpose. Fix: Reuse existing token (`--primary`) for the accent color instead of introducing new custom vars.
 - [2025-02-25] Mistake: Used hex values in `globals.css`. Fix: Convert all color values to `oklch()` format for consistency and perceptual uniformity.
 - [2026-03-29] Mistake: Manually edited Bun patch files which broke hunk headers (`hunk_header_integrity_check_failed`). Fix: Always use `bun patch` and `bun patch --commit` to let Bun generate perfectly formatted patches.
-- [2026-03-29] Mistake: Assumed a Vite-based environment for all fixes when the project follows a Bun-native HTML import pattern. Fix: Align with `Bun.serve()` and HTML-first architectures as defined in `tools/bun.mdc`.
 - [2026-03-30] Mistake: Over-complicated Dilithium integration with manual `chrome` mocks and custom singleton logic. Fix: Patch the library to handle environment detection and provide a pre-initialized ESM `default` export. This eliminates build-time regex hacks and reduces integration code by 80%.
-- [2026-04-28] Mistake: Suggested replacing a strong existing hero headline and wrote a sub-headline that was too long. Fix: Preserve working hero positioning and keep landing-page sub-headlines short, sharp, and campaign-aligned.
 - [2026-04-29] Mistake: Imported Privy unlink hooks (`useUnlinkWallet`/`useUnlinkOAuth`) that aren’t exported in the installed `@privy-io/react-auth` version, causing typecheck failures. Fix: Removed unlink wiring and kept only link-method actions in the profile settings UI.
-- [2026-04-29] Mistake: Ran `biome check --write` and it caused unrelated large diffs. Fix: Reverted non-profile auto-fixes and reran targeted linting for the touched profile files.
-- [2026-04-29] Mistake: Attempted a patch with mismatched hunk context, so copy edits didn’t apply on the first try. Fix: Re-read the exact target lines and re-applied a correctly-contextualized patch.
 - [2026-05-13] Mistake: Added verbose comments and over-explained straightforward client code. Fix: Keep comments minimal and only where logic is genuinely non-obvious.

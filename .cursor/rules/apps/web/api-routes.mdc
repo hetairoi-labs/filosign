@@ -1,0 +1,20 @@
+---
+description: Filosign API routes (Hono) and how the client consumes them via the React SDK.
+alwaysApply: false
+---
+
+# Filosign API routes
+
+Backend: **`apps/server`**. Routes live under **`api/routes/`**, mounted from [`api/routes/router.ts`](apps/server/api/routes/router.ts) (`/files`, `/users`, `/sharing`, `/auth`, `/tx`). Optional shared logic can sit in **`api/handlers/`** (e.g. [`handlers/sharing.ts`](apps/server/api/handlers/sharing.ts)); most handlers are inlined in route modules.
+
+## Conventions
+
+- **Responses:** `respond.ok(ctx, data, message, status)` / `respond.err(ctx, message, status)` ([`lib/utils/respond`](apps/server/lib/utils/respond.ts)) — `{ success, data?, message }` shape expected by **`ApiClient.postSafe` / `getSafe`** in `@filosign/react`.
+- **Auth:** `authenticated` middleware ([`api/middleware/auth.ts`](apps/server/api/middleware/auth.ts)) — JWT `Bearer`, sets **`ctx.var.userWallet`**. Public routes omit it.
+- **Input:** Zod **`.safeParse`** (or equivalent) at the handler boundary; on failure **`respond.err(..., 400)`**.
+- **Fallible async:** use **`tryCatch`** / **`tryCatchSync`** from [`lib/utils/tryCatch`](apps/server/lib/utils/tryCatch.ts); branch on `result.error` and respond—do not assume a global `ApiError` / `ErrorHandler` stack.
+- **DB:** Drizzle `db` / `db.transaction` — match patterns in the same route file.
+
+## Client
+
+New JSON APIs: add or extend hooks in **`packages/react-sdk`** using **`useFilosignContext().api`**; **`apps/client`** stays a thin UI layer (see root **`AGENTS.md`**).
