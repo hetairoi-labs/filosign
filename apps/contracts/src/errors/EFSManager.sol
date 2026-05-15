@@ -11,3 +11,7 @@ error NotAllSigned();
 error IncentiveAlreadyClaimed();
 error OnlyServerOrFileRegistry();
 error IncentiveReleaseLengthMismatch();
+error InvalidPayoutWallet();
+error FundOperationPaused();
+error ExceedsPlatformFeeBps();
+error InvalidTreasury();
