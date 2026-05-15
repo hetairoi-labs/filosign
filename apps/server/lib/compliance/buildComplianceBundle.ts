@@ -447,7 +447,7 @@ export async function buildComplianceBundleAndHash(args: {
 		if (seenIncentiveTx.has(h)) continue;
 		seenIncentiveTx.add(h);
 		txDrafts.push({
-			kind: "incentive_attached",
+			kind: "invoice_attached",
 			txHash: inc.txHash as Hex,
 			contractAddress: mgrAddr,
 			summary: `attachIncentive — token ${getAddress(inc.token as Address)} amount ${inc.amount}`,
@@ -492,7 +492,7 @@ export async function buildComplianceBundleAndHash(args: {
 		if (meta?.hasIncentivesReleased && !incentivesReleasedSeen.has(h)) {
 			incentivesReleasedSeen.add(h);
 			transactions.push({
-				kind: "incentives_released",
+				kind: "invoices_released",
 				txHash: s.onchainTxHash as Hex,
 				chainId,
 				contractAddress: mgrAddr,
