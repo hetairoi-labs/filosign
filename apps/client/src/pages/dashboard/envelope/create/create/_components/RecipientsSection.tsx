@@ -1,5 +1,6 @@
+import { useFilosignContext } from "@filosign/react";
 import { useUserProfileByQuery } from "@filosign/react/hooks";
-import { validateInvoiceMemo } from "@filosign/shared";
+import { computeSignerNetPayout, validateInvoiceMemo } from "@filosign/shared";
 import {
 	CaretDownIcon,
 	CheckIcon,
@@ -573,6 +574,8 @@ function InvoiceAttachDialog({
 }: InvoiceAttachDialogProps) {
 	const usdc = SUPPORTED_TOKENS[0];
 	const tokenAddress = usdc.address as Address;
+	const { runtime } = useFilosignContext();
+	const platformFeeBps = runtime.platformFeeBps ?? 0;
 	const { address } = useAccount();
 	const chainId = useChainId();
 	const { fundWallet } = useFundWallet();
@@ -633,6 +636,16 @@ function InvoiceAttachDialog({
 		parsedAmountWei !== null &&
 		parsedAmountWei > 0n &&
 		parsedAmountWei > balance;
+
+	const signerNetLabel = useMemo(() => {
+		if (!parsedAmountWei || parsedAmountWei <= 0n || platformFeeBps <= 0) {
+			return null;
+		}
+		const net = computeSignerNetPayout(parsedAmountWei, platformFeeBps);
+		return Number(formatUnits(net, usdc.decimals)).toLocaleString(undefined, {
+			maximumFractionDigits: 6,
+		});
+	}, [parsedAmountWei, platformFeeBps, usdc.decimals]);
 
 	const saveBlockedByBalance = !balanceReady || amountExceedsBalance;
 
@@ -800,6 +813,15 @@ function InvoiceAttachDialog({
 						) : balanceQueryEnabled && !balanceReady && !balanceIsError ? (
 							<p className="text-xs text-muted-foreground" role="status">
 								Wait for your balance to load before saving, or tap Refresh.
+							</p>
+						) : null}
+						{signerNetLabel ? (
+							<p className="text-xs text-muted-foreground" role="status">
+								Signer receives ~{signerNetLabel} {usdc.symbol} after a{" "}
+								{(platformFeeBps / 100).toLocaleString(undefined, {
+									maximumFractionDigits: 2,
+								})}
+								% platform fee at settlement.
 							</p>
 						) : null}
 					</div>
