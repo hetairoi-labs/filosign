@@ -82,7 +82,7 @@ flowchart LR
 
 **Logic home:** UI `apps/client` | API+chain hooks `packages/react-sdk` | auth/DB/relay `apps/server`.
 
-**Definitions:** Never hand-edit `definitions/`**; `bun run --cwd apps/contracts compile` (Hardhat + `scripts/syncDefinitionsAbi.ts`).
+**Definitions:** Never hand-edit `definitions/`**; `definitions/*.ts` ABI/addresses are updated when you **deploy** (`hardhat run scripts/deploy.ts`); `bun run --cwd apps/contracts compile` only generates interfaces + Solidity artifacts.
 
 ## Runtime
 

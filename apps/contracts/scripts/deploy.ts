@@ -4,7 +4,7 @@ import { getAddress, toHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import type { ChainKey } from "../definitions/index.js";
 
-/** Keep in sync with `@filosign/shared` invoice-usdc (avoid workspace import + rootDir cycles). */
+// Constants
 const USDC_BASE_MAINNET = getAddress(
 	"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
 );
@@ -21,43 +21,85 @@ const CHAIN_ID = {
 	mainnet: 8453, // Base
 } as const;
 
-/** Hardhat-only: funded on every local deploy for invoice / USDC flow testing. */
+const CHAIN_NUMBER_TO_KEY: Record<number, ChainKey> = {
+	[CHAIN_ID.local]: "local",
+	[CHAIN_ID.testnet]: "testnet",
+	[CHAIN_ID.mainnet]: "mainnet",
+};
+
+const BASE_BLOCK_EXPLORER_NETWORKS = new Set(["baseSepolia", "base"]);
 const LOCAL_MOCK_USDC_RECIPIENT = getAddress(
 	"0x900aEe86E4a368653217D8a952ae0B781980ea4b",
 );
-/** 10_000_000 USDC (6 decimals). */
 const LOCAL_MOCK_USDC_MINT_AMOUNT = 10_000_000n * 10n ** 6n;
+const MOCK_USDC_DEF_PATH = "definitions/mock-usdc.ts";
 
-function chainName(chainId: number): ChainKey {
-	if (chainId === CHAIN_ID.local) return "local";
-	if (chainId === CHAIN_ID.testnet) return "testnet";
-	if (chainId === CHAIN_ID.mainnet) return "mainnet";
-	throw new Error(`Unsupported chainId ${chainId}`);
+// Types
+type MockUsdBundle = {
+	readonly address: `0x${string}`;
+	abi: unknown;
+};
+
+type WalletDeployed = Awaited<ReturnType<typeof hre.viem.getWalletClient>>;
+type PublicClientDeployed = Awaited<
+	ReturnType<typeof hre.viem.getPublicClient>
+>;
+
+// Pure helpers & env vars
+function chainKeyFromId(chainId: number): ChainKey {
+	const key = CHAIN_NUMBER_TO_KEY[chainId];
+	if (!key) throw new Error(`Unsupported chainId ${chainId}`);
+	return key;
 }
 
-async function main() {
-	const chainId = hre.network.config.chainId;
-	const deployerPrivateKey = Bun.env.FC_PVT_KEY as `0x${string}` | undefined;
+function sleep(ms: number) {
+	return Bun.sleep(ms);
+}
 
+function requireChainId(): number {
+	const chainId = hre.network.config.chainId;
 	if (!chainId) {
 		console.error(
 			"No chainId found in network config, how will we deploy to this network?",
 		);
 		process.exit(1);
 	}
+	return chainId;
+}
 
-	if (!deployerPrivateKey) {
+function requireDeployerPrivateKey(): `0x${string}` {
+	const key = Bun.env.FC_PVT_KEY as `0x${string}` | undefined;
+	if (!key) {
 		console.error("FC_PVT_KEY is required for deployment");
 		process.exit(1);
 	}
+	return key;
+}
 
-	const deployerAddress = privateKeyToAccount(deployerPrivateKey).address;
-	const deployer = await hre.viem.getWalletClient(deployerAddress);
+function definitionsFileBody(singleChainDefinitions: unknown) {
+	return (
+		DEFINITIONS_FILE_PREFIX +
+		JSON.stringify(singleChainDefinitions, null, 2) +
+		DEFINITIONS_FILE_SUFFIX
+	);
+}
 
-	console.log("Deploying contracts as", {
-		address: deployer.account.address,
-	});
+function abiFromContract(c: { address: string; abi: unknown }) {
+	return { address: getAddress(c.address), abi: c.abi };
+}
 
+function invoiceAllowlistTokens(
+	chainId: number,
+	mockUsd: MockUsdBundle | undefined,
+): `0x${string}`[] {
+	return [
+		...(chainId === CHAIN_ID.mainnet ? [getAddress(USDC_BASE_MAINNET)] : []),
+		...(chainId === CHAIN_ID.testnet ? [getAddress(USDC_BASE_SEPOLIA)] : []),
+		...(mockUsd ? [mockUsd.address] : []),
+	];
+}
+
+async function deployFsManager(deployer: WalletDeployed) {
 	const manager = await hre.viem.deployContract(
 		"FSManager",
 		[deployer.account.address],
@@ -66,143 +108,184 @@ async function main() {
 	console.log("FSManager deployed at:", manager.address, {
 		treasury: deployer.account.address,
 	});
+	return manager;
+}
 
-	// Wait for deployment to be confirmed
-	await new Promise((resolve) => setTimeout(resolve, 3000));
+type FsManagerDeployed = Awaited<ReturnType<typeof deployFsManager>>;
 
-	// Verify deployment succeeded by checking code at address
+async function assertManagerBytecodeLive(managerAddress: `0x${string}`) {
+	await sleep(3000);
 	const publicClient = await hre.viem.getPublicClient();
-	const code = await publicClient.getBytecode({ address: manager.address });
+	const code = await publicClient.getBytecode({ address: managerAddress });
 	if (!code || code === "0x") {
 		console.error("Deployment failed - no code at manager address");
 		process.exit(1);
 	}
+	return publicClient;
+}
 
-	const fileRegistry = await hre.viem.getContractAt(
-		"FSFileRegistry",
-		await manager.read.fileRegistry(),
+async function attachManagerChildren(manager: FsManagerDeployed) {
+	const [fileRegistry, keyRegistry, escrow] = await Promise.all([
+		hre.viem.getContractAt("FSFileRegistry", await manager.read.fileRegistry()),
+		hre.viem.getContractAt("FSKeyRegistry", await manager.read.keyRegistry()),
+		hre.viem.getContractAt("FSEscrow", await manager.read.escrow()),
+	]);
+	return { fileRegistry, keyRegistry, escrow };
+}
+
+type AttachedContracts = Awaited<ReturnType<typeof attachManagerChildren>>;
+
+async function deployAndFundLocalMockUsd(
+	deployer: WalletDeployed,
+	publicClient: PublicClientDeployed,
+): Promise<MockUsdBundle> {
+	const mockUsdc = await hre.viem.deployContract(
+		"MockUSDCToken",
+		[deployer.account.address],
+		{ client: { wallet: deployer } },
 	);
-	const keyRegistry = await hre.viem.getContractAt(
-		"FSKeyRegistry",
-		await manager.read.keyRegistry(),
-	);
-	const escrow = await hre.viem.getContractAt(
-		"FSEscrow",
-		await manager.read.escrow(),
-	);
+	const bundle: MockUsdBundle = {
+		address: getAddress(mockUsdc.address),
+		abi: mockUsdc.abi,
+	};
+	console.log("MockUSDCToken deployed at:", bundle.address);
 
-	let mockUsdLike:
-		| { readonly address: `0x${string}`; abi: unknown }
-		| undefined;
+	const mintHash = await mockUsdc.write.mint([
+		LOCAL_MOCK_USDC_RECIPIENT,
+		LOCAL_MOCK_USDC_MINT_AMOUNT,
+	]);
+	await publicClient.waitForTransactionReceipt({ hash: mintHash });
+	console.log("MockUSDC minted to test wallet:", {
+		to: LOCAL_MOCK_USDC_RECIPIENT,
+		amount: LOCAL_MOCK_USDC_MINT_AMOUNT.toString(),
+		txHash: mintHash,
+	});
 
-	if (chainId === CHAIN_ID.local) {
-		const mockUsdc = await hre.viem.deployContract(
-			"MockUSDCToken",
-			[deployer.account.address],
-			{ client: { wallet: deployer } },
-		);
-		mockUsdLike = {
-			address: getAddress(mockUsdc.address),
-			abi: mockUsdc.abi,
-		};
-		console.log("MockUSDCToken deployed at:", mockUsdLike.address);
+	return bundle;
+}
 
-		const mintHash = await mockUsdc.write.mint([
-			LOCAL_MOCK_USDC_RECIPIENT,
-			LOCAL_MOCK_USDC_MINT_AMOUNT,
-		]);
-		await publicClient.waitForTransactionReceipt({ hash: mintHash });
-		console.log("MockUSDC minted to test wallet:", {
-			to: LOCAL_MOCK_USDC_RECIPIENT,
-			amount: LOCAL_MOCK_USDC_MINT_AMOUNT.toString(),
-			txHash: mintHash,
-		});
+async function writeMockUsdAddressFile(address: `0x${string}`) {
+	const body =
+		"/** Auto-generated by scripts/deploy.ts (local Hardhat) — do not edit */\n" +
+		`export const LOCAL_MOCK_USDC_ADDRESS = ${JSON.stringify(address)} as const;\n`;
+	await Bun.write(MOCK_USDC_DEF_PATH, body);
+	console.log(`Wrote ${MOCK_USDC_DEF_PATH}`);
+}
 
-		const mockAddrPath = "definitions/mock-usdc.ts";
-		await Bun.write(
-			mockAddrPath,
-			"/** Auto-generated by scripts/deploy.ts (local Hardhat) — do not edit */\n" +
-				`export const LOCAL_MOCK_USDC_ADDRESS = ${JSON.stringify(
-					mockUsdLike.address,
-				)} as const;\n`,
-		);
-		console.log(`Wrote ${mockAddrPath}`);
-	}
-
-	const allowlist: `0x${string}`[] = [];
-	if (chainId === CHAIN_ID.mainnet) {
-		allowlist.push(getAddress(USDC_BASE_MAINNET));
-	} else if (chainId === CHAIN_ID.testnet) {
-		allowlist.push(getAddress(USDC_BASE_SEPOLIA));
-	}
-	if (mockUsdLike) {
-		allowlist.push(mockUsdLike.address);
-	}
-	for (const token of allowlist) {
+async function setAllowedInvoiceTokens(
+	publicClient: PublicClientDeployed,
+	manager: FsManagerDeployed,
+	tokens: readonly `0x${string}`[],
+) {
+	for (const token of tokens) {
 		const tx = await manager.write.setTokenAllowed([token, true]);
 		await publicClient.waitForTransactionReceipt({ hash: tx });
 		console.log("Allowed invoice token:", token);
 	}
+}
+
+function buildDefinitionsManifest(args: {
+	manager: FsManagerDeployed;
+	fileRegistry: AttachedContracts["fileRegistry"];
+	keyRegistry: AttachedContracts["keyRegistry"];
+	escrow: AttachedContracts["escrow"];
+	chainId: number;
+	mockUsd: MockUsdBundle | undefined;
+}) {
+	const { manager, fileRegistry, keyRegistry, escrow, chainId, mockUsd } = args;
+
+	return {
+		FSManager: abiFromContract(manager),
+		FSFileRegistry: abiFromContract(fileRegistry),
+		FSKeyRegistry: abiFromContract(keyRegistry),
+		FSEscrow: abiFromContract(escrow),
+		...(chainId === CHAIN_ID.local && mockUsd ? { MockUSDC: mockUsd } : {}),
+	} as const;
+}
+
+async function writeChainDefinitions(
+	chainId: number,
+	definitions: ReturnType<typeof buildDefinitionsManifest>,
+) {
+	const key = chainKeyFromId(chainId);
+	const blob = definitionsFileBody({
+		[toHex(chainId)]: definitions,
+	});
+	const path = `definitions/${key}.ts`;
+	await Bun.write(path, blob);
+	console.log(`Definitions written to ${path}`);
+	console.log({ chain: key, chainId });
+}
+
+async function verifyOnBaseExplorerIfApplicable(
+	args: {
+		networkName: string;
+		deployer: WalletDeployed;
+		manager: FsManagerDeployed;
+	} & AttachedContracts,
+) {
+	const { networkName, deployer, manager, fileRegistry, keyRegistry, escrow } =
+		args;
+	if (!BASE_BLOCK_EXPLORER_NETWORKS.has(networkName)) return;
+
+	try {
+		await $`bunx --bun hardhat verify --network ${networkName} ${manager.address} ${deployer.account.address} --force`;
+		for (const addr of [
+			fileRegistry.address,
+			keyRegistry.address,
+			escrow.address,
+		]) {
+			await sleep(1000);
+			await $`bunx --bun hardhat verify --network ${networkName} ${addr} --force`;
+		}
+	} catch (_) {}
+	console.log(`Contracts verified on ${networkName} block explorer`);
+}
+
+async function main() {
+	const chainId = requireChainId();
+	const deployer = await hre.viem.getWalletClient(
+		privateKeyToAccount(requireDeployerPrivateKey()).address,
+	);
+
+	console.log("Deploying contracts as", { address: deployer.account.address });
+
+	const manager = await deployFsManager(deployer);
+	const publicClient = await assertManagerBytecodeLive(manager.address);
+	const { fileRegistry, keyRegistry, escrow } =
+		await attachManagerChildren(manager);
+
+	let mockUsd: MockUsdBundle | undefined;
+	if (chainId === CHAIN_ID.local) {
+		mockUsd = await deployAndFundLocalMockUsd(deployer, publicClient);
+		await writeMockUsdAddressFile(mockUsd.address);
+	}
+
+	const tokens = invoiceAllowlistTokens(chainId, mockUsd);
+	await setAllowedInvoiceTokens(publicClient, manager, tokens);
 
 	console.log("Contracts deployed");
 
-	const definitions = {
-		FSManager: {
-			address: getAddress(manager.address),
-			abi: manager.abi,
-		},
-		FSFileRegistry: {
-			address: getAddress(fileRegistry.address),
-			abi: fileRegistry.abi,
-		},
-		FSKeyRegistry: {
-			address: getAddress(keyRegistry.address),
-			abi: keyRegistry.abi,
-		},
-		FSEscrow: {
-			address: getAddress(escrow.address),
-			abi: escrow.abi,
-		},
-		...(chainId === CHAIN_ID.local && mockUsdLike
-			? {
-					MockUSDC: mockUsdLike,
-				}
-			: {}),
-	} as const;
-
-	const envName = chainName(chainId);
-	const singleChainDefinitions = { [toHex(chainId)]: definitions };
-	const definitionsPath = `definitions/${envName}.ts`;
-	await Bun.write(
-		definitionsPath,
-		DEFINITIONS_FILE_PREFIX +
-			JSON.stringify(singleChainDefinitions, null, 2) +
-			DEFINITIONS_FILE_SUFFIX,
-	);
-	console.log(`Definitions written to ${definitionsPath}`);
-
-	console.log({
-		chain: envName,
+	await writeChainDefinitions(
 		chainId,
+		buildDefinitionsManifest({
+			manager,
+			fileRegistry,
+			keyRegistry,
+			escrow,
+			chainId,
+			mockUsd,
+		}),
+	);
+
+	await verifyOnBaseExplorerIfApplicable({
+		networkName: hre.network.name,
+		deployer,
+		manager,
+		fileRegistry,
+		keyRegistry,
+		escrow,
 	});
-
-	const networkName = hre.network.name;
-	if (networkName === "baseSepolia" || networkName === "base") {
-		try {
-			await $`bunx --bun hardhat verify --network ${networkName} ${manager.address} ${deployer.account.address} --force`;
-			await sleep(1000);
-			await $`bunx --bun hardhat verify --network ${networkName} ${fileRegistry.address} --force`;
-			await sleep(1000);
-			await $`bunx --bun hardhat verify --network ${networkName} ${keyRegistry.address} --force`;
-			await sleep(1000);
-			await $`bunx --bun hardhat verify --network ${networkName} ${escrow.address} --force`;
-		} catch (_) {}
-		console.log(`Contracts verified on ${networkName} block explorer`);
-	}
-}
-
-async function sleep(ms: number) {
-	return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 main()

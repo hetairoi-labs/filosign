@@ -14,9 +14,9 @@
 	},
 	"scripts": {
 		"node": "bunx --bun hardhat node",
-		"compile": "bun gen:interfaces; bun --bun hardhat compile && bun run scripts/syncDefinitionsAbi.ts",
+		"compile": "bun gen:interfaces; bun --bun hardhat compile",
 		"tests": "bun compile; bunx --bun hardhat test",
-		"gen:interfaces": "bun run scripts/generateInterfaces.ts",
+		"gen:interfaces": "bun run scripts/interfaces.ts",
 		"deploy": "bunx --bun hardhat run scripts/deploy.ts",
 		"deploy:testnet": "bunx --bun hardhat run scripts/deploy.ts --network baseSepolia",
 		"deploy:mainnet": "bunx --bun hardhat run scripts/deploy.ts --network base",
