@@ -9,6 +9,7 @@ export * from "./compliance-bundle";
 export { zFileData } from "./file-data";
 export * from "./invoice-usdc";
 export * from "./placement-manifest";
+export * from "./platform-fee";
 export * from "./privy-subject-commitment";
 export * from "./signer-email-commitment";
 
