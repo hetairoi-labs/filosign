@@ -2,7 +2,7 @@ import { useFilosignContext } from "@filosign/react";
 import {
 	useAckFile,
 	useApproveSender,
-	useAttachIncentiveToFile,
+	useAttachInvoiceToFile,
 	useCanReceiveFrom,
 	useCanSendTo,
 	useFileInfo,
@@ -985,7 +985,7 @@ const SentFileItem = memo(function SentFileItem(props: { pieceCid: string }) {
 						if (!email) return null;
 						const key = typeof s === "string" ? s : (s.wallet ?? email);
 						return (
-							<TestAttachIncentive
+							<TestAttachInvoice
 								key={key}
 								pieceCid={pieceCid}
 								signerEmail={email}
@@ -998,23 +998,26 @@ const SentFileItem = memo(function SentFileItem(props: { pieceCid: string }) {
 	);
 });
 
-function TestAttachIncentive(props: { pieceCid: string; signerEmail: string }) {
+function TestAttachInvoice(props: { pieceCid: string; signerEmail: string }) {
 	const { pieceCid, signerEmail } = props;
-	const attachIncentive = useAttachIncentiveToFile();
+	const attachInvoice = useAttachInvoiceToFile();
 	const tokenRef = useRef<HTMLInputElement>(null);
 	const amountRef = useRef<HTMLInputElement>(null);
+	const memoRef = useRef<HTMLTextAreaElement>(null);
 	const formId = useId();
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		const token = tokenRef.current?.value.trim() as `0x${string}` | undefined;
 		const rawAmount = amountRef.current?.value.trim();
+		const memo = memoRef.current?.value.trim() ?? "";
 		if (!token || !rawAmount) return;
-		attachIncentive.mutate({
+		attachInvoice.mutate({
 			pieceCid,
 			signerEmailCommitment: hashNormalizedSignerEmail(signerEmail),
 			token,
 			amount: BigInt(rawAmount),
+			memo,
 		});
 	};
 
@@ -1052,25 +1055,33 @@ function TestAttachIncentive(props: { pieceCid: string; signerEmail: string }) {
 				/>
 				<button
 					type="submit"
-					disabled={attachIncentive.isPending}
+					disabled={attachInvoice.isPending}
 					className="rounded-md px-3 py-1 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none transition-all"
 				>
-					{attachIncentive.isPending ? "Attaching..." : "Attach"}
+					{attachInvoice.isPending ? "Attaching..." : "Attach"}
 				</button>
 			</div>
+			<textarea
+				ref={memoRef}
+				required
+				rows={2}
+				placeholder="Invoice memo (required)"
+				className="w-full rounded border bg-card px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-ring"
+				aria-label="Invoice memo"
+			/>
 
-			{attachIncentive.isError && (
+			{attachInvoice.isError && (
 				<p
 					className="text-destructive bg-destructive/10 p-1 rounded text-xs wrap-break-word"
 					role="alert"
 				>
-					{getErrorMessage(attachIncentive.error)}
+					{getErrorMessage(attachInvoice.error)}
 				</p>
 			)}
 
-			{attachIncentive.isSuccess && (
+			{attachInvoice.isSuccess && (
 				<p className="text-success bg-success/10 p-1 rounded text-xs">
-					Incentive attached successfully.
+					Invoice attached successfully.
 				</p>
 			)}
 		</form>
