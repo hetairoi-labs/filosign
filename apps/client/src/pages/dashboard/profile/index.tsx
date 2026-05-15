@@ -1,12 +1,9 @@
 import { CaretLeftIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { motion } from "motion/react";
-import { useState } from "react";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
-import { Card, CardContent } from "@/src/lib/components/ui/card";
 import { Form } from "@/src/lib/components/ui/form";
-import { ChangePinDialog } from "./ChangePinDialog";
 import { useProfileSettings } from "./hooks/use-profile-settings";
 import { LinkedAccountsSection } from "./LinkedAccountsSection";
 import { PersonalInfoSection } from "./PersonalInfoSection";
@@ -14,7 +11,6 @@ import { WalletUsdcBalanceCard } from "./WalletUsdcBalanceCard";
 
 export default function ProfilePage() {
 	const { form, personalSection } = useProfileSettings();
-	const [pinDialogOpen, setPinDialogOpen] = useState(false);
 
 	return (
 		<div className="min-h-screen">
@@ -68,29 +64,10 @@ export default function ProfilePage() {
 						>
 							<PersonalInfoSection form={form} sectionState={personalSection} />
 							<LinkedAccountsSection />
-
-							<Card className="w-full border-border/50 shadow-none">
-								<CardContent className="flex flex-col gap-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-									<p className="text-sm text-foreground/85">
-										Want to change your PIN?
-									</p>
-									<Button
-										type="button"
-										variant="outline"
-										size="sm"
-										className="shrink-0 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-										onClick={() => setPinDialogOpen(true)}
-									>
-										Change PIN
-									</Button>
-								</CardContent>
-							</Card>
 						</motion.div>
 					</main>
 				</form>
 			</Form>
-
-			<ChangePinDialog open={pinDialogOpen} onOpenChange={setPinDialogOpen} />
 		</div>
 	);
 }
