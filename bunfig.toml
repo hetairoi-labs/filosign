@@ -1,6 +1,7 @@
 [install]
 # Use exact versions for reproducible builds
 exact = true
+minimumReleaseAge = 86400
 
 [install.scopes]
 # Configure any scoped packages if needed
