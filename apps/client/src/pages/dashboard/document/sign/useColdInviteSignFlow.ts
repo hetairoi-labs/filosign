@@ -1,7 +1,7 @@
 import { useFilosignContext } from "@filosign/react";
 import {
 	fetchUserProfile,
-	LOGIN_PIN_REQUIRED,
+	LOGIN_RECOVERY_PHRASE_REQUIRED,
 	useClaimColdInvite,
 	useColdInviteDecrypt,
 	useColdInvitePayload,
@@ -9,6 +9,7 @@ import {
 	useIsRegistered,
 	useLogin,
 	useLogout,
+	useRecoverWithPhrase,
 	useUserProfile,
 	type ViewFileResult,
 } from "@filosign/react/hooks";
@@ -41,22 +42,23 @@ export function useColdInviteSignFlow(args: {
 	const { data: invite, isLoading, error } = useColdInvitePayload(inviteToken);
 	const coldDecrypt = useColdInviteDecrypt();
 	const claimColdInvite = useClaimColdInvite();
+	const recoverWithPhrase = useRecoverWithPhrase();
 
 	const [phrase, setPhrase] = useState("");
-	const [pin, setPin] = useState("");
+	const [filosignRecoveryPhrase, setFilosignRecoveryPhrase] = useState("");
 	const [fileData, setFileData] = useState<ViewFileResult | null>(null);
 	const [decryptError, setDecryptError] = useState<string | null>(null);
 	const [tryingWalletUnlock, setTryingWalletUnlock] = useState(false);
-	const [showPinAuth, setShowPinAuth] = useState(false);
+	const [showFilosignRecovery, setShowFilosignRecovery] = useState(false);
 	const walletUnlockStartedRef = useRef(false);
 	const autoPrivyLoginRef = useRef(false);
 
 	const resetColdInviteWizardAfterSwitchAccount = useCallback(() => {
 		setPhrase("");
-		setPin("");
+		setFilosignRecoveryPhrase("");
 		setDecryptError(null);
 		setTryingWalletUnlock(false);
-		setShowPinAuth(false);
+		setShowFilosignRecovery(false);
 		walletUnlockStartedRef.current = false;
 		autoPrivyLoginRef.current = false;
 	}, []);
@@ -147,13 +149,13 @@ export function useColdInviteSignFlow(args: {
 		if (!ready || !authenticated) return;
 		if (!isRegistered.data || isRegistered.isPending) return;
 		if (isLoggedIn.data) {
-			setShowPinAuth(false);
-			setPin("");
+			setShowFilosignRecovery(false);
+			setFilosignRecoveryPhrase("");
 			walletUnlockStartedRef.current = false;
 			return;
 		}
 		if (isLoggedIn.isPending) return;
-		if (showPinAuth) return;
+		if (showFilosignRecovery) return;
 
 		const canTryWallet =
 			authenticated &&
@@ -174,15 +176,18 @@ export function useColdInviteSignFlow(args: {
 		void sdkLogin
 			.mutateAsync({})
 			.catch((err: unknown) => {
-				if (err instanceof Error && err.message === LOGIN_PIN_REQUIRED) {
-					setShowPinAuth(true);
+				if (
+					err instanceof Error &&
+					err.message === LOGIN_RECOVERY_PHRASE_REQUIRED
+				) {
+					setShowFilosignRecovery(true);
 					walletUnlockStartedRef.current = false;
 					return;
 				}
 				toast.error(
 					err instanceof Error ? err.message : "Could not unlock session",
 				);
-				setShowPinAuth(true);
+				setShowFilosignRecovery(true);
 				walletUnlockStartedRef.current = false;
 			})
 			.finally(() => {
@@ -196,7 +201,7 @@ export function useColdInviteSignFlow(args: {
 		isLoggedIn.data,
 		isLoggedIn.isPending,
 		sdkLogin,
-		showPinAuth,
+		showFilosignRecovery,
 	]);
 
 	const wizardPanel = useMemo(() => {
@@ -204,7 +209,8 @@ export function useColdInviteSignFlow(args: {
 		if (!authenticated) return "signingIn" as const;
 		if (isRegistered.isPending || isLoggedIn.isPending) return "busy" as const;
 		if (isRegistered.data === false) return "redirecting" as const;
-		if (!isLoggedIn.data && showPinAuth) return "pin" as const;
+		if (!isLoggedIn.data && showFilosignRecovery)
+			return "filosignRecovery" as const;
 		if (!isLoggedIn.data && tryingWalletUnlock) return "unlocking" as const;
 		if (!isLoggedIn.data) return "busy" as const;
 		return "passphrase" as const;
@@ -215,7 +221,7 @@ export function useColdInviteSignFlow(args: {
 		isRegistered.data,
 		isLoggedIn.isPending,
 		isLoggedIn.data,
-		showPinAuth,
+		showFilosignRecovery,
 		tryingWalletUnlock,
 	]);
 
@@ -271,16 +277,18 @@ export function useColdInviteSignFlow(args: {
 		}
 		if (!isLoggedIn.data) {
 			throw new Error(
-				"Wait for your wallet session to finish unlocking, or enter your PIN if prompted.",
+				"Wait for your wallet session to finish unlocking, or enter your recovery phrase if prompted.",
 			);
 		}
 	}, [authenticated, login, isRegistered.data, isLoggedIn.data]);
 
-	const submitFilosignPin = useCallback(async () => {
-		if (pin.length < 6 || pin.length > 10) return;
+	const submitFilosignRecovery = useCallback(async () => {
+		if (!filosignRecoveryPhrase.trim()) return;
 		setDecryptError(null);
 		try {
-			await sdkLogin.mutateAsync({ pin });
+			await recoverWithPhrase.mutateAsync({
+				phrase: filosignRecoveryPhrase,
+			});
 			await queryClient.invalidateQueries({
 				queryKey: ["fsQ-is-logged-in", wallet?.account.address],
 			});
@@ -288,16 +296,25 @@ export function useColdInviteSignFlow(args: {
 				predicate: (q) =>
 					Array.isArray(q.queryKey) && q.queryKey[0] === "fsQ-is-logged-in",
 			});
-			setShowPinAuth(false);
-			setPin("");
+			setShowFilosignRecovery(false);
+			setFilosignRecoveryPhrase("");
 			toast.success("Session unlocked");
 		} catch (e) {
 			const msg =
-				e instanceof Error ? e.message : "Could not unlock with this PIN";
+				e instanceof Error
+					? e.message.includes("unlock") || e.message.includes("phrase")
+						? "Invalid recovery phrase"
+						: e.message
+					: "Could not unlock with this phrase";
 			setDecryptError(msg);
 			toast.error(msg);
 		}
-	}, [pin, sdkLogin, queryClient, wallet?.account.address]);
+	}, [
+		filosignRecoveryPhrase,
+		recoverWithPhrase,
+		queryClient,
+		wallet?.account.address,
+	]);
 
 	const handleUnlockDocument = useCallback(async () => {
 		if (!invite || !phrase.trim()) {
@@ -376,14 +393,15 @@ export function useColdInviteSignFlow(args: {
 		wizardPanel,
 		phrase,
 		setPhrase,
-		pin,
-		setPin,
+		filosignRecoveryPhrase,
+		setFilosignRecoveryPhrase,
 		decryptError,
 		phraseWordCount,
 		shouldSwitchAccountPrompt,
 		signedInEmailForUi,
 		inviteMatchesCurrentUser,
-		submitFilosignPin,
+		submitFilosignRecovery,
+		isFilosignRecoveryPending: recoverWithPhrase.isPending,
 		handleUnlockDocument,
 		runColdInviteSwitchAccount,
 		resetColdInviteWizardAfterSwitchAccount,
