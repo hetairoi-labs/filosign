@@ -10,6 +10,7 @@ import {
 	buildRegistrationEmailCommitments,
 	completionsMerkleRootV1,
 	computePlacementCommitment,
+	computeSignerNetPayout,
 	FILE_ACK_COLD_CLAIM_SENTINEL_V1,
 	hashInvoiceMemo,
 	hashNormalizedSignerEmail,
@@ -1693,7 +1694,19 @@ export default new Hono()
 			);
 		}
 
-		return respond.ok(ctx, { txHash }, "Invoice attached successfully", 201);
+		const platformFeeBps = Number(await FSManager.read.platformFeeBps());
+		const gross = BigInt(amount);
+		const signerNetAmount = computeSignerNetPayout(
+			gross,
+			platformFeeBps,
+		).toString();
+
+		return respond.ok(
+			ctx,
+			{ txHash, platformFeeBps, grossAmount: amount, signerNetAmount },
+			"Invoice attached successfully",
+			201,
+		);
 	})
 
 	.get("/:pieceCid/s3", authenticated, async (ctx) => {
