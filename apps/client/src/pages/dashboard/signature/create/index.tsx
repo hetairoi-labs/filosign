@@ -144,7 +144,7 @@ export default function CreateNewSignaturePage({
 				lastName,
 				hasOnboarded: true,
 			});
-			navigate({ to: "/onboarding/set-pin" });
+			navigate({ to: "/onboarding" });
 		}
 	};
 
@@ -187,7 +187,7 @@ export default function CreateNewSignaturePage({
 					size="lg"
 					className="self-start mb-4"
 					render={
-						<Link to={onboarding ? "/onboarding/set-pin" : "/dashboard"} />
+						<Link to={onboarding ? "/onboarding" : "/dashboard"} />
 					}
 				>
 					<CaretLeftIcon className="size-5" weight="bold" />
