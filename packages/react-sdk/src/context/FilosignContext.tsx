@@ -24,6 +24,9 @@ export type Runtime = {
 	chain: Chain;
 	chainKey: ChainKey;
 	serverAddressSynapse: string;
+	platformFeeBps: number;
+	maxPlatformFeeBps: number;
+	treasury: `0x${string}`;
 };
 
 export const FilosignContext = createContext<FilosignContextValue>({
