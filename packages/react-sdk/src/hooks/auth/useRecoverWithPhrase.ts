@@ -1,13 +1,7 @@
 import { seedKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFilosignContext } from "../../context/useFilosignContext";
-import {
-	encryptSeedWithPin,
-	resetAttempts,
-	saveEnvelope,
-	seedFromRecoveryPhrase,
-	validatePin,
-} from "./pin-storage";
+import { seedFromRecoveryPhrase } from "./recovery-phrase";
 import { setSessionSeed } from "./session-seed";
 
 export function useRecoverWithPhrase() {
@@ -15,12 +9,9 @@ export function useRecoverWithPhrase() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async (params: { phrase: string; newPin: string }) => {
+		mutationFn: async (params: { phrase: string }) => {
 			if (!wallet || !contracts || !wasm.dilithium) {
 				throw new Error("unreachable");
-			}
-			if (!validatePin(params.newPin)) {
-				throw new Error("PIN must be 6-10 digits");
 			}
 			const seed = await seedFromRecoveryPhrase(params.phrase);
 			const keygenData = await seedKeyGen(new Uint8Array(Array.from(seed)), {
@@ -36,9 +27,6 @@ export function useRecoverWithPhrase() {
 				throw new Error("Unable to unlock");
 			}
 
-			const envelope = await encryptSeedWithPin(params.newPin, seed);
-			await saveEnvelope({ wallet: wallet.account.address, envelope });
-			await resetAttempts({ wallet: wallet.account.address });
 			setSessionSeed(wallet.account.address, seed);
 			await queryClient.refetchQueries({
 				queryKey: ["fsQ-is-logged-in", wallet.account.address],

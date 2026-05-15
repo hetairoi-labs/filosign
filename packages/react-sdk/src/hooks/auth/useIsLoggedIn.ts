@@ -2,7 +2,6 @@ import { seedKeyGen } from "@filosign/crypto-utils";
 import { useQuery } from "@tanstack/react-query";
 import { DAY } from "../../constants";
 import { useFilosignContext } from "../../context/useFilosignContext";
-import { loadEnvelope } from "./pin-storage";
 import { getSessionSeed } from "./session-seed";
 import { useIsRegistered } from "./useIsRegistered";
 import { useStoredKeygenData } from "./useStoredKeygenData";
@@ -24,25 +23,20 @@ export function useIsLoggedIn() {
 
 			const keySeed = getSessionSeed(wallet.account.address);
 
-			// If we have a session seed (in-memory or hydrated from this tab), validate it
-			if (keySeed) {
-				const keygenData = await seedKeyGen(keySeed, { dl: wasm.dilithium });
-				const { commitmentKem, commitmentSig } = storedKeygenData;
-
-				const kemMatch = commitmentKem === keygenData.commitmentKem;
-				const sigMatch = commitmentSig === keygenData.commitmentSig;
-
-				if (!kemMatch || !sigMatch) {
-					return false;
-				}
-				return true;
+			if (!keySeed) {
+				return false;
 			}
 
-			// Otherwise, check if we can unlock with PIN (envelope exists)
-			const envelope = await loadEnvelope({ wallet: wallet.account.address });
-			if (!envelope) return false;
+			const keygenData = await seedKeyGen(keySeed, { dl: wasm.dilithium });
+			const { commitmentKem, commitmentSig } = storedKeygenData;
 
-			return false; // Have envelope but no seed yet - need PIN login
+			const kemMatch = commitmentKem === keygenData.commitmentKem;
+			const sigMatch = commitmentSig === keygenData.commitmentSig;
+
+			if (!kemMatch || !sigMatch) {
+				return false;
+			}
+			return true;
 		},
 		staleTime: 1 * DAY,
 		enabled:

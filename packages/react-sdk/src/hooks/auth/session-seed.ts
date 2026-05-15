@@ -3,7 +3,7 @@
  *
  * We intentionally do **not** persist the decrypted seed to `sessionStorage`:
  * same-origin XSS could read it there across navigations. After a full page
- * reload the seed is gone and the user must unlock again (PIN / recovery flow).
+ * reload the seed is gone and the user must unlock again (wallet or recovery phrase).
  */
 const LEGACY_TAB_SEED_PREFIX = "fs_tab_seed:";
 

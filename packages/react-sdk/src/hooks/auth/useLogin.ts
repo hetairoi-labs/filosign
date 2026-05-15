@@ -1,29 +1,16 @@
 import { eip712signature } from "@filosign/contracts";
-import { seedKeyGen, toHex, walletKeyGen } from "@filosign/crypto-utils";
+import { toHex, walletKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFilosignContext } from "../../context/useFilosignContext";
-import {
-	assertAttemptAllowed,
-	decryptSeedWithPin,
-	encryptSeedWithPin,
-	loadAttempts,
-	loadEnvelope,
-	recoveryPhraseFromSeed,
-	registerFailedAttempt,
-	resetAttempts,
-	saveEnvelope,
-	validatePin,
-} from "./pin-storage";
+import { recoveryPhraseFromSeed } from "./recovery-phrase";
 import { setSessionSeed } from "./session-seed";
 import { unlockSeedFromWallet } from "./unlock-seed-from-wallet";
 import { useIsLoggedIn } from "./useIsLoggedIn";
 import { useIsRegistered } from "./useIsRegistered";
 
-/** Thrown when wallet-based unlock failed and a PIN must be supplied. */
-export const LOGIN_PIN_REQUIRED = "PIN_REQUIRED";
+export const LOGIN_RECOVERY_PHRASE_REQUIRED = "RECOVERY_PHRASE_REQUIRED";
 
 export interface LoginParams {
-	pin?: string;
 	idToken?: string;
 	/** @internal For dev testing only - skips token authentication */
 	skipToken?: boolean;
@@ -47,10 +34,7 @@ export function useLogin() {
 			let recoveryPhrase: string | undefined;
 
 			if (!isRegistered) {
-				const { pin, idToken, skipToken } = params;
-				if (!pin || !validatePin(pin)) {
-					throw new Error("PIN must be 6-10 digits");
-				}
+				const { idToken, skipToken } = params;
 				if (!idToken && !skipToken) {
 					throw new Error(
 						"Authentication token required. Please ensure you are logged in with Privy.",
@@ -100,9 +84,6 @@ export function useLogin() {
 
 				await api.rpc.postSafe({}, "/users/profile", requestPayload);
 
-				const envelope = await encryptSeedWithPin(pin, keygenData.seed);
-				await saveEnvelope({ wallet: wallet.account.address, envelope });
-				await resetAttempts({ wallet: wallet.account.address });
 				setSessionSeed(wallet.account.address, keygenData.seed);
 				recoveryPhrase = recoveryPhraseFromSeed(keygenData.seedCore32);
 
@@ -129,60 +110,9 @@ export function useLogin() {
 				});
 
 				if (seedFromWallet) {
-					await resetAttempts({ wallet: wallet.account.address });
 					setSessionSeed(wallet.account.address, seedFromWallet);
 				} else {
-					const { pin } = params;
-					if (!pin || !validatePin(pin)) {
-						throw new Error(LOGIN_PIN_REQUIRED);
-					}
-
-					const attempts = await loadAttempts({
-						wallet: wallet.account.address,
-					});
-					assertAttemptAllowed(attempts);
-
-					const [
-						saltPin,
-						saltSeed,
-						saltChallenge,
-						commitmentKem,
-						commitmentSig,
-					] = await contracts.FSKeyRegistry.read.keygenData([
-						wallet.account.address,
-					]);
-
-					const envelope = await loadEnvelope({
-						wallet: wallet.account.address,
-					});
-					if (!envelope) {
-						throw new Error("Unable to unlock");
-					}
-					let decryptedSeed: Uint8Array;
-					try {
-						decryptedSeed = await decryptSeedWithPin(pin, envelope);
-						const keygenData = await seedKeyGen(
-							new Uint8Array(Array.from(decryptedSeed)),
-							{
-								dl: wasm.dilithium,
-							},
-						);
-						if (
-							commitmentKem !== keygenData.commitmentKem ||
-							commitmentSig !== keygenData.commitmentSig
-						) {
-							throw new Error("Unable to unlock");
-						}
-					} catch (_error) {
-						await registerFailedAttempt({ wallet: wallet.account.address });
-						throw new Error("Unable to unlock");
-					}
-					await resetAttempts({ wallet: wallet.account.address });
-					setSessionSeed(wallet.account.address, decryptedSeed);
-
-					void saltPin;
-					void saltSeed;
-					void saltChallenge;
+					throw new Error(LOGIN_RECOVERY_PHRASE_REQUIRED);
 				}
 			}
 

@@ -10,12 +10,8 @@ import type { FilosignContextValue } from "../../context/FilosignContext";
 type Wallet = NonNullable<UseWalletClientReturnType["data"]>;
 
 /**
- * Re-derives the Filosign seed from the embedded wallet using the same path as
- * registration (`walletKeyGen`): `signMessage` on the fixed register challenge,
- * then HKDF into the keygen seed. No PIN envelope is required when this succeeds.
- *
- * Returns `null` if signing fails, commitments don’t match (e.g. non-deterministic
- * ECDSA from some wallets), or chain data is missing.
+ * Re-derives the seed via the same path as registration (`walletKeyGen`).
+ * Returns `null` if signing fails, commitments mismatch, or chain data is missing.
  */
 export async function unlockSeedFromWallet(args: {
 	wallet: Wallet;
