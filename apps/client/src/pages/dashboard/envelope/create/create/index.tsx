@@ -12,8 +12,8 @@ import { safeAsync } from "@/src/lib/utils/safe";
 import { UserDropdown } from "../../../_components/user-dropdown";
 import type { EnvelopeForm, StoredDocument } from "../types";
 import {
-	incentiveTokenLabel,
-	incentiveTotalsByTokenWei,
+	invoiceTokenLabel,
+	invoiceTotalsByTokenWei,
 } from "../utils/incentive-totals-by-token";
 import DocumentsSection from "./_components/DocumentUpload";
 import { EnvelopeDraftProvider } from "./_components/envelope-draft-context";
@@ -58,12 +58,12 @@ export default function CreateEnvelopePage() {
 				return;
 			}
 
-			const incentiveTotals = incentiveTotalsByTokenWei(value.recipients);
+			const invoiceTotals = invoiceTotalsByTokenWei(value.recipients);
 
-			if (incentiveTotals.size > 0) {
+			if (invoiceTotals.size > 0) {
 				if (!address) {
 					toast.error(
-						"Connect your wallet so we can verify balances for incentives.",
+						"Connect your wallet so we can verify balances for signer invoices.",
 					);
 					return;
 				}
@@ -72,7 +72,7 @@ export default function CreateEnvelopePage() {
 					return;
 				}
 
-				for (const [tokenAddr, totalWei] of incentiveTotals) {
+				for (const [tokenAddr, totalWei] of invoiceTotals) {
 					if (totalWei <= 0n) continue;
 
 					const [balance, readErr] = await safeAsync(() =>
@@ -86,17 +86,17 @@ export default function CreateEnvelopePage() {
 
 					if (readErr || balance === undefined) {
 						toast.error(
-							`Could not verify your ${incentiveTokenLabel(tokenAddr)} balance. Try again.`,
+							`Could not verify your ${invoiceTokenLabel(tokenAddr)} balance. Try again.`,
 						);
 						return;
 					}
 
 					if (totalWei > balance) {
-						const label = incentiveTokenLabel(tokenAddr);
+						const label = invoiceTokenLabel(tokenAddr);
 						toast.error(
-							`Total ${label} incentives exceed your current ${label} balance.`,
+							`Total ${label} invoice amounts exceed your current ${label} balance.`,
 							{
-								id: `incentive-exceeds-balance-${tokenAddr}`,
+								id: `invoice-exceeds-balance-${tokenAddr}`,
 							},
 						);
 						return;

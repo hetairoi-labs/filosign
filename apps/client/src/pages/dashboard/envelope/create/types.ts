@@ -4,9 +4,10 @@ export type Recipient = {
 	email: string;
 	walletAddress?: string;
 	role: "signer" | "viewer";
-	incentive?: {
+	invoice?: {
 		token: string;
 		amount: string;
+		memo: string;
 	};
 };
 

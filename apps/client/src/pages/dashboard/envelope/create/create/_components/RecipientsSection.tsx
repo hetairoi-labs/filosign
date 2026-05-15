@@ -1,4 +1,5 @@
 import { useUserProfileByQuery } from "@filosign/react/hooks";
+import { validateInvoiceMemo } from "@filosign/shared";
 import {
 	CaretDownIcon,
 	CheckIcon,
@@ -6,8 +7,8 @@ import {
 	TrashIcon,
 	UserIcon,
 	UsersIcon,
-	XIcon,
 } from "@phosphor-icons/react";
+import { useFundWallet } from "@privy-io/react-auth";
 import { motion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -15,10 +16,10 @@ import {
 	erc20Abi,
 	formatUnits,
 	getAddress,
-	isAddress,
+	parseUnits,
 } from "viem";
-import { useAccount, useReadContract } from "wagmi";
-import { erc20DisplayForChain, SUPPORTED_TOKENS } from "@/src/constants";
+import { useAccount, useChainId, useReadContract } from "wagmi";
+import { defaultChain, SUPPORTED_TOKENS } from "@/src/constants";
 import { Avatar, AvatarFallback } from "@/src/lib/components/ui/avatar";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
@@ -27,6 +28,14 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 } from "@/src/lib/components/ui/collapsible";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/src/lib/components/ui/dialog";
 import { Input } from "@/src/lib/components/ui/input";
 import { Label } from "@/src/lib/components/ui/label";
 import {
@@ -36,11 +45,13 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@/src/lib/components/ui/select";
+import { Textarea } from "@/src/lib/components/ui/textarea";
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@/src/lib/components/ui/tooltip";
+import { safeAsync } from "@/src/lib/utils/safe";
 import { cn } from "@/src/lib/utils/utils";
 import { initialsFromName } from "@/src/pages/dashboard/connections/_components/contact-utils";
 import type { Recipient } from "../../types";
@@ -285,9 +296,8 @@ function CompactRecipientCard({
 	const isRegisteredOnFilosign = Boolean(queryEmail) && profileQuery.isSuccess;
 	const isCheckingProfile = Boolean(queryEmail) && profileQuery.isPending;
 
-	const [showIncentive, setShowIncentive] = useState(
-		!!recipient.incentive?.token,
-	);
+	const usdc = SUPPORTED_TOKENS[0];
+	const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
 
 	const flushEmailLookup = () => {
 		const raw = recipient.email.trim().toLowerCase();
@@ -336,35 +346,30 @@ function CompactRecipientCard({
 		onUpdate,
 	]);
 
-	const shouldClearIncentive =
+	const shouldClearInvoice =
 		invalidEmailSyntax || (Boolean(queryEmail) && profileQuery.isError);
 
 	useEffect(() => {
-		if (!recipient.incentive?.token) return;
+		if (!recipient.invoice?.token) return;
 		if (isCheckingProfile) return;
 		if (isRegisteredOnFilosign) return;
-		if (profileQuery.isError || shouldClearIncentive) {
-			onUpdate(index, { incentive: { token: "", amount: "" } });
-			setShowIncentive(false);
+		if (profileQuery.isError || shouldClearInvoice) {
+			onUpdate(index, { invoice: { token: "", amount: "", memo: "" } });
+			setInvoiceDialogOpen(false);
 		}
 	}, [
 		isCheckingProfile,
 		isRegisteredOnFilosign,
 		profileQuery.isError,
-		shouldClearIncentive,
-		recipient.incentive?.token,
+		shouldClearInvoice,
+		recipient.invoice?.token,
 		index,
 		onUpdate,
 	]);
 
-	const tokenSymbol = useMemo(() => {
-		if (!recipient.incentive?.token) return null;
-		const token = SUPPORTED_TOKENS.find(
-			(t) =>
-				t.address.toLowerCase() === recipient.incentive?.token?.toLowerCase(),
-		);
-		return token?.symbol || "Token";
-	}, [recipient.incentive?.token]);
+	const hasInvoice =
+		Boolean(recipient.invoice?.token?.trim()) &&
+		Boolean(recipient.invoice?.amount?.trim());
 
 	const showAvatarUserIcon = !recipient.name.trim() && !recipient.email.trim();
 	const avatarInitials = initialsFromName(
@@ -491,13 +496,13 @@ function CompactRecipientCard({
 						</div>
 
 						<div className="flex flex-wrap items-center gap-2">
-							{recipient.incentive?.token ? (
+							{hasInvoice ? (
 								<Badge
 									variant="secondary"
 									className="h-5 gap-1 border border-border/50 bg-muted/40 px-2 text-[10px] font-medium text-foreground/85"
 								>
 									<CoinsIcon className="size-3" weight="fill" />
-									{recipient.incentive.amount || "0"} {tokenSymbol}
+									{recipient.invoice?.amount || "0"} USD · {usdc.symbol}
 								</Badge>
 							) : null}
 							{isRegisteredOnFilosign ? (
@@ -506,19 +511,10 @@ function CompactRecipientCard({
 									variant="outline"
 									size="sm"
 									className="gap-1.5 border-border/60 shadow-none"
-									onClick={() => setShowIncentive(!showIncentive)}
+									onClick={() => setInvoiceDialogOpen(true)}
 								>
-									{showIncentive ? (
-										<>
-											<XIcon className="size-3.5" weight="bold" />
-											Hide incentive
-										</>
-									) : (
-										<>
-											<CoinsIcon className="size-3.5" weight="regular" />
-											Add incentive
-										</>
-									)}
+									<CoinsIcon className="size-3.5" weight="regular" />
+									{hasInvoice ? "Edit invoice" : "Attach invoice"}
 								</Button>
 							) : null}
 						</div>
@@ -546,287 +542,328 @@ function CompactRecipientCard({
 				</div>
 			</div>
 
-			{showIncentive && isRegisteredOnFilosign ? (
-				<IncentiveSection
-					index={index}
-					recipient={recipient}
-					onUpdate={(updates) => onUpdate(index, updates)}
-					onClose={() => setShowIncentive(false)}
-				/>
-			) : null}
+			<InvoiceAttachDialog
+				open={invoiceDialogOpen}
+				onOpenChange={setInvoiceDialogOpen}
+				recipient={recipient}
+				onSave={(invoice) => onUpdate(index, { invoice })}
+				onClear={() => {
+					onUpdate(index, { invoice: { token: "", amount: "", memo: "" } });
+					setInvoiceDialogOpen(false);
+				}}
+			/>
 		</motion.div>
 	);
 }
 
-interface IncentiveSectionProps {
-	index: number;
+interface InvoiceAttachDialogProps {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
 	recipient: Recipient;
-	onUpdate: (updates: Partial<Recipient>) => void;
-	onClose: () => void;
+	onSave: (invoice: NonNullable<Recipient["invoice"]>) => void;
+	onClear: () => void;
 }
 
-function IncentiveSection({
-	index,
+function InvoiceAttachDialog({
+	open,
+	onOpenChange,
 	recipient,
-	onUpdate,
-	onClose,
-}: IncentiveSectionProps) {
-	const baseId = `recipient-${index}-incentive`;
-
-	const selectedIncentiveToken = useMemo(() => {
-		const addr = recipient.incentive?.token;
-		if (!addr) return null;
-		return (
-			SUPPORTED_TOKENS.find(
-				(t) => t.address.toLowerCase() === addr.toLowerCase(),
-			) ?? null
-		);
-	}, [recipient.incentive?.token]);
-
-	const hasIncentiveValues =
-		Boolean(recipient.incentive?.token?.trim()) ||
-		Boolean(recipient.incentive?.amount?.trim());
-
-	return (
-		<div className="border-t border-border/50 bg-muted/10 px-5 py-4">
-			<div className="mb-4 flex items-start justify-between gap-3">
-				<div className="space-y-1">
-					<p className="text-sm font-medium text-foreground/90">
-						Attach incentive
-					</p>
-					<p className="text-xs leading-relaxed text-muted-foreground">
-						Optional reward for this recipient when they complete signing.
-					</p>
-				</div>
-				<div className="flex shrink-0 items-center gap-0.5">
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						disabled={!hasIncentiveValues}
-						className="size-8 shrink-0 p-0 text-muted-foreground hover:text-destructive disabled:pointer-events-none disabled:opacity-40"
-						aria-label="Clear incentive"
-						title="Clear incentive"
-						onClick={() =>
-							onUpdate({
-								incentive: { token: "", amount: "" },
-							})
-						}
-					>
-						<TrashIcon className="size-4" weight="regular" />
-					</Button>
-					<Button
-						type="button"
-						variant="ghost"
-						size="sm"
-						className="size-8 shrink-0 p-0 text-muted-foreground hover:text-foreground"
-						aria-label="Close incentive section"
-						title="Close"
-						onClick={onClose}
-					>
-						<XIcon className="size-4" weight="bold" />
-					</Button>
-				</div>
-			</div>
-
-			<div className="grid gap-4 sm:grid-cols-2">
-				<div className="space-y-1.5">
-					<Label htmlFor={`${baseId}-token`} className={FIELD_LABEL_CLASS}>
-						Token
-					</Label>
-					<Select
-						value={recipient.incentive?.token || "none"}
-						onValueChange={(val) => {
-							if (val === "none") {
-								onUpdate({
-									incentive: { token: "", amount: "" },
-								});
-							} else if (val && isAddress(val)) {
-								onUpdate({
-									incentive: {
-										token: getAddress(val),
-										amount: recipient.incentive?.amount || "",
-									},
-								});
-							}
-						}}
-					>
-						<SelectTrigger
-							id={`${baseId}-token`}
-							className={cn(FIELD_CONTROL_CLASS, "w-full")}
-						>
-							{selectedIncentiveToken ? (
-								<span className="flex min-w-0 flex-1 items-center gap-2 text-left">
-									<img
-										src={selectedIncentiveToken.icon}
-										alt=""
-										className="size-4 shrink-0 rounded-sm"
-									/>
-									<span className="min-w-0 truncate text-sm">
-										<span className="font-medium text-foreground">
-											{selectedIncentiveToken.symbol}
-										</span>
-										<span className="text-muted-foreground">
-											{" "}
-											· {selectedIncentiveToken.name}
-										</span>
-									</span>
-								</span>
-							) : recipient.incentive?.token ? (
-								<span className="flex min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
-									{
-										erc20DisplayForChain(recipient.incentive.token as Address)
-											.label
-									}
-								</span>
-							) : (
-								<SelectValue placeholder="Select token" />
-							)}
-						</SelectTrigger>
-						<SelectContent>
-							<SelectItem value="none">None</SelectItem>
-							{SUPPORTED_TOKENS.map((token) => (
-								<SelectItem key={token.address} value={token.address}>
-									<span className="flex min-w-0 items-center gap-2">
-										<img
-											src={token.icon}
-											alt=""
-											className="size-4 shrink-0 rounded-sm"
-										/>
-										<span className="min-w-0 truncate">
-											<span className="font-medium">{token.symbol}</span>
-											<span className="text-muted-foreground">
-												{" "}
-												· {token.name}
-											</span>
-										</span>
-									</span>
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-
-				<div className="space-y-1.5">
-					<Label htmlFor={`${baseId}-amount`} className={FIELD_LABEL_CLASS}>
-						Amount
-					</Label>
-					<Input
-						id={`${baseId}-amount`}
-						type="number"
-						inputMode="decimal"
-						value={recipient.incentive?.amount || ""}
-						onChange={(e) =>
-							onUpdate({
-								incentive: {
-									token: recipient.incentive?.token || "",
-									amount: e.target.value,
-								},
-							})
-						}
-						placeholder="0"
-						className={cn(
-							FIELD_CONTROL_CLASS,
-							"placeholder:text-muted-foreground/45",
-						)}
-						step="any"
-					/>
-				</div>
-			</div>
-
-			{recipient.incentive?.token ? (
-				<div className="mt-4 rounded-lg border border-border/60 bg-background p-3">
-					<p className="mb-2 text-[11px] leading-relaxed text-destructive">
-						You must hold enough tokens. They will be locked when sending.
-					</p>
-					{(() => {
-						const currentToken = SUPPORTED_TOKENS.find(
-							(t) =>
-								t.address.toLowerCase() ===
-								recipient.incentive?.token?.toLowerCase(),
-						);
-						if (!currentToken) return null;
-
-						return (
-							<div className="space-y-2">
-								<TokenBalanceChecker
-									tokenAddress={currentToken.address as Address}
-									decimals={currentToken.decimals}
-									symbol={currentToken.symbol}
-								/>
-								{currentToken.faucets && currentToken.faucets.length > 0 && (
-									<div className="flex flex-wrap gap-1.5 items-center text-[10px]">
-										<span className="text-muted-foreground">
-											Need {currentToken.symbol}?
-										</span>
-										{currentToken.faucets.map((faucet) => (
-											<a
-												key={faucet.url}
-												href={faucet.url}
-												target="_blank"
-												rel="noreferrer"
-												className="text-primary hover:underline"
-											>
-												{faucet.name}
-											</a>
-										))}
-									</div>
-								)}
-							</div>
-						);
-					})()}
-				</div>
-			) : null}
-		</div>
-	);
-}
-
-function TokenBalanceChecker({
-	tokenAddress,
-	decimals,
-	symbol,
-}: {
-	tokenAddress: Address;
-	decimals: number;
-	symbol: string;
-}) {
+	onSave,
+	onClear,
+}: InvoiceAttachDialogProps) {
+	const usdc = SUPPORTED_TOKENS[0];
+	const tokenAddress = usdc.address as Address;
 	const { address } = useAccount();
-	const { data, refetch, isFetching } = useReadContract({
+	const chainId = useChainId();
+	const { fundWallet } = useFundWallet();
+
+	const wrongChain = chainId !== defaultChain.id;
+	const balanceQueryEnabled = open && Boolean(address) && !wrongChain;
+
+	const [amount, setAmount] = useState("");
+	const [memo, setMemo] = useState("");
+	const [formError, setFormError] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!open) return;
+		setFormError(null);
+		const inv = recipient.invoice;
+		setAmount(inv?.amount?.trim() || "");
+		setMemo(inv?.memo ?? "");
+	}, [
+		open,
+		recipient.invoice?.amount,
+		recipient.invoice?.memo,
+		recipient.invoice?.token,
+	]);
+
+	const {
+		data: balance,
+		isFetching: balanceFetching,
+		isPending: balancePending,
+		isError: balanceIsError,
+		error: balanceQueryError,
+		refetch,
+	} = useReadContract({
 		address: tokenAddress,
 		abi: erc20Abi,
 		functionName: "balanceOf",
 		args: address ? [address] : undefined,
-		query: { enabled: false },
+		query: { enabled: balanceQueryEnabled },
 	});
 
-	const [hasChecked, setHasChecked] = useState(false);
+	const balanceReady =
+		balanceQueryEnabled &&
+		!balancePending &&
+		!balanceIsError &&
+		balance !== undefined;
 
-	const handleCheck = async () => {
-		await refetch();
-		setHasChecked(true);
+	const parsedAmountWei = useMemo(() => {
+		const trimmed = amount.trim();
+		if (!trimmed) return null;
+		try {
+			return parseUnits(trimmed, usdc.decimals);
+		} catch {
+			return null;
+		}
+	}, [amount, usdc.decimals]);
+
+	const amountExceedsBalance =
+		balanceReady &&
+		parsedAmountWei !== null &&
+		parsedAmountWei > 0n &&
+		parsedAmountWei > balance;
+
+	const saveBlockedByBalance = !balanceReady || amountExceedsBalance;
+
+	const handleSave = () => {
+		setFormError(null);
+		let normalizedMemo: string;
+		try {
+			normalizedMemo = validateInvoiceMemo(memo).normalized;
+		} catch (e) {
+			setFormError(e instanceof Error ? e.message : "Invalid memo");
+			return;
+		}
+		const trimmed = amount.trim();
+		if (!trimmed) {
+			setFormError("Enter an amount in USD");
+			return;
+		}
+		let amountWei: bigint;
+		try {
+			amountWei = parseUnits(trimmed, usdc.decimals);
+		} catch {
+			setFormError("Enter a valid USD amount");
+			return;
+		}
+		if (amountWei <= 0n) {
+			setFormError("Amount must be greater than zero");
+			return;
+		}
+		if (!balanceReady) {
+			setFormError(
+				"Your USDC balance must load before you can save. Connect your wallet, use the correct network, then tap Refresh.",
+			);
+			return;
+		}
+		if (amountWei > balance) {
+			setFormError("Amount exceeds your USDC balance.");
+			return;
+		}
+		onSave({
+			token: getAddress(tokenAddress),
+			amount: trimmed,
+			memo: normalizedMemo,
+		});
+		onOpenChange(false);
+	};
+
+	const handleFund = async () => {
+		if (!address) return;
+		setFormError(null);
+		const [, err] = await safeAsync(() =>
+			fundWallet({
+				address,
+				options: { chain: defaultChain, asset: "USDC" },
+			}),
+		);
+		if (err) setFormError(err.message);
+		else void refetch();
 	};
 
 	return (
-		<div className="flex flex-wrap items-center gap-3">
-			<Button
-				type="button"
-				variant="outline"
-				size="sm"
-				onClick={handleCheck}
-				disabled={isFetching || !address}
-				className="h-8 gap-1.5 border-border/60 px-3 text-sm shadow-none"
-			>
-				{isFetching ? "Checking…" : "Check balance"}
-			</Button>
-			{hasChecked && !isFetching && data !== undefined ? (
-				<span className="text-sm font-medium text-foreground/90">
-					<span className="mr-1 text-muted-foreground">Balance:</span>
-					{Number(formatUnits(data, decimals)).toLocaleString(undefined, {
-						maximumFractionDigits: 4,
-					})}{" "}
-					{symbol}
-				</span>
-			) : null}
-		</div>
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="max-w-md gap-4">
+				<DialogHeader>
+					<DialogTitle>Signer invoice (USDC)</DialogTitle>
+					<DialogDescription>
+						Describe what this payment is for and how much USDC to escrow for
+						this signer. Funds lock when you send the envelope.
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="space-y-3">
+					{wrongChain ? (
+						<p className="text-xs text-destructive">
+							Switch your wallet to {defaultChain.name} before funding or
+							sending.
+						</p>
+					) : null}
+
+					<div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border/60 bg-muted/10 px-3 py-2 text-xs">
+						<div className="space-y-0.5">
+							<p className="font-medium text-foreground/90">
+								Your USDC balance
+							</p>
+							<p className="text-muted-foreground">
+								{!address
+									? "Connect a wallet to see balance."
+									: wrongChain
+										? `Switch to ${defaultChain.name} to load balance.`
+										: balanceIsError
+											? (balanceQueryError?.shortMessage ??
+												balanceQueryError?.message ??
+												"Could not load balance.")
+											: balanceFetching && balance === undefined
+												? "Loading…"
+												: balance !== undefined
+													? `${Number(
+															formatUnits(balance, usdc.decimals),
+														).toLocaleString(undefined, {
+															maximumFractionDigits: 4,
+														})} ${usdc.symbol}`
+													: "—"}
+							</p>
+						</div>
+						<div className="flex flex-wrap gap-2">
+							<Button
+								type="button"
+								variant="outline"
+								size="sm"
+								className="h-8"
+								disabled={!address || wrongChain}
+								onClick={() => void refetch()}
+							>
+								Refresh
+							</Button>
+							<Button
+								type="button"
+								size="sm"
+								className="h-8"
+								disabled={!address || wrongChain}
+								onClick={() => void handleFund()}
+							>
+								Add funds
+							</Button>
+						</div>
+					</div>
+
+					{usdc.faucets && usdc.faucets.length > 0 ? (
+						<div className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
+							<span>Testnet faucet:</span>
+							{usdc.faucets.map((faucet) => (
+								<a
+									key={faucet.url}
+									href={faucet.url}
+									target="_blank"
+									rel="noreferrer"
+									className="text-primary hover:underline"
+								>
+									{faucet.name}
+								</a>
+							))}
+						</div>
+					) : null}
+
+					<div className="space-y-1.5">
+						<Label htmlFor="invoice-amount" className={FIELD_LABEL_CLASS}>
+							Amount (USD)
+						</Label>
+						<Input
+							id="invoice-amount"
+							type="text"
+							inputMode="decimal"
+							value={amount}
+							onChange={(e) => setAmount(e.target.value)}
+							placeholder="0.00"
+							className={cn(
+								FIELD_CONTROL_CLASS,
+								"placeholder:text-muted-foreground/45",
+							)}
+							autoComplete="off"
+						/>
+						{amountExceedsBalance ? (
+							<p className="text-xs text-destructive" role="status">
+								This amount is higher than your loaded USDC balance.
+							</p>
+						) : balanceQueryEnabled && !balanceReady && !balanceIsError ? (
+							<p className="text-xs text-muted-foreground" role="status">
+								Wait for your balance to load before saving, or tap Refresh.
+							</p>
+						) : null}
+					</div>
+
+					<div className="space-y-1.5">
+						<Label htmlFor="invoice-memo" className={FIELD_LABEL_CLASS}>
+							Memo / description
+						</Label>
+						<Textarea
+							id="invoice-memo"
+							value={memo}
+							onChange={(e) => setMemo(e.target.value)}
+							placeholder="e.g. Contractor payment for Q1 design work"
+							className={cn(FIELD_CONTROL_CLASS, "min-h-[88px] resize-y")}
+							rows={3}
+						/>
+					</div>
+
+					{formError ? (
+						<p className="text-xs text-destructive" role="alert">
+							{formError}
+						</p>
+					) : null}
+				</div>
+
+				<DialogFooter className="gap-2 sm:justify-between">
+					<Button
+						type="button"
+						variant="ghost"
+						size="sm"
+						className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+						onClick={() => {
+							onClear();
+						}}
+					>
+						Remove invoice
+					</Button>
+					<div className="flex flex-wrap gap-2 sm:justify-end">
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => onOpenChange(false)}
+						>
+							Cancel
+						</Button>
+						<Button
+							type="button"
+							size="sm"
+							disabled={saveBlockedByBalance}
+							title={
+								saveBlockedByBalance
+									? !balanceReady
+										? "Balance must load before you can save."
+										: "Amount cannot exceed your USDC balance."
+									: undefined
+							}
+							onClick={handleSave}
+						>
+							Save
+						</Button>
+					</div>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 }

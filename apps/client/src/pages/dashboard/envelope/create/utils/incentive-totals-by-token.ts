@@ -1,29 +1,35 @@
-import { type Address, getAddress } from "viem";
+import { type Address, getAddress, parseUnits } from "viem";
 import { erc20DisplayForChain, SUPPORTED_TOKENS } from "@/src/constants";
 import type { Recipient } from "../types";
 
 /**
- * Sums incentive `amount` values (smallest units per token) grouped by ERC-20 contract address.
+ * Sums per-recipient invoice `amount` values (human decimal strings) into wei,
+ * grouped by ERC-20 contract address.
  */
-export function incentiveTotalsByTokenWei(
+export function invoiceTotalsByTokenWei(
 	recipients: Recipient[],
 ): Map<Address, bigint> {
 	const byLower = new Map<string, bigint>();
 
 	for (const r of recipients) {
-		const inc = r.incentive;
-		if (!inc?.token?.trim() || !inc.amount?.trim()) continue;
+		const inv = r.invoice;
+		if (!inv?.token?.trim() || !inv.amount?.trim()) continue;
 
 		let token: Address;
 		try {
-			token = getAddress(inc.token as Address);
+			token = getAddress(inv.token as Address);
 		} catch {
 			continue;
 		}
 
+		const meta = SUPPORTED_TOKENS.find(
+			(t) => t.address.toLowerCase() === token.toLowerCase(),
+		);
+		const decimals = meta?.decimals ?? 18;
+
 		let amt: bigint;
 		try {
-			amt = BigInt(inc.amount.trim());
+			amt = parseUnits(inv.amount.trim(), decimals);
 		} catch {
 			continue;
 		}
@@ -41,7 +47,7 @@ export function incentiveTotalsByTokenWei(
 }
 
 /** Label for toasts: known symbol from {@link SUPPORTED_TOKENS}, else short address. */
-export function incentiveTokenLabel(tokenAddress: Address): string {
+export function invoiceTokenLabel(tokenAddress: Address): string {
 	const known = SUPPORTED_TOKENS.find(
 		(t) => t.address.toLowerCase() === tokenAddress.toLowerCase(),
 	);
