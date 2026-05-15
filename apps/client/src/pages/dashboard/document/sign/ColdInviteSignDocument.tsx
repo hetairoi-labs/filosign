@@ -17,6 +17,7 @@ import {
 import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
 import { Input } from "@/src/lib/components/ui/input";
 import { Label } from "@/src/lib/components/ui/label";
+import { Textarea } from "@/src/lib/components/ui/textarea";
 import { cn } from "@/src/lib/utils";
 import { ColdInviteNotForYouCallout } from "@/src/pages/onboarding/_components/ColdInviteNotForYouCallout";
 import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
@@ -186,7 +187,7 @@ export function ColdInviteSignDocument({ pieceCid, inviteToken }: Props) {
 											: f.wizardPanel === "redirecting"
 												? "Taking you to registration…"
 												: f.wizardPanel === "unlocking"
-													? "Confirm in your wallet if prompted. You only need a PIN if automatic unlock fails."
+													? "Confirm in your wallet if prompted. If automatic unlock fails, use your 24-word recovery phrase."
 													: "Loading your session…"}
 									</DialogDescription>
 								</DialogHeader>
@@ -194,30 +195,34 @@ export function ColdInviteSignDocument({ pieceCid, inviteToken }: Props) {
 									<InlineLoader size="md" />
 								</div>
 							</>
-						) : f.wizardPanel === "pin" ? (
+						) : f.wizardPanel === "filosignRecovery" ? (
 							<>
 								<DialogHeader>
-									<DialogTitle>PIN required</DialogTitle>
+									<DialogTitle>Recovery phrase</DialogTitle>
 									<DialogDescription>
-										Your wallet couldn’t unlock the session automatically. Enter
-										your Filosign PIN (the same as on the dashboard).
+										Your wallet could not unlock this session. Enter your
+										24-word Filosign recovery phrase (from onboarding).
 									</DialogDescription>
 								</DialogHeader>
 								<div className="space-y-2">
-									<Label htmlFor="cold-invite-pin-session">Filosign PIN</Label>
-									<Input
-										id="cold-invite-pin-session"
-										type="password"
-										inputMode="numeric"
+									<Label htmlFor="cold-invite-filosign-recovery">
+										Filosign recovery phrase
+									</Label>
+									<Textarea
+										id="cold-invite-filosign-recovery"
 										autoComplete="off"
-										value={f.pin}
+										spellCheck={false}
+										value={f.filosignRecoveryPhrase}
 										onChange={(e) =>
-											f.setPin(e.target.value.replace(/\D+/g, ""))
+											f.setFilosignRecoveryPhrase(e.target.value)
 										}
-										placeholder="6-10 digits"
+										placeholder="24-word recovery phrase"
+										rows={5}
 										className="font-mono text-sm"
 										onKeyDown={(e) => {
-											if (e.key === "Enter") void f.submitFilosignPin();
+											if (e.key === "Enter" && e.ctrlKey) {
+												void f.submitFilosignRecovery();
+											}
 										}}
 									/>
 								</div>
@@ -228,10 +233,13 @@ export function ColdInviteSignDocument({ pieceCid, inviteToken }: Props) {
 									type="button"
 									variant="primary"
 									className="w-full"
-									disabled={f.sdkLogin.isPending || f.pin.length < 6}
-									onClick={() => void f.submitFilosignPin()}
+									disabled={
+										f.isFilosignRecoveryPending ||
+										!f.filosignRecoveryPhrase.trim()
+									}
+									onClick={() => void f.submitFilosignRecovery()}
 								>
-									{f.sdkLogin.isPending ? (
+									{f.isFilosignRecoveryPending ? (
 										<>
 											<SpinnerIcon className="size-4 animate-spin mr-2" />
 											Unlocking…
