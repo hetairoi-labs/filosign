@@ -1,4 +1,4 @@
-import { LOCAL_MOCK_USDC_ADDRESS } from "@filosign/contracts/mock-usdc";
+import { LOCAL_MOCK_USDC_ADDRESS } from "@filosign/contracts";
 import { getAddress } from "viem";
 import { base, baseSepolia, hardhat } from "viem/chains";
 import env from "./env";

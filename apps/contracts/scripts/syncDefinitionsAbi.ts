@@ -4,12 +4,9 @@
  */
 import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
 
-const CONTRACTS_DIR = path.join(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"..",
-);
+/** Run from the contracts package root (`bun run scripts/syncDefinitionsAbi.ts`). */
+const CONTRACTS_DIR = process.cwd();
 const ART = path.join(CONTRACTS_DIR, "artifacts/src");
 
 const KEYS = [

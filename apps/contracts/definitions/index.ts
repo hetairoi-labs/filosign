@@ -5,6 +5,8 @@ import { definitions as testnet } from "./testnet.js";
 export type ChainDefinitionsEntry = (typeof local)[keyof typeof local];
 export type ChainKey = "local" | "testnet" | "mainnet";
 
+export { LOCAL_MOCK_USDC_ADDRESS } from "./mock-usdc.js";
+
 export const CHAIN_KEYS: readonly ChainKey[] = [
 	"local",
 	"testnet",

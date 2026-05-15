@@ -10,9 +10,6 @@
 	"exports": {
 		".": {
 			"default": "./exports.ts"
-		},
-		"./mock-usdc": {
-			"default": "./definitions/mock-usdc.ts"
 		}
 	},
 	"scripts": {
@@ -25,7 +22,8 @@
 		"deploy:mainnet": "bunx --bun hardhat run scripts/deploy.ts --network base",
 		"migrate": "bun run --env-file=.env.local compile && bun run --env-file=.env.local deploy",
 		"migrate:testnet": "bun run --env-file=.env.staging compile && bun run --env-file=.env.staging deploy:testnet",
-		"migrate:mainnet": "bun run --env-file=.env.production compile && bun run --env-file=.env.production deploy:mainnet"
+		"migrate:mainnet": "bun run --env-file=.env.production compile && bun run --env-file=.env.production deploy:mainnet",
+		"check-types": "bunx --bun tsc --noEmit"
 	},
 	"devDependencies": {
 		"@filosign/crypto-utils": "workspace:*",

@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { expect } from "chai";
 import hre from "hardhat";
 import { getAddress, type Hex, parseUnits } from "viem";
@@ -211,7 +212,7 @@ describe("FSManager platform fee", () => {
 		const pieceCid = "manager-fee-cid";
 
 		await registerFileAndAttach(ctx, pieceCid, commitment);
-		await ctx.manager.write.setPlatformFeeBps([250n], {
+		await ctx.manager.write.setPlatformFeeBps([250], {
 			account: ctx.server.account,
 		});
 
@@ -310,7 +311,7 @@ describe("FSManager platform fee", () => {
 		const commitment = `0x${"bb".repeat(32)}` as Hex;
 		const pieceCid = "withdraw-cid";
 		await registerFileAndAttach(ctx, pieceCid, commitment);
-		await ctx.manager.write.setPlatformFeeBps([500n], {
+		await ctx.manager.write.setPlatformFeeBps([500], {
 			account: ctx.server.account,
 		});
 		await completeSigning(ctx, pieceCid, commitment);
@@ -335,15 +336,16 @@ describe("FSManager platform fee", () => {
 		await registerFileAndAttach(ctx, pieceCid, commitment);
 		await completeSigning(ctx, pieceCid, commitment);
 
-		await expect(
+		await assert.rejects(
 			ctx.manager.write.releaseIncentives(
 				[
+					pieceCid,
 					[commitment],
 					[getAddress("0x0000000000000000000000000000000000000000")],
 				],
 				{ account: ctx.server.account },
 			),
-		).to.be.rejected;
+		);
 	});
 
 	it("rejects disallowed tokens on attach", async () => {
@@ -357,7 +359,7 @@ describe("FSManager platform fee", () => {
 		const pieceCid = "bad-token-cid";
 		await registerFileAndAttach(ctx, pieceCid, commitment);
 
-		await expect(
+		await assert.rejects(
 			ctx.manager.write.attachIncentive(
 				[
 					pieceCid,
@@ -368,6 +370,6 @@ describe("FSManager platform fee", () => {
 				],
 				{ account: ctx.server.account },
 			),
-		).to.be.rejected;
+		);
 	});
 });

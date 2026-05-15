@@ -1,5 +1,4 @@
-export { CHAIN_KEYS } from "./definitions/index";
-export { LOCAL_MOCK_USDC_ADDRESS } from "./definitions/mock-usdc";
+export { CHAIN_KEYS, LOCAL_MOCK_USDC_ADDRESS } from "./definitions/index";
 export {
 	type ChainKey,
 	type FilosignContracts,
