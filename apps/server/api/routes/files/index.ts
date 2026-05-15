@@ -1,3 +1,4 @@
+import { LOCAL_MOCK_USDC_ADDRESS } from "@filosign/contracts/mock-usdc";
 import {
 	computeCommitment,
 	jsonStringify,
@@ -5,16 +6,20 @@ import {
 	toBytes,
 } from "@filosign/crypto-utils/node";
 import {
+	assessInvoiceForAml,
 	buildRegistrationEmailCommitments,
 	completionsMerkleRootV1,
 	computePlacementCommitment,
 	FILE_ACK_COLD_CLAIM_SENTINEL_V1,
+	hashInvoiceMemo,
 	hashNormalizedSignerEmail,
 	hashPrivySubjectCommitment,
+	isCanonicalInvoiceUsdc,
 	LEAF_SCHEMA_VERSION_V1,
 	normalizePlacementRecipientEmail,
 	requiredFieldIdsForRecipientEmail,
 	sortedSignerCommitsForManifest,
+	validateInvoiceMemo,
 	zPlacementManifest,
 } from "@filosign/shared";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
@@ -24,6 +29,7 @@ import type { Address, Hex } from "viem";
 import { getAddress, zeroAddress } from "viem";
 import z from "zod";
 import { authenticated } from "@/api/middleware/auth";
+import config from "@/config";
 import {
 	buildComplianceBundleAndHash,
 	insertComplianceExportLog,
@@ -37,7 +43,7 @@ import { evmClient, fsContracts } from "@/lib/evm";
 import { bucket } from "@/lib/s3/client";
 import { getOrCreateUserDataset } from "@/lib/synapse";
 import { respond } from "@/lib/utils/respond";
-import { tryCatch } from "@/lib/utils/tryCatch";
+import tryCatchSync, { tryCatch } from "@/lib/utils/tryCatch";
 
 const { FSFileRegistry, FSManager } = fsContracts;
 
@@ -58,6 +64,14 @@ const {
 	shareApprovals,
 	users,
 } = db.schema;
+
+function isInvoiceTokenAllowed(chainId: number, token: Address): boolean {
+	if (isCanonicalInvoiceUsdc(chainId, token)) return true;
+	if (chainId === 31_337) {
+		return getAddress(token) === getAddress(LOCAL_MOCK_USDC_ADDRESS);
+	}
+	return false;
+}
 
 function isSenderAlreadyApprovedError(err: unknown): boolean {
 	const msg = err instanceof Error ? err.message : String(err);
@@ -1550,7 +1564,7 @@ export default new Hono()
 		);
 	})
 
-	.post("/:pieceCid/incentive", authenticated, async (ctx) => {
+	.post("/:pieceCid/invoice", authenticated, async (ctx) => {
 		const userWallet = ctx.var.userWallet;
 		const pieceCid = ctx.req.param("pieceCid");
 
@@ -1565,6 +1579,7 @@ export default new Hono()
 		const baseSchema = z.object({
 			signerEmailCommitment: zBytes32Hex.transform((s) => s as Hex),
 			token: zEvmAddress(),
+			memo: z.string(),
 			amount: z
 				.string()
 				.regex(/^[0-9]+$/, "amount must be a non-negative integer string"),
@@ -1589,7 +1604,16 @@ export default new Hono()
 			return respond.err(ctx, parsedBody.error.message, 400);
 		}
 
-		const { FSManager } = fsContracts;
+		const memoValidated = tryCatchSync(() =>
+			validateInvoiceMemo(parsedBody.data.memo),
+		);
+		if (memoValidated.error) {
+			return respond.err(ctx, memoValidated.error.message, 400);
+		}
+		const { normalized: invoiceMemo } = memoValidated.data;
+		if (assessInvoiceForAml(invoiceMemo) === "blocked") {
+			return respond.err(ctx, "Invoice memo blocked by policy", 400);
+		}
 
 		// Verify the file exists and the caller is the sender
 		const [fileRecord] = await db
@@ -1600,22 +1624,35 @@ export default new Hono()
 			return respond.err(ctx, "File not found", 404);
 		}
 		if (getAddress(fileRecord.sender) !== getAddress(userWallet)) {
-			return respond.err(
-				ctx,
-				"Only the file sender can attach incentives",
-				403,
-			);
+			return respond.err(ctx, "Only the file sender can attach invoices", 403);
 		}
 
 		const { signerEmailCommitment, token, amount } = parsedBody.data;
+		const tokenAddr = getAddress(token);
+		if (!isInvoiceTokenAllowed(config.runtimeChain.id, tokenAddr)) {
+			return respond.err(
+				ctx,
+				"Only canonical invoice USDC is allowed for this chain",
+				400,
+			);
+		}
+
+		const memoHash = hashInvoiceMemo({
+			memo: invoiceMemo,
+			pieceCid,
+			signerEmailCommitment,
+			amount,
+			token: tokenAddr,
+		});
 
 		const attachResult = await tryCatch(
 			parsedBody.data.usePermit
 				? FSManager.write.attachIncentiveWithPermit([
 						pieceCid,
 						signerEmailCommitment,
-						getAddress(token),
+						tokenAddr,
 						BigInt(amount),
+						memoHash,
 						BigInt(parsedBody.data.deadline),
 						parsedBody.data.v,
 						parsedBody.data.r,
@@ -1624,15 +1661,16 @@ export default new Hono()
 				: FSManager.write.attachIncentive([
 						pieceCid,
 						signerEmailCommitment,
-						getAddress(token),
+						tokenAddr,
 						BigInt(amount),
+						memoHash,
 					]),
 		);
 
 		if (attachResult.error) {
 			return respond.err(
 				ctx,
-				`Failed to attach incentive: ${attachResult.error}`,
+				`Failed to attach invoice: ${attachResult.error}`,
 				500,
 			);
 		}
@@ -1650,12 +1688,12 @@ export default new Hono()
 		if (ins.error) {
 			return respond.err(
 				ctx,
-				`Incentive attached on-chain but failed to record tx: ${ins.error}`,
+				`Invoice attached on-chain but failed to record tx: ${ins.error}`,
 				500,
 			);
 		}
 
-		return respond.ok(ctx, { txHash }, "Incentive attached successfully", 201);
+		return respond.ok(ctx, { txHash }, "Invoice attached successfully", 201);
 	})
 
 	.get("/:pieceCid/s3", authenticated, async (ctx) => {
