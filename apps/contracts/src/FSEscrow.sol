@@ -14,6 +14,16 @@ contract FSEscrow {
     mapping(address account => mapping(address token => uint256 amount))
         public balances;
 
+    /// @notice If true, `account` cannot deposit (pull) into escrow.
+    mapping(address account => bool) public senderBlacklisted;
+
+    /// @notice Per `(sender, token)` max amount per single deposit. `0` means use `defaultMaxDepositPerTx`.
+    mapping(address sender => mapping(address token => uint256 maxAmount))
+        public maxDepositOverride;
+
+    /// @notice Used when `maxDepositOverride[sender][token] == 0`. `type(uint256).max` = unlimited.
+    uint256 public defaultMaxDepositPerTx;
+
     event Deposited(
         address indexed token,
         address indexed account,
@@ -33,6 +43,41 @@ contract FSEscrow {
 
     constructor() {
         manager = msg.sender;
+        defaultMaxDepositPerTx = type(uint256).max;
+    }
+
+    function setSenderBlacklisted(
+        address account_,
+        bool blacklisted_
+    ) external onlyManager {
+        if (account_ == address(0)) revert ZeroAddress();
+        senderBlacklisted[account_] = blacklisted_;
+    }
+
+    function setDefaultMaxDepositPerTx(uint256 max_) external onlyManager {
+        defaultMaxDepositPerTx = max_;
+    }
+
+    function setMaxDepositOverride(
+        address sender_,
+        address token_,
+        uint256 maxAmount_
+    ) external onlyManager {
+        if (sender_ == address(0) || token_ == address(0)) revert ZeroAddress();
+        maxDepositOverride[sender_][token_] = maxAmount_;
+    }
+
+    function _enforceDepositRules(
+        address token,
+        address account,
+        uint256 amount
+    ) internal view {
+        if (senderBlacklisted[account]) revert SenderBlacklisted();
+        uint256 cap = maxDepositOverride[account][token];
+        if (cap == 0) {
+            cap = defaultMaxDepositPerTx;
+        }
+        if (cap != type(uint256).max && amount > cap) revert ExceedsMaxDeposit();
     }
 
     function depositWithPermit(
@@ -46,6 +91,7 @@ contract FSEscrow {
     ) external onlyManager {
         if (token == address(0) || account == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
+        _enforceDepositRules(token, account, amount);
 
         IERC20Permit(token).permit(
             account,
@@ -70,6 +116,7 @@ contract FSEscrow {
     ) external onlyManager {
         if (token == address(0) || account == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
+        _enforceDepositRules(token, account, amount);
 
         IERC20(token).safeTransferFrom(account, address(this), amount);
         balances[account][token] += amount;

@@ -36,9 +36,16 @@ contract FSManager is EIP712 {
         bytes32 indexed cidId,
         bytes32 indexed signerEmailCommitment,
         address token,
-        uint256 amount
+        uint256 amount,
+        bytes32 memoHash
     );
     event IncentivesReleased(bytes32 indexed cidId);
+    event IncentiveRefunded(
+        bytes32 indexed cidId,
+        bytes32 indexed signerEmailCommitment,
+        address token,
+        uint256 amount
+    );
 
     modifier onlyServer() {
         if (msg.sender != server) revert OnlyServer();
@@ -125,11 +132,31 @@ contract FSManager is EIP712 {
         emit SenderRevoked(msg.sender, sender_);
     }
 
+    function escrowSetSenderBlacklisted(
+        address account_,
+        bool blacklisted_
+    ) external onlyServer {
+        FSEscrow(escrow).setSenderBlacklisted(account_, blacklisted_);
+    }
+
+    function escrowSetDefaultMaxDepositPerTx(uint256 max_) external onlyServer {
+        FSEscrow(escrow).setDefaultMaxDepositPerTx(max_);
+    }
+
+    function escrowSetMaxDepositOverride(
+        address sender_,
+        address token_,
+        uint256 maxAmount_
+    ) external onlyServer {
+        FSEscrow(escrow).setMaxDepositOverride(sender_, token_, maxAmount_);
+    }
+
     function attachIncentive(
         string calldata pieceCid_,
         bytes32 signerEmailCommitment_,
         address token_,
-        uint256 amount_
+        uint256 amount_,
+        bytes32 memoHash_
     ) external onlyServer {
         bytes32 cidId = FSFileRegistry(fileRegistry).cidIdentifier(pieceCid_);
         address sender = FSFileRegistry(fileRegistry)
@@ -140,10 +167,17 @@ contract FSManager is EIP712 {
             cidId,
             signerEmailCommitment_,
             token_,
-            amount_
+            amount_,
+            memoHash_
         );
         FSEscrow(escrow).deposit(token_, sender, amount_);
-        emit IncentiveAttached(cidId, signerEmailCommitment_, token_, amount_);
+        emit IncentiveAttached(
+            cidId,
+            signerEmailCommitment_,
+            token_,
+            amount_,
+            memoHash_
+        );
     }
 
     function attachIncentiveWithPermit(
@@ -151,6 +185,7 @@ contract FSManager is EIP712 {
         bytes32 signerEmailCommitment_,
         address token_,
         uint256 amount_,
+        bytes32 memoHash_,
         uint256 deadline_,
         uint8 v_,
         bytes32 r_,
@@ -164,7 +199,8 @@ contract FSManager is EIP712 {
             cidId,
             signerEmailCommitment_,
             token_,
-            amount_
+            amount_,
+            memoHash_
         );
         FSEscrow(escrow).depositWithPermit(
             token_,
@@ -175,7 +211,48 @@ contract FSManager is EIP712 {
             r_,
             s_
         );
-        emit IncentiveAttached(cidId, signerEmailCommitment_, token_, amount_);
+        emit IncentiveAttached(
+            cidId,
+            signerEmailCommitment_,
+            token_,
+            amount_,
+            memoHash_
+        );
+    }
+
+    function refundSignerIncentive(
+        string calldata pieceCid_,
+        bytes32 signerEmailCommitment_
+    ) external onlyServer {
+        bytes32 cidId = FSFileRegistry(fileRegistry).cidIdentifier(pieceCid_);
+        if (FSFileRegistry(fileRegistry).allSigned(cidId))
+            revert FileAlreadyFullySigned();
+        if (FSFileRegistry(fileRegistry).hasSigned(cidId, signerEmailCommitment_))
+            revert IncentiveRefundSignerAlreadySigned();
+
+        (address token, uint256 amount, bool claimed) = FSFileRegistry(
+            fileRegistry
+        ).getSignerIncentive(cidId, signerEmailCommitment_);
+        if (token == address(0) || amount == 0) revert IncentiveNotAttached();
+        if (claimed) revert IncentiveAlreadyClaimed();
+
+        uint256 unlockTime = FSFileRegistry(fileRegistry).getIncentiveRefundNotBefore(
+            cidId,
+            signerEmailCommitment_
+        );
+        if (unlockTime == 0) revert IncentiveNotAttached();
+        if (block.timestamp < unlockTime) revert IncentiveRefundTooEarly();
+
+        address sender = FSFileRegistry(fileRegistry)
+            .fileRegistrations(cidId)
+            .sender;
+
+        FSFileRegistry(fileRegistry).clearSignerIncentive(
+            cidId,
+            signerEmailCommitment_
+        );
+        FSEscrow(escrow).release(token, sender, amount, sender);
+        emit IncentiveRefunded(cidId, signerEmailCommitment_, token, amount);
     }
 
     function releaseIncentives(

@@ -7,3 +7,5 @@ error ZeroAmount();
 error ZeroAddress();
 error InsufficientBalance();
 error TokenNotSupported();
+error SenderBlacklisted();
+error ExceedsMaxDeposit();

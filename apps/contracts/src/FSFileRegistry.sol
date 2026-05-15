@@ -12,6 +12,7 @@ contract FSFileRegistry is EIP712 {
 
     uint256 constant SIGNATURE_VALIDITY_PERIOD = 2 minutes;
     uint256 constant SIGNATURE_MAX_DRIFT_PERIOD = 1 minutes;
+    uint256 public constant INCENTIVE_REFUND_DELAY = 7 days;
 
     struct FileRegistration {
         bytes32 cidIdentifier;
@@ -32,6 +33,9 @@ contract FSFileRegistry is EIP712 {
         mapping(bytes32 => address) incentiveToken;
         mapping(bytes32 => uint256) incentiveAmount;
         mapping(bytes32 => bool) incentiveClaimed;
+        /// @notice Refund allowed when `block.timestamp` is **strictly after** this timestamp (attach + 7 days).
+        mapping(bytes32 => uint256) incentiveRefundNotBefore;
+        mapping(bytes32 => bytes32) incentiveMemoHash;
     }
 
     struct FileRegistrationView {
@@ -417,7 +421,8 @@ contract FSFileRegistry is EIP712 {
         bytes32 cidId,
         bytes32 signerEmailCommitment_,
         address token,
-        uint256 amount
+        uint256 amount,
+        bytes32 memoHash_
     ) external onlyManager {
         FileRegistration storage file = _fileRegistrations[cidId];
         if (file.timestamp == 0) revert FileNotRegistered();
@@ -429,6 +434,39 @@ contract FSFileRegistry is EIP712 {
             revert IncentiveAlreadyAttached();
         file.incentiveToken[signerEmailCommitment_] = token;
         file.incentiveAmount[signerEmailCommitment_] = amount;
+        file.incentiveRefundNotBefore[signerEmailCommitment_] =
+            block.timestamp + INCENTIVE_REFUND_DELAY;
+        file.incentiveMemoHash[signerEmailCommitment_] = memoHash_;
+    }
+
+    /// @notice Clears incentive slot after refund to sender (manager-only).
+    function clearSignerIncentive(
+        bytes32 cidId,
+        bytes32 signerEmailCommitment_
+    ) external onlyManager {
+        FileRegistration storage file = _fileRegistrations[cidId];
+        file.incentiveToken[signerEmailCommitment_] = address(0);
+        file.incentiveAmount[signerEmailCommitment_] = 0;
+        file.incentiveClaimed[signerEmailCommitment_] = false;
+        file.incentiveRefundNotBefore[signerEmailCommitment_] = 0;
+        file.incentiveMemoHash[signerEmailCommitment_] = bytes32(0);
+    }
+
+    function getIncentiveRefundNotBefore(
+        bytes32 cidId,
+        bytes32 signerEmailCommitment_
+    ) external view returns (uint256) {
+        return
+            _fileRegistrations[cidId].incentiveRefundNotBefore[
+                signerEmailCommitment_
+            ];
+    }
+
+    function getIncentiveMemoHash(
+        bytes32 cidId,
+        bytes32 signerEmailCommitment_
+    ) external view returns (bytes32) {
+        return _fileRegistrations[cidId].incentiveMemoHash[signerEmailCommitment_];
     }
 
     function getSignerIncentive(

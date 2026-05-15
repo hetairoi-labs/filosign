@@ -6,6 +6,7 @@ pragma solidity ^0.8.26;
 import "./IFSManager.sol";
 
 interface IFSFileRegistry {
+    function INCENTIVE_REFUND_DELAY() external view returns (uint256);
     struct FileRegistration {
         bytes32 cidIdentifier;
         address sender;
@@ -23,6 +24,8 @@ interface IFSFileRegistry {
         mapping(bytes32 => address) incentiveToken;
         mapping(bytes32 => uint256) incentiveAmount;
         mapping(bytes32 => bool) incentiveClaimed;
+        mapping(bytes32 => uint256) incentiveRefundNotBefore;
+        mapping(bytes32 => bytes32) incentiveMemoHash;
     }
 
     struct FileRegistrationView {
@@ -52,7 +55,10 @@ interface IFSFileRegistry {
     function validateFileSigningSignature(string calldata pieceCid_, address sender_, address signerWallet_, bytes32 signerEmailCommitment_, bytes32 privySubjectCommitment_, bytes20 dl3SignatureCommitment_, uint256 timestamp_, bytes calldata signature_, bytes32 completionsRoot_, uint8 leafSchemaVersion_) external view returns (bool);
     function validateFileAckSignature(string calldata pieceCid_, address sender_, address viewerWallet_, bytes32 viewerEmailCommitment_, bytes32 privySubjectCommitment_, uint256 timestamp_, bytes calldata signature_) external view returns (bool);
     function cidIdentifier(string calldata pieceCid_) external pure returns (bytes32);
-    function setSignerIncentive(bytes32 cidId, bytes32 signerEmailCommitment_, address token, uint256 amount) external;
+    function setSignerIncentive(bytes32 cidId, bytes32 signerEmailCommitment_, address token, uint256 amount, bytes32 memoHash_) external;
+    function clearSignerIncentive(bytes32 cidId, bytes32 signerEmailCommitment_) external;
+    function getIncentiveRefundNotBefore(bytes32 cidId, bytes32 signerEmailCommitment_) external view returns (uint256);
+    function getIncentiveMemoHash(bytes32 cidId, bytes32 signerEmailCommitment_) external view returns (bytes32);
     function getSignerIncentive(bytes32 cidId, bytes32 signerEmailCommitment_) external view returns (address token, uint256 amount, bool claimed);
     function markIncentiveClaimed(bytes32 cidId, bytes32 signerEmailCommitment_) external;
     function allSigned(bytes32 cidId) external view returns (bool);

@@ -19,3 +19,6 @@ error InvalidSignature();
 error IncentiveAlreadyAttached();
 error FileAlreadyFullySigned();
 error InvalidSignersCommitment();
+error IncentiveNotAttached();
+error IncentiveRefundTooEarly();
+error IncentiveRefundSignerAlreadySigned();

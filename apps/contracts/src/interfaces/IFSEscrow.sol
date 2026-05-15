@@ -6,8 +6,14 @@ pragma solidity ^0.8.26;
 interface IFSEscrow {
     function manager() external view returns (address);
     function balances(address key, address key1) external view returns (uint256);
+    function senderBlacklisted(address key) external view returns (bool);
+    function maxDepositOverride(address key, address key1) external view returns (uint256);
+    function defaultMaxDepositPerTx() external view returns (uint256);
     event Deposited();
     event Released();
+    function setSenderBlacklisted(address account_, bool blacklisted_) external;
+    function setDefaultMaxDepositPerTx(uint256 max_) external;
+    function setMaxDepositOverride(address sender_, address token_, uint256 maxAmount_) external;
     function depositWithPermit(address token, address account, uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s) external;
     function deposit(address token, address account, uint256 amount) external;
     function release(address token, address account, uint256 amount, address recipient) external;
