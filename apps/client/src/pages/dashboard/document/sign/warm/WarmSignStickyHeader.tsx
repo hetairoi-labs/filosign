@@ -18,7 +18,6 @@ import { formatUnits } from "viem";
 import { CopyButton } from "@/src/lib/components/custom/CopyButton";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
-import { cn } from "@/src/lib/utils";
 import type { WarmSignDocumentController } from "./useWarmSignDocument";
 
 export type WarmSignStickyHeaderProps = {
@@ -312,31 +311,28 @@ export function WarmSignStickyHeader({
 										<ArrowSquareOutIcon className="size-3.5" />
 									</a>
 								) : (
-									<span className="text-xs text-muted-foreground">
+									<div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
 										On-chain proof recorded
-									</span>
+									</div>
 								)}
 							</div>
 						)}
 						{incentive && incentive.amount > 0n && (
 							<div className="flex flex-wrap items-center gap-2 mt-2">
-								<Badge
-									variant="default"
-									className={cn(incentive.claimed ? "bg-accent" : "bg-chart-1")}
-								>
+								<Badge variant="default">
+									<img
+										src={tokenInfo?.icon}
+										alt={tokenInfo?.symbol}
+										className="size-4"
+									/>
 									<pre className="font-medium">
 										{formatUnits(incentive.amount, tokenInfo?.decimals ?? 18)}
 									</pre>
 									<pre className="font-medium">
 										{tokenInfo?.symbol ?? "Tokens"}
 									</pre>
-									<img
-										src={tokenInfo?.icon}
-										alt={tokenInfo?.symbol}
-										className="size-4"
-									/>
 								</Badge>
-								<div className="items-center text-xs font-medium text-ring hover:text-ring/90">
+								<div className="items-center text-xs font-medium text-muted-foreground hover:text-ring/90">
 									{incentive.claimed ? (
 										<span className="inline-flex items-center gap-1">
 											Distributed
