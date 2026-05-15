@@ -64,8 +64,8 @@ export const zChainTxKind = z.enum([
 	"file_signed",
 	"sender_approved",
 	"sender_revoked",
-	"incentive_attached",
-	"incentives_released",
+	"invoice_attached",
+	"invoices_released",
 ]);
 
 /** All values of {@link zChainTxKind} (for UI, PDF glossary coverage tests, etc.). */
