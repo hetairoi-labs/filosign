@@ -1,6 +1,6 @@
 import { useFilosignContext } from "@filosign/react";
 import { useIsRegistered, useLogout } from "@filosign/react/hooks";
-import { SpinnerBallIcon } from "@phosphor-icons/react";
+import { SpinnerIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
@@ -156,7 +156,7 @@ export default function SignInPage() {
 									/>
 								</>
 							) : null}
-							<SpinnerBallIcon
+							<SpinnerIcon
 								className="size-10 animate-spin text-muted-foreground"
 								aria-hidden
 							/>
