@@ -25,7 +25,7 @@
 | Contracts ops | `bun run contracts -- …` |
 | Nuke deps | `bun run purge` then `bun install` |
 
-**`check`** = Biome `--write` + types. **`sanity`** = `check --ci --types` (read-only) + turbo test excluding `@filosign/contracts`. **`test`** = all packages with tests (includes contracts). CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (`sanity` + parallel `contracts` job). Pre-push: `.husky/pre-push` → `sanity`.
+**`check`** = Biome `--write` + types. **`sanity`** = `check --ci --types` (read-only) + turbo test excluding `@filosign/contracts`. **`test`** = all packages with tests (includes contracts). CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (`sanity` + parallel `contracts` job). Pre-push (husky): `scripts/prepush.ts` → `check --lint` then `sanity` (aborts if Biome wrote files).
 
 ## Entrypoints
 
@@ -59,7 +59,7 @@ Default: `biome check --write .` + `turbo check-types --filter=@filosign/*`.
 | `--types` | turbo `check-types`; scope: `--server`, `server`, … |
 | `--ci --types` | sanity’s check step |
 
-Biome = whole repo; scope args affect **`--types` only**. Pipeline must not use default `check` (writes). Local: `check` → commit → `sanity`.
+Biome = whole repo; scope args affect **`--types` only**. Pipeline must not use default `check` (writes). Local: `check` → commit → `sanity`. On `git push`, husky runs `scripts/prepush.ts` (lint write, then sanity).
 
 ## `sanity`
 

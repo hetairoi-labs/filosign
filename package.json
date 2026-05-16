@@ -15,7 +15,8 @@
 		"test": "bun run scripts/test.ts",
 		"check": "bun run scripts/check.ts",
 		"sanity": "bun run scripts/sanity.ts",
-		"purge": "./scripts/shell/purge.sh"
+		"purge": "./scripts/shell/purge.sh",
+		"prepare": "husky"
 	},
 	"engines": {
 		"bun": ">=1.3.13",
