@@ -152,3 +152,83 @@ export async function signRegisterFileSignature(args: {
 		},
 	});
 }
+
+/** EIP-712 `ApproveSender` for FSManager — recipient signs approval of sender. */
+export async function signApproveSender(args: {
+	wallet: WalletClient;
+	managerAddress: Address;
+	chainId: number;
+	recipient: Address;
+	sender: Address;
+	nonce: bigint;
+	deadline: bigint;
+}): Promise<Hex> {
+	return args.wallet.signTypedData({
+		account: args.wallet.account as Account,
+		domain: {
+			name: "FSManager",
+			version: "1",
+			chainId: args.chainId,
+			verifyingContract: args.managerAddress,
+		},
+		types: {
+			ApproveSender: [
+				{ name: "recipient", type: "address" },
+				{ name: "sender", type: "address" },
+				{ name: "nonce", type: "uint256" },
+				{ name: "deadline", type: "uint256" },
+			],
+		},
+		primaryType: "ApproveSender",
+		message: {
+			recipient: args.recipient,
+			sender: args.sender,
+			nonce: args.nonce,
+			deadline: args.deadline,
+		},
+	});
+}
+
+/** OZ `ERC20Permit` for MockUSDCToken (`name`: Mock USD Coin). */
+export async function signMockUsdcPermit(args: {
+	wallet: WalletClient;
+	tokenAddress: Address;
+	chainId: number;
+	owner: Address;
+	spender: Address;
+	value: bigint;
+	nonce: bigint;
+	deadline: bigint;
+}): Promise<{ v: number; r: Hex; s: Hex }> {
+	const sig = await args.wallet.signTypedData({
+		account: args.wallet.account as Account,
+		domain: {
+			name: "Mock USD Coin",
+			version: "1",
+			chainId: args.chainId,
+			verifyingContract: args.tokenAddress,
+		},
+		types: {
+			Permit: [
+				{ name: "owner", type: "address" },
+				{ name: "spender", type: "address" },
+				{ name: "value", type: "uint256" },
+				{ name: "nonce", type: "uint256" },
+				{ name: "deadline", type: "uint256" },
+			],
+		},
+		primaryType: "Permit",
+		message: {
+			owner: args.owner,
+			spender: args.spender,
+			value: args.value,
+			nonce: args.nonce,
+			deadline: args.deadline,
+		},
+	});
+	const r = `0x${sig.slice(2, 66)}` as Hex;
+	const s = `0x${sig.slice(66, 130)}` as Hex;
+	let v = Number.parseInt(sig.slice(130, 132), 16);
+	if (v < 27) v += 27;
+	return { v, r, s };
+}
