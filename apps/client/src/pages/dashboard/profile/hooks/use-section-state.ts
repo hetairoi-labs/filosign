@@ -1,8 +1,4 @@
-import {
-	useUpdateUserAvatar,
-	useUpdateUserProfile,
-} from "@filosign/react/hooks";
-import { useQueryClient } from "@tanstack/react-query";
+import { useUpdateUserProfile } from "@filosign/react/hooks";
 import { useCallback, useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
@@ -42,9 +38,7 @@ export const useSectionState = (
 	form: UseFormReturn<ProfileForm>,
 	originalValues: ProfileForm,
 ) => {
-	const queryClient = useQueryClient();
 	const updateUserProfile = useUpdateUserProfile();
-	const updateUserAvatar = useUpdateUserAvatar();
 
 	const [state, setState] = useState<SectionState>({
 		isSaving: false,
@@ -134,12 +128,9 @@ export const useSectionState = (
 
 			const avatarFile = dataUrlToFile(picValue, "avatar.webp");
 
-			await updateUserAvatar
+			await updateUserProfile
 				.mutateAsync({ avatar: avatarFile })
 				.then(() => {
-					// `useUserProfile` fetches `queryKey: ["user"]`; avatar mutations don’t invalidate it.
-					void queryClient.invalidateQueries({ queryKey: ["user"] });
-
 					setHasChangesState(false);
 					setState({ isSaving: false, isSaved: true });
 				})
@@ -150,7 +141,7 @@ export const useSectionState = (
 					toast.error(errorMessage);
 				});
 		}
-	}, [sectionKey, form, queryClient, updateUserAvatar, updateUserProfile]);
+	}, [sectionKey, form, updateUserProfile]);
 
 	return { state, hasChanges: hasChangesState, save };
 };
