@@ -2,13 +2,13 @@ import {
 	useAcceptedPeople,
 	useApproveSender,
 	useCancelRequest,
-	useProfilesByAddresses,
 	useReceivableFrom,
 	useReceivedRequests,
 	useRejectRequest,
 	useSendableTo,
 	useSentRequests,
-} from "@filosign/react/hooks";
+} from "@filosign/react/sharing";
+import { useProfilesByAddresses } from "@filosign/react/users";
 import { MagnifyingGlassIcon, PlusIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { type ComponentProps, useMemo, useState } from "react";
