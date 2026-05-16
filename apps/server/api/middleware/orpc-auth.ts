@@ -5,7 +5,6 @@ import env from "@/env";
 import db from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { verifyJwt } from "@/lib/utils/jwt";
-import { respond } from "@/lib/utils/respond";
 import tryCatchSync, { tryCatch } from "@/lib/utils/tryCatch";
 
 const ORPC_PATH_PREFIXES = ["/api/rpc", "/api/api-reference"] as const;
@@ -16,10 +15,7 @@ function touchesOrpcUrls(pathname: string) {
 	);
 }
 
-/**
- * Sets `userWallet` when Authorization is valid (mirrors authenticated touch behavior).
- * Only runs on oRPC/OpenAPI-reference paths so other /api routes keep existing semantics.
- */
+/** Optional JWT → `userWallet`. Invalid/expired Bearer is ignored so RPC returns native `UNAUTHORIZED` from procedures instead of Hono `{ success:false }`. */
 export async function optionalJwtWalletForOrpc(c: Context, next: Next) {
 	const pathname = new URL(c.req.url).pathname;
 	if (!touchesOrpcUrls(pathname)) return next();
@@ -29,15 +25,20 @@ export async function optionalJwtWalletForOrpc(c: Context, next: Next) {
 
 	const token = authHeader.slice(7);
 	const verified = tryCatchSync(() => verifyJwt(token));
+
 	if (verified.error) {
 		if (env.DEBUG) {
 			console.error("[orpc-auth] JWT verify failed:", verified.error);
 		}
-		return respond.err(c, "Invalid token format", 401);
+		return next();
 	}
+
 	const payload = verified.data;
 	if (!payload?.sub) {
-		return respond.err(c, "Invalid or expired token", 401);
+		if (env.DEBUG) {
+			console.error("[orpc-auth] JWT missing sub");
+		}
+		return next();
 	}
 
 	const touchRes = await tryCatch(
