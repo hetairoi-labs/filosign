@@ -133,7 +133,8 @@ export async function userProfileUpdate(wallet: Address, body: unknown) {
 		const exists = await bucket.exists(expectedKey);
 		if (!exists) {
 			throw new ORPCError("BAD_REQUEST", {
-				message: "Avatar upload not found — PUT the WebP to the issued URL first",
+				message:
+					"Avatar upload not found — PUT the WebP to the issued URL first",
 			});
 		}
 		await db.updateUserFieldWithLog({
