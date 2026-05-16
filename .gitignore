@@ -134,7 +134,6 @@ dist/
 .vercel
 
 docs/
-!docs/SCRIPTS.md
 
 packages/client/db/filosign.db-shm
 packages/client/db/filosign.db-wal

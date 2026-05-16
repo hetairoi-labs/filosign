@@ -136,7 +136,13 @@ Mount in `[api/routes/router.ts](apps/server/api/routes/router.ts)`: **`optional
 4. Client: UI + `@filosign/react` imports only.
 5. Verify: preamble + `bun check`, tsc, `bun run test`, forge when contracts change.
 
-Scripts: `web:dev:*`, `client:dev:*`, `server:dev:*`, `contracts:migrate`, `contracts:test`, GitHub Actions workflow `contracts.yml`, `db:push:*`, `test` (`[package.json](package.json)`).
+Scripts: [`project/SCRIPTS.md`](project/SCRIPTS.md) — `bun run dev -- --local|testnet`, `bun run db -- push|purge`, `sanity:check`, Turbo `check-types`/`test`/`build` (`[package.json](package.json)`). Local notes only: `docs/` (gitignored).
+
+**CI / quality (run before merge; Dokploy deploys green `main` only):**
+
+- `bun run sanity:check` — Biome + Turbo `check-types` + unit tests (excludes Hardhat; cached via `.turbo/`)
+- `bun run sanity:check:full` — above + `apps/contracts` Hardhat suite
+- GitHub Actions: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (`sanity` + parallel `contracts` job)
 
 ## Commits
 

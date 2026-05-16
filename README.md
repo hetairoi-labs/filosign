@@ -26,7 +26,8 @@ packages/
   crypto-utils/       Encryption, KEM, signatures, hashing, encoding
   shared/             Shared schemas and helpers
   test/               Local SDK/protocol test harness
-docs/                 Product and marketing notes
+project/              Committed project docs (e.g. scripts reference)
+docs/                 Local-only notes (gitignored)
 ```
 
 ## Architecture
@@ -92,24 +93,25 @@ Install dependencies:
 bun install
 ```
 
-Push the database schema:
+Push the database schema (local):
 
 ```bash
-bun run db:push
+bun run db -- push local
 ```
 
-Run the web app and API together:
+Run the local stack (Hardhat bootstrap + client):
 
 ```bash
-bun run web:dev
+bun run dev -- --local
 ```
 
-Run services individually:
+Run client + API against staging:
 
 ```bash
-bun run client:dev
-bun run server:dev
+bun run dev -- --testnet
 ```
+
+See [`project/SCRIPTS.md`](project/SCRIPTS.md) for all dev/db commands.
 
 Run the local test harness:
 
@@ -147,16 +149,15 @@ Client configuration includes:
 
 | Command | Description |
 | --- | --- |
-| `bun run web:dev` | Run client and server together. |
-| `bun run client:dev` | Start the client dev server. |
-| `bun run client:build` | Build the client. |
-| `bun run server:dev` | Start the API server with hot reload. |
-| `bun run server:start` | Start the API server. |
-| `bun run server:compile` | Compile the API server to a Bun binary. |
-| `bun run db:push` | Push the Drizzle schema. |
-| `bun run db:purge` | Clear local database data. |
-| `bun run test:dev` | Start the SDK/protocol test harness. |
-| `bun run check` | Run Biome checks and formatting. |
+| `bun run dev -- --local` | Local chain (`serloc`) + client. |
+| `bun run dev -- --local --full` | Above + Astro marketing site. |
+| `bun run dev -- --testnet` | Client + server (staging env). |
+| `bun run db -- push local` | Push Drizzle schema (local). |
+| `bun run sanity:check` | Lint + types + tests (CI gate). |
+| `bun run test:dev` | SDK/protocol test harness. |
+| `bun run check` | Biome (repo root). |
+
+More commands and migration from old script names: [`project/SCRIPTS.md`](project/SCRIPTS.md).
 
 ## Contracts
 
