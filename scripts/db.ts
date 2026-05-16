@@ -5,26 +5,25 @@
  * Usage:
  *   bun run db -- push local
  *   bun run db -- push testnet
- *   bun run db -- purge local
- *   bun run db -- purge testnet
+ *   bun run db -- purge local      clear schema + drizzle push (.env.local)
+ *   bun run db -- purge testnet    clear schema + drizzle push (.env.staging)
  *   bun run db -- --help
  */
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { packageRunCmd } from "./lib/bun-run-package.ts";
 
-const rootDir = path.resolve(
-	path.dirname(fileURLToPath(import.meta.url)),
-	"..",
-);
+import { die, exitOnHelpOrEmpty, runMain, scriptArgv } from "./lib/cli.ts";
+import { repoRoot } from "./lib/root.ts";
+import { packageRunCmd } from "./lib/run.ts";
+import { runInheritExit, runSequentialExit } from "./lib/spawn.ts";
+
+const rootDir = repoRoot(import.meta.url);
 
 const HELP = `
 Filosign database orchestrator (@filosign/server)
 
   bun run db -- push local      drizzle push (.env.local)
   bun run db -- push testnet    drizzle push (.env.staging)
-  bun run db -- purge local     clear DB (.env.local)
-  bun run db -- purge testnet   clear DB (.env.staging)
+  bun run db -- purge local     clear schema, then push (.env.local)
+  bun run db -- purge testnet   clear schema, then push (.env.staging)
 `.trim();
 
 type Action = "push" | "purge";
@@ -34,41 +33,31 @@ function scriptFor(action: Action, profile: Profile): string {
 	return `db:${action}:${profile}`;
 }
 
-async function main() {
-	const argv = process.argv.slice(2);
-
-	if (argv.includes("--help") || argv.includes("-h") || argv.length === 0) {
-		console.log(HELP);
-		process.exit(argv.length === 0 ? 1 : 0);
-	}
+runMain(async () => {
+	const argv = scriptArgv();
+	exitOnHelpOrEmpty(HELP, argv);
 
 	const action = argv[0] as Action;
 	const profile = argv[1] as Profile;
 
 	if (action !== "push" && action !== "purge") {
-		console.error(`Unknown action: ${action}`);
-		process.exit(1);
+		die(`Unknown action: ${action}`);
 	}
 	if (profile !== "local" && profile !== "testnet") {
-		console.error(`Unknown profile: ${profile}`);
-		process.exit(1);
+		die(`Unknown profile: ${profile}`);
 	}
 
-	const script = scriptFor(action, profile);
-	const proc = Bun.spawn({
-		cmd: packageRunCmd(rootDir, "@filosign/server", script),
-		cwd: rootDir,
-		stdout: "inherit",
-		stderr: "inherit",
-		stdin: "inherit",
-		env: process.env,
-	});
+	const server = "@filosign/server";
 
-	const code = await proc.exited;
-	process.exit(code ?? 1);
-}
+	if (action === "purge") {
+		await runSequentialExit(rootDir, [
+			packageRunCmd(rootDir, server, scriptFor("purge", profile)),
+			packageRunCmd(rootDir, server, scriptFor("push", profile)),
+		]);
+	}
 
-main().catch((err) => {
-	console.error(err);
-	process.exit(1);
+	await runInheritExit(
+		rootDir,
+		packageRunCmd(rootDir, server, scriptFor(action, profile)),
+	);
 });
