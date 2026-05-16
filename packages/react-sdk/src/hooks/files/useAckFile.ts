@@ -6,11 +6,11 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAddress } from "viem";
 import { useFilosignContext } from "../../context/useFilosignContext";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 import { useUserProfile } from "../users/useUserProfile";
 
 export function useAckFile() {
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 	const { contracts, wallet } = useFilosignContext();
 	const queryClient = useQueryClient();
 	const { data: userProfile } = useUserProfile();
@@ -19,11 +19,11 @@ export function useAckFile() {
 		mutationFn: async (args: { pieceCid: string }) => {
 			const { pieceCid } = args;
 
-			if (!auth || !contracts || !wallet) {
+			if (!isAuthed || !contracts || !wallet) {
 				throw new Error("not connected");
 			}
 
-			const fileResponse = await auth.rpc.files.piece.detail({
+			const fileResponse = await rpcQuery.files.piece.detail.call({
 				pieceCid,
 			});
 
@@ -93,7 +93,7 @@ export function useAckFile() {
 				},
 			});
 
-			await auth.rpc.files.piece.ack({
+			await rpcQuery.files.piece.ack.call({
 				pieceCid,
 				body: {
 					signature,
@@ -101,7 +101,11 @@ export function useAckFile() {
 				},
 			});
 
-			queryClient.refetchQueries({ queryKey: ["fsQ-file-info", pieceCid] });
+			void queryClient.invalidateQueries({
+				queryKey: rpcQuery.files.piece.detail.key({
+					input: { pieceCid },
+				}),
+			});
 
 			return true;
 		},

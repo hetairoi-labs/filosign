@@ -1,10 +1,9 @@
 import { encryption, KEM, toBytes } from "@filosign/crypto-utils";
 import { decodeFileData, type PlacementManifest } from "@filosign/shared";
 import { useMutation } from "@tanstack/react-query";
-import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 import { getSessionSeed } from "../auth/session-seed";
-import { useAuthedApi } from "../auth/useAuthedApi";
 
 export type ViewFileArgs = {
 	pieceCid: string;
@@ -28,23 +27,22 @@ export type ViewFileResult = {
 
 export function useViewFile() {
 	const { contracts, wallet, runtime } = useFilosignContext();
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 
 	return useMutation<ViewFileResult, Error, ViewFileArgs>({
 		mutationFn: async (args) => {
 			const { pieceCid, kemCiphertext, encryptedEncryptionKey } = args;
 
-			if (!contracts || !wallet || !runtime || !auth) {
-				throw new Error("not conected iido");
+			if (!contracts || !wallet || !runtime || !isAuthed) {
+				throw new Error("not connected");
 			}
 
 			let data: Uint8Array;
 
 			try {
-				const s3Raw = await auth.rpc.files.piece.s3Url({ pieceCid });
-				const { presignedUrl } = z
-					.object({ presignedUrl: z.string() })
-					.parse(s3Raw);
+				const { presignedUrl } = await rpcQuery.files.piece.s3Url.call({
+					pieceCid,
+				});
 
 				const downloadResponse = await fetch(presignedUrl, {
 					method: "GET",

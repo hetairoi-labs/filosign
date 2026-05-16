@@ -19,12 +19,12 @@ import { getAddress } from "viem";
 import { useFilosignContext } from "../../context/useFilosignContext";
 import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useCryptoSeed } from "../auth";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 import { useUserProfile } from "../users/useUserProfile";
 
 export function useSignFile() {
 	const { contracts, wallet, wasm } = useFilosignContext();
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 	const { action: cryptoAction } = useCryptoSeed();
 	const { data: userProfile } = useUserProfile();
 
@@ -42,14 +42,15 @@ export function useSignFile() {
 			const timestamp = Math.floor(Date.now() / 1000);
 			const textEncoder = new TextEncoder();
 
-			if (!contracts || !wallet || !wasm.dilithium || !auth) {
+			if (!contracts || !wallet || !wasm.dilithium || !isAuthed) {
 				throw new Error("not connected");
 			}
 
 			await cryptoAction(async (seed: Uint8Array) => {
-				const fileResponse: PieceDetail = await auth.rpc.files.piece.detail({
-					pieceCid,
-				});
+				const fileResponse: PieceDetail =
+					await rpcQuery.files.piece.detail.call({
+						pieceCid,
+					});
 
 				const {
 					sender,
@@ -192,7 +193,7 @@ export function useSignFile() {
 						},
 					},
 				);
-				await auth.rpc.files.piece.sign({
+				await rpcQuery.files.piece.sign.call({
 					pieceCid,
 					body: {
 						signature,
