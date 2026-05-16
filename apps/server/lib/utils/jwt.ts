@@ -11,7 +11,7 @@ import {
 const zEvmAddress = z
 	.string()
 	.refine((value) => isAddress(value), {
-		message: "Invalid EVM address format",
+		error: "Invalid EVM address format",
 	})
 	.transform((value) => value as Address);
 
@@ -19,9 +19,9 @@ export const zJwtPayload = () =>
 	z.object({
 		iss: z.string(), // issuer
 		sub: zEvmAddress, // subject (wallet address)
-		iat: z.number(), // issued at
-		exp: z.number(), // expires at
-		nbf: z.number(), // not before
+		iat: z.int(), // issued at
+		exp: z.int(), // expires at
+		nbf: z.int(), // not before
 	});
 
 export type JwtPayload = z.infer<ReturnType<typeof zJwtPayload>>;

@@ -1,23 +1,33 @@
 import { signatures, toBytes } from "@filosign/crypto-utils/node";
+import { zHexString } from "@filosign/shared/zod";
 import { eq } from "drizzle-orm";
 import { Hono } from "hono";
 import {
 	type Address,
 	type Hash,
 	isAddress,
-	isHex,
 	keccak256,
 	numberToHex,
 } from "viem";
+import z from "zod";
 import { MINUTE } from "@/constants";
 import db from "@/lib/db";
 import { issueJwtToken } from "@/lib/utils/jwt";
 import { respond } from "@/lib/utils/respond";
 import { tryCatch } from "@/lib/utils/tryCatch";
+import { zodSafeParseMessage } from "@/lib/utils/zodHttp";
 
 const nonces: Record<Address, { nonce: Hash; validTill: number }> = {};
 
 const { users } = db.schema;
+
+const zAuthVerifyBody = z.object({
+	address: z.string().refine((v) => isAddress(v), {
+		error: "Invalid address",
+	}),
+	signature: zHexString(),
+});
+
 export default new Hono()
 
 	.get("/nonce", async (ctx) => {
@@ -35,14 +45,19 @@ export default new Hono()
 	})
 
 	.post("/verify", async (ctx) => {
-		const { address, signature } = await ctx.req.json();
+		let rawBody: unknown;
+		try {
+			rawBody = await ctx.req.json();
+		} catch {
+			return respond.err(ctx, "Invalid JSON body", 400);
+		}
 
-		if (!address || !isAddress(address)) {
-			return respond.err(ctx, "Missing or invalid address", 400);
+		const parsed = zAuthVerifyBody.safeParse(rawBody);
+		if (!parsed.success) {
+			return respond.err(ctx, zodSafeParseMessage(parsed.error), 400);
 		}
-		if (!signature || typeof signature !== "string" || !isHex(signature)) {
-			return respond.err(ctx, "Missing signature", 400);
-		}
+
+		const { address, signature } = parsed.data;
 
 		const msgData = nonces[address];
 		delete nonces[address];
