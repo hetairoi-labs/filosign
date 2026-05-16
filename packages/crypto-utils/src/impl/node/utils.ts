@@ -201,55 +201,13 @@ function stringifyReplacer(_: string, value: unknown) {
 		if (BigInt(asNumber) === value) return asNumber;
 		return value.toString();
 	}
-	if (value instanceof Uint8Array) {
-		// Convert Uint8Array to base64 string to reduce JSON size
-		if (typeof Buffer !== "undefined") {
-			return {
-				__type: "Uint8Array",
-				data: Buffer.from(value).toString("base64"),
-			};
-		} else {
-			let binary = "";
-			for (let i = 0; i < value.length; i++) {
-				const v = value[i];
-				if (!v) continue;
-				binary += String.fromCharCode(v);
-			}
-			return { __type: "Uint8Array", data: btoa(binary) };
-		}
-	}
-	return value;
-}
-
-function parseReviver(_: string, value: unknown) {
-	if (
-		value &&
-		typeof value === "object" &&
-		"__type" in value &&
-		value.__type === "Uint8Array" &&
-		"data" in value &&
-		typeof value.data === "string"
-	) {
-		// Convert base64 string back to Uint8Array
-		if (typeof Buffer !== "undefined") {
-			return new Uint8Array(Buffer.from(value.data, "base64"));
-		} else {
-			const binary = atob(value.data);
-			const bytes = new Uint8Array(binary.length);
-			for (let i = 0; i < binary.length; i++) {
-				bytes[i] = binary.charCodeAt(i);
-			}
-			return bytes;
-		}
-	}
 	return value;
 }
 
 export const jsonStringify = (obj: unknown): string =>
 	fjsStringify(JSON.parse(JSON.stringify(obj, stringifyReplacer)));
 
-export const jsonParse = (str: string): unknown =>
-	JSON.parse(str, parseReviver);
+export const jsonParse = (str: string): unknown => JSON.parse(str);
 
 export const jsonClone = <T>(obj: T): T => {
 	return jsonParse(jsonStringify(obj)) as T;

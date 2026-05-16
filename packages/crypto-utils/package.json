@@ -11,6 +11,7 @@
 		}
 	},
 	"scripts": {
+		"test": "bun test lib.test.ts",
 		"wasm:build": "wasm-pack build --target web --out-dir pkg; wasm-pack build --target nodejs --out-dir pkg-node;"
 	},
 	"devDependencies": {
