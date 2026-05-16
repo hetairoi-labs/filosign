@@ -15,6 +15,10 @@ import {
 import * as pieceHandlers from "@/api/handlers/files-piece";
 import { filesRegister } from "@/api/handlers/files-register";
 import * as sharingHandlers from "@/api/handlers/sharing-handlers";
+import {
+	storagePresignPut,
+	zStoragePresignPutInput,
+} from "@/api/handlers/storage-handlers";
 import { txProcessIndexerHash } from "@/api/handlers/tx";
 import * as userHandlers from "@/api/handlers/users-handlers";
 import { loadPlatformRuntime } from "@/lib/domain/platform-runtime";
@@ -51,6 +55,7 @@ import {
 	rpcSharingRequestInviteOutputSchema,
 	rpcSharingSendableToOutputSchema,
 	rpcSharingSentRequestsOutputSchema,
+	rpcStoragePresignPutOutputSchema,
 	rpcTxProcessIndexerHashOutputSchema,
 	rpcUserProfileLookupOutputSchema,
 	rpcUserProfileMeOutputSchema,
@@ -113,6 +118,14 @@ export const appRouter = {
 			.output(rpcTxProcessIndexerHashOutputSchema)
 			.handler(({ input }) =>
 				txProcessIndexerHash({ hash: input.hash }, input.body ?? {}),
+			),
+	},
+	storage: {
+		presignPut: authenticatedProcedure
+			.input(zStoragePresignPutInput)
+			.output(rpcStoragePresignPutOutputSchema)
+			.handler(({ context, input }) =>
+				storagePresignPut(context.userWallet, input),
 			),
 	},
 	files: {

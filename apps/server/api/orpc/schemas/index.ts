@@ -37,6 +37,7 @@ export {
 	rpcSharingSendableToOutputSchema,
 	rpcSharingSentRequestsOutputSchema,
 } from "./sharing-output";
+export { rpcStoragePresignPutOutputSchema } from "./storage-output";
 export { rpcTxProcessIndexerHashOutputSchema } from "./tx-output";
 export {
 	rpcUserProfileLookupOutputSchema,
