@@ -19,6 +19,7 @@
 		"server:dev:testnet": "bun run --cwd apps/server dev:testnet",
 		"server:compile": "bun run --cwd apps/server compile",
 		"server:start": "bun run --cwd apps/server start",
+		"server:test": "bun run --cwd apps/server test",
 		"contracts:test": "bun run --cwd apps/contracts test",
 		"contracts:migrate": "./scripts/migrate.sh",
 		"test:dev": "bun run --cwd packages/test dev",

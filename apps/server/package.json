@@ -1,5 +1,11 @@
 {
 	"name": "@filosign/server",
+	"type": "module",
+	"exports": {
+		".": "./index.ts",
+		"./api/orpc/router": "./api/orpc/router.ts",
+		"./api/orpc/context": "./api/orpc/context.ts"
+	},
 	"scripts": {
 		"dev:local": "bun run --env-file=.env.local --hot index.ts",
 		"dev:testnet": "bun run --env-file=.env.staging --hot index.ts",
@@ -19,12 +25,17 @@
 		"@filosign/crypto-utils": "workspace:*",
 		"@filosign/shared": "workspace:*",
 		"@filoz/synapse-sdk": "^0.40.3",
+		"@orpc/experimental-pino": "1.14.3",
+		"@orpc/openapi": "1.14.3",
+		"@orpc/server": "1.14.3",
+		"@orpc/zod": "1.14.3",
 		"@privy-io/node": "0.18.0",
 		"drizzle-orm": "0.44.7",
 		"fast-json-stable-stringify": "catalog:",
 		"hono": "catalog:",
 		"jsonwebtoken": "9.0.2",
 		"pg": "8.16.3",
+		"pino": "10.3.1",
 		"resend": "6.4.0",
 		"viem": "catalog:",
 		"zod": "catalog:"

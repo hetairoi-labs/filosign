@@ -33,6 +33,7 @@
 		"@tanstack/react-query": "catalog:"
 	},
 	"devDependencies": {
+		"@filosign/server": "workspace:*",
 		"@types/react": "catalog:"
 	}
 }
