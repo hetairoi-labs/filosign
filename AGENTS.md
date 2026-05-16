@@ -61,11 +61,11 @@ Mount: `[api/routes/router.ts](apps/server/api/routes/router.ts)` — `optionalJ
 2. Server: oRPC `api/orpc/` + handlers + thin routes + `fsContracts`.
 3. SDK: hooks + `useFilosignContext()`.
 4. Client: UI only, `@filosign/react`.
-5. Verify: [SCRIPTS.md](SCRIPTS.md) — `check`, `test`; contracts changes + `sanity --full` / Hardhat as needed.
+5. Verify: [SCRIPTS.md](SCRIPTS.md) — `check`, `test`; contract changes: `bun run sanity` (includes Hardhat) or `bun run sanity -- --fast` without Hardhat.
 
 ## Scripts & CI
 
-All commands: **[SCRIPTS.md](SCRIPTS.md)** (or `bun run <script> -- --help`). Pre-push + CI: `bun run sanity` ([ci.yml](.github/workflows/ci.yml) + parallel contracts job). Local format: `bun run check`. `docs/` is gitignored (local notes only).
+All commands: **[SCRIPTS.md](SCRIPTS.md)** (or `bun run <script> -- --help`). Pre-push + CI: `bun run sanity` ([ci.yml](.github/workflows/ci.yml)). Local format: `bun run check`. `docs/` is gitignored (local notes only).
 
 ## Commits
 

@@ -1,12 +1,13 @@
 #!/usr/bin/env bun
 /**
- * Sanity gate: check + test (CI / pre-push).
+ * Sanity gate: check + tests + Hardhat (CI / pre-push).
  *
  * Usage:
- *   bun run sanity                 # check (--ci + types) + unit tests (no Hardhat)
- *   bun run sanity -- --full       # above + contracts Hardhat suite
+ *   bun run sanity                 # check (--ci + types) + unit tests + Hardhat
+ *   bun run sanity -- --fast       # check + unit tests only (no Hardhat)
  *   bun run sanity -- --check      # check only
  *   bun run sanity -- --test       # test only (excludes contracts)
+ *   bun run sanity -- --contracts  # Hardhat only
  *   bun run sanity -- --help
  */
 import { die, runMain, scriptArgv, wantsHelp } from "./lib/cli.ts";
@@ -27,14 +28,15 @@ const STEP_FLAGS: Record<Step, string[]> = {
 };
 
 const MODE_FLAGS = {
+	fast: ["--fast", "fast"],
 	full: ["--full", "full"],
 } as const;
 
 const HELP = `
 Filosign sanity orchestrator (pre-push / CI)
 
-  bun run sanity                 check (--ci + types) + unit tests (excludes Hardhat)
-  bun run sanity -- --full       above + contracts test (Hardhat)
+  bun run sanity                 check (--ci + types) + unit tests + Hardhat (default)
+  bun run sanity -- --fast       check + unit tests only (skip Hardhat)
 
 Uses check --ci so CI/pre-push never mutates files (see check --help).
 
@@ -44,17 +46,20 @@ Steps only:
   bun run sanity -- --test server   forwarded to test orchestrator
   bun run sanity -- --contracts     Hardhat only
 
-Use bun run test for all packages including Hardhat without the full gate.
+  --full is an alias for the default (all steps).
 `.trim();
 
 function parseArgv(argv: string[]) {
-	let full = false;
+	let fast = false;
 	const steps = new Set<Step>();
 	const passthrough: string[] = [];
 
 	for (const arg of argv) {
+		if (MODE_FLAGS.fast.includes(arg)) {
+			fast = true;
+			continue;
+		}
 		if (MODE_FLAGS.full.includes(arg)) {
-			full = true;
 			continue;
 		}
 
@@ -72,13 +77,10 @@ function parseArgv(argv: string[]) {
 		if (!matched) passthrough.push(arg);
 	}
 
-	if (full) {
+	if (steps.size === 0) {
 		steps.add("check");
 		steps.add("test");
-		steps.add("contracts");
-	} else if (steps.size === 0) {
-		steps.add("check");
-		steps.add("test");
+		if (!fast) steps.add("contracts");
 	}
 
 	return { steps, passthrough };

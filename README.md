@@ -153,8 +153,8 @@ Client configuration includes:
 | `bun run dev -- --local --full` | Above + Astro marketing site. |
 | `bun run dev -- --testnet` | Client + server (staging env). |
 | `bun run db -- push local` | Push Drizzle schema (local). |
-| `bun run sanity` | Lint + types + unit tests (CI / pre-push). |
-| `bun run sanity -- --full` | Above + Hardhat contract tests. |
+| `bun run sanity` | Lint + types + unit tests + Hardhat (CI / pre-push). |
+| `bun run sanity -- --fast` | Same without Hardhat. |
 | `bun run test:dev` | SDK/protocol test harness. |
 | `bun run check` | Biome (repo root). |
 

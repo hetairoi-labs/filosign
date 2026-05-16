@@ -13,13 +13,13 @@ jobs:
   sanity:
     name: sanity
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: "25"
+          node-version: "22"
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -33,23 +33,3 @@ jobs:
         env:
           TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
           TURBO_TEAM: ${{ vars.TURBO_TEAM }}
-
-  contracts:
-    name: contracts
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - uses: oven-sh/setup-bun@v2
-        with:
-          bun-version-file: package.json
-
-      - run: bun install
-
-      - name: Hardhat test suite
-        run: bun run --cwd apps/contracts test

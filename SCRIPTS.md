@@ -16,7 +16,7 @@
 | CI / pre-push verify (no writes) | `bun run sanity` |
 | Match sanity check step only | `bun run check -- --ci --types` |
 | Autofix + unit tests | `bun run check && bun run test` |
-| Full gate + Hardhat | `bun run sanity -- --full` |
+| Skip Hardhat in sanity | `bun run sanity -- --fast` |
 | All tests | `bun run test` |
 | Hardhat only | `bun run test -- --contracts` or `bun run contracts -- test` |
 | Release builds | `bun run build` (+ flags) |
@@ -25,7 +25,7 @@
 | Contracts ops | `bun run contracts -- …` |
 | Nuke deps | `bun run purge` then `bun install` |
 
-**`check`** = Biome `--write` + types. **`sanity`** = `check --ci --types` (read-only) + turbo test excluding `@filosign/contracts`. **`test`** = all packages with tests (includes contracts). CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (`sanity` + parallel `contracts` job). Pre-push (husky): `scripts/prepush.ts` → `check --lint` then `sanity` (aborts if Biome wrote files).
+**`check`** = Biome `--write` + types. **`sanity`** = `check --ci --types` + turbo unit tests + Hardhat (`contracts -- test`). **`test`** = all packages with tests (includes contracts). CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (`bun run sanity`, Node 22). Pre-push (husky): `bun check --lint` then `bun sanity`.
 
 ## Entrypoints
 
@@ -34,7 +34,7 @@
 | `dev` | `dev.ts` | Parallel dev stacks |
 | `check` | `check.ts` | Biome + turbo `check-types` |
 | `check:ci` | alias | `check -- --ci` (Biome only, no types) |
-| `sanity` | `sanity.ts` | CI gate: check + fast tests |
+| `sanity` | `sanity.ts` | CI gate: check + tests + Hardhat |
 | `test` | `test.ts` | turbo `test` |
 | `build` | `build.ts` | Release builds (`--cwd`, sequential) |
 | `db` | `db.ts` | Drizzle purge/push via server |
@@ -63,9 +63,9 @@ Biome = whole repo; scope args affect **`--types` only**. Pipeline must not use 
 
 ## `sanity`
 
-Default: `check --ci --types` → turbo `test` (`@filosign/*` \ `!@filosign/contracts`).
+Default: `check --ci --types` → turbo `test` (`@filosign/*` \ `!@filosign/contracts`) → `contracts -- test` (Hardhat).
 
-`--full` → + `contracts -- test` · `--check` · `--test` [scope → `test` orchestrator] · `--contracts` (Hardhat only).
+`--fast` → skip Hardhat · `--check` · `--test` [scope → `test` orchestrator] · `--contracts` (Hardhat only). `--full` = default (all steps).
 
 ## `test`
 
