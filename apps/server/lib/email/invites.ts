@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Resend } from "resend";
 import type { Address } from "viem";
 import env from "@/env";
@@ -52,22 +53,41 @@ type SendInviteEmailArgs = {
 
 const resend = new Resend(env.RESEND_API_KEY);
 
+function idempotencyKey(parts: string[]): string {
+	// Resend caps idempotency keys at 256 chars (see Send Email API docs)
+	return createHash("sha256")
+		.update(parts.join("\0"))
+		.digest("hex")
+		.slice(0, 240);
+}
+
 async function deliverEmail(args: {
 	to: string;
 	subject: string;
 	text: string;
 	html: string;
+	idempotencySegments: string[];
 }) {
-	const { error } = await resend.emails.send({
-		from: env.RESEND_FROM_EMAIL,
-		to: args.to,
-		subject: args.subject,
-		text: args.text,
-		html: args.html,
-		replyTo: env.RESEND_FROM_EMAIL,
-	});
+	const { data, error } = await resend.emails.send(
+		{
+			from: env.RESEND_FROM_EMAIL,
+			to: args.to,
+			subject: args.subject,
+			text: args.text,
+			html: args.html,
+			replyTo: env.RESEND_FROM_EMAIL,
+		},
+		{
+			headers: {
+				"Idempotency-Key": idempotencyKey(args.idempotencySegments),
+			},
+		},
+	);
 	if (error) {
 		throw new Error(error.message);
+	}
+	if (data?.id) {
+		console.info("[email] resend sent", { id: data.id, to: args.to });
 	}
 }
 
@@ -113,7 +133,19 @@ export async function sendShareRequestEmail(args: SendShareRequestEmailArgs) {
 		ctaLabel: "Open Connections",
 	});
 
-	await deliverEmail({ to: args.to, subject, text, html });
+	await deliverEmail({
+		to: args.to,
+		subject,
+		text,
+		html,
+		idempotencySegments: [
+			"share-request",
+			args.to.trim().toLowerCase(),
+			args.senderWallet.toLowerCase(),
+			args.recipientWallet.toLowerCase(),
+			subject,
+		],
+	});
 }
 
 type SendColdDocumentInviteEmailArgs = {
@@ -159,7 +191,19 @@ export async function sendColdDocumentInviteEmail(
 		ctaLabel: "Open document",
 	});
 
-	await deliverEmail({ to: args.to, subject, text, html });
+	await deliverEmail({
+		to: args.to,
+		subject,
+		text,
+		html,
+		idempotencySegments: [
+			"cold-doc-invite",
+			args.to.trim().toLowerCase(),
+			args.pieceCid,
+			args.inviteToken,
+			args.senderWallet.toLowerCase(),
+		],
+	});
 }
 
 export async function sendInviteEmail(args: SendInviteEmailArgs) {
@@ -213,7 +257,18 @@ export async function sendInviteEmail(args: SendInviteEmailArgs) {
 		ctaLabel: "Open invitation",
 	});
 
-	await deliverEmail({ to: args.to, subject, text, html });
+	await deliverEmail({
+		to: args.to,
+		subject,
+		text,
+		html,
+		idempotencySegments: [
+			"user-invite",
+			args.inviteId,
+			args.to.trim().toLowerCase(),
+			args.senderWallet.toLowerCase(),
+		],
+	});
 }
 
 export async function sendDocumentReceivedEmail(
@@ -245,5 +300,16 @@ export async function sendDocumentReceivedEmail(
 		ctaLabel: "Open document",
 	});
 
-	await deliverEmail({ to: args.to, subject, text, html });
+	await deliverEmail({
+		to: args.to,
+		subject,
+		text,
+		html,
+		idempotencySegments: [
+			"doc-received",
+			args.to.trim().toLowerCase(),
+			args.pieceCid,
+			args.senderWallet.toLowerCase(),
+		],
+	});
 }
