@@ -54,7 +54,7 @@ export function useAttachInvoiceToFile() {
 	const { contracts, wallet, api } = useFilosignContext();
 
 	return useMutation({
-		mutationKey: ["fsM-attach-invoice"],
+		mutationKey: ["fsM-attach-incentive"],
 		mutationFn: async (args: AttachInvoiceArgs) => {
 			const { pieceCid, signerEmailCommitment, token, amount, memo } = args;
 
@@ -145,7 +145,7 @@ export function useAttachInvoiceToFile() {
 
 				const { v, r, s } = hexToSignature(permitSig);
 
-				await api.rpc.postSafe({}, `/files/${pieceCid}/invoice`, {
+				await api.rpc.postSafe({}, `/files/${pieceCid}/incentive`, {
 					signerEmailCommitment,
 					memo,
 					token,
@@ -182,7 +182,7 @@ export function useAttachInvoiceToFile() {
 					await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
 				}
 
-				await api.rpc.postSafe({}, `/files/${pieceCid}/invoice`, {
+				await api.rpc.postSafe({}, `/files/${pieceCid}/incentive`, {
 					signerEmailCommitment,
 					memo,
 					token,
