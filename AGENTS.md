@@ -112,9 +112,12 @@ Scripts: `web:dev:*`, `client:dev:*`, `server:dev:*`, `contracts:migrate`, `cont
 **Only when the user explicitly asks to commit** (see user rules for full git safety).
 
 - **Batching:** Group by **feature/domain**; keep commits **atomic**. Target **≤4–5 files per commit** (stay roughly under five unrelated paths); if a change touches more, split into logical batches (e.g. tests vs docs vs generated defs).
-- **Subject line (exact pattern):** `[MAJOR FEATURE] - SUBFEATURE (<domain / package>): <concise description>`
+- **Subject line (exact pattern):** `[SPRINT OR MAJOR FEATURE] - SUBFEATURE (<domain / package>): <concise description>`
+  - **Brackets:** the **initiative or sprint** you are delivering (e.g. `CONTRACT TEST SUITE`, `COLD INVITE`) — not the package shorthand (`CONTRACTS`, `CLIENT`). Put **area** in the parenthetical after `SUBFEATURE`.
+  - Example: `[CONTRACT TEST SUITE] - Fixtures and helpers (apps/contracts): shared deploy, EIP-712, chain time`.
+  - Counter-example (avoid): `[CONTRACTS] - …` in brackets when `CONTRACTS` is only the package — use the **sprint name** instead.
 
-  Example: `[COLD INVITE] - Claim KEM wrap (server): persist participant on cold invite claim`.
+  Older example for the same pattern: `[COLD INVITE] - Claim KEM wrap (server): persist participant on cold invite claim`.
 
 ## Skills
 
