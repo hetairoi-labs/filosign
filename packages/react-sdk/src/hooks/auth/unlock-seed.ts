@@ -9,10 +9,6 @@ import type { FilosignContextValue } from "../../context/FilosignContext";
 
 type Wallet = NonNullable<UseWalletClientReturnType["data"]>;
 
-/**
- * Re-derives the seed via the same path as registration (`walletKeyGen`).
- * Returns `null` if signing fails, commitments mismatch, or chain data is missing.
- */
 export async function unlockSeedFromWallet(args: {
 	wallet: Wallet;
 	contracts: FilosignContracts;
