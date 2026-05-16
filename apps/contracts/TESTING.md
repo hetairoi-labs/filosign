@@ -6,10 +6,12 @@ Concise rules for `apps/contracts` Hardhat tests. Humans: see also [README.md](.
 
 ```bash
 bun run --cwd apps/contracts test        # compile + hardhat test
-bun run --cwd apps/contracts check-types # tsc --noEmit
+bun run --cwd apps/contracts check-types # tsc on exports/definitions/services (no artifacts required)
 ```
 
 `test` runs `compile` first (interfaces + Solidity), then `hardhat test`.
+
+**Env:** `hardhat.config.ts` validates `FC_PVT_KEY` and `ALCHEMY_API_KEY` via [`env.ts`](./env.ts). For local runs, use `.env.local` (gitignored). For CI-shaped runs, copy [`.env.ci`](./.env.ci) or export the same vars. GitHub Actions sets workflow `env` in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — no repository secrets needed for unit tests. Use **GitHub Secrets** only when you add jobs that hit real RPCs (testnet deploy, fork tests, etc.).
 
 **Deploy / migrate:** `migrate`, `migrate:testnet`, and `migrate:mainnet` run `**test` before `deploy`**. If the suite fails, deploy does not run.
 

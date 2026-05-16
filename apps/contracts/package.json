@@ -24,7 +24,7 @@
 		"migrate": "bun run --env-file=.env.local test && bun run --env-file=.env.local deploy:local",
 		"migrate:testnet": "bun run --env-file=.env.staging test && bun run --env-file=.env.staging deploy:testnet",
 		"migrate:mainnet": "bun run --env-file=.env.production test && bun run --env-file=.env.production deploy:mainnet",
-		"check-types": "bunx --bun tsc --noEmit"
+		"check-types": "bunx --bun tsc --noEmit -p tsconfig.check.json"
 	},
 	"devDependencies": {
 		"@filosign/crypto-utils": "workspace:*",
