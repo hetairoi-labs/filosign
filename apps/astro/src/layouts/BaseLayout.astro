@@ -181,7 +181,11 @@ const isArticle = schemaVariant === "article" && article;
 		<meta name="twitter:description" content={description} />
 		<meta name="twitter:image" content={ogImageAbs} />
 
-		<script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+		<script
+			type="application/ld+json"
+			is:inline
+			set:html={JSON.stringify(jsonLd)}
+		/>
 
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
