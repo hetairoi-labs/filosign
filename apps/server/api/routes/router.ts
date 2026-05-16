@@ -2,6 +2,7 @@ import type { ChainKey } from "@filosign/contracts";
 import { Hono } from "hono";
 import type { Address, Chain } from "viem";
 import { fsContracts } from "@/lib/evm";
+import { respond } from "@/lib/utils/respond";
 import config from "../../config";
 import auth from "./auth";
 import files from "./files";
@@ -35,7 +36,7 @@ export const apiRouter = new Hono()
 			maxPlatformFeeBps: Number(maxPlatformFeeBps),
 			treasury,
 		};
-		return ctx.json(runtime);
+		return respond.ok(ctx, runtime, "Runtime", 200);
 	})
 	.route("/auth", auth)
 	.route("/files", files)
