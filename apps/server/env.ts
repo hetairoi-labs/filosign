@@ -8,14 +8,14 @@ export const env = createEnv({
 		S3_SECRET_ACCESS_KEY: z.string().min(1),
 		S3_ACCESS_KEY_ID: z.string().min(1),
 		S3_BUCKET: z.string().min(1),
-		S3_ENDPOINT: z.string().min(1).url(),
+		S3_ENDPOINT: z.url(),
 		EVM_PRIVATE_KEY_SYNAPSE: z.string().min(1),
 		EVM_PRIVATE_KEY_SERVER: z.string().min(1),
 		PG_URI: z.string().min(1),
 		DB_NAME: z.string().min(1),
-		FRONTEND_URL: z.string().min(1).url(),
+		FRONTEND_URL: z.url(),
 		RESEND_API_KEY: z.string().min(1),
-		RESEND_FROM_EMAIL: z.string().min(1).email(),
+		RESEND_FROM_EMAIL: z.email(),
 		CHAIN: z.enum(["local", "testnet", "mainnet"]),
 		PORT: z
 			.string()
