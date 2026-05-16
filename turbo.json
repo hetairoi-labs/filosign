@@ -1,0 +1,25 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"ui": "tui",
+	"tasks": {
+		"check-types": {
+			"dependsOn": ["^check-types"],
+			"inputs": ["$TURBO_DEFAULT$", "tsconfig.json", "tsconfig.*.json"],
+			"outputs": []
+		},
+		"test": {
+			"dependsOn": ["^check-types"],
+			"inputs": ["$TURBO_DEFAULT$", "**/*.test.ts", "test/**", "lib.test.ts"],
+			"outputs": []
+		},
+		"build": {
+			"dependsOn": ["^build", "^check-types"],
+			"inputs": ["$TURBO_DEFAULT$"],
+			"outputs": ["dist/**", "out/**", ".astro/**", "artifacts/**"]
+		},
+		"compile": {
+			"dependsOn": ["^check-types"],
+			"outputs": ["out/**", "artifacts/**", "dist/**"]
+		}
+	}
+}
