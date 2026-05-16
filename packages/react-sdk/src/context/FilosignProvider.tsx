@@ -1,10 +1,15 @@
 import { type FilosignContracts, getContracts } from "@filosign/contracts";
 import type { signatures } from "@filosign/crypto-utils";
 import { useQuery } from "@tanstack/react-query";
-import { type ReactNode, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import type { UseWalletClientReturnType } from "wagmi";
-import ApiClient from "../ApiClient";
 import { MINUTE } from "../constants";
+import {
+	createFilosignOrpcClient,
+	FilosignSession,
+	normalizeApiBaseUrl,
+} from "../orpc/create-orpc-client";
+import { createFilosignRpcQueryUtils } from "../orpc/rpc-query-utils";
 import {
 	FilosignContext,
 	type FilosignContextValue,
@@ -29,69 +34,68 @@ export function FilosignProvider(props: FilosignConfig) {
 
 	const [contracts, setContracts] = useState<FilosignContracts | null>(null);
 
-	const api = useMemo(() => new ApiClient(apiBaseUrl), [apiBaseUrl]);
+	const apiBaseNormalized = normalizeApiBaseUrl(apiBaseUrl);
+	const sessionRef = useRef<FilosignSession | null>(null);
+	if (!sessionRef.current) {
+		sessionRef.current = new FilosignSession();
+	}
+	const session = sessionRef.current;
 
-	const runtime = useQuery({
-		queryKey: ["runtime", apiBaseUrl],
+	const rpc = useMemo(
+		() => createFilosignOrpcClient(apiBaseNormalized, session),
+		[apiBaseNormalized, session],
+	);
+
+	const rpcQuery = useMemo(() => createFilosignRpcQueryUtils(rpc), [rpc]);
+
+	const runtimeQuery = useQuery({
+		// Never put `rpc` in the key: `JSON.stringify`/query hashing calls `toJSON`, and
+		// {@link createORPCClient} resolves any string key to a procedure (POST …/toJSON).
+		queryKey: ["runtime", apiBaseNormalized],
 		queryFn: async () => {
-			const response = await api.rpc.base.get("/runtime");
-			const body = response.data as
-				| { success: true; data: Runtime; message: string }
-				| Runtime;
-			const data =
-				body &&
-				typeof body === "object" &&
-				"success" in body &&
-				body.success === true
-					? (body as { success: true; data: Runtime }).data
-					: (body as Runtime);
+			const data = await rpc.runtime();
 			if (!data?.chainKey) throw new Error("Failed to fetch runtime");
 			return data;
 		},
 		staleTime: 5 * MINUTE,
-
-		enabled: !!api,
 	});
 
 	useEffect(() => {
-		if (!wallet || !runtime.data) {
+		if (!wallet || !runtimeQuery.data) {
 			setContracts(null);
 			return;
 		}
 
 		const fsContracts = getContracts({
 			client: wallet,
-			chainKey: runtime.data.chainKey,
+			chainKey: runtimeQuery.data.chainKey,
 		});
 		setContracts(fsContracts);
-	}, [runtime.data, wallet]);
+	}, [runtimeQuery.data, wallet]);
 
 	const value: FilosignContextValue = useMemo(
 		() => ({
-			ready: !!api && !!runtime.data,
+			ready: !!runtimeQuery.data,
+			apiBaseUrl: apiBaseNormalized,
+			rpc,
+			rpcQuery,
+			session,
 			wallet: wallet,
-			api: api as ApiClient,
 			contracts,
 			wasm: { dilithium: wasm.dilithium },
-			runtime: runtime.data || ({} as Runtime),
+			runtime: runtimeQuery.data || ({} as Runtime),
 		}),
-		[api, wallet, contracts, wasm, runtime.data],
+		[
+			apiBaseNormalized,
+			rpc,
+			rpcQuery,
+			session,
+			wallet,
+			contracts,
+			wasm,
+			runtimeQuery.data,
+		],
 	);
-
-	// if (!runtime.data) {
-	// 	if (LoaderComponent) {
-	// 		return <LoaderComponent />;
-	// 	}
-	// 	return <>Runtime Loading...</>;
-	// }
-
-	// if (!contracts) {
-	// 	console.log("contracts", contracts);
-	// 	if (LoaderComponent) {
-	// 		return <LoaderComponent />;
-	// 	}
-	// 	return <>Not Ready...</>;
-	// }
 
 	return (
 		<FilosignContext.Provider value={value}>

@@ -7,6 +7,8 @@ import type {
 	Transport,
 	WalletClient,
 } from "viem";
+import type { AppRouterClient } from "../src/orpc/app-router-types";
+import type { FilosignSession } from "../src/orpc/create-orpc-client";
 import type { FilosignStore } from "../store";
 
 export type FilosignClientConfig = {
@@ -18,8 +20,9 @@ export type FilosignClientConfig = {
 export type Wallet = WalletClient<Transport, Chain, Account>;
 
 export type Defaults = {
-	logger: Logger;
-	apiClient: ApiClient;
+	logger: unknown;
+	rpc: AppRouterClient;
+	session: FilosignSession;
 	contracts: ReturnType<typeof getContracts<Wallet>>;
 	publicClient: PublicClient;
 	crypto: Crypto;
