@@ -2,6 +2,23 @@
 
 LLM/agent map: **packages**, **boundaries**, **data flow**, **[skills](#skills)**. Always read `[.cursor/rules/](.cursor/rules/)`; if repo rules conflict with this doc on the same detail, **narrow rule wins** until both change.
 
+## Before you edit any package
+
+**Universal rule:** For every task, read **[AGENTS.md](AGENTS.md)** (this file) **and** the **README of each workspace you will touch** before changing code. Package READMEs hold local conventions, layout, and anti-patterns; this file holds cross-package boundaries and flow.
+
+| If your edit is under… | Read first |
+| ---------------------- | ---------- |
+| `apps/client/` | [apps/client/AGENTS.md](apps/client/AGENTS.md) *(package pointer)* |
+| `apps/server/` | [apps/server/README.md](apps/server/README.md) |
+| `apps/contracts/` | [apps/contracts/README.md](apps/contracts/README.md) + [TESTING.md](apps/contracts/TESTING.md) when touching `test/` or `src/*.sol` |
+| `apps/astro/` | [apps/astro/README.md](apps/astro/README.md) |
+| `packages/react-sdk/` | [packages/react-sdk/README.md](packages/react-sdk/README.md) |
+| `packages/shared/` | [packages/shared/AGENTS.md](packages/shared/AGENTS.md) *(package pointer)* |
+| `packages/crypto-utils/` | [packages/crypto-utils/README.md](packages/crypto-utils/README.md) |
+| `packages/test/` | [packages/test/README.md](packages/test/README.md) |
+| Monorepo-wide / unsure | [README.md](README.md) (product + repo map) |
+
+When a task spans multiple packages (e.g. new oRPC procedure + hook + UI), read **every** relevant README in the table above, then use [Vertical slice](#vertical-slice).
 
 | Rule file                                                                 | Use                                                                                                 |
 | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
@@ -14,17 +31,18 @@ LLM/agent map: **packages**, **boundaries**, **data flow**, **[skills](#skills)*
 
 ## Packages
 
+**Read the package README (or pointer) in [Before you edit any package](#before-you-edit-any-package) before editing that path.**
 
-| Path                    | npm                      | Role                                                                            |
-| ----------------------- | ------------------------ | ------------------------------------------------------------------------------- |
-| `apps/client`           | `@filosign/client`       | Vite UI, Privy/wagmi, Dilithium bootstrap—**thin**; logic via `@filosign/react` |
-| `apps/server`           | `@filosign/server`       | Hono, Drizzle, Privy; **`rpc.runtime`** (`/api/rpc`), server-side `chainKey`/contracts |
-| `apps/contracts`        | `@filosign/contracts`    | Solidity, `definitions/`, `getContracts`, EIP-712 helpers; **tests:** `apps/contracts/test/`, [TESTING.md](apps/contracts/TESTING.md)                       |
-| `apps/astro`            | —                        | Marketing                                                                       |
-| `packages/react-sdk`    | `@filosign/react`        | `FilosignProvider`, typed `rpc` (`RPCLink`), subtree **`rpcQuery`**, `FilosignSession`, hooks |
-| `packages/shared`       | `@filosign/shared`       | Types, Zod, manifests, commitments (browser+server)                             |
-| `packages/crypto-utils` | `@filosign/crypto-utils` | KEM, crypto, cold-invite; SDK + contracts tooling                               |
-| `packages/test`         | `test`                   | Dev harness                                                                     |
+| Path                    | npm                      | README / local docs | Role                                                                            |
+| ----------------------- | ------------------------ | ------------------- | ------------------------------------------------------------------------------- |
+| `apps/client`           | `@filosign/client`       | [AGENTS.md](apps/client/AGENTS.md) | Vite UI, Privy/wagmi, Dilithium bootstrap—**thin**; logic via `@filosign/react` |
+| `apps/server`           | `@filosign/server`       | [README.md](apps/server/README.md) | Hono, Drizzle, Privy; **`rpc.runtime`** (`/api/rpc`), server-side `chainKey`/contracts |
+| `apps/contracts`        | `@filosign/contracts`    | [README.md](apps/contracts/README.md) · [TESTING.md](apps/contracts/TESTING.md) | Solidity, `definitions/`, `getContracts`, EIP-712 helpers; **tests:** `apps/contracts/test/` |
+| `apps/astro`            | —                        | [README.md](apps/astro/README.md) | Marketing                                                                       |
+| `packages/react-sdk`    | `@filosign/react`        | [README.md](packages/react-sdk/README.md) | `FilosignProvider`, typed `rpc` (`RPCLink`), subtree **`rpcQuery`**, `FilosignSession`, hooks |
+| `packages/shared`       | `@filosign/shared`       | [AGENTS.md](packages/shared/AGENTS.md) | Types, Zod, manifests, commitments (browser+server)                             |
+| `packages/crypto-utils` | `@filosign/crypto-utils` | [README.md](packages/crypto-utils/README.md) | KEM, crypto, cold-invite; SDK + contracts tooling                               |
+| `packages/test`         | `test`                   | [README.md](packages/test/README.md) | Dev harness                                                                     |
 
 
 Root `[package.json](package.json)`: workspaces `apps/`*, `packages/*`.
