@@ -15,7 +15,6 @@
 		"db:push:local": "bun run --env-file=.env.local drizzle-kit:push",
 		"db:push:testnet": "bun run --env-file=.env.staging drizzle-kit:push",
 		"compile": "bun build --compile --minify --sourcemap --bytecode ./index.ts --outfile out/server",
-		"check": "bunx --bun biome check --write",
 		"check-types": "tsc --noEmit",
 		"test": "bun test",
 		"routes:print": "bun run scripts/print-routes.ts"
