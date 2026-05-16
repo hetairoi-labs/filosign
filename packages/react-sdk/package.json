@@ -18,11 +18,11 @@
 		"@filosign/contracts": "workspace:*",
 		"@filosign/crypto-utils": "workspace:*",
 		"@filosign/shared": "workspace:*",
+		"@orpc/client": "1.14.3",
+		"@orpc/tanstack-query": "1.14.3",
 		"@web3-storage/data-segment": "catalog:",
-		"axios": "catalog:",
 		"bip39": "^3.1.0",
 		"browser-image-compression": "catalog:",
-		"hono": "catalog:",
 		"multiformats": "catalog:",
 		"zod": "catalog:"
 	},
