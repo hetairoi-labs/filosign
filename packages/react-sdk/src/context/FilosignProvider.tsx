@@ -49,13 +49,13 @@ export function FilosignProvider(props: FilosignConfig) {
 	const rpcQuery = useMemo(() => createFilosignRpcQueryUtils(rpc), [rpc]);
 
 	const runtimeQuery = useQuery({
-		queryKey: ["runtime", apiBaseNormalized],
+		...rpcQuery.runtime.queryOptions(),
+		staleTime: 5 * MINUTE,
 		queryFn: async () => {
 			const data = await rpc.runtime();
 			if (!data?.chainKey) throw new Error("Failed to fetch runtime");
 			return data;
 		},
-		staleTime: 5 * MINUTE,
 	});
 
 	useEffect(() => {
