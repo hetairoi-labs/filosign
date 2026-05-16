@@ -1,18 +1,22 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export function useRejectRequest() {
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: async (requestId: string) => {
-			if (!auth) throw new Error("Not authenticated");
-			await auth.rpc.sharing.rejectRequest({ id: requestId });
+			if (!isAuthed) throw new Error("Not authenticated");
+			return rpcQuery.sharing.rejectRequest.call({ id: requestId });
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["received-requests"] });
-			queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
+			void queryClient.invalidateQueries({
+				queryKey: rpcQuery.sharing.receivedRequests.key(),
+			});
+			void queryClient.invalidateQueries({
+				queryKey: rpcQuery.sharing.sentRequests.key(),
+			});
 		},
 	});
 }

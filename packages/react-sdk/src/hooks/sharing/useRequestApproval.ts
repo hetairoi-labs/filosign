@@ -1,20 +1,20 @@
 import { useMutation } from "@tanstack/react-query";
 import { useFilosignContext } from "../../context/useFilosignContext";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export function useRequestApproval() {
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 	const { wallet } = useFilosignContext();
 
 	return useMutation({
 		mutationFn: async (args: { recipientEmail: string; message?: string }) => {
-			if (!wallet || !auth) {
+			if (!wallet || !isAuthed) {
 				throw new Error("Wallet not connected or API not authenticated");
 			}
 
 			const { recipientEmail, message } = args;
 
-			return auth.rpc.sharing.requestInvite({
+			return rpcQuery.sharing.requestInvite.call({
 				inviteeEmail: recipientEmail,
 				message,
 			});

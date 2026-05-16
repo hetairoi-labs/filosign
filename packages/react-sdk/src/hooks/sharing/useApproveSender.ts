@@ -2,24 +2,23 @@ import { eip712signature } from "@filosign/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Address } from "viem";
 import { useFilosignContext } from "../../context/useFilosignContext";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { filosignKeys } from "../../lib/query-keys";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export function useApproveSender() {
 	const { contracts, wallet } = useFilosignContext();
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: async (args: {
 			sender: Address;
-			/** After approving sender A, insert pending share request so A can approve you (mutual connection). */
 			establishMutualConnection?: boolean;
-			/** Validates POST body against this incoming pending request when establishing mutual connection. */
 			shareRequestId?: string;
 		}) => {
 			const { sender, establishMutualConnection, shareRequestId } = args;
 
-			if (!contracts || !wallet || !auth) {
+			if (!contracts || !wallet || !isAuthed) {
 				throw new Error("not connected");
 			}
 
@@ -45,7 +44,7 @@ export function useApproveSender() {
 				},
 			});
 
-			await auth.rpc.sharing.approve({
+			const result = await rpcQuery.sharing.approve.call({
 				sender,
 				nonce: nonce.toString(),
 				deadline: deadline.toString(),
@@ -57,14 +56,16 @@ export function useApproveSender() {
 			});
 
 			queryClient.refetchQueries({
-				queryKey: ["fsQ-is-approved", wallet?.account.address, sender],
+				queryKey: filosignKeys.isApprovedWalletFirst(
+					wallet.account.address,
+					sender,
+				),
 			});
-			queryClient.invalidateQueries({ queryKey: ["received-requests"] });
-			queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
-			queryClient.invalidateQueries({ queryKey: ["sendable-to"] });
-			queryClient.invalidateQueries({ queryKey: ["receivable-from"] });
-			queryClient.invalidateQueries({ queryKey: ["accepted-recipients"] });
-			queryClient.invalidateQueries({ queryKey: ["accepted-people"] });
+			void queryClient.invalidateQueries({
+				queryKey: rpcQuery.sharing.key(),
+			});
+
+			return result;
 		},
 	});
 }
