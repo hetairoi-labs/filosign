@@ -18,9 +18,10 @@
 		"test": "bun compile; bunx --bun hardhat test",
 		"gen:interfaces": "bun run scripts/interfaces.ts",
 		"deploy": "bunx --bun hardhat run scripts/deploy.ts",
+		"deploy:local": "bun run --env-file=.env.local -- bunx --bun hardhat run scripts/deploy.ts --network localhost",
 		"deploy:testnet": "bunx --bun hardhat run scripts/deploy.ts --network baseSepolia",
 		"deploy:mainnet": "bunx --bun hardhat run scripts/deploy.ts --network base",
-		"migrate": "bun run --env-file=.env.local test && bun run --env-file=.env.local deploy",
+		"migrate": "bun run --env-file=.env.local test && bun run --env-file=.env.local deploy:local",
 		"migrate:testnet": "bun run --env-file=.env.staging test && bun run --env-file=.env.staging deploy:testnet",
 		"migrate:mainnet": "bun run --env-file=.env.production test && bun run --env-file=.env.production deploy:mainnet",
 		"check-types": "bunx --bun tsc --noEmit"
