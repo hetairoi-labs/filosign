@@ -7,7 +7,7 @@ import {
 	wrapColdInviteDek,
 } from "@filosign/crypto-utils";
 import { getAddress, type Hex } from "viem";
-import { getSessionSeed } from "../src/hooks/auth/session-seed";
+import { getSessionSeed } from "../hooks/auth/session-seed";
 
 export type ColdInviteClaimKemArgs = {
 	dek: Uint8Array;
