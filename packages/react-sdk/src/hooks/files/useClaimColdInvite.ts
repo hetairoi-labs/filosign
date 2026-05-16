@@ -3,10 +3,6 @@ import { useMutation } from "@tanstack/react-query";
 import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
 
-const dbg = (...xs: unknown[]) => {
-	console.debug("[cold-invite claim]", ...xs);
-};
-
 export function useClaimColdInvite() {
 	const { api } = useFilosignContext();
 
@@ -17,7 +13,6 @@ export function useClaimColdInvite() {
 			encryptedEncryptionKey: `0x${string}`;
 		}) => {
 			if (!api) throw new Error("Missing API context");
-			dbg("mutation start", { inviteTokenLen: args.inviteToken.length });
 			const res = await api.rpc.postSafe(
 				{
 					filePieceCid: z.string(),
@@ -31,7 +26,6 @@ export function useClaimColdInvite() {
 					),
 				},
 			);
-			dbg("mutation success");
 			return res.data;
 		},
 	});
