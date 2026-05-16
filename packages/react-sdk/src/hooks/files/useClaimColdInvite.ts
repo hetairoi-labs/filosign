@@ -1,9 +1,9 @@
 import { zHexString } from "@filosign/shared/zod";
 import { useMutation } from "@tanstack/react-query";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export function useClaimColdInvite() {
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 
 	return useMutation({
 		mutationFn: async (args: {
@@ -11,9 +11,9 @@ export function useClaimColdInvite() {
 			kemCiphertext: `0x${string}`;
 			encryptedEncryptionKey: `0x${string}`;
 		}) => {
-			if (!auth) throw new Error("Not authenticated");
+			if (!isAuthed) throw new Error("Not authenticated");
 
-			return auth.rpc.files.coldInvite.claim({
+			return rpcQuery.files.coldInvite.claim.call({
 				inviteToken: args.inviteToken,
 				body: {
 					kemCiphertext: zHexString().parse(args.kemCiphertext),

@@ -1,10 +1,10 @@
 import { zHexString } from "@filosign/shared/zod";
 import { useMutation } from "@tanstack/react-query";
 import z from "zod";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export function useRegenerateColdInvite() {
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 
 	return useMutation({
 		mutationFn: async (args: {
@@ -12,9 +12,9 @@ export function useRegenerateColdInvite() {
 			inviteToken: string;
 			wrappedEncryptionKey: `0x${string}`;
 		}) => {
-			if (!auth) throw new Error("Missing auth context");
+			if (!isAuthed) throw new Error("Not authenticated");
 
-			return auth.rpc.files.coldInvite.regenerate({
+			return rpcQuery.files.coldInvite.regenerate.call({
 				pieceCid: args.pieceCid,
 				body: {
 					inviteToken: z.string().min(16).parse(args.inviteToken),

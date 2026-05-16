@@ -1,44 +1,40 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export function useSignDraft(pieceCid: string | undefined) {
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 
 	return useQuery({
-		queryKey: ["fsQ-sign-draft", pieceCid],
-		queryFn: async () => {
-			if (!auth || !pieceCid) {
-				throw new Error("API or pieceCid missing");
-			}
-			const raw = await auth.rpc.files.piece.signDraftGet({ pieceCid });
-			return raw.completedFieldIds;
-		},
-		enabled: !!pieceCid && !!auth,
+		...rpcQuery.files.piece.signDraftGet.queryOptions({
+			input: { pieceCid: pieceCid ?? "" },
+		}),
+		enabled: isAuthed && !!pieceCid,
+		select: (data) => data.completedFieldIds,
 	});
 }
 
 export function useUpdateSignDraft() {
 	const queryClient = useQueryClient();
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 
 	return useMutation({
 		mutationFn: async (args: {
 			pieceCid: string;
 			completedFieldIds: string[];
 		}) => {
-			if (!auth) {
-				throw new Error("API not ready");
-			}
-			const raw = await auth.rpc.files.piece.signDraftPut({
+			if (!isAuthed) throw new Error("Not authenticated");
+			return rpcQuery.files.piece.signDraftPut.call({
 				pieceCid: args.pieceCid,
 				body: { completedFieldIds: args.completedFieldIds },
 			});
-			return raw.completedFieldIds;
 		},
-		onSuccess: (_data, variables) => {
+		onSuccess: (data, variables) => {
 			queryClient.setQueryData(
-				["fsQ-sign-draft", variables.pieceCid],
-				variables.completedFieldIds,
+				rpcQuery.files.piece.signDraftGet.queryKey({
+					input: { pieceCid: variables.pieceCid },
+				}),
+				data,
 			);
 		},
 	});
