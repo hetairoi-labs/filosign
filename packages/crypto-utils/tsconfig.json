@@ -23,5 +23,7 @@
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
 		"noPropertyAccessFromIndexSignature": false
-	}
+	},
+	"include": ["src/**/*.ts"],
+	"exclude": ["**/*.test.ts", "lib.test.ts", "apt.ts", "apt-out.ts"]
 }

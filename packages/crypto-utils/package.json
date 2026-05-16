@@ -11,10 +11,12 @@
 		}
 	},
 	"scripts": {
+		"check-types": "tsc --noEmit -p tsconfig.json",
 		"test": "bun test lib.test.ts",
 		"wasm:build": "wasm-pack build --target web --out-dir pkg; wasm-pack build --target nodejs --out-dir pkg-node;"
 	},
 	"devDependencies": {
+		"typescript": "catalog:",
 		"@types/argon2": "^0.15.4",
 		"@types/argon2-browser": "^1.18.4",
 		"@types/bun": "catalog:",
