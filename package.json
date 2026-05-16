@@ -19,7 +19,7 @@
 		"server:dev:testnet": "bun run --cwd apps/server dev:testnet",
 		"server:compile": "bun run --cwd apps/server compile",
 		"server:start": "bun run --cwd apps/server start",
-		"contracts:node": "bun run --cwd apps/contracts node",
+		"contracts:test": "bun run --cwd apps/contracts test",
 		"contracts:migrate": "./scripts/migrate.sh",
 		"test:dev": "bun run --cwd packages/test dev",
 		"check": "bunx biome check --write",

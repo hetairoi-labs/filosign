@@ -3,12 +3,13 @@
 LLM/agent map: **packages**, **boundaries**, **data flow**, **[skills](#skills)**. Always read `[.cursor/rules/](.cursor/rules/)`; if repo rules conflict with this doc on the same detail, **narrow rule wins** until both change.
 
 
-| Rule file                                                        | Use                                                    |
-| ---------------------------------------------------------------- | ------------------------------------------------------ |
-| [preamble.mdc](.cursor/rules/preamble.mdc)                       | Discipline, `bun check`, `tsc`, tests                  |
-| [apps/web/patterns.mdc](.cursor/rules/apps/web/patterns.mdc)     | `safe`/`tryCatch`, `respond`, Hono middleware, `lib/`  |
-| [app.mdc](.cursor/rules/app.mdc)                                 | Never edit `apps/contracts/definitions/`** (generated) |
-| [apps/web/api-routes.mdc](.cursor/rules/apps/web/api-routes.mdc) | Hono routes + SDK consumer pattern—see [API](#api)     |
+| Rule file                                                                 | Use                                                                                                 |
+| ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| [contracts-testing.mdc](.cursor/rules/contracts-testing.mdc)              | Before editing `apps/contracts/test/` or `src/*.sol` (see [TESTING.md](apps/contracts/TESTING.md)) |
+| [preamble.mdc](.cursor/rules/preamble.mdc)                                | Discipline, `bun check`, `tsc`, tests                                                             |
+| [apps/web/patterns.mdc](.cursor/rules/apps/web/patterns.mdc)              | `safe`/`tryCatch`, `respond`, Hono middleware, `lib/`                                               |
+| [app.mdc](.cursor/rules/app.mdc)                                          | Never edit `apps/contracts/definitions/`** (generated)                                              |
+| [apps/web/api-routes.mdc](.cursor/rules/apps/web/api-routes.mdc)          | Hono routes + SDK consumer pattern—see [API](#api)                                                  |
 
 
 ## Packages
@@ -18,7 +19,7 @@ LLM/agent map: **packages**, **boundaries**, **data flow**, **[skills](#skills)*
 | ----------------------- | ------------------------ | ------------------------------------------------------------------------------- |
 | `apps/client`           | `@filosign/client`       | Vite UI, Privy/wagmi, Dilithium bootstrap—**thin**; logic via `@filosign/react` |
 | `apps/server`           | `@filosign/server`       | Hono, Drizzle, Privy, `GET /runtime`, server `getContracts`                     |
-| `apps/contracts`        | `@filosign/contracts`    | Solidity, `definitions/`, `getContracts`, EIP-712 helpers                       |
+| `apps/contracts`        | `@filosign/contracts`    | Solidity, `definitions/`, `getContracts`, EIP-712 helpers; **tests:** `apps/contracts/test/`, [TESTING.md](apps/contracts/TESTING.md)                       |
 | `apps/astro`            | —                        | Marketing                                                                       |
 | `packages/react-sdk`    | `@filosign/react`        | `FilosignProvider`, `ApiClient`, hooks, user-wallet chain calls                 |
 | `packages/shared`       | `@filosign/shared`       | Types, Zod, manifests, commitments (browser+server)                             |
@@ -82,7 +83,7 @@ flowchart LR
 
 **Logic home:** UI `apps/client` | API+chain hooks `packages/react-sdk` | auth/DB/relay `apps/server`.
 
-**Definitions:** Never hand-edit `definitions/`**; `definitions/*.ts` ABI/addresses are updated when you **deploy** (`hardhat run scripts/deploy.ts`); `bun run --cwd apps/contracts compile` only generates interfaces + Solidity artifacts.
+**Definitions:** Never hand-edit `definitions/`**; `definitions/*.ts` ABI/addresses are updated when you **deploy** (`hardhat run scripts/deploy.ts`); `bun run --cwd apps/contracts compile` only generates interfaces + Solidity artifacts. **Do not run `deploy` or `migrate*` without a green `apps/contracts` test run** — `migrate` scripts run `test` before `deploy`.
 
 ## Runtime
 
@@ -98,19 +99,19 @@ Mount in `[api/routes/router.ts](apps/server/api/routes/router.ts)`: `files/`, `
 
 ## Vertical slice
 
-1. Contracts: edit `apps/contracts/src` → `compile` (only pipeline updates `definitions/`).
+1. Contracts: edit `apps/contracts/src` → `compile` (only pipeline updates `definitions/`). **Follow [apps/contracts/TESTING.md](apps/contracts/TESTING.md)** for Hardhat tests; keep Solidity and tests aligned in the same PR when behavior changes.
 2. Server: `apps/server/api/routes` + `fsContracts` (`[evm.ts](apps/server/lib/evm.ts)`).
 3. SDK: hooks + `useFilosignContext()`.
 4. Client: UI + `@filosign/react` imports only.
 5. Verify: preamble + `bun check`, tsc, `bun run test`, forge when contracts change.
 
-Scripts: `web:dev:*`, `client:dev:*`, `server:dev:*`, `contracts:migrate`, `db:push:*`, `test` (`[package.json](package.json)`).
+Scripts: `web:dev:*`, `client:dev:*`, `server:dev:*`, `contracts:migrate`, `contracts:test`, GitHub Actions workflow `contracts.yml`, `db:push:*`, `test` (`[package.json](package.json)`).
 
 ## Commits
 
 **Only when the user explicitly asks to commit** (see user rules for full git safety).
 
-- **Batching:** Group by **feature/domain**; keep commits **atomic**. Aim for **3–5 files per commit**; split if a change set is larger.
+- **Batching:** Group by **feature/domain**; keep commits **atomic**. Target **≤4–5 files per commit** (stay roughly under five unrelated paths); if a change touches more, split into logical batches (e.g. tests vs docs vs generated defs).
 - **Subject line (exact pattern):** `[MAJOR FEATURE] - SUBFEATURE (<domain / package>): <concise description>`
 
   Example: `[COLD INVITE] - Claim KEM wrap (server): persist participant on cold invite claim`.
