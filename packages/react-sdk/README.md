@@ -9,7 +9,7 @@ React SDK: **`FilosignProvider`**, typed **oRPC**, TanStack Query hooks, wallet/
 1. **API hooks:** `useFilosignRpc()` + `rpcQuery.*.queryOptions()` / `.call()`; `enabled: isAuthed` (or document public procedures).
 2. **Invalidate:** `rpcQuery.<domain>.<procedure>.key()` (or parent `.key()`); profile → `useInvalidateUserProfile()`. **`filosignKeys`** only for wallet / on-chain / session—not for oRPC lists.
 3. **Apps:** import `@filosign/react/{auth,files,sharing,users}` (+ `/utils`, `/runtime` if needed)—no `/hooks` barrel, no `@filosign/react/src/...`, no `fetch` to `/api/rpc`.
-4. **Changes:** server procedure first → hook in matching `src/hooks/<domain>/` → client import → `bun run client:typecheck`.
+4. **Changes:** server procedure first → hook in matching `src/hooks/<domain>/` → client import → `turbo run check-types --filter=@filosign/client`.
 5. **Never** put `rpc` inside a `queryKey` (proxy + `JSON.stringify` hazard—see root [`AGENTS.md`](../../AGENTS.md)).
 
 Deeper context: [`AGENTS.md`](../../AGENTS.md), [api-routes.mdc](../../.cursor/rules/apps/web/api-routes.mdc).
@@ -130,7 +130,7 @@ Non-RPC only: `useAuthedApi`, `useIsLoggedIn`, `useIsRegistered`, `useStoredKeyg
 3. `useFilosignRpc` + `rpcQuery`; gate with `isAuthed` unless public.
 4. Invalidate with `rpcQuery.*.key()` or `filosignKeys` as appropriate.
 5. Client: `@filosign/react/<domain>` only.
-6. `bun run client:typecheck`; `bunx biome check packages/react-sdk`.
+6. `turbo run check-types --filter=@filosign/react`; `bun run check:ci` (or scoped Biome on changed paths).
 
 ---
 

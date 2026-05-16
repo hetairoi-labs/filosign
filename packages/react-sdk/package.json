@@ -25,7 +25,10 @@
 			"default": "./src/utils/index.ts"
 		}
 	},
-	"scripts": {},
+	"scripts": {
+		"check-types": "tsc --noEmit -p tsconfig.json",
+		"test": "bun -e \"console.log('[ @filosign/react ] no bun tests yet'); process.exit(0)\""
+	},
 	"dependencies": {
 		"@filosign/contracts": "workspace:*",
 		"@filosign/crypto-utils": "workspace:*",
@@ -46,6 +49,7 @@
 	},
 	"devDependencies": {
 		"@filosign/server": "workspace:*",
-		"@types/react": "catalog:"
+		"@types/react": "catalog:",
+		"typescript": "catalog:"
 	}
 }

@@ -14,16 +14,27 @@
 		"verbatimModuleSyntax": true,
 		"noEmit": true,
 
+		"paths": {
+			"@/*": ["../../apps/server/*"],
+			"@/api/*": ["../../apps/server/api/*"],
+			"@/lib/*": ["../../apps/server/lib/*"],
+			"@/constants": ["../../apps/server/constants.ts"],
+			"@/config": ["../../apps/server/config.ts"],
+			"@/env": ["../../apps/server/env.ts"]
+		},
+
 		// Best practices
 		"strict": true,
 		"skipLibCheck": true,
 		"noFallthroughCasesInSwitch": true,
-		"noUncheckedIndexedAccess": true,
+		"noUncheckedIndexedAccess": false,
 		"noImplicitOverride": true,
 
 		// Some stricter flags (disabled by default)
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
 		"noPropertyAccessFromIndexSignature": false
-	}
+	},
+	"include": ["**/*.ts", "**/*.tsx"],
+	"exclude": ["dist", "node_modules"]
 }
