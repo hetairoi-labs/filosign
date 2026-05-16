@@ -1,6 +1,7 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation } from "@tanstack/react-query";
 import imageCompression from "browser-image-compression";
-import { useAuthedApi } from "../auth";
+import { useInvalidateUserProfile } from "../../lib/invalidate-user-profile";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 type ProfileTextFields = {
 	email?: string;
@@ -10,12 +11,12 @@ type ProfileTextFields = {
 };
 
 export function useUpdateUserProfile() {
-	const { data: auth } = useAuthedApi();
-	const queryClient = useQueryClient();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
+	const invalidateUser = useInvalidateUserProfile();
 
 	return useMutation({
 		mutationFn: async (args: ProfileTextFields & { avatar?: File }) => {
-			if (!auth) throw new Error("Not reachable");
+			if (!isAuthed) throw new Error("Not authenticated");
 
 			const { avatar, ...rest } = args;
 
@@ -35,7 +36,7 @@ export function useUpdateUserProfile() {
 					useWebWorker: true,
 				});
 
-				const { uploadUrl, key } = await auth.rpc.storage.presignPut({
+				const { uploadUrl, key } = await rpcQuery.storage.presignPut.call({
 					kind: "webp_user_avatar",
 				});
 
@@ -55,13 +56,13 @@ export function useUpdateUserProfile() {
 			}
 
 			if (Object.keys(payload).length === 0) {
-				return;
+				return {};
 			}
 
-			await auth.rpc.users.profile.update(payload);
+			return rpcQuery.users.profile.update.call(payload);
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["user"] });
+			invalidateUser();
 		},
 	});
 }

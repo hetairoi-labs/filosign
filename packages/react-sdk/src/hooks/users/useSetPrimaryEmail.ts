@@ -1,21 +1,18 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuthedApi } from "../auth";
+import { useMutation } from "@tanstack/react-query";
+import { useInvalidateUserProfile } from "../../lib/invalidate-user-profile";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export function useSetPrimaryEmail() {
-	const { data: auth } = useAuthedApi();
-	const queryClient = useQueryClient();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
+	const invalidateUser = useInvalidateUserProfile();
 
 	return useMutation({
 		mutationFn: async (args: { identityToken: string; email: string }) => {
-			if (!auth) throw new Error("Not reachable");
-
-			await auth.rpc.users.profile.setPrimaryEmail({
-				identityToken: args.identityToken,
-				email: args.email,
-			});
+			if (!isAuthed) throw new Error("Not authenticated");
+			return rpcQuery.users.profile.setPrimaryEmail.call(args);
 		},
 		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["user"] });
+			invalidateUser();
 		},
 	});
 }
