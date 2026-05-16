@@ -20,6 +20,49 @@ import * as userHandlers from "@/api/handlers/users-handlers";
 import { loadPlatformRuntime } from "@/lib/domain/platform-runtime";
 import { zIndexerTxBody } from "@/lib/validation/tx-registration";
 import { authenticatedProcedure, publicProcedure } from "./procedures";
+import {
+	rpcAuthNonceOutputSchema,
+	rpcAuthVerifyOutputSchema,
+	rpcColdInviteByTokenOutputSchema,
+	rpcColdInviteClaimOutputSchema,
+	rpcColdInviteRegenerateOutputSchema,
+	rpcFilesListReceivedOutputSchema,
+	rpcFilesListSentOutputSchema,
+	rpcFilesRegisterOutputSchema,
+	rpcFilesUploadStartOutputSchema,
+	rpcPieceAckOutputSchema,
+	rpcPieceComplianceBundleOutputSchema,
+	rpcPieceDetailOutputSchema,
+	rpcPieceIncentiveOutputSchema,
+	rpcPieceS3UrlOutputSchema,
+	rpcPieceSignDraftFieldIdsOutputSchema,
+	rpcPieceSignOutputSchema,
+	rpcSharingAcceptRequestOutputSchema,
+	rpcSharingApproveOutputSchema,
+	rpcSharingCancelRequestOutputSchema,
+	rpcSharingCanSendToOutputSchema,
+	rpcSharingCreateRequestOutputSchema,
+	rpcSharingEmailInvitesOutputSchema,
+	rpcSharingInviteByIdOutputSchema,
+	rpcSharingInviteClaimOutputSchema,
+	rpcSharingReceivableFromOutputSchema,
+	rpcSharingReceivedRequestsOutputSchema,
+	rpcSharingRejectRequestOutputSchema,
+	rpcSharingRequestInviteOutputSchema,
+	rpcSharingSendableToOutputSchema,
+	rpcSharingSentRequestsOutputSchema,
+	rpcTxProcessIndexerHashOutputSchema,
+	rpcUserProfileLookupOutputSchema,
+	rpcUserProfileMeOutputSchema,
+	rpcUserProfilePrevalidateOutputSchema,
+	rpcUserProfileSetPrimaryEmailOutputSchema,
+	rpcUserProfileSyncPrivyEmailOutputSchema,
+	rpcUserProfileUpdateOutputSchema,
+	rpcUserRegisterOutputSchema,
+	rpcUserSignaturesCreateOutputSchema,
+	rpcUserSignaturesGetOutputSchema,
+	rpcUserSignaturesListOutputSchema,
+} from "./schemas/index";
 
 const platformRuntimeSchema = z.object({
 	uptime: z.number(),
@@ -53,11 +96,11 @@ export const appRouter = {
 	auth: {
 		nonce: publicProcedure
 			.input(z.object({ address: z.string() }))
-			.output(unk)
+			.output(rpcAuthNonceOutputSchema)
 			.handler(({ input }) => authNonce(input.address)),
 		verify: publicProcedure
 			.input(zAuthVerifyBody)
-			.output(unk)
+			.output(rpcAuthVerifyOutputSchema)
 			.handler(({ input }) => authVerify(input)),
 	},
 	tx: {
@@ -68,7 +111,7 @@ export const appRouter = {
 					body: zIndexerTxBody.optional(),
 				}),
 			)
-			.output(unk)
+			.output(rpcTxProcessIndexerHashOutputSchema)
 			.handler(({ input }) =>
 				txProcessIndexerHash({ hash: input.hash }, input.body ?? {}),
 			),
@@ -76,28 +119,28 @@ export const appRouter = {
 	files: {
 		uploadStart: authenticatedProcedure
 			.input(zUploadStartBody)
-			.output(unk)
+			.output(rpcFilesUploadStartOutputSchema)
 			.handler(({ context, input }) =>
 				filesUploadStart(context.userWallet, input),
 			),
 		register: authenticatedProcedure
 			.input(z.record(z.string(), unk))
-			.output(unk)
+			.output(rpcFilesRegisterOutputSchema)
 			.handler(({ context, input }) =>
 				filesRegister(context.userWallet, input),
 			),
 		list: {
 			sent: authenticatedProcedure
-				.output(unk)
+				.output(rpcFilesListSentOutputSchema)
 				.handler(({ context }) => filesListSent(context.userWallet)),
 			received: authenticatedProcedure
-				.output(unk)
+				.output(rpcFilesListReceivedOutputSchema)
 				.handler(({ context }) => filesListReceived(context.userWallet)),
 		},
 		coldInvite: {
 			inviteByToken: publicProcedure
 				.input(z.object({ inviteToken: z.string().min(1) }))
-				.output(unk)
+				.output(rpcColdInviteByTokenOutputSchema)
 				.handler(({ input }) => filesColdInviteByToken(input.inviteToken)),
 			claim: authenticatedProcedure
 				.input(
@@ -106,7 +149,7 @@ export const appRouter = {
 						body: z.record(z.string(), unk),
 					}),
 				)
-				.output(unk)
+				.output(rpcColdInviteClaimOutputSchema)
 				.handler(({ context, input }) =>
 					filesColdInviteClaim({
 						userWallet: context.userWallet,
@@ -121,7 +164,7 @@ export const appRouter = {
 						body: z.record(z.string(), unk),
 					}),
 				)
-				.output(unk)
+				.output(rpcColdInviteRegenerateOutputSchema)
 				.handler(({ context, input }) =>
 					filesColdInviteRegenerate({
 						userWallet: context.userWallet,
@@ -133,7 +176,7 @@ export const appRouter = {
 		piece: {
 			detail: authenticatedProcedure
 				.input(z.object({ pieceCid: z.string().min(1) }))
-				.output(unk)
+				.output(rpcPieceDetailOutputSchema)
 				.handler(({ context, input }) =>
 					pieceHandlers.pieceDetail(context.userWallet, input.pieceCid),
 				),
@@ -144,7 +187,7 @@ export const appRouter = {
 						body: z.record(z.string(), unk),
 					}),
 				)
-				.output(unk)
+				.output(rpcPieceAckOutputSchema)
 				.handler(({ context, input }) =>
 					pieceHandlers.pieceAck({
 						userWallet: context.userWallet,
@@ -154,7 +197,7 @@ export const appRouter = {
 				),
 			signDraftGet: authenticatedProcedure
 				.input(z.object({ pieceCid: z.string().min(1) }))
-				.output(unk)
+				.output(rpcPieceSignDraftFieldIdsOutputSchema)
 				.handler(({ context, input }) =>
 					pieceHandlers.pieceSignDraftGet(context.userWallet, input.pieceCid),
 				),
@@ -165,7 +208,7 @@ export const appRouter = {
 						body: z.record(z.string(), unk),
 					}),
 				)
-				.output(unk)
+				.output(rpcPieceSignDraftFieldIdsOutputSchema)
 				.handler(({ context, input }) =>
 					pieceHandlers.pieceSignDraftPut({
 						userWallet: context.userWallet,
@@ -175,7 +218,7 @@ export const appRouter = {
 				),
 			s3Url: authenticatedProcedure
 				.input(z.object({ pieceCid: z.string().min(1) }))
-				.output(unk)
+				.output(rpcPieceS3UrlOutputSchema)
 				.handler(({ context, input }) =>
 					pieceHandlers.pieceS3Url(context.userWallet, input.pieceCid),
 				),
@@ -186,7 +229,7 @@ export const appRouter = {
 						documentSha256: z.string().optional(),
 					}),
 				)
-				.output(unk)
+				.output(rpcPieceComplianceBundleOutputSchema)
 				.handler(({ context, input }) => {
 					const h = context.hono.req;
 					const ua = h.header("user-agent") ?? null;
@@ -207,7 +250,7 @@ export const appRouter = {
 						body: z.record(z.string(), unk),
 					}),
 				)
-				.output(unk)
+				.output(rpcPieceIncentiveOutputSchema)
 				.handler(({ context, input }) =>
 					pieceHandlers.pieceIncentive({
 						userWallet: context.userWallet,
@@ -222,7 +265,7 @@ export const appRouter = {
 						body: z.record(z.string(), unk),
 					}),
 				)
-				.output(unk)
+				.output(rpcPieceSignOutputSchema)
 				.handler(({ context, input }) =>
 					pieceHandlers.pieceSign({
 						userWallet: context.userWallet,
@@ -234,76 +277,76 @@ export const appRouter = {
 	},
 	sharing: {
 		receivedRequests: authenticatedProcedure
-			.output(unk)
+			.output(rpcSharingReceivedRequestsOutputSchema)
 			.handler(({ context }) =>
 				sharingHandlers.sharingReceivedRequests(context.userWallet),
 			),
 		sentRequests: authenticatedProcedure
-			.output(unk)
+			.output(rpcSharingSentRequestsOutputSchema)
 			.handler(({ context }) =>
 				sharingHandlers.sharingSentRequests(context.userWallet),
 			),
 		emailInvites: authenticatedProcedure
-			.output(unk)
+			.output(rpcSharingEmailInvitesOutputSchema)
 			.handler(({ context }) =>
 				sharingHandlers.sharingEmailInvites(context.userWallet),
 			),
 		canSendTo: authenticatedProcedure
 			.input(z.object({ recipient: z.string() }))
-			.output(unk)
+			.output(rpcSharingCanSendToOutputSchema)
 			.handler(({ context, input }) =>
 				sharingHandlers.sharingCanSendTo(context.userWallet, input.recipient),
 			),
 		cancelRequest: authenticatedProcedure
 			.input(z.object({ id: z.string().min(1) }))
-			.output(unk)
+			.output(rpcSharingCancelRequestOutputSchema)
 			.handler(({ context, input }) =>
 				sharingHandlers.sharingCancelRequest(context.userWallet, input.id),
 			),
 		rejectRequest: authenticatedProcedure
 			.input(z.object({ id: z.string().min(1) }))
-			.output(unk)
+			.output(rpcSharingRejectRequestOutputSchema)
 			.handler(({ context, input }) =>
 				sharingHandlers.sharingRejectRequest(context.userWallet, input.id),
 			),
 		acceptRequest: authenticatedProcedure
-			.output(unk)
+			.output(rpcSharingAcceptRequestOutputSchema)
 			.handler(() => sharingHandlers.sharingAcceptRequestDenied()),
 		approve: authenticatedProcedure
 			.input(z.record(z.string(), unk))
-			.output(unk)
+			.output(rpcSharingApproveOutputSchema)
 			.handler(({ context, input }) =>
 				sharingHandlers.sharingApprove(context.userWallet, input),
 			),
 		receivableFrom: authenticatedProcedure
-			.output(unk)
+			.output(rpcSharingReceivableFromOutputSchema)
 			.handler(({ context }) =>
 				sharingHandlers.sharingReceivableFrom(context.userWallet),
 			),
 		sendableTo: authenticatedProcedure
-			.output(unk)
+			.output(rpcSharingSendableToOutputSchema)
 			.handler(({ context }) =>
 				sharingHandlers.sharingSendableTo(context.userWallet),
 			),
 		inviteById: publicProcedure
 			.input(z.object({ id: z.string().min(1) }))
-			.output(unk)
+			.output(rpcSharingInviteByIdOutputSchema)
 			.handler(({ input }) => sharingHandlers.sharingInviteById(input.id)),
 		inviteClaim: authenticatedProcedure
 			.input(z.object({ id: z.string().min(1) }))
-			.output(unk)
+			.output(rpcSharingInviteClaimOutputSchema)
 			.handler(({ context, input }) =>
 				sharingHandlers.sharingInviteClaim(context.userWallet, input.id),
 			),
 		createRequest: authenticatedProcedure
 			.input(z.record(z.string(), unk))
-			.output(unk)
+			.output(rpcSharingCreateRequestOutputSchema)
 			.handler(({ context, input }) =>
 				sharingHandlers.sharingCreateRequest(context.userWallet, input),
 			),
 		requestInvite: authenticatedProcedure
 			.input(z.record(z.string(), unk))
-			.output(unk)
+			.output(rpcSharingRequestInviteOutputSchema)
 			.handler(({ context, input }) =>
 				sharingHandlers.sharingRequestInvite(context.userWallet, input),
 			),
@@ -311,17 +354,17 @@ export const appRouter = {
 	users: {
 		register: publicProcedure
 			.input(z.record(z.string(), unk))
-			.output(unk)
+			.output(rpcUserRegisterOutputSchema)
 			.handler(({ input }) => userHandlers.userRegister(input)),
 		profile: {
 			me: authenticatedProcedure
-				.output(unk)
+				.output(rpcUserProfileMeOutputSchema)
 				.handler(({ context }) =>
 					userHandlers.userProfileMe(context.userWallet),
 				),
 			update: authenticatedProcedure
 				.input(z.record(z.string(), unk))
-				.output(unk)
+				.output(rpcUserProfileUpdateOutputSchema)
 				.handler(({ context, input }) =>
 					userHandlers.userProfileUpdate(context.userWallet, input),
 				),
@@ -332,23 +375,23 @@ export const appRouter = {
 						username: z.string().optional(),
 					}),
 				)
-				.output(unk)
+				.output(rpcUserProfilePrevalidateOutputSchema)
 				.handler(({ input }) => userHandlers.userProfilePrevalidate(input)),
 			lookup: authenticatedProcedure
 				.input(z.object({ query: z.string().min(1) }))
-				.output(unk)
+				.output(rpcUserProfileLookupOutputSchema)
 				.handler(({ context, input }) =>
 					userHandlers.userProfileLookup(context.userWallet, input.query),
 				),
 			syncPrivyEmail: authenticatedProcedure
 				.input(z.record(z.string(), unk))
-				.output(unk)
+				.output(rpcUserProfileSyncPrivyEmailOutputSchema)
 				.handler(({ context, input }) =>
 					userHandlers.userProfileSyncPrivyEmail(context.userWallet, input),
 				),
 			setPrimaryEmail: authenticatedProcedure
 				.input(z.record(z.string(), unk))
-				.output(unk)
+				.output(rpcUserProfileSetPrimaryEmailOutputSchema)
 				.handler(({ context, input }) =>
 					userHandlers.userProfileSetPrimaryEmail(context.userWallet, input),
 				),
@@ -356,18 +399,18 @@ export const appRouter = {
 		signatures: {
 			create: authenticatedProcedure
 				.input(z.record(z.string(), unk))
-				.output(unk)
+				.output(rpcUserSignaturesCreateOutputSchema)
 				.handler(({ context, input }) =>
 					userHandlers.userSignaturesCreate(context.userWallet, input),
 				),
 			list: authenticatedProcedure
-				.output(unk)
+				.output(rpcUserSignaturesListOutputSchema)
 				.handler(({ context }) =>
 					userHandlers.userSignaturesList(context.userWallet),
 				),
 			get: authenticatedProcedure
 				.input(z.object({ id: z.string().min(1) }))
-				.output(unk)
+				.output(rpcUserSignaturesGetOutputSchema)
 				.handler(({ context, input }) =>
 					userHandlers.userSignaturesGetById(context.userWallet, input.id),
 				),
