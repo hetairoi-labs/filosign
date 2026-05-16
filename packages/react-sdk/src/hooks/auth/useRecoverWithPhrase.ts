@@ -1,6 +1,7 @@
 import { seedKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { filosignKeys } from "../../lib/query-keys";
 import { seedFromRecoveryPhrase } from "./recovery-phrase";
 import { setSessionSeed } from "./session-seed";
 
@@ -29,7 +30,7 @@ export function useRecoverWithPhrase() {
 
 			setSessionSeed(wallet.account.address, seed);
 			await queryClient.refetchQueries({
-				queryKey: ["fsQ-is-logged-in", wallet.account.address],
+				queryKey: filosignKeys.isLoggedIn(wallet.account.address),
 			});
 			return true;
 		},

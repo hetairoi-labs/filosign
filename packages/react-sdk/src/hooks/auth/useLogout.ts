@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { filosignKeys } from "../../lib/query-keys";
 import { clearSessionSeed } from "./session-seed";
 
 export function useLogout() {
@@ -17,7 +18,7 @@ export function useLogout() {
 			session.setJwt(null);
 
 			queryClient.invalidateQueries({
-				queryKey: ["fsQ-is-logged-in", wallet?.account.address],
+				queryKey: filosignKeys.isLoggedIn(wallet?.account.address),
 			});
 			queryClient.invalidateQueries();
 			queryClient.refetchQueries();
