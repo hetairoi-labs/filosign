@@ -166,7 +166,7 @@ export async function sharingRejectRequest(wallet: Address, id: string) {
 	return {};
 }
 
-export async function sharingAcceptRequestDenied() {
+export function sharingAcceptRequestDenied(): never {
 	throw new ORPCError("BAD_REQUEST", {
 		message:
 			"Share requests are accepted on-chain only. Sign ApproveSender and POST sharing.approve (see FSManager / apps/contracts/README.md).",
@@ -633,7 +633,7 @@ export async function sharingRequestInvite(wallet: Address, body: unknown) {
 			);
 
 		if (existingRequest) {
-			return { exists: true, alreadyRequested: true as const };
+			return { exists: true as const, alreadyRequested: true as const };
 		}
 
 		const [latestApproval] = await db
@@ -649,7 +649,7 @@ export async function sharingRequestInvite(wallet: Address, body: unknown) {
 			.limit(1);
 
 		if (latestApproval?.active) {
-			return { exists: true, alreadyApproved: true as const };
+			return { exists: true as const, alreadyApproved: true as const };
 		}
 
 		await db.insert(shareRequests).values({
@@ -670,7 +670,7 @@ export async function sharingRequestInvite(wallet: Address, body: unknown) {
 			}),
 		);
 
-		return { exists: true, requested: true as const };
+		return { exists: true as const, requested: true as const };
 	}
 
 	const [existingInvite] = await db
@@ -684,7 +684,7 @@ export async function sharingRequestInvite(wallet: Address, body: unknown) {
 		);
 
 	if (existingInvite) {
-		return { invited: true, alreadyInvited: true as const };
+		return { invited: true as const, alreadyInvited: true as const };
 	}
 
 	const [newInvite] = await db
