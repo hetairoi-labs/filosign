@@ -11,11 +11,11 @@ bun run --cwd apps/contracts check-types # tsc --noEmit
 
 `test` runs `compile` first (interfaces + Solidity), then `hardhat test`.
 
-**Deploy / migrate:** `migrate`, `migrate:testnet`, and `migrate:mainnet` run **`test` before `deploy`**. If the suite fails, deploy does not run.
+**Deploy / migrate:** `migrate`, `migrate:testnet`, and `migrate:mainnet` run `**test` before `deploy`**. If the suite fails, deploy does not run.
 
-Direct **`bun run deploy`** does not run tests; use **`migrate`** / **`migrate:*`** for gated deploy, or run `bun run test` yourself first.
+Direct `**bun run deploy**` does not run tests; use `**migrate**` / `**migrate:***` for gated deploy, or run `bun run test` yourself first.
 
-## Philosophy (ETHSKILLS-aligned)
+## Philosophy
 
 This stack is **Hardhat + viem + TypeScript**, not Foundry. Keep the same *intent* as [ETHSKILLS — Testing](https://raw.githubusercontent.com/austintgriffith/ethskills/refs/heads/master/testing/SKILL.md) ([overview](https://ethskills.com/SKILL.md)):
 
@@ -41,10 +41,10 @@ This stack is **Hardhat + viem + TypeScript**, not Foundry. Keep the same *inten
 
 ## Non-negotiables
 
-1. **Chain time** — Any field the contract compares to `block.timestamp` (e.g. registry signature validity, ERC-20 permit `deadline`) must use **`latestBlockTimestamp(publicClient)`**, not `Date.now()` / `Math.floor(Date.now()/1000)`.
+1. **Chain time** — Any field the contract compares to `block.timestamp` (e.g. registry signature validity, ERC-20 permit `deadline`) must use `**latestBlockTimestamp(publicClient)`**, not `Date.now()` / `Math.floor(Date.now()/1000)`.
 2. **Viem `.read` args** — For a single Solidity parameter of type `bytes32[]`, pass **one** tuple element that *is* the array: `read.computeEmailSignerCommitment([commitments])`. Passing a bare `Hex[]` with length 2 makes viem encode **two** ABI arguments → `AbiEncodingLengthMismatchError`.
 3. **Hex fixtures** — `bytes32`-sized literals must be **valid hex** (`0-9a-f`). Invalid nibbles produce opaque RPC errors.
-4. **Definitions** — Do not hand-edit `definitions/`. Updated by **deploy**, not by `compile` alone. See repo [`.cursor/rules/app.mdc`](../../.cursor/rules/app.mdc).
+4. **Definitions** — Do not hand-edit `definitions/`. Updated by **deploy**, not by `compile` alone. See repo `[.cursor/rules/app.mdc](../../.cursor/rules/app.mdc)`.
 
 ## Adding tests
 
@@ -58,13 +58,13 @@ For behavioral or security-sensitive edits, add or update tests **in the same ch
 
 ## Before merge / deploy
 
-- [ ] Custom or economic logic has tests for **failure modes** and **edges**, not only the happy path.
-- [ ] Access control: unauthorized callers revert where expected.
-- [ ] Fund flows: escrow and fee semantics covered with explicit balances or shared invariant helpers where applicable.
-- [ ] `bun run --cwd apps/contracts test` and `check-types` are green; required CI workflow passes.
+- Custom or economic logic has tests for **failure modes** and **edges**, not only the happy path.
+- Access control: unauthorized callers revert where expected.
+- Fund flows: escrow and fee semantics covered with explicit balances or shared invariant helpers where applicable.
+- `bun run --cwd apps/contracts test` and `check-types` are green; required CI workflow passes.
 
 ## CI
 
-Workflow: [`.github/workflows/contracts.yml`](../../.github/workflows/contracts.yml) runs `bun run test` and `check-types` on pull requests and on push to `main` / `master`. Enable it as a **required status** on your default branch in GitHub settings.
+Workflow: `[.github/workflows/contracts.yml](../../.github/workflows/contracts.yml)` runs `bun run test` and `check-types` on pull requests and on push to `main` / `master`. Enable it as a **required status** on your default branch in GitHub settings.
 
-PR template: [`.github/PULL_REQUEST_TEMPLATE.md`](../../.github/PULL_REQUEST_TEMPLATE.md) includes a contracts checklist.
+PR template: `[.github/PULL_REQUEST_TEMPLATE.md](../../.github/PULL_REQUEST_TEMPLATE.md)` includes a contracts checklist.
