@@ -2,25 +2,21 @@ import type { InferClientOutputs } from "@orpc/client";
 import { useQueries } from "@tanstack/react-query";
 import type { Address } from "viem";
 import type { AppRouterClient } from "../../orpc/app-router-types";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export type ProfileByAddress =
 	InferClientOutputs<AppRouterClient>["users"]["profile"]["lookup"];
 
 export function useProfilesByAddresses(addresses: Address[] | undefined) {
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 
 	const queries = useQueries({
 		queries: (addresses ?? []).map((address) => ({
-			queryKey: ["fsQ-user-info-by-address", address],
-			queryFn: async () => {
-				if (!auth) throw new Error("API not ready");
-				const userInfo = await auth.rpc.users.profile.lookup({
-					query: address,
-				});
-				return { address, profile: userInfo };
-			},
-			enabled: !!auth && !!address,
+			...rpcQuery.users.profile.lookup.queryOptions({
+				input: { query: address },
+			}),
+			enabled: isAuthed && !!address,
+			select: (profile: ProfileByAddress) => ({ address, profile }),
 		})),
 	});
 

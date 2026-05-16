@@ -2,7 +2,7 @@ import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { DAY } from "../../constants";
 import type { AppRouterClient } from "../../orpc/app-router-types";
-import { useAuthedApi } from "../auth";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export type UserProfile =
 	InferClientOutputs<AppRouterClient>["users"]["profile"]["me"];
@@ -14,15 +14,11 @@ export async function fetchUserProfile(
 }
 
 export function useUserProfile() {
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 
 	return useQuery({
-		queryKey: ["user"],
-		queryFn: async () => {
-			if (!auth) throw new Error("Unreachable");
-			return fetchUserProfile(auth.rpc);
-		},
+		...rpcQuery.users.profile.me.queryOptions(),
+		enabled: isAuthed,
 		staleTime: 1 * DAY,
-		enabled: !!auth,
 	});
 }
