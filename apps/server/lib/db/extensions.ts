@@ -26,7 +26,7 @@ export function dbExtensionHelpers(db: DbClient) {
 
 	async function updateUserFieldWithLog(args: {
 		walletAddress: Address;
-		fieldName: "username" | "email" | "firstName" | "lastName";
+		fieldName: "username" | "email" | "firstName" | "lastName" | "avatarKey";
 		newValue: string | undefined | null;
 	}) {
 		const { walletAddress, fieldName, newValue } = args;
