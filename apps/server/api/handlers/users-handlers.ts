@@ -1,6 +1,5 @@
 /**
- * Profile, registration, Dilithium signatures, and Privy email sync — migrated from api/routes/users/.
- * Multipart avatar upload stays on Hono (see avatar-route.ts).
+ * Profile, registration, Dilithium signatures, Privy email sync.
  */
 import { hashPrivySubjectCommitment } from "@filosign/shared";
 import { zEvmAddress, zHexString } from "@filosign/shared/zod";
@@ -11,6 +10,7 @@ import { isAddress } from "viem";
 import { z } from "zod";
 import db from "@/lib/db";
 import { materializePendingInvitesForEmail } from "@/lib/domain/sharing";
+import { userAvatarWebpKey } from "@/lib/domain/storage-keys";
 import { fsContracts } from "@/lib/evm";
 import { processTransaction } from "@/lib/indexer/process";
 import {
@@ -21,6 +21,7 @@ import {
 import { tryCatch } from "@/lib/utils/tryCatch";
 
 const { users, userSignatures } = db.schema;
+
 const { FSKeyRegistry } = fsContracts;
 
 export async function userProfileMe(wallet: Address) {
@@ -76,6 +77,8 @@ const zProfilePutBody = z.object({
 		.min(1, { error: "Last name must be at least 1 character" })
 		.max(50, { error: "Last name must be at most 50 characters" })
 		.optional(),
+	/** Must match {@link userAvatarWebpKey} after presigned PUT succeeds. */
+	avatarKey: z.string().min(1).optional(),
 });
 
 export async function userProfileUpdate(wallet: Address, body: unknown) {
@@ -117,6 +120,28 @@ export async function userProfileUpdate(wallet: Address, body: unknown) {
 		fieldName: "lastName",
 		newValue: lastName,
 	});
+
+	if (parsedBody.data.avatarKey !== undefined) {
+		const trimmed = parsedBody.data.avatarKey.trim();
+		const expectedKey = userAvatarWebpKey(wallet);
+		if (trimmed !== expectedKey) {
+			throw new ORPCError("BAD_REQUEST", {
+				message: "Avatar key does not match this wallet",
+			});
+		}
+		const { bucket } = await import("@/lib/s3/client");
+		const exists = await bucket.exists(expectedKey);
+		if (!exists) {
+			throw new ORPCError("BAD_REQUEST", {
+				message: "Avatar upload not found — PUT the WebP to the issued URL first",
+			});
+		}
+		await db.updateUserFieldWithLog({
+			walletAddress: wallet,
+			fieldName: "avatarKey",
+			newValue: expectedKey,
+		});
+	}
 
 	if (email?.trim()) {
 		const inviteRes = await tryCatch(
