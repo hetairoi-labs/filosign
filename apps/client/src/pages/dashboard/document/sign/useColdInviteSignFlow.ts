@@ -1,3 +1,4 @@
+import { normalizeColdInvitePhrase } from "@filosign/crypto-utils";
 import { useFilosignContext } from "@filosign/react";
 import {
 	fetchUserProfile,
@@ -23,6 +24,10 @@ import { getAddress, type Hex } from "viem";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { coldInviteRecipientMatchesIdentity } from "@/src/lib/routing/cold-invite-search";
 import { executeSwitchAccountLogout } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
+
+const dbg = (...parts: unknown[]) => {
+	console.debug("[cold-invite sign]", ...parts);
+};
 
 export function useColdInviteSignFlow(args: {
 	pieceCid: string;
@@ -66,8 +71,9 @@ export function useColdInviteSignFlow(args: {
 	useEffect(() => {
 		if (!invite || authenticated || autoPrivyLoginRef.current) return;
 		autoPrivyLoginRef.current = true;
+		dbg("auto Privy login: starting", { inviteTokenLen: inviteToken.length });
 		void login();
-	}, [invite, authenticated, login]);
+	}, [invite, authenticated, login, inviteToken.length]);
 
 	const runColdInviteSwitchAccount = useCallback(async () => {
 		await executeSwitchAccountLogout({
@@ -88,14 +94,14 @@ export function useColdInviteSignFlow(args: {
 		resetColdInviteWizardAfterSwitchAccount,
 	]);
 
+	const phraseNormalized = useMemo(
+		() => normalizeColdInvitePhrase(phrase),
+		[phrase],
+	);
+
 	const phraseWordCount = useMemo(() => {
-		const normalized = phrase
-			.trim()
-			.toLowerCase()
-			.replace(/[\s_]+/g, "-")
-			.replace(/-+/g, "-");
-		return normalized.split("-").filter(Boolean).length;
-	}, [phrase]);
+		return phraseNormalized.split("-").filter(Boolean).length;
+	}, [phraseNormalized]);
 
 	const loggedInEmail = useMemo(
 		() => user?.email?.address?.trim() || user?.google?.email?.trim() || "",
@@ -173,6 +179,10 @@ export function useColdInviteSignFlow(args: {
 		walletUnlockStartedRef.current = true;
 		setTryingWalletUnlock(true);
 
+		dbg("sdkLogin.walletUnlock: mutateAsync start", {
+			address: wallet?.account?.address,
+		});
+
 		void sdkLogin
 			.mutateAsync({})
 			.catch((err: unknown) => {
@@ -180,10 +190,12 @@ export function useColdInviteSignFlow(args: {
 					err instanceof Error &&
 					err.message === LOGIN_RECOVERY_PHRASE_REQUIRED
 				) {
+					dbg("sdkLogin.walletUnlock: recovery phrase required");
 					setShowFilosignRecovery(true);
 					walletUnlockStartedRef.current = false;
 					return;
 				}
+				dbg("sdkLogin.walletUnlock: error", err);
 				toast.error(
 					err instanceof Error ? err.message : "Could not unlock session",
 				);
@@ -191,6 +203,10 @@ export function useColdInviteSignFlow(args: {
 				walletUnlockStartedRef.current = false;
 			})
 			.finally(() => {
+				dbg("sdkLogin.walletUnlock: finished", {
+					sdkLoginPending: sdkLogin.isPending,
+					isLoggedIn: isLoggedIn.data,
+				});
 				setTryingWalletUnlock(false);
 			});
 	}, [
@@ -223,6 +239,30 @@ export function useColdInviteSignFlow(args: {
 		isLoggedIn.data,
 		showFilosignRecovery,
 		tryingWalletUnlock,
+	]);
+
+	useEffect(() => {
+		dbg("wizard / unlock state snapshot", {
+			wizardPanel,
+			authenticated,
+			phraseChars: phrase.length,
+			phraseWordCount,
+			coldDecryptPending: coldDecrypt.isPending,
+			claimPending: claimColdInvite.isPending,
+			sdkLoginPending: sdkLogin.isPending,
+			isLoggedIn: isLoggedIn.data,
+			shouldSwitchAccountPrompt,
+		});
+	}, [
+		wizardPanel,
+		authenticated,
+		phrase.length,
+		phraseWordCount,
+		coldDecrypt.isPending,
+		claimColdInvite.isPending,
+		sdkLogin.isPending,
+		isLoggedIn.data,
+		shouldSwitchAccountPrompt,
 	]);
 
 	const claimWithWalletWrap = useCallback(
@@ -317,6 +357,7 @@ export function useColdInviteSignFlow(args: {
 	]);
 
 	const handleUnlockDocument = useCallback(async () => {
+		dbg("handleUnlockDocument: click");
 		if (!invite || !phrase.trim()) {
 			toast.error("Enter the six-word passphrase the sender shared with you.");
 			return;
@@ -332,31 +373,48 @@ export function useColdInviteSignFlow(args: {
 			return;
 		}
 
+		const normalizedPhrase = normalizeColdInvitePhrase(phrase);
+		const wc = normalizedPhrase.split("-").filter(Boolean).length;
+		if (wc !== 6) {
+			dbg("handleUnlockDocument: wrong word count", { wc });
+			toast.error(
+				`Passphrase must be exactly six hyphen-separated words (${wc} detected).`,
+			);
+			return;
+		}
+
+		dbg("handleUnlockDocument: preconditions ok", {
+			phraseWordCount: wc,
+			pieceCid,
+		});
+
 		setDecryptError(null);
 		try {
 			await ensureLoggedInForUnlock();
 
 			const recipientEncryptionPk = await resolveRecipientEncryptionKey();
+			dbg("handleUnlockDocument: got recipient encryption PK (len)", {
+				len: recipientEncryptionPk.length,
+			});
 
 			const result = await coldDecrypt.mutateAsync({
-				phrase: phrase
-					.trim()
-					.toLowerCase()
-					.replace(/[\s_]+/g, "-")
-					.replace(/-+/g, "-"),
+				phrase: normalizedPhrase,
 				wrappedEncryptionKey: invite.wrappedEncryptionKey as Hex,
 				downloadUrl: invite.downloadUrl,
 			});
+			dbg("handleUnlockDocument: cold decrypt ok, claiming invite");
 
 			await claimWithWalletWrap(result.encryptionKey, recipientEncryptionPk);
 			setFileData(result);
 
 			void queryClient.invalidateQueries({ queryKey: ["user"] });
 			toast.success("Document unlocked and secured to your wallet");
+			dbg("handleUnlockDocument: done");
 		} catch (e) {
 			if (e instanceof Error && e.message === "PRIVY_LOGIN_STARTED") return;
 			if (e instanceof Error && e.message === "REDIRECTING_TO_ONBOARDING")
 				return;
+			dbg("handleUnlockDocument: error", e);
 			const msg =
 				e instanceof Error ? e.message : "Could not unlock this document";
 			setDecryptError(msg);
@@ -372,6 +430,7 @@ export function useColdInviteSignFlow(args: {
 		coldDecrypt.mutateAsync,
 		claimWithWalletWrap,
 		queryClient,
+		pieceCid,
 	]);
 
 	const previewPdfBytes = useMemo(() => {

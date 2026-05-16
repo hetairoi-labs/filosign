@@ -279,6 +279,12 @@ export function ColdInviteSignDocument({ pieceCid, inviteToken }: Props) {
 										className="font-mono text-sm"
 									/>
 								</div>
+								{f.phraseWordCount > 0 && f.phraseWordCount !== 6 && (
+									<p className="text-xs text-muted-foreground">
+										Passphrase must be exactly six words (hyphen-separated).
+										Current segments detected: {f.phraseWordCount}
+									</p>
+								)}
 								{f.decryptError && (
 									<p className="text-sm text-destructive">{f.decryptError}</p>
 								)}
@@ -287,10 +293,7 @@ export function ColdInviteSignDocument({ pieceCid, inviteToken }: Props) {
 									variant="primary"
 									className="w-full"
 									disabled={
-										f.coldDecrypt.isPending ||
-										f.claimColdInvite.isPending ||
-										f.sdkLogin.isPending ||
-										f.phraseWordCount !== 6
+										f.coldDecrypt.isPending || f.claimColdInvite.isPending
 									}
 									onClick={() => void f.handleUnlockDocument()}
 								>

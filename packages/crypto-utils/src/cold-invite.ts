@@ -61,11 +61,16 @@ export function generateColdInvitePhrase(): string {
 
 /** Normalize user input: trim, lowercase, collapse spaces/underscores to hyphens. */
 export function normalizeColdInvitePhrase(phrase: string): string {
-	return phrase
-		.trim()
-		.toLowerCase()
-		.replace(/[\s_]+/g, "-")
-		.replace(/-+/g, "-");
+	return (
+		phrase
+			.trim()
+			.toLowerCase()
+			// Common paste variants (email/clients swap ASCII hyphen for en/em dash).
+			.replace(/[\u2013\u2014]/g, "-")
+			.replace(/[,，;]+/g, "-")
+			.replace(/[\s_]+/g, "-")
+			.replace(/-+/g, "-")
+	);
 }
 
 async function deriveColdInviteKeyFromPhrase(args: {

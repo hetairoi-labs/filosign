@@ -159,6 +159,8 @@ describe("Cold invite phrase", () => {
 		expect(normalizeColdInvitePhrase("word__word___word_word")).toBe(
 			"word-word-word-word",
 		);
+		expect(normalizeColdInvitePhrase("a,b,c,d,e,f")).toBe("a-b-c-d-e-f");
+		expect(normalizeColdInvitePhrase("a–b")).toBe("a-b"); // en dash
 	});
 });
 
