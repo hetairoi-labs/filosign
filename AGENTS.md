@@ -87,11 +87,11 @@ flowchart LR
 
 ## Runtime
 
-`[router.ts](apps/server/api/routes/router.ts)` `GET /runtime` → `chainKey`, chain, fees/treasury (`FSManager`). Browser `getContracts` uses `runtime.chainKey` + defs; matches `[config.ts](apps/server/config.ts)`.
+`[router.ts](apps/server/api/routes/router.ts)` `GET /runtime` uses `respond.ok` (same JSON envelope as other APIs; payload in `data`). Browser `getContracts` uses `runtime.chainKey` + defs; matches `[config.ts](apps/server/config.ts)`.
 
 ## API
 
-Mount in `[api/routes/router.ts](apps/server/api/routes/router.ts)`: `files/`, `users/`, `sharing/`, `auth/`, `tx/`. Handlers e.g. `[handlers/sharing.ts](apps/server/api/handlers/sharing.ts)`. Align with [apps/web/api-routes.mdc](.cursor/rules/apps/web/api-routes.mdc).
+Mount in `[api/routes/router.ts](apps/server/api/routes/router.ts)`: `files/`, `users/`, `sharing/`, `auth/`, `tx/`. Cross-route domain logic lives under **`lib/domain/`** (e.g. [`lib/domain/sharing.ts`](apps/server/lib/domain/sharing.ts)). Align with [apps/web/api-routes.mdc](.cursor/rules/apps/web/api-routes.mdc).
 
 ## Lib choice
 
