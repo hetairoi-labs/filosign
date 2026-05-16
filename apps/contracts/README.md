@@ -63,7 +63,7 @@ flowchart TB
 | `**FSFileRegistry**` | Per-file `incentiveToken` / `incentiveAmount` / `incentiveClaimed` / refund schedule | **Declared incentive** per signer commitment (what the workflow records as the attach size). For **standard** ERC‑20s this matches what lands in escrow; for **deflationary/fee-on-transfer** tokens the registry can still show the requested gross while escrow credits **less**, and later settlement can **revert** (`InsufficientBalance`) if the sender’s ledger is short. |
 
 
-**Operational nuance:** `**FSManager.attachIncentive**` tells the registry the **nominal** token/amount; escrow books **tokens actually received**. Keep the allowlist on **plain** ERC‑20s (e.g. USDC) so nominal and credited amounts stay aligned ([ERC‑20 guardrail](#erc20-token-guardrail)). See [`AUDIT-contracts-internal.md`](./AUDIT-contracts-internal.md).
+**Operational nuance:** `**FSManager.attachIncentive**` tells the registry the **nominal** token/amount; escrow books **tokens actually received**. Keep the allowlist on **plain** ERC‑20s (e.g. USDC) so nominal and credited amounts stay aligned ([ERC‑20 guardrail](#erc20-token-guardrail)). See [`AUDIT.md`](./AUDIT.md).
 
 Platform fee `**platformFeeBps`** is applied in `**FSEscrow.settleIncentiveRelease**` using the **manager’s fee at payout time**, not frozen at incentive attach (`FSManager.releaseIncentives` → escrow).
 
@@ -158,7 +158,7 @@ Local Hardhat: **USDC-shaped** (**6 decimals**), `**ERC20Permit`**,  `**Ownable*
 
 ## ERC‑20 token guardrail
 
-Escrow **deposit** paths credit **balance deltas**, so the vault ledger matches **tokens physically received** on each pull. **Still** keep the allowlist on **plain** ERC‑20 behaviour (e.g. canonical USDC): **`FSFileRegistry`** stores the **nominal** attach amount from the server/manager, which can **diverge** from credited escrow if a token is fee-on-transfer or otherwise non-standard—then refunds/settlement can fail until policy or product fixes the mismatch. **Rebasing** tokens remain **unsupported** without bespoke design. See **`AUDIT-contracts-internal.md`**.
+Escrow **deposit** paths credit **balance deltas**, so the vault ledger matches **tokens physically received** on each pull. **Still** keep the allowlist on **plain** ERC‑20 behaviour (e.g. canonical USDC): **`FSFileRegistry`** stores the **nominal** attach amount from the server/manager, which can **diverge** from credited escrow if a token is fee-on-transfer or otherwise non-standard—then refunds/settlement can fail until policy or product fixes the mismatch. **Rebasing** tokens remain **unsupported** without bespoke design. See **`AUDIT.md`**.
 
 ---
 
