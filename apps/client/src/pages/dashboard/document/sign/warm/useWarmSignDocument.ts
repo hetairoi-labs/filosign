@@ -8,10 +8,10 @@ import {
 	useSignDraft,
 	useSignFile,
 	useUpdateSignDraft,
-	useUserProfile,
 	useViewFile,
 	type ViewFileResult,
-} from "@filosign/react/hooks";
+} from "@filosign/react/files";
+import { useUserProfile } from "@filosign/react/users";
 import { buildRotatedInviteEnvelope } from "@filosign/react/utils";
 import {
 	hashNormalizedSignerEmail,

@@ -1,4 +1,4 @@
-import type { ViewFileResult } from "@filosign/react/hooks";
+import type { ViewFileResult } from "@filosign/react/files";
 import type { PlacementField } from "@filosign/shared";
 import { DownloadIcon, FileTextIcon } from "@phosphor-icons/react";
 import type { Dispatch, SetStateAction } from "react";

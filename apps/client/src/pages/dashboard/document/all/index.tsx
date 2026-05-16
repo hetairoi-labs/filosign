@@ -1,4 +1,4 @@
-import { useReceivedFiles, useSentFiles } from "@filosign/react/hooks";
+import { useReceivedFiles, useSentFiles } from "@filosign/react/files";
 import {
 	FileTextIcon,
 	FunnelIcon,

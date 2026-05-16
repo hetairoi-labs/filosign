@@ -1,19 +1,20 @@
 import { normalizeColdInvitePhrase } from "@filosign/crypto-utils";
 import { useFilosignContext } from "@filosign/react";
 import {
-	fetchUserProfile,
 	LOGIN_RECOVERY_PHRASE_REQUIRED,
-	useClaimColdInvite,
-	useColdInviteDecrypt,
-	useColdInvitePayload,
 	useIsLoggedIn,
 	useIsRegistered,
 	useLogin,
 	useLogout,
 	useRecoverWithPhrase,
-	useUserProfile,
+} from "@filosign/react/auth";
+import {
+	useClaimColdInvite,
+	useColdInviteDecrypt,
+	useColdInvitePayload,
 	type ViewFileResult,
-} from "@filosign/react/hooks";
+} from "@filosign/react/files";
+import { fetchUserProfile, useUserProfile } from "@filosign/react/users";
 import { buildClaimKemPayload } from "@filosign/react/utils";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";

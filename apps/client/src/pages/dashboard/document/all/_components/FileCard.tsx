@@ -1,4 +1,4 @@
-import { useFileInfo, useViewFile } from "@filosign/react/hooks";
+import { useFileInfo, useViewFile } from "@filosign/react/files";
 import {
 	DotsThreeVerticalIcon,
 	FilePdfIcon,
