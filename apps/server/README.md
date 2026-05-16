@@ -51,8 +51,8 @@ JSON API is **`/api/rpc`** — native outputs + **`ORPCError`** mapping. OpenAPI
 ## Database
 
 - **Drizzle** uses **`pg.Pool`** in `lib/db/client.ts`; tune **`max`** / **`idleTimeoutMillis`** for your Postgres limits.
-- Push schema (dev): `bun run db:push:local` or `db:push:testnet`
-- Purge (destructive): `db:purge:*` scripts
+- Push schema (dev): `bun run db -- push local` or `bun run db -- push testnet` (from repo root)
+- Purge (destructive): `bun run db -- purge local|testnet`
 
 ## Checks
 

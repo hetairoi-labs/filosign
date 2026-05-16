@@ -6,7 +6,7 @@ Marketing / SEO site (Astro 6 + Tailwind v4). Migrated from the React client app
 
 From repo root:
 
-- `bun run astro:dev` — dev server ([localhost:3001](http://localhost:3001))
+- `bun run dev -- --astro` or `bun run --cwd apps/astro dev:local` — dev server ([localhost:3001](http://localhost:3001))
 - `bun run astro:build` — production build to `dist/`
 
 From this package:
