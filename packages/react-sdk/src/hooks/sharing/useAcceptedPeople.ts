@@ -1,20 +1,24 @@
 import { useQuery } from "@tanstack/react-query";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 import { useAcceptedRecipients } from "./useSendableTo";
 
 export function useAcceptedPeople() {
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 	const { data: acceptedRecipients } = useAcceptedRecipients();
 
 	return useQuery({
-		queryKey: ["accepted-people", acceptedRecipients],
+		queryKey: [
+			...rpcQuery.sharing.sentRequests.key(),
+			"accepted-people",
+			acceptedRecipients,
+		],
 		queryFn: async () => {
-			if (!acceptedRecipients || !auth) return { people: [] };
+			if (!acceptedRecipients || !isAuthed) return { people: [] };
 
 			const people = await Promise.all(
 				acceptedRecipients.map(async (request) => {
 					try {
-						const profile = await auth.rpc.users.profile.lookup({
+						const profile = await rpcQuery.users.profile.lookup.call({
 							query: request.recipientWallet,
 						});
 						return {
@@ -44,6 +48,6 @@ export function useAcceptedPeople() {
 
 			return { people };
 		},
-		enabled: !!acceptedRecipients && !!auth,
+		enabled: !!acceptedRecipients && isAuthed,
 	});
 }

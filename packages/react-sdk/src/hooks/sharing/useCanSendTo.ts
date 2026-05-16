@@ -2,22 +2,19 @@ import { useQuery } from "@tanstack/react-query";
 import type { Address } from "viem";
 import { MINUTE } from "../../constants";
 import { useFilosignContext } from "../../context/useFilosignContext";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export function useCanSendTo(args: { recipient: Address }) {
 	const { recipient } = args;
 	const { wallet } = useFilosignContext();
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 
 	return useQuery({
-		queryKey: ["fsQ-is-approved", recipient, wallet?.account.address],
-		queryFn: async () => {
-			if (!auth || !wallet) return false;
-
-			const raw = await auth.rpc.sharing.canSendTo({ recipient });
-			return raw.canSend;
-		},
-		enabled: !!wallet && !!auth,
+		...rpcQuery.sharing.canSendTo.queryOptions({
+			input: { recipient },
+		}),
+		enabled: !!wallet && isAuthed,
 		staleTime: 5 * MINUTE,
+		select: (data) => data.canSend,
 	});
 }
