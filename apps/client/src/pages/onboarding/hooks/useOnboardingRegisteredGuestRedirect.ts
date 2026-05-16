@@ -1,4 +1,4 @@
-import { useIsRegistered } from "@filosign/react/hooks";
+import { useIsRegistered } from "@filosign/react/auth";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";

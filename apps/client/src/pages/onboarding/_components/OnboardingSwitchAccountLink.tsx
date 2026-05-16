@@ -1,5 +1,5 @@
 import { useFilosignContext } from "@filosign/react";
-import { useLogout } from "@filosign/react/hooks";
+import { useLogout } from "@filosign/react/auth";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";

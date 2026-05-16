@@ -1,4 +1,4 @@
-import { useLogin } from "@filosign/react/hooks";
+import { useLogin } from "@filosign/react/auth";
 import { useIdentityToken } from "@privy-io/react-auth";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";

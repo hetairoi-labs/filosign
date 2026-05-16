@@ -1,8 +1,5 @@
-import {
-	useAuthedApi,
-	useIsRegistered,
-	useUpdateUserProfile,
-} from "@filosign/react/hooks";
+import { useAuthedApi, useIsRegistered } from "@filosign/react/auth";
+import { useUpdateUserProfile } from "@filosign/react/users";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
