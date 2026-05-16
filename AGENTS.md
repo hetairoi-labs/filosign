@@ -77,4 +77,4 @@ Use when relevant (`~/.agents/skills/`): **ETHSKILLS** / `~/.cursor/skills/ethsk
 
 ## Development stance
 
-Pre-production (solo dev, no users): skip backward-compat and migration shims. Fix root causes; replace legacy code, comments, and modules—don’t layer around them.
+Pre-production (solo dev, no users): skip backward-compat and migration shims. Fix root causes; replace legacy code, unused dependencies, comments, and modules—don’t layer around them.

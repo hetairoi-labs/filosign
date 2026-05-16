@@ -17,22 +17,13 @@
 		"viem": "catalog:",
 		"@filosign/contracts": "workspace:*",
 		"@filosign/crypto-utils": "workspace:*",
-		"@web3-storage/data-segment": "catalog:",
-		"axios": "catalog:",
-		"browser-image-compression": "catalog:",
-		"hono": "catalog:",
-		"idb": "catalog:",
-		"multiformats": "catalog:",
 		"zod": "catalog:"
 	},
 	"peerDependencies": {
-		"viem": "catalog:",
-		"wagmi": "catalog:",
-		"react": "catalog:"
+		"viem": "catalog:"
 	},
 	"devDependencies": {
 		"@types/bun": "catalog:",
-		"@types/react": "catalog:",
 		"typescript": "catalog:"
 	}
 }

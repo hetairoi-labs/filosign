@@ -1,11 +1,11 @@
 import { RouterProvider } from "@tanstack/react-router";
+import { ThemeProvider } from "next-themes";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Toaster } from "sonner";
 import ProfileEmailSync from "./lib/components/custom/ProfileEmailSync";
 import { ErrorBoundary } from "./lib/components/errors/ErrorBoundary";
+import { Toaster } from "./lib/components/ui/sonner";
 import { QueryClientProvider } from "./lib/context/query-client";
-import { ThemeProvider } from "./lib/context/theme-provider";
 import router from "./router";
 import "./globals.css";
 import { IconContext } from "@phosphor-icons/react";
@@ -23,7 +23,12 @@ const App = () => {
 	return (
 		<StrictMode>
 			<ErrorBoundary>
-				<ThemeProvider defaultTheme="light" storageKey="theme">
+				<ThemeProvider
+					attribute="class"
+					defaultTheme="light"
+					enableSystem
+					storageKey="theme"
+				>
 					<QueryClientProvider>
 						<PrivyProvider>
 							<WagmiProvider>

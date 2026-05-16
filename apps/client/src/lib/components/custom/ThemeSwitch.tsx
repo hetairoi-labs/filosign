@@ -1,10 +1,11 @@
 import { MoonIcon, SunIcon } from "@phosphor-icons/react";
 import { motion } from "motion/react";
-import { useTheme } from "@/src/lib/context/theme-provider";
+import { useTheme } from "next-themes";
 import { Button } from "../ui/button";
 
 export default function ThemeSwitch() {
-	const { theme, setTheme } = useTheme();
+	const { resolvedTheme, setTheme } = useTheme();
+	const isDark = resolvedTheme === "dark";
 
 	return (
 		<motion.div
@@ -18,9 +19,9 @@ export default function ThemeSwitch() {
 			<Button
 				variant="secondary"
 				size="icon"
-				onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+				onClick={() => setTheme(isDark ? "light" : "dark")}
 			>
-				{theme === "dark" ? <MoonIcon /> : <SunIcon />}
+				{isDark ? <MoonIcon /> : <SunIcon />}
 				<span className="sr-only">Toggle theme</span>
 			</Button>
 		</motion.div>
