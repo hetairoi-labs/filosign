@@ -2,9 +2,11 @@ import { eip712signature } from "@filosign/contracts";
 import { toHex, walletKeyGen } from "@filosign/crypto-utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { invalidateUserProfile } from "../../lib/invalidate-user-profile";
+import { filosignKeys } from "../../lib/query-keys";
 import { recoveryPhraseFromSeed } from "./recovery-phrase";
 import { setSessionSeed } from "./session-seed";
-import { unlockSeedFromWallet } from "./unlock-seed-from-wallet";
+import { unlockSeedFromWallet } from "./unlock-seed";
 import { useIsLoggedIn } from "./useIsLoggedIn";
 import { useIsRegistered } from "./useIsRegistered";
 
@@ -17,7 +19,7 @@ export interface LoginParams {
 }
 
 export function useLogin() {
-	const { rpc, contracts, wallet, wasm } = useFilosignContext();
+	const { rpcQuery, contracts, wallet, wasm } = useFilosignContext();
 	const queryClient = useQueryClient();
 
 	const { data: isRegistered } = useIsRegistered();
@@ -82,23 +84,25 @@ export function useLogin() {
 					skipToken,
 				};
 
-				await rpc.users.register(requestPayload);
+				await rpcQuery.users.register.call(requestPayload);
 
 				setSessionSeed(wallet.account.address, keygenData.seed);
 				recoveryPhrase = recoveryPhraseFromSeed(keygenData.seedCore32);
 
 				queryClient
 					.refetchQueries({
-						queryKey: ["fsQ-is-registered", wallet?.account.address],
+						queryKey: filosignKeys.isRegistered(wallet?.account.address),
 					})
 					.then(() =>
 						queryClient
 							.refetchQueries({
-								queryKey: ["fsQ-stored-keygen-data", wallet?.account.address],
+								queryKey: filosignKeys.storedKeygenData(
+									wallet?.account.address,
+								),
 							})
 							.then(() =>
 								queryClient.refetchQueries({
-									queryKey: ["fsQ-is-logged-in", wallet?.account.address],
+									queryKey: filosignKeys.isLoggedIn(wallet?.account.address),
 								}),
 							),
 					);
@@ -118,20 +122,20 @@ export function useLogin() {
 
 			queryClient
 				.refetchQueries({
-					queryKey: ["fsQ-is-registered", wallet?.account.address],
+					queryKey: filosignKeys.isRegistered(wallet?.account.address),
 				})
 				.then(() =>
 					queryClient
 						.refetchQueries({
-							queryKey: ["fsQ-stored-keygen-data", wallet?.account.address],
+							queryKey: filosignKeys.storedKeygenData(wallet?.account.address),
 						})
 						.then(() =>
 							queryClient.refetchQueries({
-								queryKey: ["fsQ-is-logged-in", wallet?.account.address],
+								queryKey: filosignKeys.isLoggedIn(wallet?.account.address),
 							}),
 						),
 				);
-			void queryClient.invalidateQueries({ queryKey: ["user"] });
+			void invalidateUserProfile(queryClient, rpcQuery);
 			return recoveryPhrase
 				? { success: true, recoveryPhrase }
 				: { success: true };
