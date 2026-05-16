@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Address, Hex } from "viem";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { filosignKeys } from "../../lib/query-keys";
 
 export function useDocumentIncentive(args: {
 	pieceCid: string | undefined;
@@ -9,11 +10,10 @@ export function useDocumentIncentive(args: {
 	const { contracts, wallet } = useFilosignContext();
 
 	return useQuery({
-		queryKey: [
-			"fsQ-document-incentive",
+		queryKey: filosignKeys.documentIncentive(
 			args.pieceCid,
 			args.signerEmailCommitment,
-		],
+		),
 		queryFn: async () => {
 			if (
 				!contracts ||

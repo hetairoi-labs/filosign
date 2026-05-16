@@ -19,16 +19,16 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Address, Hex } from "viem";
 import z from "zod";
-import { calculatePieceCid } from "../../../utils/piece";
+import { calculatePieceCid } from "../../utils/piece.ts";
 import { useFilosignContext } from "../../context/useFilosignContext";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 import { useUserProfile } from "../users";
 
 type FileData = z.infer<ReturnType<typeof zFileData>>;
 
 export function useSendFile() {
 	const { contracts, wallet } = useFilosignContext();
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 	const { data: user } = useUserProfile();
 
 	const queryClient = useQueryClient();
@@ -58,7 +58,7 @@ export function useSendFile() {
 			} = args;
 			const timestamp = Math.floor(Date.now() / 1000);
 
-			if (!contracts || !wallet || !user || !auth) {
+			if (!contracts || !wallet || !user || !isAuthed) {
 				throw new Error(
 					"Not connected: contracts, wallet, profile, and auth required",
 				);
@@ -163,7 +163,7 @@ export function useSendFile() {
 				});
 			}
 
-			const uploadStartRaw = await auth.rpc.files.uploadStart({
+			const uploadStartRaw = await rpcQuery.files.uploadStart.call({
 				pieceCid: pieceCid.toString(),
 			});
 			const uploadStartResponse = z
@@ -267,9 +267,13 @@ export function useSendFile() {
 				...(coldInviteRows.length > 0 ? { coldInvites: coldInviteRows } : {}),
 			};
 
-			await auth.rpc.files.register(requestPayload as Record<string, unknown>);
+			await rpcQuery.files.register.call(
+				requestPayload as Record<string, unknown>,
+			);
 
-			queryClient.refetchQueries({ queryKey: ["sent-files"] });
+			void queryClient.invalidateQueries({
+				queryKey: rpcQuery.files.list.sent.key(),
+			});
 
 			return {
 				success: true as const,

@@ -8,7 +8,7 @@ import {
 	http,
 } from "viem";
 import { useFilosignContext } from "../../context/useFilosignContext";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 const PERMIT_DEADLINE_BUFFER = 20 * 60; // seconds
 
@@ -53,14 +53,13 @@ export type AttachInvoiceArgs = {
 
 export function useAttachInvoiceToFile() {
 	const { contracts, wallet } = useFilosignContext();
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 
 	return useMutation({
-		mutationKey: ["fsM-attach-incentive"],
 		mutationFn: async (args: AttachInvoiceArgs) => {
 			const { pieceCid, signerEmailCommitment, token, amount, memo } = args;
 
-			if (!contracts || !wallet || !auth) {
+			if (!contracts || !wallet || !isAuthed) {
 				throw new Error("not connected");
 			}
 
@@ -147,7 +146,7 @@ export function useAttachInvoiceToFile() {
 
 				const { v, r, s } = hexToSignature(permitSig);
 
-				await auth.rpc.files.piece.incentive({
+				return rpcQuery.files.piece.incentive.call({
 					pieceCid,
 					body: {
 						signerEmailCommitment,
@@ -187,7 +186,7 @@ export function useAttachInvoiceToFile() {
 					await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
 				}
 
-				await auth.rpc.files.piece.incentive({
+				return rpcQuery.files.piece.incentive.call({
 					pieceCid,
 					body: {
 						signerEmailCommitment,
@@ -198,8 +197,6 @@ export function useAttachInvoiceToFile() {
 					},
 				});
 			}
-
-			return true;
 		},
 	});
 }
