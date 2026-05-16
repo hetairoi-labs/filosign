@@ -1,32 +1,22 @@
+import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
-import { useFilosignContext } from "../../context/useFilosignContext";
+import type { AppRouterClient } from "../../orpc/app-router-types";
+import { useAuthedApi } from "../auth/useAuthedApi";
+
+export type SentShareRequestRow =
+	InferClientOutputs<AppRouterClient>["sharing"]["sentRequests"]["requests"][number];
 
 export function useSentRequests() {
-	const { api } = useFilosignContext();
+	const { data: auth } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["sent-requests"],
 		queryFn: async () => {
-			const response = await api.rpc.getSafe(
-				{
-					requests: z.array(
-						z.object({
-							id: z.string(),
-							senderWallet: z.string(),
-							recipientWallet: z.string(),
-							message: z.string().nullable(),
-							status: z.enum(["PENDING", "ACCEPTED", "REJECTED", "CANCELLED"]),
-							createdAt: z.string(),
-							updatedAt: z.string(),
-						}),
-					),
-				},
-				"/sharing/sent",
-			);
+			if (!auth) throw new Error("API is unreachable");
 
-			return response.data.requests;
+			const raw = await auth.rpc.sharing.sentRequests();
+			return raw.requests;
 		},
-		enabled: !!api,
+		enabled: !!auth,
 	});
 }

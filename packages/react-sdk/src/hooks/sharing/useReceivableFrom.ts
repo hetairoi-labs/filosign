@@ -1,28 +1,21 @@
+import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useAuthedApi } from "../auth/useAuthedApi";
 
+export type ReceivableApprovalRow =
+	InferClientOutputs<AppRouterClient>["sharing"]["receivableFrom"]["approvals"][number];
+
 export function useReceivableFrom() {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["receivable-from"],
 		queryFn: async () => {
-			if (!api) throw new Error("API is unreachable");
-			const response = await api.rpc.getSafe(
-				{
-					approvals: z.array(
-						z.object({
-							senderWallet: z.string(),
-							active: z.boolean(),
-							createdAt: z.string(),
-						}),
-					),
-				},
-				"/sharing/receivable-from",
-			);
-			return response.data.approvals;
+			if (!auth) throw new Error("API is unreachable");
+			const raw = await auth.rpc.sharing.receivableFrom();
+			return raw.approvals;
 		},
-		enabled: !!api,
+		enabled: !!auth,
 	});
 }

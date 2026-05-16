@@ -1,30 +1,21 @@
+import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useAuthedApi } from "../auth/useAuthedApi";
 
+export type SentEmailInviteRow =
+	InferClientOutputs<AppRouterClient>["sharing"]["emailInvites"]["invites"][number];
+
 export function useSentEmailInvites() {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["sent-email-invites"],
 		queryFn: async () => {
-			if (!api) throw new Error("API is unreachable");
-			const response = await api.rpc.getSafe(
-				{
-					invites: z.array(
-						z.object({
-							id: z.string(),
-							inviteeEmail: z.string(),
-							message: z.string().nullable(),
-							accepted: z.boolean(),
-							createdAt: z.string(),
-						}),
-					),
-				},
-				"/sharing/email-invites",
-			);
-			return response.data.invites;
+			if (!auth) throw new Error("API is unreachable");
+			const raw = await auth.rpc.sharing.emailInvites();
+			return raw.invites;
 		},
-		enabled: !!api,
+		enabled: !!auth,
 	});
 }

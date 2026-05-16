@@ -1,59 +1,36 @@
+import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { z } from "zod";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useAuthedApi } from "../auth/useAuthedApi";
 
+export type SendableApprovalRow =
+	InferClientOutputs<AppRouterClient>["sharing"]["sendableTo"]["approvals"][number];
+
 export function useSendableTo() {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["sendable-to"],
 		queryFn: async () => {
-			if (!api) throw new Error("API is unreachable");
-			const response = await api.rpc.getSafe(
-				{
-					approvals: z.array(
-						z.object({
-							recipientWallet: z.string(),
-							active: z.boolean(),
-							createdAt: z.string(),
-						}),
-					),
-				},
-				"/sharing/sendable-to",
-			);
-			return response.data.approvals;
+			if (!auth) throw new Error("API is unreachable");
+			const raw = await auth.rpc.sharing.sendableTo();
+			return raw.approvals;
 		},
-		enabled: !!api,
+		enabled: !!auth,
 	});
 }
 
 // Hook to get people who have accepted your requests (for envelope creation)
 export function useAcceptedRecipients() {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["accepted-recipients"],
 		queryFn: async () => {
-			if (!api) throw new Error("API is unreachable");
-			const response = await api.rpc.getSafe(
-				{
-					requests: z.array(
-						z.object({
-							id: z.string(),
-							senderWallet: z.string(),
-							recipientWallet: z.string(),
-							message: z.string().nullable(),
-							status: z.enum(["PENDING", "ACCEPTED", "REJECTED", "CANCELLED"]),
-							createdAt: z.string(),
-							updatedAt: z.string(),
-						}),
-					),
-				},
-				"/sharing/sent", // This would need to be added to show sent requests
-			);
-			// Filter for accepted requests
-			return response.data.requests.filter((req) => req.status === "ACCEPTED");
+			if (!auth) throw new Error("API is unreachable");
+			const raw = await auth.rpc.sharing.sentRequests();
+			return raw.requests.filter((req) => req.status === "ACCEPTED");
 		},
-		enabled: !!api,
+		enabled: !!auth,
 	});
 }

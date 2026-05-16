@@ -1,13 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useFilosignContext } from "../../context/useFilosignContext";
+import { useAuthedApi } from "../auth/useAuthedApi";
 
 export function useRejectRequest() {
-	const { api } = useFilosignContext();
+	const { data: auth } = useAuthedApi();
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: async (requestId: string) => {
-			await api.rpc.deleteSafe({}, `/sharing/${requestId}/reject`);
+			if (!auth) throw new Error("Not authenticated");
+			await auth.rpc.sharing.rejectRequest({ id: requestId });
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["received-requests"] });

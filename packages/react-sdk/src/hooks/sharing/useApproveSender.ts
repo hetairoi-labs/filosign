@@ -1,13 +1,12 @@
 import { eip712signature } from "@filosign/contracts";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Address } from "viem";
-import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
 import { useAuthedApi } from "../auth/useAuthedApi";
 
 export function useApproveSender() {
 	const { contracts, wallet } = useFilosignContext();
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -20,7 +19,7 @@ export function useApproveSender() {
 		}) => {
 			const { sender, establishMutualConnection, shareRequestId } = args;
 
-			if (!contracts || !wallet || !api) {
+			if (!contracts || !wallet || !auth) {
 				throw new Error("not connected");
 			}
 
@@ -46,25 +45,16 @@ export function useApproveSender() {
 				},
 			});
 
-			const resp = await api.rpc.postSafe(
-				{
-					txHash: z.string(),
-					reciprocalCreated: z.boolean().optional(),
-				},
-				"/sharing/approve",
-				{
-					sender,
-					nonce: nonce.toString(),
-					deadline: deadline.toString(),
-					signature,
-					...(establishMutualConnection
-						? { establishMutualConnection: true }
-						: {}),
-					...(shareRequestId ? { shareRequestId } : {}),
-				},
-			);
-
-			if (!resp.success) throw new Error("Failed to approve sender");
+			await auth.rpc.sharing.approve({
+				sender,
+				nonce: nonce.toString(),
+				deadline: deadline.toString(),
+				signature,
+				...(establishMutualConnection
+					? { establishMutualConnection: true }
+					: {}),
+				...(shareRequestId ? { shareRequestId } : {}),
+			});
 
 			queryClient.refetchQueries({
 				queryKey: ["fsQ-is-approved", wallet?.account.address, sender],
