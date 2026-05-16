@@ -1,7 +1,5 @@
 import { Hono } from "hono";
-import profile from "./profile";
-import signatures from "./signatures";
+import avatarRoute from "./avatar-route";
 
-export default new Hono()
-	.route("/profile", profile)
-	.route("/signatures", signatures);
+/** Multipart carve-out under `/api/users/profile/avatar` */
+export default new Hono().route("/profile/avatar", avatarRoute);
