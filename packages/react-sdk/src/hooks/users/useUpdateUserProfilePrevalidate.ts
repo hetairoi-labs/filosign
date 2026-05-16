@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import z from "zod";
 import { MINUTE } from "../../constants";
 import { useAuthedApi } from "../auth";
 
@@ -7,28 +6,19 @@ export function useUpdateUserProfilePrevalidate(args: {
 	email?: string;
 	username?: string;
 }) {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["fsQ-user-profile-prevalidate", args],
 		queryFn: async () => {
-			if (!api) throw new Error("Not reachable");
+			if (!auth) throw new Error("Not reachable");
 
-			const { email, username } = args;
-
-			const prevalidateResponse = await api.rpc.getSafe(
-				{
-					valid: z.boolean(),
-				},
-				`/users/profile/prevalidate?${new URLSearchParams({
-					...(email ? { email } : {}),
-					...(username ? { username } : {}),
-				})}`,
-			);
-
-			return prevalidateResponse.data;
+			return auth.rpc.users.profile.prevalidate({
+				...(args.email !== undefined ? { email: args.email } : {}),
+				...(args.username !== undefined ? { username: args.username } : {}),
+			});
 		},
-		enabled: !!api,
+		enabled: !!auth,
 		staleTime: 5 * MINUTE,
 	});
 }

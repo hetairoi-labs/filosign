@@ -2,14 +2,14 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthedApi } from "../auth";
 
 export function useSetPrimaryEmail() {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 	const queryClient = useQueryClient();
 
 	return useMutation({
 		mutationFn: async (args: { identityToken: string; email: string }) => {
-			if (!api) throw new Error("Not reachable");
+			if (!auth) throw new Error("Not reachable");
 
-			await api.rpc.postSafe({}, `/users/profile/set-primary-email`, {
+			await auth.rpc.users.profile.setPrimaryEmail({
 				identityToken: args.identityToken,
 				email: args.email,
 			});

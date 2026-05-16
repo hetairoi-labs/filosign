@@ -1,53 +1,26 @@
-import { zHexString } from "@filosign/shared/zod";
+import type { InferClientOutputs } from "@orpc/client";
 import { useQueries } from "@tanstack/react-query";
 import type { Address } from "viem";
-import z from "zod";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useAuthedApi } from "../auth/useAuthedApi";
 
-export type ProfileByAddress = {
-	walletAddress: `0x${string}`;
-	encryptionPublicKey: `0x${string}`;
-	lastActiveAt: string;
-	createdAt: string;
-	firstName: string | null;
-	lastName: string | null;
-	avatarUrl: string | null;
-	/** Present when the API returns it for sharing-linked profiles. */
-	email?: string | null;
-	has: { email: boolean; mobile: boolean };
-};
+export type ProfileByAddress =
+	InferClientOutputs<AppRouterClient>["users"]["profile"]["lookup"];
 
 export function useProfilesByAddresses(addresses: Address[] | undefined) {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 
 	const queries = useQueries({
 		queries: (addresses ?? []).map((address) => ({
 			queryKey: ["fsQ-user-info-by-address", address],
 			queryFn: async () => {
-				if (!api) throw new Error("API not ready");
-				const userInfo = await api.rpc.getSafe(
-					{
-						walletAddress: zHexString(),
-						encryptionPublicKey: zHexString(),
-						lastActiveAt: z.string(),
-						createdAt: z.string(),
-						firstName: z.string().nullable(),
-						lastName: z.string().nullable(),
-						avatarUrl: z.string().nullable(),
-						email: z.string().email().nullable().optional(),
-						has: z.object({
-							email: z.boolean(),
-							mobile: z.boolean(),
-						}),
-					},
-					`/users/profile/${address}`,
-				);
-				return { address, profile: userInfo.data } as {
-					address: Address;
-					profile: ProfileByAddress;
-				};
+				if (!auth) throw new Error("API not ready");
+				const userInfo = await auth.rpc.users.profile.lookup({
+					query: address,
+				});
+				return { address, profile: userInfo };
 			},
-			enabled: !!api && !!address,
+			enabled: !!auth && !!address,
 		})),
 	});
 

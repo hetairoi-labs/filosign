@@ -1,47 +1,28 @@
-import { zHexString } from "@filosign/shared/zod";
+import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import z from "zod";
-import type ApiClient from "../../ApiClient";
 import { DAY } from "../../constants";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useAuthedApi } from "../auth";
 
-const userProfileResponseShape = {
-	walletAddress: zHexString(),
-	encryptionPublicKey: zHexString(),
-	keygenData: z.any().nullable(),
-	createdAt: z.string(),
-	email: z.string().nullable(),
-	username: z.string().nullable(),
-	firstName: z.string().nullable(),
-	lastName: z.string().nullable(),
-	avatarUrl: z.string().nullable(),
-	/** Opaque `bytes32` for EIP-712 AckFile / SignFile; derived from `users.privyDid`. */
-	privySubjectCommitment: zHexString(),
-};
+export type UserProfile =
+	InferClientOutputs<AppRouterClient>["users"]["profile"]["me"];
 
-const zUserProfileModel = z.object(userProfileResponseShape);
-
-export type UserProfile = z.infer<typeof zUserProfileModel>;
-
-/** GET `/users/profile` with a JWT-backed client (e.g. after login/register). */
-export async function fetchUserProfile(api: ApiClient): Promise<UserProfile> {
-	const user = await api.rpc.getSafe(
-		userProfileResponseShape,
-		`/users/profile`,
-	);
-	return user.data;
+export async function fetchUserProfile(
+	rpc: AppRouterClient,
+): Promise<UserProfile> {
+	return rpc.users.profile.me();
 }
 
 export function useUserProfile() {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["user"],
 		queryFn: async () => {
-			if (!api) throw new Error("Noreachable");
-			return fetchUserProfile(api);
+			if (!auth) throw new Error("Unreachable");
+			return fetchUserProfile(auth.rpc);
 		},
 		staleTime: 1 * DAY,
-		enabled: !!api,
+		enabled: !!auth,
 	});
 }

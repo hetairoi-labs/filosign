@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthedApi } from "../auth";
 
 export function useUpdateUserProfile() {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -12,9 +12,9 @@ export function useUpdateUserProfile() {
 			firstName?: string;
 			lastName?: string;
 		}) => {
-			if (!api) throw new Error("Not reachable");
+			if (!auth) throw new Error("Not reachable");
 
-			await api.rpc.putSafe({}, `/users/profile`, {
+			await auth.rpc.users.profile.update({
 				email: args.email,
 				username: args.username,
 				firstName: args.firstName,
