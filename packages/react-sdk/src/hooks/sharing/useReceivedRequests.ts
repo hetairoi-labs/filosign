@@ -1,21 +1,17 @@
 import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import type { AppRouterClient } from "../../orpc/app-router-types";
-import { useAuthedApi } from "../auth/useAuthedApi";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 
 export type ShareRequestRow =
 	InferClientOutputs<AppRouterClient>["sharing"]["receivedRequests"]["requests"][number];
 
 export function useReceivedRequests() {
-	const { data: auth } = useAuthedApi();
+	const { rpcQuery, isAuthed } = useFilosignRpc();
 
 	return useQuery({
-		queryKey: ["received-requests"],
-		queryFn: async () => {
-			if (!auth) throw new Error("API is unreachable");
-			const raw = await auth.rpc.sharing.receivedRequests();
-			return raw.requests;
-		},
-		enabled: !!auth,
+		...rpcQuery.sharing.receivedRequests.queryOptions(),
+		enabled: isAuthed,
+		select: (data) => data.requests,
 	});
 }
