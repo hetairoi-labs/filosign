@@ -35,8 +35,17 @@ export function FilosignProvider(props: FilosignConfig) {
 		queryKey: ["runtime", apiBaseUrl],
 		queryFn: async () => {
 			const response = await api.rpc.base.get("/runtime");
-			const data = await response.data;
-			if (!data) throw new Error("Failed to fetch runtime");
+			const body = response.data as
+				| { success: true; data: Runtime; message: string }
+				| Runtime;
+			const data =
+				body &&
+				typeof body === "object" &&
+				"success" in body &&
+				body.success === true
+					? (body as { success: true; data: Runtime }).data
+					: (body as Runtime);
+			if (!data?.chainKey) throw new Error("Failed to fetch runtime");
 			return data;
 		},
 		staleTime: 5 * MINUTE,
