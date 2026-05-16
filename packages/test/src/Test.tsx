@@ -1,23 +1,26 @@
 import { useFilosignContext } from "@filosign/react";
 import {
-	useAckFile,
-	useApproveSender,
-	useAttachInvoiceToFile,
-	useCanReceiveFrom,
-	useCanSendTo,
-	useFileInfo,
 	useIsLoggedIn,
 	useIsRegistered,
 	useLogin,
 	useLogout,
+} from "@filosign/react/auth";
+import {
+	useAckFile,
+	useAttachInvoiceToFile,
+	useFileInfo,
 	useReceivedFiles,
 	useSendFile,
 	useSentFiles,
 	useSignFile,
-	useUserProfile,
-	useUserProfileByQuery,
 	useViewFile,
-} from "@filosign/react/hooks";
+} from "@filosign/react/files";
+import {
+	useApproveSender,
+	useCanReceiveFrom,
+	useCanSendTo,
+} from "@filosign/react/sharing";
+import { useUserProfile, useUserProfileByQuery } from "@filosign/react/users";
 import type { PlacementManifest } from "@filosign/shared";
 import {
 	hashNormalizedSignerEmail,
