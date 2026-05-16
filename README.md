@@ -111,7 +111,7 @@ Run client + API against staging:
 bun run dev -- --testnet
 ```
 
-See [`project/SCRIPTS.md`](project/SCRIPTS.md) for all dev/db commands.
+See [`SCRIPTS.md`](SCRIPTS.md) for all dev/db commands.
 
 Run the local test harness:
 
@@ -149,22 +149,23 @@ Client configuration includes:
 
 | Command | Description |
 | --- | --- |
-| `bun run dev -- --local` | Local chain (`serloc`) + client. |
+| `bun run dev` | Local bootstrap (chain + DB + deploy) + server + client. |
 | `bun run dev -- --local --full` | Above + Astro marketing site. |
 | `bun run dev -- --testnet` | Client + server (staging env). |
 | `bun run db -- push local` | Push Drizzle schema (local). |
-| `bun run sanity:check` | Lint + types + tests (CI gate). |
+| `bun run sanity` | Lint + types + unit tests (CI / pre-push). |
+| `bun run sanity -- --full` | Above + Hardhat contract tests. |
 | `bun run test:dev` | SDK/protocol test harness. |
 | `bun run check` | Biome (repo root). |
 
-More commands and migration from old script names: [`project/SCRIPTS.md`](project/SCRIPTS.md).
+All root commands: [`SCRIPTS.md`](SCRIPTS.md).
 
 ## Contracts
 
 Run a local Hardhat node:
 
 ```bash
-bun run --cwd apps/contracts localnode
+bun run contracts -- node
 ```
 
 Compile contracts:
