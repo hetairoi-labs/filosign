@@ -6,6 +6,9 @@ export const PACKAGE_DIRS: Record<string, string> = {
 	"@filosign/server": "apps/server",
 	"@filosign/astro": "apps/astro",
 	"@filosign/contracts": "apps/contracts",
+	"@filosign/crypto-utils": "packages/crypto-utils",
+	"@filosign/react": "packages/react-sdk",
+	"@filosign/shared": "packages/shared",
 	test: "packages/test",
 };
 
@@ -19,4 +22,8 @@ export function packageRunCmd(
 		throw new Error(`Unknown workspace package: ${packageName}`);
 	}
 	return ["bun", "run", "--cwd", path.join(rootDir, rel), script];
+}
+
+export function rootRunCmd(script: string): string[] {
+	return ["bun", "run", script];
 }
