@@ -1,4 +1,4 @@
-import { useRequestApproval } from "@filosign/react/hooks";
+import { useRequestApproval } from "@filosign/react/sharing";
 import {
 	CheckCircleIcon,
 	PlusIcon,

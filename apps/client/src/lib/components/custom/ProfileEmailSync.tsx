@@ -1,4 +1,4 @@
-import { useSyncPrivyEmail, useUserProfile } from "@filosign/react/hooks";
+import { useSyncPrivyEmail, useUserProfile } from "@filosign/react/users";
 import { useIdentityToken, usePrivy } from "@privy-io/react-auth";
 import { useEffect, useRef } from "react";
 

@@ -4,7 +4,7 @@ import {
 	useFileInfo,
 	useViewFile,
 	type ViewFileResult,
-} from "@filosign/react/hooks";
+} from "@filosign/react/files";
 import type { PlacementManifest } from "@filosign/shared";
 import {
 	ArrowClockwiseIcon,

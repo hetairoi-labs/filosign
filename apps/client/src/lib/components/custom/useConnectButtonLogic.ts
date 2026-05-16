@@ -1,4 +1,4 @@
-import { useIsRegistered } from "@filosign/react/hooks";
+import { useIsRegistered } from "@filosign/react/auth";
 import { usePrivy } from "@privy-io/react-auth";
 
 export type ConnectButtonState =

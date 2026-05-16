@@ -1,4 +1,4 @@
-import type { ViewFileResult } from "@filosign/react/hooks";
+import type { ViewFileResult } from "@filosign/react/files";
 import type { ComplianceBundle, PlacementManifest } from "@filosign/shared";
 import {
 	PDFDocument,

@@ -1,5 +1,6 @@
 import { useFilosignContext } from "@filosign/react";
-import { useColdInvitePayload, useUserProfile } from "@filosign/react/hooks";
+import { useColdInvitePayload } from "@filosign/react/files";
+import { useUserProfile } from "@filosign/react/users";
 import { usePrivy } from "@privy-io/react-auth";
 import { useRouterState } from "@tanstack/react-router";
 import { useMemo } from "react";
