@@ -17,7 +17,7 @@ export interface LoginParams {
 }
 
 export function useLogin() {
-	const { api, contracts, wallet, wasm } = useFilosignContext();
+	const { rpc, contracts, wallet, wasm } = useFilosignContext();
 	const queryClient = useQueryClient();
 
 	const { data: isRegistered } = useIsRegistered();
@@ -82,7 +82,7 @@ export function useLogin() {
 					skipToken,
 				};
 
-				await api.rpc.postSafe({}, "/users/profile", requestPayload);
+				await rpc.users.register(requestPayload);
 
 				setSessionSeed(wallet.account.address, keygenData.seed);
 				recoveryPhrase = recoveryPhraseFromSeed(keygenData.seedCore32);

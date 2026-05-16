@@ -3,7 +3,7 @@ import { useFilosignContext } from "../../context/useFilosignContext";
 import { clearSessionSeed } from "./session-seed";
 
 export function useLogout() {
-	const { wallet } = useFilosignContext();
+	const { wallet, session } = useFilosignContext();
 	const queryClient = useQueryClient();
 
 	return useMutation({
@@ -14,6 +14,7 @@ export function useLogout() {
 			}
 
 			clearSessionSeed(wallet.account.address);
+			session.setJwt(null);
 
 			queryClient.invalidateQueries({
 				queryKey: ["fsQ-is-logged-in", wallet?.account.address],
