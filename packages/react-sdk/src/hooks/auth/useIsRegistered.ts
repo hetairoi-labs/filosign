@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { MINUTE } from "../../constants";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { filosignKeys } from "../../lib/query-keys";
 
 export function useIsRegistered() {
 	const { contracts, wallet } = useFilosignContext();
 
 	return useQuery({
-		queryKey: ["fsQ-is-registered", wallet?.account.address],
+		queryKey: filosignKeys.isRegistered(wallet?.account.address),
 		queryFn: async () => {
 			if (!contracts || !wallet) {
 				throw new Error("No contracts or wallet");

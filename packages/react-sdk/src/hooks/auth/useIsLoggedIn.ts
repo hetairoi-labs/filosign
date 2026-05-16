@@ -2,6 +2,7 @@ import { seedKeyGen } from "@filosign/crypto-utils";
 import { useQuery } from "@tanstack/react-query";
 import { DAY } from "../../constants";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { filosignKeys } from "../../lib/query-keys";
 import { getSessionSeed } from "./session-seed";
 import { useIsRegistered } from "./useIsRegistered";
 import { useStoredKeygenData } from "./useStoredKeygenData";
@@ -12,7 +13,7 @@ export function useIsLoggedIn() {
 	const { data: storedKeygenData } = useStoredKeygenData();
 
 	return useQuery({
-		queryKey: ["fsQ-is-logged-in", wallet?.account.address],
+		queryKey: filosignKeys.isLoggedIn(wallet?.account.address),
 		queryFn: async () => {
 			if (!wallet || !contracts || !wasm.dilithium) {
 				return false;

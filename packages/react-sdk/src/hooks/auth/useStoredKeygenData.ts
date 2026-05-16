@@ -1,12 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { DAY } from "../../constants";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { filosignKeys } from "../../lib/query-keys";
 
 export function useStoredKeygenData() {
 	const { wallet, contracts } = useFilosignContext();
 
 	return useQuery({
-		queryKey: ["fsQ-stored-keygen-data", wallet?.account.address],
+		queryKey: filosignKeys.storedKeygenData(wallet?.account.address),
 		queryFn: async () => {
 			if (!wallet || !contracts) {
 				throw new Error("unreachable");
