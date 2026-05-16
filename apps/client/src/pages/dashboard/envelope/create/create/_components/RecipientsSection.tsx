@@ -1,5 +1,5 @@
 import { useFilosignContext } from "@filosign/react";
-import { useUserProfileByQuery } from "@filosign/react/hooks";
+import { useUserProfileByQuery } from "@filosign/react/users";
 import { computeSignerNetPayout, validateInvoiceMemo } from "@filosign/shared";
 import {
 	CaretDownIcon,

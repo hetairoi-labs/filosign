@@ -1,8 +1,5 @@
-import {
-	useAttachInvoiceToFile,
-	useProfilesByAddresses,
-	useSendFile,
-} from "@filosign/react/hooks";
+import { useAttachInvoiceToFile, useSendFile } from "@filosign/react/files";
+import { useProfilesByAddresses } from "@filosign/react/users";
 import {
 	hashNormalizedSignerEmail,
 	normalizePlacementRecipientEmail,
