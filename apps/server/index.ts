@@ -1,14 +1,9 @@
-import "dotenv/config";
+import "./lib/polyfills/bigint-json";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { apiRouter } from "./api/routes/router";
 import env from "./env";
-
-//@ts-expect-error
-BigInt.prototype.toJSON = function () {
-	return this.toString();
-};
 
 export const app = new Hono()
 	.use(logger())
@@ -38,6 +33,7 @@ export const app = new Hono()
 		await next();
 	})
 	.get("/", (c) => c.text("OK"))
+	.get("/health", (c) => c.json({ ok: true }))
 	.route("/api", apiRouter);
 
 export default {
