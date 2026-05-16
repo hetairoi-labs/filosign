@@ -21,4 +21,4 @@ Backend: **`apps/server`**. **`/api`** is **oRPC** on **`/api/rpc`** and **OpenA
 
 ## Client
 
-Consume **`useFilosignContext().rpc`** (and **`session`**); prefer **`rpcQuery`** for query/mutation helpers. Direct **`fetch` PUT** only to URLs from **`storage.presignPut`** / file upload presign flows. **`apps/client`** stays thin (**`AGENTS.md`**).
+Consume **`useFilosignContext().rpcQuery`** (`.queryOptions()` / `.mutationOptions()` / `.call()`) for API data; **`useAuthedApi`** gates authenticated procedures. Direct **`fetch` PUT** only to presigned storage URLs. **`apps/client`** stays thin (**`AGENTS.md`**).

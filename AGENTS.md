@@ -76,7 +76,7 @@ flowchart LR
 
 ## Boundaries
 
-**HTTP:** Use `useFilosignContext().rpc` (and `session` where auth applies) + `@filosign/react/hooks`. No `fetch`/axios from `apps/client` to JSON API **except** narrow cases: blob/doc URL bytes (`[send-envelope.ts](apps/client/src/pages/dashboard/envelope/create/add-sign/send-envelope.ts)`), static assets (`[compliance-pdf-images.ts](apps/client/src/lib/utils/compliance-pdf/compliance-pdf-images.ts)`), and **direct `PUT` to URLs returned by `storage.presignPut`** (private object-store upload only—no API body proxy).
+**HTTP:** Use `useFilosignContext().rpc` (and `session` where auth applies) + `@filosign/react/{auth,files,sharing,users}` hooks. No `fetch`/axios from `apps/client` to JSON API **except** narrow cases: blob/doc URL bytes (`[send-envelope.ts](apps/client/src/pages/dashboard/envelope/create/add-sign/send-envelope.ts)`), static assets (`[compliance-pdf-images.ts](apps/client/src/lib/utils/compliance-pdf/compliance-pdf-images.ts)`), and **direct `PUT` to URLs returned by `storage.presignPut`** (private object-store upload only—no API body proxy).
 
 **Imports:** Client → minimal `@filosign/contracts` (`[constants.ts` mock-usdc](apps/client/src/constants.ts)); prefer SDK/runtime for new.
 
