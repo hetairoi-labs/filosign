@@ -1,31 +1,23 @@
+import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import z from "zod";
 import { MINUTE } from "../../constants";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useAuthedApi } from "../auth/useAuthedApi";
 
+export type SentFileRow =
+	InferClientOutputs<AppRouterClient>["files"]["list"]["sent"]["files"][number];
+
 export function useSentFiles() {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["sent-files"],
 		queryFn: async () => {
-			if (!api) throw new Error("API is unreachable");
-			const response = await api.rpc.getSafe(
-				{
-					files: z.array(
-						z.object({
-							pieceCid: z.string(),
-							sender: z.string(),
-							status: z.string(),
-						}),
-					),
-				},
-				"/files/sent",
-			);
-
-			return response.data.files;
+			if (!auth) throw new Error("API is unreachable");
+			const raw = await auth.rpc.files.list.sent();
+			return raw.files;
 		},
-		enabled: !!api,
+		enabled: !!auth,
 		staleTime: 5 * MINUTE,
 	});
 }

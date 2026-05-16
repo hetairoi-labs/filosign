@@ -12,27 +12,24 @@ import {
 	normalizePlacementRecipientEmail,
 	zPlacementManifest,
 } from "@filosign/shared";
+import type { InferClientOutputs } from "@orpc/client";
 import { useMutation } from "@tanstack/react-query";
 import type { Hex } from "viem";
 import { getAddress } from "viem";
-import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useCryptoSeed } from "../auth";
+import { useAuthedApi } from "../auth/useAuthedApi";
 import { useUserProfile } from "../users/useUserProfile";
 
 export function useSignFile() {
-	const { contracts, wallet, api, wasm } = useFilosignContext();
+	const { contracts, wallet, wasm } = useFilosignContext();
+	const { data: auth } = useAuthedApi();
 	const { action: cryptoAction } = useCryptoSeed();
 	const { data: userProfile } = useUserProfile();
 
-	const zParticipant = z.union([
-		z.string(),
-		z.object({
-			wallet: z.string(),
-			name: z.string().nullable(),
-			email: z.string().nullable(),
-		}),
-	]);
+	type PieceDetail =
+		InferClientOutputs<AppRouterClient>["files"]["piece"]["detail"];
 
 	return useMutation({
 		mutationFn: async (args: {
@@ -45,48 +42,28 @@ export function useSignFile() {
 			const timestamp = Math.floor(Date.now() / 1000);
 			const textEncoder = new TextEncoder();
 
-			if (!contracts || !wallet || !wasm.dilithium || !api) {
+			if (!contracts || !wallet || !wasm.dilithium || !auth) {
 				throw new Error("not connected");
 			}
 
 			await cryptoAction(async (seed: Uint8Array) => {
-				const fileResponse = await api.rpc.getSafe(
-					{
-						pieceCid: z.string(),
-						sender: z.string(),
-						status: z.string(),
-						createdAt: z.string(),
-						placementCommitment: z.string(),
-						placementManifest: z.unknown(),
-						signers: z.array(zParticipant),
-						viewers: z.array(zParticipant),
-					},
-					`/files/${pieceCid}`,
-				);
-
-				if (!fileResponse.success) {
-					throw new Error("Failed to fetch file info");
-				}
+				const fileResponse: PieceDetail = await auth.rpc.files.piece.detail({
+					pieceCid,
+				});
 
 				const {
 					sender,
 					placementCommitment,
 					placementManifest: manifestRaw,
-				} = fileResponse.data;
+				} = fileResponse;
 
 				const manifest = zPlacementManifest.parse(manifestRaw);
 				const signerAddr = getAddress(wallet.account.address);
 
-				const selfSigner = fileResponse.data.signers.find((s) => {
-					if (typeof s === "string") {
-						return getAddress(s) === signerAddr;
-					}
-					return getAddress(s.wallet) === signerAddr;
-				});
-				const rawEmail =
-					typeof selfSigner === "object" && selfSigner?.email
-						? selfSigner.email.trim()
-						: "";
+				const selfSigner = fileResponse.signers.find(
+					(s) => getAddress(s.wallet) === signerAddr,
+				);
+				const rawEmail = selfSigner?.email?.trim() ?? "";
 				if (!rawEmail) {
 					throw new Error(
 						"Your Filosign profile must include an email to sign placed fields for this document",
@@ -215,12 +192,11 @@ export function useSignFile() {
 						},
 					},
 				);
-				const signResponse = await api.rpc.postSafe(
-					{},
-					`/files/${pieceCid}/sign`,
-					{
+				await auth.rpc.files.piece.sign({
+					pieceCid,
+					body: {
 						signature,
-						timestamp: timestamp,
+						timestamp,
 						dl3Signature: toHex(dl3Signature),
 						approveSender: {
 							nonce: approveSenderNonce.toString(),
@@ -229,8 +205,8 @@ export function useSignFile() {
 						},
 						...(completedFieldIds !== undefined ? { completedFieldIds } : {}),
 					},
-				);
-				success = signResponse.success;
+				});
+				success = true;
 			});
 
 			return success;

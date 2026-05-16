@@ -1,33 +1,21 @@
-import { zHexString } from "@filosign/shared/zod";
+import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import z from "zod";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useAuthedApi } from "../auth/useAuthedApi";
 
+export type ReceivedFileRow =
+	InferClientOutputs<AppRouterClient>["files"]["list"]["received"]["files"][number];
+
 export function useReceivedFiles() {
-	const { data: api } = useAuthedApi();
+	const { data: auth } = useAuthedApi();
 
 	return useQuery({
 		queryKey: ["received-files"],
 		queryFn: async () => {
-			if (!api) throw new Error("API is unreachable");
-			const response = await api.rpc.getSafe(
-				{
-					files: z.array(
-						z.object({
-							pieceCid: z.string(),
-							sender: z.string(),
-							status: z.string(),
-							encryptedEncryptionKey: zHexString(),
-							kemCiphertext: zHexString(),
-							inboxCategory: z.enum(["primary", "pending"]).optional(),
-						}),
-					),
-				},
-				"/files/received",
-			);
-
-			return response.data.files;
+			if (!auth) throw new Error("API is unreachable");
+			const raw = await auth.rpc.files.list.received();
+			return raw.files;
 		},
-		enabled: !!api,
+		enabled: !!auth,
 	});
 }

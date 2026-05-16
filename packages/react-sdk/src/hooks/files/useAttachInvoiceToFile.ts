@@ -8,6 +8,7 @@ import {
 	http,
 } from "viem";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { useAuthedApi } from "../auth/useAuthedApi";
 
 const PERMIT_DEADLINE_BUFFER = 20 * 60; // seconds
 
@@ -51,14 +52,15 @@ export type AttachInvoiceArgs = {
 };
 
 export function useAttachInvoiceToFile() {
-	const { contracts, wallet, api } = useFilosignContext();
+	const { contracts, wallet } = useFilosignContext();
+	const { data: auth } = useAuthedApi();
 
 	return useMutation({
 		mutationKey: ["fsM-attach-incentive"],
 		mutationFn: async (args: AttachInvoiceArgs) => {
 			const { pieceCid, signerEmailCommitment, token, amount, memo } = args;
 
-			if (!contracts || !wallet) {
+			if (!contracts || !wallet || !auth) {
 				throw new Error("not connected");
 			}
 
@@ -145,16 +147,19 @@ export function useAttachInvoiceToFile() {
 
 				const { v, r, s } = hexToSignature(permitSig);
 
-				await api.rpc.postSafe({}, `/files/${pieceCid}/incentive`, {
-					signerEmailCommitment,
-					memo,
-					token,
-					amount: amount.toString(),
-					usePermit: true,
-					deadline: deadline.toString(),
-					v: Number(v),
-					r,
-					s,
+				await auth.rpc.files.piece.incentive({
+					pieceCid,
+					body: {
+						signerEmailCommitment,
+						memo,
+						token,
+						amount: amount.toString(),
+						usePermit: true,
+						deadline: deadline.toString(),
+						v: Number(v),
+						r,
+						s,
+					},
 				});
 			} else {
 				const escrowAddress = (await publicClient.readContract({
@@ -182,12 +187,15 @@ export function useAttachInvoiceToFile() {
 					await publicClient.waitForTransactionReceipt({ hash: approveTxHash });
 				}
 
-				await api.rpc.postSafe({}, `/files/${pieceCid}/incentive`, {
-					signerEmailCommitment,
-					memo,
-					token,
-					amount: amount.toString(),
-					usePermit: false,
+				await auth.rpc.files.piece.incentive({
+					pieceCid,
+					body: {
+						signerEmailCommitment,
+						memo,
+						token,
+						amount: amount.toString(),
+						usePermit: false,
+					},
 				});
 			}
 

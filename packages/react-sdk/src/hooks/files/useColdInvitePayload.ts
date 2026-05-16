@@ -1,47 +1,25 @@
-import { zHexString } from "@filosign/shared/zod";
+import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 
-const zInvitePayload = z.object({
-	pieceCid: z.string(),
-	recipientEmails: z.array(z.string().email()).min(1),
-	wrappedEncryptionKey: zHexString(),
-	isSigner: z.boolean(),
-	sender: z.string(),
-	/** Display: name (email) or (email); falls back to checksummed wallet if no profile. */
-	senderLabel: z.string(),
-	placementManifest: z.unknown(),
-	downloadUrl: z.string().min(1),
-});
-
-export type ColdInvitePayload = z.infer<typeof zInvitePayload>;
+export type ColdInvitePayload =
+	InferClientOutputs<AppRouterClient>["files"]["coldInvite"]["inviteByToken"];
 
 export function useColdInvitePayload(inviteToken: string | undefined) {
-	const { api } = useFilosignContext();
+	const { rpc, ready } = useFilosignContext();
 
 	return useQuery({
 		queryKey: ["fsQ-cold-invite", inviteToken],
 		queryFn: async (): Promise<ColdInvitePayload> => {
-			if (!api || !inviteToken) {
-				throw new Error("Missing invite or API");
+			if (!inviteToken?.trim()) {
+				throw new Error("Missing invite token");
 			}
-			const response = await api.rpc.getSafe(
-				{
-					pieceCid: z.string(),
-					recipientEmails: z.array(z.string().email()).min(1),
-					wrappedEncryptionKey: zHexString(),
-					isSigner: z.boolean(),
-					sender: z.string(),
-					senderLabel: z.string(),
-					placementManifest: z.unknown(),
-					downloadUrl: z.string(),
-				},
-				`/files/invite/by-token/${encodeURIComponent(inviteToken)}`,
-			);
-			return zInvitePayload.parse(response.data);
+			return rpc.files.coldInvite.inviteByToken({
+				inviteToken: inviteToken.trim(),
+			});
 		},
-		enabled: Boolean(api && inviteToken && inviteToken.length >= 8),
+		enabled: Boolean(ready && inviteToken && inviteToken.length >= 8),
 		staleTime: 60_000,
 	});
 }

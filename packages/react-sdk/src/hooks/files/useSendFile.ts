@@ -21,12 +21,14 @@ import type { Address, Hex } from "viem";
 import z from "zod";
 import { calculatePieceCid } from "../../../utils/piece";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { useAuthedApi } from "../auth/useAuthedApi";
 import { useUserProfile } from "../users";
 
 type FileData = z.infer<ReturnType<typeof zFileData>>;
 
 export function useSendFile() {
-	const { contracts, wallet, api } = useFilosignContext();
+	const { contracts, wallet } = useFilosignContext();
+	const { data: auth } = useAuthedApi();
 	const { data: user } = useUserProfile();
 
 	const queryClient = useQueryClient();
@@ -56,9 +58,9 @@ export function useSendFile() {
 			} = args;
 			const timestamp = Math.floor(Date.now() / 1000);
 
-			if (!contracts || !wallet || !user) {
+			if (!contracts || !wallet || !user || !auth) {
 				throw new Error(
-					"Not connected: contracts, wallet, and profile required",
+					"Not connected: contracts, wallet, profile, and auth required",
 				);
 			}
 
@@ -161,17 +163,14 @@ export function useSendFile() {
 				});
 			}
 
-			const uploadStartResponse = await api.rpc.postSafe(
-				{
-					uploadUrl: z.string(),
-				},
-				"/files/upload/start",
-				{
-					pieceCid: pieceCid.toString(),
-				},
-			);
+			const uploadStartRaw = await auth.rpc.files.uploadStart({
+				pieceCid: pieceCid.toString(),
+			});
+			const uploadStartResponse = z
+				.object({ uploadUrl: z.string() })
+				.parse(uploadStartRaw);
 
-			const uploadResponse = await fetch(uploadStartResponse.data.uploadUrl, {
+			const uploadResponse = await fetch(uploadStartResponse.uploadUrl, {
 				method: "PUT",
 				headers: {
 					"Content-Type": "application/octet-stream",
@@ -268,16 +267,12 @@ export function useSendFile() {
 				...(coldInviteRows.length > 0 ? { coldInvites: coldInviteRows } : {}),
 			};
 
-			const registerResponse = await api.rpc.postSafe(
-				{},
-				"/files",
-				requestPayload,
-			);
+			await auth.rpc.files.register(requestPayload as Record<string, unknown>);
 
 			queryClient.refetchQueries({ queryKey: ["sent-files"] });
 
 			return {
-				success: registerResponse.success,
+				success: true as const,
 				pieceCid: pieceCid.toString(),
 				...(coldInviteShareCode ? { coldInviteShareCode } : {}),
 			};

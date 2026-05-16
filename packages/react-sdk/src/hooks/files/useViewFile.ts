@@ -4,6 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
 import { getSessionSeed } from "../auth/session-seed";
+import { useAuthedApi } from "../auth/useAuthedApi";
 
 export type ViewFileArgs = {
 	pieceCid: string;
@@ -26,34 +27,25 @@ export type ViewFileResult = {
 };
 
 export function useViewFile() {
-	const { contracts, wallet, api, runtime } = useFilosignContext();
+	const { contracts, wallet, runtime } = useFilosignContext();
+	const { data: auth } = useAuthedApi();
 
 	return useMutation<ViewFileResult, Error, ViewFileArgs>({
 		mutationFn: async (args) => {
 			const { pieceCid, kemCiphertext, encryptedEncryptionKey } = args;
 
-			if (!contracts || !wallet || !runtime || !api) {
+			if (!contracts || !wallet || !runtime || !auth) {
 				throw new Error("not conected iido");
 			}
 
 			let data: Uint8Array;
 
-			// S3 is the source of truth for now.
-			// We still upload to Filecoin Onchain Cloud, but downloads should prefer S3
-			// (and fall back to Filecoin when needed).
 			try {
-				const s3Response = await api.rpc.getSafe(
-					{
-						presignedUrl: z.string(),
-					},
-					`/files/${pieceCid}/s3`,
-				);
+				const s3Raw = await auth.rpc.files.piece.s3Url({ pieceCid });
+				const { presignedUrl } = z
+					.object({ presignedUrl: z.string() })
+					.parse(s3Raw);
 
-				if (!s3Response.success) {
-					throw new Error("Failed to fetch file from S3");
-				}
-
-				const { presignedUrl } = s3Response.data;
 				const downloadResponse = await fetch(presignedUrl, {
 					method: "GET",
 				});
