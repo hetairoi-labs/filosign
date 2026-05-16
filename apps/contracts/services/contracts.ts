@@ -1,5 +1,6 @@
 import {
 	type Account,
+	type Address,
 	type Client,
 	createPublicClient,
 	type GetContractReturnType,
@@ -20,16 +21,27 @@ export type { ChainKey } from "../definitions/index";
 
 type Wallet = WalletClient<Transport, ViemChain, Account>;
 
-/** Avoid TS7056 (inferred node exceeds serialization limit). */
+/** Public + wallet client bundle passed to `getContract` (see `getKeyedClient`). */
+type FilosignKeyedContractClient = {
+	public: PublicClient<Transport, ViemChain>;
+	wallet: WalletClient<Transport, ViemChain, Account>;
+};
+
+type DefinitionContracts = Pick<
+	ChainDefinitionsEntry,
+	"FSManager" | "FSFileRegistry" | "FSKeyRegistry" | "FSEscrow"
+>;
+
+// Mapped type keeps TS7056 in check vs. a large inferred union.
 export type FilosignContracts<T extends Wallet = Wallet> = {
-	FSManager: GetContractReturnType<ChainDefinitionsEntry["FSManager"]["abi"]>;
-	FSFileRegistry: GetContractReturnType<
-		ChainDefinitionsEntry["FSFileRegistry"]["abi"]
+	[K in keyof DefinitionContracts]: GetContractReturnType<
+		DefinitionContracts[K]["abi"],
+		FilosignKeyedContractClient,
+		DefinitionContracts[K]["address"] extends Address
+			? DefinitionContracts[K]["address"]
+			: Address
 	>;
-	FSKeyRegistry: GetContractReturnType<
-		ChainDefinitionsEntry["FSKeyRegistry"]["abi"]
-	>;
-	FSEscrow: GetContractReturnType<ChainDefinitionsEntry["FSEscrow"]["abi"]>;
+} & {
 	$client: T;
 };
 
@@ -39,10 +51,7 @@ function getKeyedClient<T extends Client | WalletClient>(client: T) {
 			transport: http(client.chain?.rpcUrls.default.http[0]),
 		}),
 		wallet: client,
-	} as {
-		public: PublicClient<Transport, ViemChain>;
-		wallet: WalletClient<Transport, ViemChain, Account>;
-	};
+	} as FilosignKeyedContractClient;
 }
 
 export function getContracts<T extends Wallet>(options: {
