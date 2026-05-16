@@ -1,5 +1,5 @@
 import { useFilosignContext } from "@filosign/react";
-import { useAuthedApi, useIsRegistered } from "@filosign/react/hooks";
+import { useAuthedApi, useIsRegistered } from "@filosign/react/auth";
 import {
 	CheckCircleIcon,
 	EnvelopeIcon,

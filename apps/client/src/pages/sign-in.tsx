@@ -1,5 +1,5 @@
 import { useFilosignContext } from "@filosign/react";
-import { useIsRegistered, useLogout } from "@filosign/react/hooks";
+import { useIsRegistered, useLogout } from "@filosign/react/auth";
 import { SpinnerIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
