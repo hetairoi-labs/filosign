@@ -1,4 +1,5 @@
-import { useLogout, useUserProfile } from "@filosign/react/hooks";
+import { useLogout } from "@filosign/react/auth";
+import { useUserProfile } from "@filosign/react/users";
 import { CopySimpleIcon, SignOutIcon, UserIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";

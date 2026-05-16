@@ -5,7 +5,7 @@ import {
 	useIsRegistered,
 	useLogin,
 	useRecoverWithPhrase,
-} from "@filosign/react/hooks";
+} from "@filosign/react/auth";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";

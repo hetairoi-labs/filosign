@@ -1,8 +1,5 @@
-import {
-	useReceivedFiles,
-	useReceivedRequests,
-	useSentFiles,
-} from "@filosign/react/hooks";
+import { useReceivedFiles, useSentFiles } from "@filosign/react/files";
+import { useReceivedRequests } from "@filosign/react/sharing";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";

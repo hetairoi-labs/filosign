@@ -1,11 +1,10 @@
 import {
 	useAckFile,
-	useApproveSender,
 	useFileInfo,
 	useReceivedFiles,
-	useReceivedRequests,
 	useViewFile,
-} from "@filosign/react/hooks";
+} from "@filosign/react/files";
+import { useApproveSender, useReceivedRequests } from "@filosign/react/sharing";
 import {
 	ArrowClockwiseIcon,
 	BellIcon,
