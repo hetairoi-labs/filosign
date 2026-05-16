@@ -13,21 +13,21 @@ Bun reads `.env*` automatically per [environment variables — Bun](https://bun.
 
 | Path | Role |
 |------|------|
-| `api/routes/` | HTTP apps mounted from `api/routes/router.ts` |
-| `api/routes/files/` | `upload-*`, cold-invite, register, list, **`piece/`** routers composed in `piece-routes.ts`; shared `helpers.ts` |
-| `api/routes/sharing/` | `requests-routes`, `invites-routes`, `inbox-routes` composed in `index.ts` |
-| `api/routes/users/` | `profile-core`, `profile-email`, `profile-registration` composed in `profile.ts` |
-| `api/middleware/` | `authenticated` (JWT → `ctx.var.userWallet`; uses shared `api/factory` typing) |
-| `lib/domain/` | Cross-cutting domain logic (routes + indexer), e.g. sharing invites |
+| `api/orpc/` | oRPC **`/api/rpc`** + OpenAPI **`/api/api-reference`** (see `hono-mount.ts`, `router.ts`) |
+| `api/handlers/` | oRPC procedure implementations (**`ORPCError`**, reuse `tryCatch`) |
+| `api/routes/` | Thin Hono apps mounted from `api/routes/router.ts` ( **`GET /runtime`**, multipart **avatar**) |
+| `api/routes/users/` | **`avatar-route.ts`** only — **`PUT /profile/avatar`** under `/api/users` |
+| `api/middleware/` | `optionalJwtWalletForOrpc` + `authenticated` (JWT → `ctx.var.userWallet`) |
+| `lib/domain/` | Cross-cutting domain logic (oRPC handlers + indexer), e.g. sharing invites, file-invite helpers |
 | `lib/indexer/` | `processTransaction` — replays receipts into DB |
-| `lib/validation/` | E.g. `tx-registration.ts` — Zod schemas shared with routes/indexer |
+| `lib/validation/` | E.g. `tx-registration.ts` — Zod schemas shared with indexer / RPC |
 | `lib/polyfills/` | `bigint-json` for JSON serialization |
 | `constants.ts` | Shared limits (e.g. `MAX_FILE_SIZE`) |
 
 ## Scaling / limits
 
-- **Auth `/api/auth/nonce`:** nonces are **in-process** (`Record<Address, …>`). Safe for **one server process**. For **multiple replicas**, use Redis/Postgres or redesign the Dilithium handshake.
-- **`POST /api/tx/:hash`** body: **`{}`** is valid for txs that only index FSManager logs; **`encryptionPublicKey` + `signaturePublicKey`** together (hex) for KeyRegistry registration. Shape is **`zIndexerTxBody`** in `lib/validation/tx-registration.ts`.
+- **Auth (`auth.nonce`):** nonces are **in-process** (`Record<Address, …>`). Safe for **one server process**. For **multiple replicas**, use Redis/Postgres or redesign the Dilithium handshake.
+- **`tx.processIndexerHash` input `{ hash, body? }`:** **`body: {}`** is valid for txs that only index FSManager logs; **`encryptionPublicKey` + `signaturePublicKey`** together (hex) for KeyRegistry registration. Shape is **`zIndexerTxBody`** in `lib/validation/tx-registration.ts`.
 
 ## Ops
 
@@ -36,11 +36,12 @@ Bun reads `.env*` automatically per [environment variables — Bun](https://bun.
 
 ## API envelope
 
-- **`GET /api/runtime`** returns the same `{ success, data, message }` shape as other JSON routes (see `respond.ok`).
+- **`GET /api/runtime`** (Hono carve-out): `{ success, data, message }` via `respond.ok` for the SDK until callers move to **`runtime`** on **`/api/rpc`**.
+- **Other APIs:** Prefer **`/api/rpc`** — native outputs + **`ORPCError`** mapping (OpenAPI explorer at **`/api/api-reference`**).
 
 ## Security notes
 
-- **`POST /tx/:hash`** is behind **`authenticated`** — JWT matches other APIs. Validates JSON server-side; **reverted** on-chain txs return **400**. Generic **500** text avoids leaking internals; see `ProcessTxUserError`.
+- **`tx.processIndexerHash`** uses **`authenticatedProcedure`** — JWT unchanged. Validates JSON server-side; **reverted** on-chain txs return **400**. Generic **500** text avoids leaking internals; see `ProcessTxUserError`.
 - **`DEBUG=true`** — skips outbound Resend email (`lib/email/invites.ts`) and expands JWT indexer logs (`env.ts` drives both).
 
 ## Database

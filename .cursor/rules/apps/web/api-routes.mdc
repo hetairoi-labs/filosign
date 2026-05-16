@@ -5,19 +5,19 @@ alwaysApply: false
 
 # Filosign API routes
 
-Backend: **`apps/server`**. Routes live under **`api/routes/`**, mounted from [`api/routes/router.ts`](apps/server/api/routes/router.ts) (`/files`, `/users`, `/sharing`, `/auth`, `/tx`).
+Backend: **`apps/server`**. **`/api`** is primarily **oRPC**: [`api/orpc/hono-mount.ts`](apps/server/api/orpc/hono-mount.ts) on **`/api/rpc`** (and **`/api/api-reference`** for OpenAPI UI). Procedure handlers live in **`api/handlers/*`** and compose [`api/orpc/router.ts`](apps/server/api/orpc/router.ts). **Carve-outs** remain thin Hono mounts from [`api/routes/router.ts`](apps/server/api/routes/router.ts): **`GET /api/runtime`** (`respond` envelope for the legacy SDK unwrap) and **multipart avatar** under **`PUT /api/users/profile/avatar`**. Details in **[`AGENTS.md`](AGENTS.md)**.
 
-- **Layout:** Large areas split into sub-apps under a folder (e.g. [`api/routes/sharing/`](apps/server/api/routes/sharing/), [`api/routes/files/`](apps/server/api/routes/files/)) — thin `index.ts` composes with `app.route("/", subApp)`.
-- **Domain:** Reusable logic shared by routes, indexer, or jobs belongs in **`lib/domain/`** (e.g. [`lib/domain/sharing.ts`](apps/server/lib/domain/sharing.ts)), not under `api/`.
+- **Layout:** New JSON surface = oRPC nesting in `router.ts`; Hono folders under `api/routes/` are only for carve-outs (e.g. `users/` for avatar upload).
+- **Domain:** Logic shared by oRPC handlers, indexer, or jobs belongs in **`lib/domain/`** (e.g. [`lib/domain/file-invites.ts`](apps/server/lib/domain/file-invites.ts), [`lib/domain/sharing.ts`](apps/server/lib/domain/sharing.ts)), not under route-only glue.
 
 ## Conventions
 
-- **Responses:** `respond.ok` / `respond.err` ([`lib/utils/respond`](apps/server/lib/utils/respond.ts)) — `{ success, data?, message }` for JSON APIs, including **`GET /runtime`** (SDK unwraps `data` when present).
-- **Auth:** `authenticated` middleware ([`api/middleware/auth.ts`](apps/server/api/middleware/auth.ts)) — JWT `Bearer`, sets **`ctx.var.userWallet`**. Public routes omit it. **`POST /tx/:hash`** requires auth (same JWT as other client APIs).
+- **Responses (oRPC):** Native procedure return values; **`ORPCError`** for failures ([`api/handlers/`](apps/server/api/handlers/)). **`respond.ok` / `respond.err`** only on leftover Hono paths (`GET /runtime`, avatar upload).
+- **Auth:** `optionalJwtWalletForOrpc` on `/api/*` parses JWT into **`ctx.var.userWallet`** for oRPC context. Procedures that need login use **`authenticatedProcedure`** (`api/orpc/procedures.ts`), which rejects missing wallet. **`authenticated`** ([`api/middleware/auth.ts`](apps/server/api/middleware/auth.ts)) is still used by carve-out Hono routes (e.g. avatar).
 - **Debug logs:** JWT failure logs include token/header prefixes only when **`DEBUG=true`** in env ([`env.ts`](apps/server/env.ts)).
-- **Input:** Zod **`.safeParse`** (or equivalent) at the handler boundary; on failure **`respond.err(..., 400)`**.
-- **Fallible async:** use **`tryCatch`** / **`tryCatchSync`** from [`lib/utils/tryCatch`](apps/server/lib/utils/tryCatch.ts); branch on `result.error` and respond—do not assume a global `ApiError` / `ErrorHandler` stack.
-- **DB:** Drizzle `db` / `db.transaction` — match patterns in the same route file.
+- **Input:** Zod at the procedure boundary (**`.safeParse`** or `.input(schema)` on the procedure).
+- **Fallible async:** **`tryCatch`** / **`tryCatchSync`**; map failures to **`ORPCError`** in migrated handlers ([`patterns.mdc`](patterns.mdc)).
+- **DB:** Drizzle `db` / `db.transaction` — match patterns in the same handler/domain module.
 
 ## Migrations
 
@@ -26,4 +26,4 @@ Backend: **`apps/server`**. Routes live under **`api/routes/`**, mounted from [`
 
 ## Client
 
-New JSON APIs: add or extend hooks in **`packages/react-sdk`** using **`useFilosignContext().api`**; **`apps/client`** stays a thin UI layer (see root **`AGENTS.md`**).
+Use **`packages/react-sdk`** **`RPCLink`** / **`@orpc`** for **`/api/rpc`**; migrate legacy **`Axios`** unwrap callers off **`respond`**. **`apps/client`** stays thin (see **`AGENTS.md`**).

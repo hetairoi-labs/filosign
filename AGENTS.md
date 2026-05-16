@@ -91,7 +91,7 @@ flowchart LR
 
 ## API
 
-Mount in `[api/routes/router.ts](apps/server/api/routes/router.ts)`: `files/`, `users/`, `sharing/`, `auth/`, `tx/`. Cross-route domain logic lives under **`lib/domain/`** (e.g. [`lib/domain/sharing.ts`](apps/server/lib/domain/sharing.ts)). Align with [apps/web/api-routes.mdc](.cursor/rules/apps/web/api-routes.mdc).
+Mount in `[api/routes/router.ts](apps/server/api/routes/router.ts)`: thin Hono carve-outs only (e.g. **`GET /runtime`**, **`PUT /users/profile/avatar`**). **JSON API** is **`/api/rpc`** (`[api/orpc/router.ts](apps/server/api/orpc/router.ts)` + `[api/handlers/](apps/server/api/handlers/)`). Cross-route domain logic lives under **`lib/domain/`** (e.g. [`lib/domain/sharing.ts`](apps/server/lib/domain/sharing.ts), [`lib/domain/file-invites.ts`](apps/server/lib/domain/file-invites.ts)). Align with [apps/web/api-routes.mdc](.cursor/rules/apps/web/api-routes.mdc).
 
 ## Lib choice
 
@@ -100,7 +100,7 @@ Mount in `[api/routes/router.ts](apps/server/api/routes/router.ts)`: `files/`, `
 ## Vertical slice
 
 1. Contracts: edit `apps/contracts/src` → `compile` (only pipeline updates `definitions/`). **Follow [apps/contracts/TESTING.md](apps/contracts/TESTING.md)** for Hardhat tests; keep Solidity and tests aligned in the same PR when behavior changes.
-2. Server: `apps/server/api/routes` + `fsContracts` (`[evm.ts](apps/server/lib/evm.ts)`).
+2. Server: **`/api/rpc`** oRPC (`api/orpc/`, `api/handlers/`) + carve-out Hono routes + `fsContracts` (`[evm.ts](apps/server/lib/evm.ts)`).
 3. SDK: hooks + `useFilosignContext()`.
 4. Client: UI + `@filosign/react` imports only.
 5. Verify: preamble + `bun check`, tsc, `bun run test`, forge when contracts change.
