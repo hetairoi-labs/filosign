@@ -36,16 +36,16 @@ export function dbExtensionHelpers(db: DbClient) {
 			.from(schema.users)
 			.where(eq(schema.users.walletAddress, walletAddress));
 
+		if (!previous) {
+			throw new Error("User not found");
+		}
+
 		if (
 			!newValue ||
 			newValue.trim() === "" ||
 			newValue === previous[fieldName]
 		) {
 			return;
-		}
-
-		if (!previous) {
-			throw new Error("User not found");
 		}
 
 		const oldValue = previous[fieldName];
