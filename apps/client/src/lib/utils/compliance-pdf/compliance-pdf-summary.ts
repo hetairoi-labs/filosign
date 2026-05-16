@@ -45,11 +45,11 @@ function incentiveSuffixForAddress(
 	const inc = map.get(address.toLowerCase());
 	if (!inc) return "";
 	if (!inc.hasIncentive) {
-		return " - Invoice: none";
+		return " - Incentive: none";
 	}
 	const amt = formatUnits(inc.amount, inc.decimals);
 	const paid = inc.claimed ? "Paid" : "Unpaid";
-	return ` - Invoice: ${amt} ${inc.tokenLabel} / ${paid}`;
+	return ` - Incentive: ${amt} ${inc.tokenLabel} / ${paid}`;
 }
 
 export function buildCompliancePdfSummaryFromBundle(
