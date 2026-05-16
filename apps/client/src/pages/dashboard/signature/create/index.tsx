@@ -186,9 +186,7 @@ export default function CreateNewSignaturePage({
 					variant="ghost"
 					size="lg"
 					className="self-start mb-4"
-					render={
-						<Link to={onboarding ? "/onboarding" : "/dashboard"} />
-					}
+					render={<Link to={onboarding ? "/onboarding" : "/dashboard"} />}
 				>
 					<CaretLeftIcon className="size-5" weight="bold" />
 					<p>Back</p>
