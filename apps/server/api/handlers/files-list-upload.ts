@@ -25,7 +25,6 @@ export async function filesUploadStart(
 		method: "PUT",
 		expiresIn: 60,
 		type: "application/octet-stream",
-		acl: "public-read",
 	});
 	return { uploadUrl, key };
 }
