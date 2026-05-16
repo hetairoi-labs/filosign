@@ -1,4 +1,4 @@
-import { useUpdateUserProfile } from "@filosign/react/hooks";
+import { useUpdateUserProfile } from "@filosign/react/users";
 import { useCallback, useEffect, useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";

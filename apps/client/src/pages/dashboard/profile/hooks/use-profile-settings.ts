@@ -1,4 +1,4 @@
-import { useUserProfile } from "@filosign/react/hooks";
+import { useUserProfile } from "@filosign/react/users";
 import { standardSchemaResolver } from "@hookform/resolvers/standard-schema";
 import { usePrivy } from "@privy-io/react-auth";
 import { useEffect, useMemo } from "react";

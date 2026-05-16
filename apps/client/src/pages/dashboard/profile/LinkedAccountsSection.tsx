@@ -1,4 +1,4 @@
-import { useSetPrimaryEmail, useUserProfile } from "@filosign/react/hooks";
+import { useSetPrimaryEmail, useUserProfile } from "@filosign/react/users";
 import {
 	EnvelopeSimpleIcon,
 	GoogleLogoIcon,
