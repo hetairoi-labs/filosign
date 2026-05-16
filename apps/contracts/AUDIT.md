@@ -67,4 +67,4 @@ Trusted `server` can change fee between attach and signer payout. Document for p
 
 Optional checklists: [evm-audit-master](https://raw.githubusercontent.com/austintgriffith/evm-audit-skills/main/evm-audit-master/SKILL.md).
 
-**Tests:** [`test/platform-fee.ts`](test/platform-fee.ts); `hardhat test` under `apps/contracts`.
+**Tests:** modular specs under [`test/*.spec.ts`](test/); `bun run tests` / `hardhat test` in `apps/contracts`.
