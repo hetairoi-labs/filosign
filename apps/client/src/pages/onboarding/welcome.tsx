@@ -1,5 +1,8 @@
-import { useFilosignContext } from "@filosign/react";
-import { useIsRegistered, useUpdateUserProfile } from "@filosign/react/hooks";
+import {
+	useAuthedApi,
+	useIsRegistered,
+	useUpdateUserProfile,
+} from "@filosign/react/hooks";
 import { CaretRightIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -27,7 +30,7 @@ export default function OnboardingWelcomeCompletePage() {
 	const { ready } = usePrivy();
 	const isRegistered = useIsRegistered();
 	const updateUserProfile = useUpdateUserProfile();
-	const { api } = useFilosignContext();
+	const { data: auth } = useAuthedApi();
 	const navigate = useNavigate();
 	const search = useSearch({ from: "/onboarding/welcome" });
 
@@ -86,9 +89,9 @@ export default function OnboardingWelcomeCompletePage() {
 		// Check for pending invite from session storage
 		const pendingInviteId = sessionStorage.getItem("pendingInviteId");
 		logger.debug("Checking for pending invite:", pendingInviteId);
-		if (pendingInviteId && api) {
-			void api.rpc.base
-				.post(`/sharing/invite/${pendingInviteId}/claim`, {})
+		if (pendingInviteId && auth) {
+			void auth.rpc.sharing
+				.inviteClaim({ id: pendingInviteId })
 				.then(() => {
 					sessionStorage.removeItem("pendingInviteId");
 				})

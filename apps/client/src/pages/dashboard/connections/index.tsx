@@ -114,7 +114,7 @@ type SharingRequestRow = {
 	senderWallet: string;
 	recipientWallet: string;
 	message: string | null;
-	createdAt: string;
+	createdAt: string | Date;
 };
 
 /** Incoming first; within each group, newest first. */

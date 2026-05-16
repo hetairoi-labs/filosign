@@ -32,7 +32,7 @@ export function useColdInviteSignFlow(args: {
 	const { pieceCid, inviteToken } = args;
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const { api, wallet } = useFilosignContext();
+	const { rpc, session, wallet } = useFilosignContext();
 	const { ready, authenticated, login, logout: logoutPrivy, user } = usePrivy();
 	const { data: userProfile } = useUserProfile();
 	const sdkLogin = useLogin();
@@ -255,18 +255,18 @@ export function useColdInviteSignFlow(args: {
 			predicate: (q) =>
 				Array.isArray(q.queryKey) && q.queryKey[0] === "fsQ-authed-api",
 		});
-		if (!api.jwtExists) {
+		if (!session.jwtExists) {
 			throw new Error(
 				"Could not authenticate with the server. Try unlocking your session again.",
 			);
 		}
-		api.ensureJwt();
-		const profile = await fetchUserProfile(api);
+		session.ensureJwt();
+		const profile = await fetchUserProfile(rpc);
 		if (!profile.encryptionPublicKey?.trim()) {
 			throw new Error("Missing recipient encryption key");
 		}
 		return profile.encryptionPublicKey as Hex;
-	}, [api, queryClient]);
+	}, [rpc, session, queryClient]);
 
 	const ensureLoggedInForUnlock = useCallback(async () => {
 		if (!authenticated) {

@@ -1,5 +1,5 @@
 import { useFilosignContext } from "@filosign/react";
-import { useIsRegistered } from "@filosign/react/hooks";
+import { useAuthedApi, useIsRegistered } from "@filosign/react/hooks";
 import {
 	CheckCircleIcon,
 	EnvelopeIcon,
@@ -10,6 +10,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
@@ -20,7 +21,8 @@ import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/
 export default function InvitePage() {
 	const { inviteId } = useParams({ from: "/invite/$inviteId" });
 	const { ready, authenticated, login } = usePrivy();
-	const { api } = useFilosignContext();
+	const { rpc, ready: filosignReady } = useFilosignContext();
+	const { data: auth } = useAuthedApi();
 	const navigate = useNavigate();
 	const isRegistered = useIsRegistered();
 
@@ -36,22 +38,22 @@ export default function InvitePage() {
 	// Fetch invite details
 	useEffect(() => {
 		const fetchInvite = async () => {
-			if (!api || !inviteId) return;
+			if (!filosignReady || !inviteId) return;
 
 			try {
-				const response = await api.rpc.base.get(`/sharing/invite/${inviteId}`);
-				// Axios response - data is already parsed
-				const data = response.data;
+				const data = z
+					.object({
+						inviteeEmail: z.string(),
+						senderName: z.string(),
+						message: z.string().nullable(),
+					})
+					.parse(await rpc.sharing.inviteById({ id: inviteId }));
 
-				if (data?.data) {
-					setInviteData({
-						inviteeEmail: data.data.inviteeEmail,
-						senderName: data.data.senderName,
-						message: data.data.message,
-					});
-				} else {
-					throw new Error("Invalid response");
-				}
+				setInviteData({
+					inviteeEmail: data.inviteeEmail,
+					senderName: data.senderName,
+					message: data.message ?? undefined,
+				});
 			} catch (error) {
 				logger.error("Failed to fetch invite:", error);
 				toast.error("Invalid or expired invite link");
@@ -61,7 +63,7 @@ export default function InvitePage() {
 		};
 
 		fetchInvite();
-	}, [api, inviteId]);
+	}, [rpc, filosignReady, inviteId]);
 
 	// Auto-claim if already logged in and registered
 	useEffect(() => {
@@ -70,7 +72,7 @@ export default function InvitePage() {
 				!ready ||
 				!authenticated ||
 				!isRegistered.data ||
-				!api ||
+				!auth ||
 				!inviteId ||
 				claimSuccess
 			) {
@@ -80,7 +82,7 @@ export default function InvitePage() {
 			setIsClaiming(true);
 
 			try {
-				await api.rpc.base.post(`/sharing/invite/${inviteId}/claim`, {});
+				await auth.rpc.sharing.inviteClaim({ id: inviteId });
 				setClaimSuccess(true);
 				toast.success(
 					"Invite accepted! You can now receive documents from this sender.",
@@ -103,7 +105,7 @@ export default function InvitePage() {
 		ready,
 		authenticated,
 		isRegistered.data,
-		api,
+		auth,
 		inviteId,
 		navigate,
 		claimSuccess,

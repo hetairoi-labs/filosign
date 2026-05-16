@@ -10,7 +10,12 @@
 		"verbatimModuleSyntax": true,
 		"noEmit": true,
 		"paths": {
-			"@/*": ["./*"]
+			"@/*": ["./*"],
+			"@/api/*": ["../server/api/*"],
+			"@/lib/*": ["../server/lib/*"],
+			"@/constants": ["../server/constants.ts"],
+			"@/config": ["../server/config.ts"],
+			"@/env": ["../server/env.ts"]
 		},
 		"target": "ESNext",
 		"skipLibCheck": true,
