@@ -7,19 +7,14 @@ export type ColdInvitePayload =
 	InferClientOutputs<AppRouterClient>["files"]["coldInvite"]["inviteByToken"];
 
 export function useColdInvitePayload(inviteToken: string | undefined) {
-	const { rpc, ready } = useFilosignContext();
+	const { rpcQuery, ready } = useFilosignContext();
+	const token = inviteToken?.trim();
 
 	return useQuery({
-		queryKey: ["fsQ-cold-invite", inviteToken],
-		queryFn: async (): Promise<ColdInvitePayload> => {
-			if (!inviteToken?.trim()) {
-				throw new Error("Missing invite token");
-			}
-			return rpc.files.coldInvite.inviteByToken({
-				inviteToken: inviteToken.trim(),
-			});
-		},
-		enabled: Boolean(ready && inviteToken && inviteToken.length >= 8),
+		...rpcQuery.files.coldInvite.inviteByToken.queryOptions({
+			input: { inviteToken: token ?? "" },
+		}),
+		enabled: Boolean(ready && token && token.length >= 8),
 		staleTime: 60_000,
 	});
 }
