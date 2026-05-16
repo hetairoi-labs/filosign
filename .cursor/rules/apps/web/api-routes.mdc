@@ -5,25 +5,20 @@ alwaysApply: false
 
 # Filosign API routes
 
-Backend: **`apps/server`**. **`/api`** is primarily **oRPC**: [`api/orpc/hono-mount.ts`](apps/server/api/orpc/hono-mount.ts) on **`/api/rpc`** (and **`/api/api-reference`** for OpenAPI UI). Procedure handlers live in **`api/handlers/*`** and compose [`api/orpc/router.ts`](apps/server/api/orpc/router.ts). **Carve-outs** remain thin Hono mounts from [`api/routes/router.ts`](apps/server/api/routes/router.ts): **`GET /api/runtime`** (`respond` envelope for the legacy SDK unwrap) and **multipart avatar** under **`PUT /api/users/profile/avatar`**. Details in **[`AGENTS.md`](AGENTS.md)**.
-
-- **Layout:** New JSON surface = oRPC nesting in `router.ts`; Hono folders under `api/routes/` are only for carve-outs (e.g. `users/` for avatar upload).
-- **Domain:** Logic shared by oRPC handlers, indexer, or jobs belongs in **`lib/domain/`** (e.g. [`lib/domain/file-invites.ts`](apps/server/lib/domain/file-invites.ts), [`lib/domain/sharing.ts`](apps/server/lib/domain/sharing.ts)), not under route-only glue.
+Backend: **`apps/server`**. **`/api`** is **oRPC** on **`/api/rpc`** and **OpenAPI UI** on **`/api/api-reference`** — see [`api/orpc/hono-mount.ts`](apps/server/api/orpc/hono-mount.ts). Procedure handlers live under [`api/handlers/*`](apps/server/api/handlers/) and compose [`api/orpc/router.ts`](apps/server/api/orpc/router.ts). [`api/routes/router.ts`](apps/server/api/routes/router.ts) mounts only **JWT optional auth** + hybrid middleware (no REST JSON carve-outs). Details in **[`AGENTS.md`](AGENTS.md)**.
 
 ## Conventions
 
-- **Responses (oRPC):** Native procedure return values; **`ORPCError`** for failures ([`api/handlers/`](apps/server/api/handlers/)). **`respond.ok` / `respond.err`** only on leftover Hono paths (`GET /runtime`, avatar upload).
-- **Auth:** `optionalJwtWalletForOrpc` on `/api/*` parses JWT into **`ctx.var.userWallet`** for oRPC context. Procedures that need login use **`authenticatedProcedure`** (`api/orpc/procedures.ts`), which rejects missing wallet. **`authenticated`** ([`api/middleware/auth.ts`](apps/server/api/middleware/auth.ts)) is still used by carve-out Hono routes (e.g. avatar).
-- **Debug logs:** JWT failure logs include token/header prefixes only when **`DEBUG=true`** in env ([`env.ts`](apps/server/env.ts)).
-- **Input:** Zod at the procedure boundary (**`.safeParse`** or `.input(schema)` on the procedure).
-- **Fallible async:** **`tryCatch`** / **`tryCatchSync`**; map failures to **`ORPCError`** in migrated handlers ([`patterns.mdc`](patterns.mdc)).
-- **DB:** Drizzle `db` / `db.transaction` — match patterns in the same handler/domain module.
+- **Responses:** Native procedure outputs; **`ORPCError`** in handlers (`api/handlers/`).
+- **Auth:** `optionalJwtWalletForOrpc` sets **`ctx.var.userWallet`** when Bearer JWT verifies (**invalid Bearer is skipped** → anonymous context). **`authenticatedProcedure`** (`api/orpc/procedures.ts`) throws **`UNAUTHORIZED`** via oRPC when the wallet is absent.
+- **Debug logs:** JWT verify failures logs only when **`DEBUG=true`** ([`env.ts`](apps/server/env.ts)).
+- **Inputs:** Zod at the procedure boundary (`.input` / `.safeParse`).
+- **Fallible async:** **`tryCatch`** / **`tryCatchSync`** ([`patterns.mdc`](patterns.mdc)); map failures to **`ORPCError`** in handlers.
 
-## Migrations
+## TanStack Query (React SDK)
 
-- **`db:push:*`** ([`apps/server/package.json`](apps/server/package.json)) runs `drizzle-kit push` against the workspace env file — fine for dev/staging iterations.
-- **`contracts:migrate`** / tracked SQL migrations are the stricter path when you need versioned schema changes in production workflows (see root scripts and contracts docs).
+- **`rpcQuery`** exposes **`createTanstackQueryUtils` per subtree** — `filosign` root + **`auth`**, **`files`**, **`sharing`**, **`storage`**, **`users`**, **`tx`**, plus leaf utils for **`healthCheck`** / **`runtime`** ([`rpc-query-utils.ts`](packages/react-sdk/src/orpc/rpc-query-utils.ts)).
 
 ## Client
 
-Use **`packages/react-sdk`** **`RPCLink`** / **`@orpc`** for **`/api/rpc`**; migrate legacy **`Axios`** unwrap callers off **`respond`**. **`apps/client`** stays thin (see **`AGENTS.md`**).
+Consume **`useFilosignContext().rpc`** (and **`session`**); prefer **`rpcQuery`** for query/mutation helpers. Direct **`fetch` PUT** only to URLs from **`storage.presignPut`** / file upload presign flows. **`apps/client`** stays thin (**`AGENTS.md`**).

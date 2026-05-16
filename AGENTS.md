@@ -18,10 +18,10 @@ LLM/agent map: **packages**, **boundaries**, **data flow**, **[skills](#skills)*
 | Path                    | npm                      | Role                                                                            |
 | ----------------------- | ------------------------ | ------------------------------------------------------------------------------- |
 | `apps/client`           | `@filosign/client`       | Vite UI, Privy/wagmi, Dilithium bootstrap—**thin**; logic via `@filosign/react` |
-| `apps/server`           | `@filosign/server`       | Hono, Drizzle, Privy, `GET /runtime`, server `getContracts`                     |
+| `apps/server`           | `@filosign/server`       | Hono, Drizzle, Privy; **`rpc.runtime`** (`/api/rpc`), server-side `chainKey`/contracts |
 | `apps/contracts`        | `@filosign/contracts`    | Solidity, `definitions/`, `getContracts`, EIP-712 helpers; **tests:** `apps/contracts/test/`, [TESTING.md](apps/contracts/TESTING.md)                       |
 | `apps/astro`            | —                        | Marketing                                                                       |
-| `packages/react-sdk`    | `@filosign/react`        | `FilosignProvider`, typed `rpc` (`RPCLink`), `FilosignSession`, hooks, chain calls |
+| `packages/react-sdk`    | `@filosign/react`        | `FilosignProvider`, typed `rpc` (`RPCLink`), subtree **`rpcQuery`**, `FilosignSession`, hooks |
 | `packages/shared`       | `@filosign/shared`       | Types, Zod, manifests, commitments (browser+server)                             |
 | `packages/crypto-utils` | `@filosign/crypto-utils` | KEM, crypto, cold-invite; SDK + contracts tooling                               |
 | `packages/test`         | `test`                   | Dev harness                                                                     |
@@ -38,9 +38,9 @@ flowchart LR
     D --> G[getContracts EIP712]
   end
   subgraph sv [apps/server]
-    R["/runtime"]
+    O[api/orpc + handlers]
     E[lib/evm.ts]
-    Rt[api/routes]
+    Rt[api/routes shell]
   end
   subgraph sdk [packages/react-sdk]
     P[FilosignProvider]
@@ -53,7 +53,7 @@ flowchart LR
   end
   G --> E
   G --> P
-  R --> P
+  O --> P
   E --> Rt
   P --> rpc
   H --> rpc
@@ -76,7 +76,7 @@ flowchart LR
 
 ## Boundaries
 
-**HTTP:** Use `useFilosignContext().rpc` (and `session` where auth applies) + `@filosign/react/hooks`. No `fetch`/axios from `apps/client` to JSON API **except** narrow cases: blob/doc URL bytes (`[send-envelope.ts](apps/client/src/pages/dashboard/envelope/create/add-sign/send-envelope.ts)`), static assets (`[compliance-pdf-images.ts](apps/client/src/lib/utils/compliance-pdf/compliance-pdf-images.ts)`).
+**HTTP:** Use `useFilosignContext().rpc` (and `session` where auth applies) + `@filosign/react/hooks`. No `fetch`/axios from `apps/client` to JSON API **except** narrow cases: blob/doc URL bytes (`[send-envelope.ts](apps/client/src/pages/dashboard/envelope/create/add-sign/send-envelope.ts)`), static assets (`[compliance-pdf-images.ts](apps/client/src/lib/utils/compliance-pdf/compliance-pdf-images.ts)`), and **direct `PUT` to URLs returned by `storage.presignPut`** (private object-store upload only—no API body proxy).
 
 **Imports:** Client → minimal `@filosign/contracts` (`[constants.ts` mock-usdc](apps/client/src/constants.ts)); prefer SDK/runtime for new.
 
@@ -86,17 +86,23 @@ flowchart LR
 
 ## Runtime
 
-`FilosignProvider` uses **`rpc.runtime`** on **`/api/rpc`**; it uses the same `loadPlatformRuntime()` helper as **`GET /api/runtime`** in `[api/routes/router.ts](apps/server/api/routes/router.ts)` for non-RPC clients. Keep both payloads aligned when changing fields; server config stays in `[config.ts](apps/server/config.ts)`.
+`FilosignProvider` calls **`rpc.runtime`** (procedure in `[api/orpc/router.ts](apps/server/api/orpc/router.ts)`, loader `[platform-runtime](apps/server/lib/domain/platform-runtime.ts)`). Server config aligns with `[config.ts](apps/server/config.ts)`.
 
 ## API
 
-Mount in `[api/routes/router.ts](apps/server/api/routes/router.ts)`: thin Hono carve-outs (e.g. **`PUT /users/profile/avatar`**, **`GET /api/runtime`**). **JSON API** is **`/api/rpc`** (`[api/orpc/router.ts](apps/server/api/orpc/router.ts)` + `[api/handlers/](apps/server/api/handlers/)`). Cross-route domain logic lives under **`lib/domain/`** (e.g. [`lib/domain/sharing.ts`](apps/server/lib/domain/sharing.ts), [`lib/domain/file-invites.ts`](apps/server/lib/domain/file-invites.ts)). Align with [apps/web/api-routes.mdc](.cursor/rules/apps/web/api-routes.mdc).
+Mount in `[api/routes/router.ts](apps/server/api/routes/router.ts)`: **`optionalJwtWalletForOrpc`** + hybrid oRPC/OpenAPI middleware only (**no REST JSON carve-outs**). **JSON API** is **`/api/rpc`** (`[api/orpc/router.ts](apps/server/api/orpc/router.ts)` + `[api/handlers/](apps/server/api/handlers/)`). Cross-route logic lives under **`lib/domain/`** (e.g. [`lib/domain/sharing.ts`](apps/server/lib/domain/sharing.ts), [`lib/domain/file-invites.ts`](apps/server/lib/domain/file-invites.ts)). Align with [apps/web/api-routes.mdc](.cursor/rules/apps/web/api-routes.mdc).
 
 ### oRPC conventions (maintain consistency)
 
 - **Output schemas:** Prefer concrete Zod **`.output` schemas per procedure** under [`api/orpc/schemas/`](apps/server/api/orpc/schemas/) rather than **`z.unknown()`**, so **`AppRouterClient` / `InferClientOutputs`** stay accurate end-to-end. Handlers remain the behavioral source of truth; schemas should match what they return (dates may need `string | Date` unions on the wire).
 
 - **`createORPCClient` is a Proxy:** Any **string property access** is treated as another procedure segment. **`JSON.stringify`** (used by TanStack Query when hashing keys) invokes **`toJSON`** if present, which resolves to **`POST …/toJSON`** on the wire. **Do not put the `rpc` client (or nested proxies)** inside `queryKey` / payloads that get deeply stringified—use primitives (e.g. `apiBaseUrl`, wallet address) instead.
+
+- **TanStack subtree keys:** `createFilosignRpcQueryUtils` builds **`@orpc/tanstack-query`** helpers under **`filosign` + domain** (e.g. `rpcQuery.users`, `rpcQuery.files`, `rpcQuery.storage`, …)—see `[rpc-query-utils.ts](packages/react-sdk/src/orpc/rpc-query-utils.ts)`.
+
+- **Private object storage:** Browser **`fetch` PUT** to URLs from **`storage.presignPut`** (and file upload **`files.uploadStart`**) uploads bytes without proxying through the API. Keep **object keys** in Postgres; serve images via **`presigned GET`** in procedure handlers—not long-lived naked bucket URLs (**no `acl: public-read`** on PUT presign paths used here).
+
+- **Optional JWT (Hono):** On **`/api/rpc`** and **`/api/api-reference`**, `optionalJwtWalletForOrpc` sets **`userWallet`** only when the Bearer verifies. **Malformed Bearer is ignored** (no pre-RPC `respond` JSON); protected procedures resolve **`UNAUTHORIZED`** via **`authenticatedProcedure`** in native oRPC form.
 
 - **Hono hybrid middleware:** `[hono-mount.ts](apps/server/api/orpc/hono-mount.ts)` serves **`/api/rpc`** first, then **`/api/api-reference`**, otherwise **`next()`**. The **`proxyRawRequest`** wrapper avoids **`Request` body “already consumed”** if earlier middleware touched parsed body helpers.
 
@@ -107,7 +113,7 @@ Mount in `[api/routes/router.ts](apps/server/api/routes/router.ts)`: thin Hono c
 ## Vertical slice
 
 1. Contracts: edit `apps/contracts/src` → `compile` (only pipeline updates `definitions/`). **Follow [apps/contracts/TESTING.md](apps/contracts/TESTING.md)** for Hardhat tests; keep Solidity and tests aligned in the same PR when behavior changes.
-2. Server: **`/api/rpc`** oRPC (`api/orpc/`, `api/handlers/`) + carve-out Hono routes + `fsContracts` (`[evm.ts](apps/server/lib/evm.ts)`).
+2. Server: **`/api/rpc`** oRPC (`api/orpc/`, `api/handlers/`) + thin **`api/routes`** middleware shell + `fsContracts` (`[evm.ts](apps/server/lib/evm.ts)`).
 3. SDK: hooks + `useFilosignContext()`.
 4. Client: UI + `@filosign/react` imports only.
 5. Verify: preamble + `bun check`, tsc, `bun run test`, forge when contracts change.

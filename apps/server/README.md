@@ -15,9 +15,8 @@ Bun reads `.env*` automatically per [environment variables — Bun](https://bun.
 |------|------|
 | `api/orpc/` | oRPC **`/api/rpc`** + OpenAPI **`/api/api-reference`** (see `hono-mount.ts`, `router.ts`) |
 | `api/handlers/` | oRPC procedure implementations (**`ORPCError`**, reuse `tryCatch`) |
-| `api/routes/` | Thin Hono apps mounted from `api/routes/router.ts` ( **`GET /runtime`**, multipart **avatar**) |
-| `api/routes/users/` | **`avatar-route.ts`** only — **`PUT /profile/avatar`** under `/api/users` |
-| `api/middleware/` | `optionalJwtWalletForOrpc` + `authenticated` (JWT → `ctx.var.userWallet`) |
+| `api/routes/router.ts` | **`optionalJwtWalletForOrpc`** + hybrid oRPC mount (thin shell) |
+| `api/middleware/` | JWT optional parsing for **`/api/rpc`** + **`/api/api-reference`** |
 | `lib/domain/` | Cross-cutting domain logic (oRPC handlers + indexer), e.g. sharing invites, file-invite helpers |
 | `lib/indexer/` | `processTransaction` — replays receipts into DB |
 | `lib/validation/` | E.g. `tx-registration.ts` — Zod schemas shared with indexer / RPC |
@@ -36,13 +35,18 @@ Bun reads `.env*` automatically per [environment variables — Bun](https://bun.
 
 ## API envelope
 
-- **`GET /api/runtime`** (Hono carve-out): `{ success, data, message }` via `respond.ok` for the SDK until callers move to **`runtime`** on **`/api/rpc`**.
-- **Other APIs:** Prefer **`/api/rpc`** — native outputs + **`ORPCError`** mapping (OpenAPI explorer at **`/api/api-reference`**).
+JSON API is **`/api/rpc`** — native outputs + **`ORPCError`** mapping. OpenAPI explorer: **`/api/api-reference`**. Avatar flow: **`storage.presignPut`** + browser **`fetch` PUT** to storage, then **`users.profile.update`** with **`avatarKey`**. **`runtime`** stays on **`rpc.runtime`**.
 
 ## Security notes
 
 - **`tx.processIndexerHash`** uses **`authenticatedProcedure`** — JWT unchanged. Validates JSON server-side; **reverted** on-chain txs return **400**. Generic **500** text avoids leaking internals; see `ProcessTxUserError`.
 - **`DEBUG=true`** — skips outbound Resend email (`lib/email/invites.ts`) and expands JWT indexer logs (`env.ts` drives both).
+
+## Object storage (S3-compatible / R2)
+
+- **Private-first:** Handlers omit **`acl: public-read`** on **`presign` PUT**. Avatars use **`storage.presignPut`** (`kind: webp_user_avatar`) plus **`bucket.exists`** validation before **`users.profile.update`**. Reads expose bytes via **`presigned GET`** (e.g. `userProfile.me`, lookups, file piece URLs).
+
+- **CORS:** Bucket / R2 dashboard must allow browser **`PUT`** (and **`GET`** if validating) from your **`apps/client`** origin(s); the upload host matches **`S3_ENDPOINT`** / configured public hostname.
 
 ## Database
 
