@@ -3,7 +3,7 @@ import type {
 	ServerErrorStatusCode,
 } from "hono/utils/http-status";
 
-/** Mapped to `respond.err` in POST /tx; avoids leaking indexer internals */
+/** Mapped to **`ORPCError`** in `tx.processIndexerHash`; avoids leaking indexer internals */
 export class ProcessTxUserError extends Error {
 	readonly httpStatus: ClientErrorStatusCode | ServerErrorStatusCode;
 
