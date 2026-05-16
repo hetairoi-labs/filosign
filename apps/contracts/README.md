@@ -16,6 +16,7 @@ Solidity contracts for Filosign: document registration/signing (`**FSFileRegistr
 | [Trust model](#trust-model)                                  | Risk / security            |
 | [ERC‑20 guardrail](#erc20-token-guardrail)                   | Ops & future token listing |
 | [This repo layout & scripts](#repository-layout-and-scripts) | Maintainers                |
+| [Testing](#testing)                                        | Engineers & agents         |
 
 
 ---
@@ -161,6 +162,14 @@ Escrow **deposit** paths credit **balance deltas**, so the vault ledger matches 
 
 ---
 
+## Testing
+
+Hardhat + viem tests live in **[`test/`](./test/)**. **Read [`TESTING.md`](./TESTING.md)** before changing tests or Solidity behavior (chain time, viem encodings, hex fixtures, deploy gate).
+
+Run locally during development, in CI on every PR, and note that **`migrate` / `migrate:testnet` / `migrate:mainnet` run the full test suite before `deploy`**.
+
+---
+
 ## Repository layout and scripts
 
 
@@ -177,8 +186,9 @@ Escrow **deposit** paths credit **balance deltas**, so the vault ledger matches 
 | Command                            | Runs                                                                                             |
 | ---------------------------------- | ------------------------------------------------------------------------------------------------ |
 | `bun run compile`                  | Interface generation + `hardhat compile`                                                         |
+| `bun run test`                     | `compile` + **`hardhat test`** (required to pass before deploy via `migrate` scripts)             |
 | `bun run deploy` (+ network flags) | `[scripts/deploy.ts](./scripts/deploy.ts)` — writes `**definitions/**` (+ local `**mock-usdc**`) |
-| `bun run tests`                    | compile + `**hardhat test**`                                                                     |
+| `bun run migrate` (+ variants)     | **`test` then `deploy`** (with env file) — deploy is skipped if tests fail                         |
 | `bun run check-types`              | `tsc --noEmit`                                                                                   |
 
 

@@ -15,14 +15,14 @@
 	"scripts": {
 		"node": "bunx --bun hardhat node",
 		"compile": "bun gen:interfaces; bun --bun hardhat compile",
-		"tests": "bun compile; bunx --bun hardhat test",
+		"test": "bun compile; bunx --bun hardhat test",
 		"gen:interfaces": "bun run scripts/interfaces.ts",
 		"deploy": "bunx --bun hardhat run scripts/deploy.ts",
 		"deploy:testnet": "bunx --bun hardhat run scripts/deploy.ts --network baseSepolia",
 		"deploy:mainnet": "bunx --bun hardhat run scripts/deploy.ts --network base",
-		"migrate": "bun run --env-file=.env.local compile && bun run --env-file=.env.local deploy",
-		"migrate:testnet": "bun run --env-file=.env.staging compile && bun run --env-file=.env.staging deploy:testnet",
-		"migrate:mainnet": "bun run --env-file=.env.production compile && bun run --env-file=.env.production deploy:mainnet",
+		"migrate": "bun run --env-file=.env.local test && bun run --env-file=.env.local deploy",
+		"migrate:testnet": "bun run --env-file=.env.staging test && bun run --env-file=.env.staging deploy:testnet",
+		"migrate:mainnet": "bun run --env-file=.env.production test && bun run --env-file=.env.production deploy:mainnet",
 		"check-types": "bunx --bun tsc --noEmit"
 	},
 	"devDependencies": {
