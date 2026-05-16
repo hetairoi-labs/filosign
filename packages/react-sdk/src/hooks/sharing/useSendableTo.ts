@@ -1,7 +1,7 @@
 import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
-import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useFilosignRpc } from "../../lib/use-filosign-rpc";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 
 export type SendableApprovalRow =
 	InferClientOutputs<AppRouterClient>["sharing"]["sendableTo"]["approvals"][number];

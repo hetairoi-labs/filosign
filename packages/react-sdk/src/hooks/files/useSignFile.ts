@@ -17,9 +17,9 @@ import { useMutation } from "@tanstack/react-query";
 import type { Hex } from "viem";
 import { getAddress } from "viem";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useCryptoSeed } from "../auth";
-import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 import { useUserProfile } from "../users/useUserProfile";
 
 export function useSignFile() {

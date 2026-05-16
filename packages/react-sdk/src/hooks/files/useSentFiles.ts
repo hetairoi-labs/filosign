@@ -1,8 +1,8 @@
 import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { MINUTE } from "../../constants";
-import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useFilosignRpc } from "../../lib/use-filosign-rpc";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 
 export type SentFileRow =
 	InferClientOutputs<AppRouterClient>["files"]["list"]["sent"]["files"][number];

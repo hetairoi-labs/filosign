@@ -2,8 +2,8 @@ import type { InferClientOutputs } from "@orpc/client";
 import { useQuery } from "@tanstack/react-query";
 import type { Address } from "viem";
 import { DAY } from "../../constants";
-import type { AppRouterClient } from "../../orpc/app-router-types";
 import { useFilosignRpc } from "../../lib/use-filosign-rpc";
+import type { AppRouterClient } from "../../orpc/app-router-types";
 
 export type UserProfileLookup =
 	InferClientOutputs<AppRouterClient>["users"]["profile"]["lookup"];

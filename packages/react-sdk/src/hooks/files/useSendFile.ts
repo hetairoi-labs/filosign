@@ -19,9 +19,9 @@ import {
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Address, Hex } from "viem";
 import z from "zod";
-import { calculatePieceCid } from "../../utils/piece.ts";
 import { useFilosignContext } from "../../context/useFilosignContext";
 import { useFilosignRpc } from "../../lib/use-filosign-rpc";
+import { calculatePieceCid } from "../../utils/piece.ts";
 import { useUserProfile } from "../users";
 
 type FileData = z.infer<ReturnType<typeof zFileData>>;
