@@ -39,11 +39,34 @@ console.log("runtime chain:", {
 	runtimeChain: runtimeChain.name,
 });
 
+const http = {
+	cors: {
+		origin: [
+			env.FRONTEND_URL,
+			"http://localhost:3001",
+			"http://localhost:3000",
+		],
+		allowHeaders: ["Content-Type", "Authorization", "x-session-token"],
+		allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+		credentials: true,
+	},
+	contentSecurityPolicy:
+		"default-src 'self'; " +
+		"script-src 'self' 'unsafe-eval' 'unsafe-inline' https://waap.xyz https://*.waap.xyz; " +
+		"style-src 'self' 'unsafe-inline'; " +
+		"connect-src 'self' http://localhost:3000 http://127.0.0.1:3000 https://waap.xyz https://*.waap.xyz https://*.walletconnect.com https://*.walletconnect.org wss://*.walletconnect.com wss://*.walletconnect.org https://sepolia.base.org https://mainnet.base.org https://rpc.ankr.com https://*.alchemy.com https://*.quiknode.pro https://api.zerocomputing.com https://*.holonym.io https://*.silkwallet.net https://*.silk-protector.com https://*.fly.dev; " +
+		"img-src 'self' data: blob: https:; " +
+		"font-src 'self' data:; " +
+		"frame-src 'self' https://waap.xyz https://*.waap.xyz https://verify.walletconnect.com;",
+	port: env.PORT ?? 30011,
+};
+
 const config = {
 	chainKey,
 	runtimeChain,
 	serverAddressSynapse,
 	INDEXER,
+	http,
 };
 
 export default config;

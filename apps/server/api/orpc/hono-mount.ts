@@ -38,7 +38,7 @@ function createPinoLogging() {
 	return new LoggingHandlerPlugin<OrpcContext>({
 		logger,
 		generateId: () => crypto.randomUUID(),
-		logRequestResponse: env.DEBUG,
+		logRequestResponse: false,
 		logRequestAbort: env.DEBUG,
 	});
 }

@@ -1,42 +1,20 @@
 import "./lib/polyfills/bigint-json";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { logger } from "hono/logger";
+import config from "@/config";
+import { csp } from "@/lib/csp";
+import { requestLog } from "@/lib/request-log";
 import { apiRouter } from "./api/routes/router";
-import env from "./env";
 
 export const app = new Hono()
-	.use(logger())
-	.use(
-		cors({
-			origin: [
-				env.FRONTEND_URL,
-				"http://localhost:3001",
-				"http://localhost:3000",
-			],
-			allowHeaders: ["Content-Type", "Authorization", "x-session-token"],
-			allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-			credentials: true,
-		}),
-	)
-	.use(async (c, next) => {
-		c.header(
-			"Content-Security-Policy",
-			"default-src 'self'; " +
-				"script-src 'self' 'unsafe-eval' 'unsafe-inline' https://waap.xyz https://*.waap.xyz; " +
-				"style-src 'self' 'unsafe-inline'; " +
-				"connect-src 'self' http://localhost:3000 http://127.0.0.1:3000 https://waap.xyz https://*.waap.xyz https://*.walletconnect.com https://*.walletconnect.org wss://*.walletconnect.com wss://*.walletconnect.org https://sepolia.base.org https://mainnet.base.org https://rpc.ankr.com https://*.alchemy.com https://*.quiknode.pro https://api.zerocomputing.com https://*.holonym.io https://*.silkwallet.net https://*.silk-protector.com https://*.fly.dev; " +
-				"img-src 'self' data: blob: https:; " +
-				"font-src 'self' data:; " +
-				"frame-src 'self' https://waap.xyz https://*.waap.xyz https://verify.walletconnect.com;",
-		);
-		await next();
-	})
+	.use(requestLog)
+	.use(cors(config.http.cors))
+	.use(csp)
 	.get("/", (c) => c.text("OK"))
 	.get("/health", (c) => c.json({ ok: true }))
 	.route("/api", apiRouter);
 
 export default {
-	port: env.PORT || 30011,
+	port: config.http.port,
 	fetch: app.fetch,
 };
