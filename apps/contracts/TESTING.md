@@ -11,7 +11,7 @@ bun run --cwd apps/contracts check-types # tsc on exports/definitions/services (
 
 `test` runs `compile` first (interfaces + Solidity), then `hardhat test`.
 
-**Env:** `hardhat.config.ts` validates `FC_PVT_KEY` and `ALCHEMY_API_KEY` via [`env.ts`](./env.ts). For local runs, use `.env.local` (gitignored). For CI-shaped runs, copy [`.env.ci`](./.env.ci) or export the same vars. GitHub Actions sets workflow `env` in [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — no repository secrets needed for unit tests. Use **GitHub Secrets** only when you add jobs that hit real RPCs (testnet deploy, fork tests, etc.).
+**Env:** [`env.ts`](./env.ts) + [`hardhat.config.ts`](./hardhat.config.ts) only require `FC_PVT_KEY` and `ALCHEMY_API_KEY` when **live networks** (Base / Filecoin) are configured — i.e. deploy/migrate. **`bun run test` uses the in-process Hardhat network only**; CI needs no env vars or secrets for the contracts job. For deploy locally, use `.env.local` (gitignored). Use **GitHub Secrets** when you add CI jobs that deploy or fork against real RPCs.
 
 **Deploy / migrate:** `migrate`, `migrate:testnet`, and `migrate:mainnet` run `**test` before `deploy`**. If the suite fails, deploy does not run.
 

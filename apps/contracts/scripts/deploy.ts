@@ -68,7 +68,7 @@ function requireChainId(): number {
 }
 
 function requireDeployerPrivateKey(): `0x${string}` {
-	const key = Bun.env.FC_PVT_KEY as `0x${string}` | undefined;
+	const key = process.env.FC_PVT_KEY as `0x${string}` | undefined;
 	if (!key) {
 		console.error("FC_PVT_KEY is required for deployment");
 		process.exit(1);
