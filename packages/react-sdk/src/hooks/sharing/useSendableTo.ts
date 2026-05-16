@@ -20,7 +20,6 @@ export function useSendableTo() {
 	});
 }
 
-// Hook to get people who have accepted your requests (for envelope creation)
 export function useAcceptedRecipients() {
 	const { data: auth } = useAuthedApi();
 

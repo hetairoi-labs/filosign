@@ -49,8 +49,6 @@ export function FilosignProvider(props: FilosignConfig) {
 	const rpcQuery = useMemo(() => createFilosignRpcQueryUtils(rpc), [rpc]);
 
 	const runtimeQuery = useQuery({
-		// Never put `rpc` in the key: `JSON.stringify`/query hashing calls `toJSON`, and
-		// {@link createORPCClient} resolves any string key to a procedure (POST …/toJSON).
 		queryKey: ["runtime", apiBaseNormalized],
 		queryFn: async () => {
 			const data = await rpc.runtime();

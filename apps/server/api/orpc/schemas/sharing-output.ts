@@ -64,7 +64,6 @@ export const rpcSharingSendableToOutputSchema = z.object({
 export const rpcSharingCancelRequestOutputSchema = rpcEmptyOutputSchema;
 export const rpcSharingRejectRequestOutputSchema = rpcEmptyOutputSchema;
 
-/** Handler always throws; nominal output for OpenAPI / client typing. */
 export const rpcSharingAcceptRequestOutputSchema = rpcEmptyOutputSchema;
 
 export const rpcSharingApproveOutputSchema = z.object({

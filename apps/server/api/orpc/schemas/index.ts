@@ -1,5 +1,3 @@
-/** Central exports for `.output(schema)` wiring in {@link ../router.ts}. */
-
 export {
 	rpcAuthNonceOutputSchema,
 	rpcAuthVerifyOutputSchema,

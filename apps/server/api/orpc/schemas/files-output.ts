@@ -52,5 +52,4 @@ export const rpcColdInviteRegenerateOutputSchema = z.object({
 	expiresAt: z.string(),
 });
 
-/** {@link ../../../api/handlers/files-register.filesRegister} */
 export const rpcFilesRegisterOutputSchema = rpcEmptyOutputSchema;

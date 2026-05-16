@@ -6,7 +6,6 @@ export const rpcUserRegisterOutputSchema = rpcEmptyOutputSchema;
 export const rpcUserProfileMeOutputSchema = z.object({
 	walletAddress: z.string(),
 	encryptionPublicKey: z.string(),
-	/** Mirrors {@link ../../../api/handlers/users-handlers.userProfileMe} alias of `users.keygenDataJson`. */
 	keygenData: z.unknown().nullable(),
 	createdAt: zDateWire,
 	email: z.string(),

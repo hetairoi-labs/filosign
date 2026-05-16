@@ -6,7 +6,6 @@ export function normalizeApiBaseUrl(apiBaseUrl: string) {
 	return apiBaseUrl.replace(/\/+$/, "");
 }
 
-/** Mutable JWT holder read by {@link createFilosignOrpcClient} on each RPC request. */
 export class FilosignSession {
 	private token: string | null = null;
 
@@ -28,14 +27,12 @@ export class FilosignSession {
 		}
 	}
 
-	/** Value for `Authorization` header, or `undefined` when unauthenticated. */
 	getAuthorizationValue(): string | undefined {
 		if (!this.jwtExists) return undefined;
 		return `Bearer ${this.token}`;
 	}
 }
 
-/** Typed oRPC client: posts to `{apiBase}/api/rpc` with Bearer from `session`. */
 export function createFilosignOrpcClient(
 	apiBaseUrl: string,
 	session: FilosignSession,

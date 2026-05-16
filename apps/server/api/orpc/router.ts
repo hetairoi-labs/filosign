@@ -76,7 +76,6 @@ const platformRuntimeSchema = z.object({
 
 const unk = z.unknown();
 
-/** Root router; JSON API lives at `/api/rpc` (+ OpenAPI docs at `/api/api-reference`). */
 export const appRouter = {
 	healthCheck: publicProcedure
 		.output(z.literal("OK"))

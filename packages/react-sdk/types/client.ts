@@ -29,7 +29,4 @@ export type Defaults = {
 	wallet: Wallet;
 	store: FilosignStore;
 	tx: (txnPromise: Promise<`0x${string}`>) => Promise<TransactionReceipt>;
-
-	//   store: FilosignStore;
-	//   events: EventNotifier;
 };

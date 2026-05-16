@@ -56,10 +56,6 @@ export const openapiHandler = new OpenAPIHandler(appRouter, {
 	],
 });
 
-/**
- * Matches [Hono adapter](https://orpc.dev/docs/adapters/hono): RPC first, then OpenAPI reference, then `next()`.
- * Request proxy avoids “body already used” if upstream middleware touched the body.
- */
 export async function orpcHybridMiddleware(c: Context, next: Next) {
 	const request = proxyRawRequest(c.req, c.req.raw);
 	const context = await createContext({ context: c });

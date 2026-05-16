@@ -15,7 +15,6 @@ export type FilosignRpcQueryUtils = ReturnType<
 
 export type FilosignContextValue = {
 	ready: boolean;
-	/** Base URL for the platform API (e.g. `VITE_PLATFORM_URL`), no trailing slash. */
 	apiBaseUrl: string;
 	rpc: AppRouterClient;
 	rpcQuery: FilosignRpcQueryUtils;
@@ -30,7 +29,6 @@ export type FilosignContextValue = {
 
 export type Runtime = {
 	uptime: number;
-	/** Serialized chain config from `/api/rpc` runtime (shape may vary by deployment). */
 	chain: unknown;
 	chainKey: ChainKey;
 	serverAddressSynapse: string;
