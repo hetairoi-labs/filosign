@@ -1,4 +1,5 @@
 import { useFilosignContext } from "@filosign/react";
+import { useEnvelopeRecipientLimit } from "@filosign/react/billing";
 import { useUserProfileByQuery } from "@filosign/react/users";
 import { computeSignerNetPayout, validateInvoiceMemo } from "@filosign/shared";
 import {
@@ -56,6 +57,7 @@ import { safeAsync } from "@/src/lib/utils/safe";
 import { cn } from "@/src/lib/utils/utils";
 import { initialsFromName } from "@/src/pages/dashboard/connections/_components/contact-utils";
 import type { Recipient } from "../../types";
+import { usePromptPlanUpgrade } from "./entitlement-upgrade-context";
 import { useRecipients } from "./envelope-draft-context";
 
 const EMPTY_USER_PROFILE_QUERY: {
@@ -75,8 +77,16 @@ function isValidEmail(email: string) {
 export default function RecipientsSection() {
 	const { value: recipients, onChange, error, showError } = useRecipients();
 	const [isRecipientsOpen, setIsRecipientsOpen] = useState(true);
+	const { canAddRecipient } = useEnvelopeRecipientLimit();
+	const promptPlanUpgrade = usePromptPlanUpgrade();
+
+	const recipientCount = recipients?.length ?? 0;
 
 	const addRecipient = () => {
+		if (!canAddRecipient(recipientCount)) {
+			promptPlanUpgrade("envelope.recipients.max");
+			return;
+		}
 		const next: Recipient = {
 			clientRowId: crypto.randomUUID(),
 			name: "",
