@@ -13,7 +13,14 @@ import type { Address } from "viem";
 import { getAddress } from "viem";
 import z from "zod";
 import { MAX_FILE_SIZE } from "@/constants";
+import { SERVER_ANALYTICS_EVENTS } from "@/lib/analytics/events";
+import { trackServerEvent } from "@/lib/analytics/track";
 import db from "@/lib/db";
+import {
+	assertEntitlement,
+	recipientSlotCounts,
+	resolveEntitlementContext,
+} from "@/lib/domain/entitlements";
 import {
 	coldInviteExpiry,
 	normalizedViewerEmailsForRegister,
@@ -173,6 +180,13 @@ export async function filesRegister(sender: Address, rawBody: unknown) {
 		throw new ORPCError("BAD_REQUEST", { message: "Uploaded file is empty" });
 	}
 
+	const slotCounts = recipientSlotCounts({ participants, coldInvites });
+	const entitlementCtx = await resolveEntitlementContext(getAddress(sender));
+	assertEntitlement(entitlementCtx, "documents.sent.monthly");
+	assertEntitlement(entitlementCtx, "envelope.recipients.max", {
+		requested: slotCounts.recipientSlotCount,
+	});
+
 	const txHash = await FSFileRegistry.write.registerFile([
 		pieceCid,
 		sender,
@@ -197,6 +211,10 @@ export async function filesRegister(sender: Address, rawBody: unknown) {
 				onchainTxHash: txHash,
 				placementCommitment,
 				placementManifestJson: placementManifest,
+				warmParticipantCount: slotCounts.warmParticipantCount,
+				coldInviteCount: slotCounts.coldInviteCount,
+				signerSlotCount: slotCounts.signerSlotCount,
+				recipientSlotCount: slotCounts.recipientSlotCount,
 				createdAt: new Date(timestamp * 1000),
 			})
 			.returning();
@@ -225,6 +243,7 @@ export async function filesRegister(sender: Address, rawBody: unknown) {
 					inviteToken: c.inviteToken,
 					wrappedEncryptionKey: c.wrappedEncryptionKey,
 					isSigner: c.isSigner,
+					status: "pending" as const,
 					expiresAt: coldInviteExpiry(),
 				})),
 			);
@@ -322,6 +341,26 @@ export async function filesRegister(sender: Address, rawBody: unknown) {
 				error: err?.message ?? String(err),
 			});
 		});
+
+	trackServerEvent({
+		distinctId: getAddress(sender),
+		event: SERVER_ANALYTICS_EVENTS.fileRegistered,
+		pieceCid,
+		properties: {
+			signer_count: slotCounts.signerSlotCount,
+			cold_invite_count: slotCounts.coldInviteCount,
+			warm_participant_count: slotCounts.warmParticipantCount,
+			recipient_slot_count: slotCounts.recipientSlotCount,
+		},
+	});
+	if (slotCounts.coldInviteCount > 0) {
+		trackServerEvent({
+			distinctId: getAddress(sender),
+			event: SERVER_ANALYTICS_EVENTS.coldInviteCreated,
+			pieceCid,
+			properties: { cold_invite_count: slotCounts.coldInviteCount },
+		});
+	}
 
 	return {};
 }
