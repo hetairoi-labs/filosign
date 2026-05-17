@@ -56,10 +56,7 @@ export function PdfJsPreview({
 		(typeof file === "string" ? file.slice(0, 128) : "pdf-binary");
 
 	const identity = useMemo(() => fileIdentity(file), [file]);
-	const fileSource = useMemo(
-		() => normalizeFile(file),
-		[docKey, identity],
-	);
+	const fileSource = useMemo(() => normalizeFile(file), [docKey, identity]);
 
 	const [numPages, setNumPages] = useState<number | null>(null);
 	const [loadError, setLoadError] = useState<string | null>(null);
@@ -74,9 +71,7 @@ export function PdfJsPreview({
 	}, [docKey, fileSource]);
 
 	const safePageNumber =
-		numPages == null
-			? 1
-			: Math.min(Math.max(1, pageNumber), numPages);
+		numPages == null ? 1 : Math.min(Math.max(1, pageNumber), numPages);
 
 	const pageProps = {
 		width,

@@ -8,6 +8,7 @@ interface LogoProps {
 	iconClassName?: string;
 	textClassName?: string;
 	animatedLogo?: boolean;
+	noHref?: boolean;
 	iconOnly?: boolean;
 	isCollapsed?: boolean;
 	onIconClick?: () => void;
@@ -24,6 +25,7 @@ export default function Logo({
 	textClassName,
 	redirectTo = "/dashboard",
 	animatedLogo = true,
+	noHref = false,
 	iconOnly = false,
 	isCollapsed = false,
 	onIconClick,
@@ -40,10 +42,14 @@ export default function Logo({
 				"flex items-center group/logo py-2 gap-3 cursor-pointer transition-all",
 				!isCollapsed && "px-4 -ml-1",
 				className,
+				noHref && "cursor-default",
+				iconOnly && "p-0",
 			)}
 			onClick={() => {
 				onIconClick?.();
-				navigate({ to: redirectTo, replace: true });
+				if (!noHref) {
+					navigate({ to: redirectTo, replace: true });
+				}
 			}}
 		>
 			{!textOnly && (
