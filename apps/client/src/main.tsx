@@ -8,8 +8,10 @@ import { Toaster } from "./lib/components/ui/sonner";
 import { QueryClientProvider } from "./lib/context/query-client";
 import router from "./router";
 import "./globals.css";
+import { FilosignAnalyticsProvider } from "@filosign/react/analytics";
 import { IconContext } from "@phosphor-icons/react";
 import { Buffer as BufferI } from "buffer";
+import env from "./env";
 import { FilosignProvider } from "./lib/context/filosign-provider";
 import { PrivyProvider } from "./lib/context/privy-provider";
 import { WagmiProvider } from "./lib/context/wagmi-provider";
@@ -33,22 +35,28 @@ const App = () => {
 					storageKey="theme"
 				>
 					<QueryClientProvider>
-						<PrivyProvider>
-							<WagmiProvider>
-								<FilosignProvider>
-									<IconContext.Provider
-										value={{
-											mirrored: false,
-											weight: "regular",
-										}}
-									>
-										<ProfileEmailSync />
-										<RouterProvider router={router} />
-										<Toaster position="bottom-right" richColors />
-									</IconContext.Provider>
-								</FilosignProvider>
-							</WagmiProvider>
-						</PrivyProvider>
+						<FilosignAnalyticsProvider
+							apiKey={env.VITE_POSTHOG_KEY ?? ""}
+							apiHost={env.VITE_POSTHOG_HOST ?? "https://us.i.posthog.com"}
+							enabled={env.VITE_POSTHOG_ENABLED === true}
+						>
+							<PrivyProvider>
+								<WagmiProvider>
+									<FilosignProvider>
+										<IconContext.Provider
+											value={{
+												mirrored: false,
+												weight: "regular",
+											}}
+										>
+											<ProfileEmailSync />
+											<RouterProvider router={router} />
+											<Toaster position="bottom-right" richColors />
+										</IconContext.Provider>
+									</FilosignProvider>
+								</WagmiProvider>
+							</PrivyProvider>
+						</FilosignAnalyticsProvider>
 					</QueryClientProvider>
 				</ThemeProvider>
 			</ErrorBoundary>

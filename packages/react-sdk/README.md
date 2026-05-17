@@ -26,7 +26,9 @@ Deeper context: [`AGENTS.md`](../../AGENTS.md), [api-routes.mdc](../../.cursor/r
 | [`@filosign/contracts`](../../apps/contracts) | `getContracts`, EIP-712; on-chain via context `contracts`. |
 | [`apps/client`](../../apps/client) | Wraps provider ([`filosign-provider.tsx`](../../apps/client/src/lib/context/filosign-provider.tsx)): `apiBaseUrl`, wagmi `wallet`, `wasm.dilithium`. `ready` after `runtime` + `chainKey`. |
 
-**Owns:** browser RPC, React Query hooks, session seed, provider. **Not:** Hono/DB, contracts source, page UI.
+**Owns:** browser RPC, React Query hooks, session seed, provider, **client PostHog** (`src/analytics/`). **Not:** Hono/DB, contracts source, page UI.
+
+**Analytics:** `FilosignAnalyticsProvider`, `useCaptureAppEvent`, `CLIENT_ANALYTICS_EVENTS` — see [`apps/server/lib/analytics/README.md`](../../apps/server/lib/analytics/README.md) (full catalog: server + client events).
 
 ---
 
