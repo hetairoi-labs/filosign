@@ -13,7 +13,12 @@ export const env = createEnv({
 		EVM_PRIVATE_KEY_SERVER: z.string().min(1),
 		PG_URI: z.string().min(1),
 		DB_NAME: z.string().min(1),
-		FRONTEND_URL: z.url(),
+		/** Public API origin (no trailing slash). */
+		SERVER_URL: z.url(),
+		/** React app origin — CORS, email CTAs. */
+		CLIENT_URL: z.url(),
+		/** Marketing site origin — email static assets (`/logo.webp`, `/icons/*`). */
+		ASTRO_URL: z.url(),
 		RESEND_API_KEY: z.string().min(1),
 		RESEND_FROM_EMAIL: z.email(),
 		CHAIN: z.enum(["local", "testnet", "mainnet"]),

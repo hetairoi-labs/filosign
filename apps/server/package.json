@@ -22,6 +22,7 @@
 	"dependencies": {
 		"@filosign/contracts": "workspace:*",
 		"@filosign/crypto-utils": "workspace:*",
+		"@filosign/emails": "workspace:*",
 		"@filosign/shared": "workspace:*",
 		"@filoz/synapse-sdk": "^0.40.3",
 		"@orpc/experimental-pino": "1.14.3",
