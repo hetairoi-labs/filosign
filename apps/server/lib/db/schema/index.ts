@@ -1,3 +1,4 @@
+import * as billing from "./billing";
 import * as file from "./file";
 import * as shareCapability from "./sharing";
 import * as user from "./user";
@@ -7,8 +8,10 @@ const schema = {
 	...shareCapability,
 	...user,
 	...file,
+	...billing,
 };
 
+export * from "./billing";
 export * from "./file";
 export * from "./sharing";
 export * from "./user";
