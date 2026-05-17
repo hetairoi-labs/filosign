@@ -13,6 +13,7 @@ Cross-package map for agents. **Commands:** [SCRIPTS.md](SCRIPTS.md). **Per-pack
 | `apps/astro`            | [README](apps/astro/README.md)                                            | Marketing                                                    |
 | `packages/react-sdk`    | [README](packages/react-sdk/README.md)                                    | `FilosignProvider`, typed `rpc`, `rpcQuery`, hooks           |
 | `packages/shared`       | [AGENTS.md](packages/shared/AGENTS.md)                                    | Types, Zod, manifests (browser+server)                       |
+| `packages/entitlements` | —                                                                         | Plan catalog + pure evaluator (no DB; server wires later)    |
 | `packages/crypto-utils` | [README](packages/crypto-utils/README.md)                                 | KEM, WASM-adjacent crypto                                    |
 | `packages/test`         | [README](packages/test/README.md)                                         | Dev harness                                                  |
 | Scripts / CI            | [SCRIPTS.md](SCRIPTS.md)                                                  | `dev`, `check`, `sanity`, `test`, `build`, `db`, `contracts` |

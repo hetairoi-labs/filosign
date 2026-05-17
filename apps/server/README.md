@@ -28,10 +28,15 @@ Bun reads `.env*` automatically per [environment variables — Bun](https://bun.
 - **Auth (`auth.nonce`):** nonces are **in-process** (`Record<Address, …>`). Safe for **one server process**. For **multiple replicas**, use Redis/Postgres or redesign the Dilithium handshake.
 - **`tx.processIndexerHash` input `{ hash, body? }`:** **`body: {}`** is valid for txs that only index FSManager logs; **`encryptionPublicKey` + `signaturePublicKey`** together (hex) for KeyRegistry registration. Shape is **`zIndexerTxBody`** in `lib/validation/tx-registration.ts`.
 
+## Analytics (PostHog)
+
+Server-side product events via `lib/analytics/` (`posthog-node`). Set `POSTHOG_ENABLED`, `POSTHOG_API_KEY` in `.env.local`. Full event catalog and funnel guidance: [`ANALYTICS.md`](../../ANALYTICS.md).
+
 ## Ops
 
 - **`GET /health`** (root app, not under `/api`) — `{ ok: true }` for probes.
 - **`bun run routes:print`** — lists mounted Hono routes (`scripts/print-routes.ts`).
+- **Cold invite expiry** — run `bun run jobs:expire-cold-invites` (or `bun run --cwd apps/server jobs:expire-cold-invites`) on a schedule (e.g. hourly cron). Marks `file_cold_invites` with `status = pending` and `expires_at < now()` as `expired`; logs `{ expiredCount }` and emits a batched PostHog `cold_invite_expired` when analytics is enabled.
 
 ## API envelope
 
