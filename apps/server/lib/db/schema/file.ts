@@ -1,8 +1,18 @@
 import type { PlacementManifest } from "@filosign/shared";
+import { sql } from "drizzle-orm";
 import * as t from "drizzle-orm/pg-core";
 import { randomUuidV7 } from "@/lib/db/random-uuid-v7";
 import { tBytes32, tEvmAddress, tHex, timestamps } from "../helpers";
 import { users } from "./user";
+
+export const coldInviteStatuses = [
+	"pending",
+	"claimed",
+	"expired",
+	"revoked",
+] as const;
+
+export type ColdInviteStatus = (typeof coldInviteStatuses)[number];
 
 export const files = t.pgTable(
 	"files",
@@ -18,9 +28,17 @@ export const files = t.pgTable(
 		placementCommitment: tBytes32().notNull(),
 		placementManifestJson: t.jsonb().$type<PlacementManifest>().notNull(),
 
+		warmParticipantCount: t.integer().notNull().default(0),
+		coldInviteCount: t.integer().notNull().default(0),
+		signerSlotCount: t.integer().notNull().default(0),
+		recipientSlotCount: t.integer().notNull().default(0),
+
 		...timestamps,
 	},
-	(table) => [t.index("idx_files_owner").on(table.sender)],
+	(table) => [
+		t.index("idx_files_owner").on(table.sender),
+		t.index("idx_files_sender_created").on(table.sender, table.createdAt),
+	],
 );
 
 export const fileParticipants = t.pgTable(
@@ -54,26 +72,36 @@ export const fileParticipants = t.pgTable(
 export const fileColdInvites = t.pgTable(
 	"file_cold_invites",
 	{
-		inviteToken: t.text().notNull(),
+		id: t.uuid().primaryKey().$defaultFn(randomUuidV7),
+		inviteToken: t.text(),
 		filePieceCid: t
 			.text()
 			.notNull()
 			.references(() => files.pieceCid, { onDelete: "cascade" }),
 		email: t.text().notNull(),
-		wrappedEncryptionKey: tHex().notNull(),
+		wrappedEncryptionKey: tHex(),
 		isSigner: t.boolean().notNull().default(false),
+		status: t.text({ enum: coldInviteStatuses }).notNull().default("pending"),
+		claimedAt: t.timestamp({ withTimezone: true }),
+		claimedByWallet: tEvmAddress().references(() => users.walletAddress),
 		expiresAt: t.timestamp({ withTimezone: true }).notNull(),
 		...timestamps,
 	},
 	(table) => [
-		t.primaryKey({
-			columns: [table.inviteToken, table.email],
-			name: "pk_file_cold_invites",
-		}),
 		t.index("idx_file_cold_invites_piece").on(table.filePieceCid),
 		t.index("idx_file_cold_invites_token").on(table.inviteToken),
 		t.index("idx_file_cold_invites_email").on(table.email),
 		t.index("idx_file_cold_invites_expires").on(table.expiresAt),
+		t
+			.index("idx_file_cold_invites_piece_status")
+			.on(table.filePieceCid, table.status),
+		t
+			.index("idx_file_cold_invites_status_expires")
+			.on(table.status, table.expiresAt),
+		t
+			.uniqueIndex("uidx_file_cold_invites_pending_token_email")
+			.on(table.inviteToken, table.email)
+			.where(sql`${table.status} = 'pending'`),
 	],
 );
 

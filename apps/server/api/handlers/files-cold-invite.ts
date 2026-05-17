@@ -1,11 +1,17 @@
 import { FILE_ACK_COLD_CLAIM_SENTINEL_V1 } from "@filosign/shared";
 import { zHexString } from "@filosign/shared/zod";
 import { ORPCError } from "@orpc/server";
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { Address } from "viem";
 import { getAddress } from "viem";
 import z from "zod";
+import { SERVER_ANALYTICS_EVENTS } from "@/lib/analytics/events";
+import { trackServerEvent } from "@/lib/analytics/track";
 import db from "@/lib/db";
+import {
+	pendingColdInviteFilter,
+	redactColdInviteRow,
+} from "@/lib/domain/cold-invite-lifecycle";
 import {
 	coldInviteExpiry,
 	coldInviteSenderLabel,
@@ -42,7 +48,7 @@ export async function filesColdInviteByToken(inviteToken: string) {
 		.where(
 			and(
 				eq(fileColdInvites.inviteToken, inviteToken),
-				gt(fileColdInvites.expiresAt, new Date()),
+				pendingColdInviteFilter(),
 			),
 		);
 
@@ -53,6 +59,10 @@ export async function filesColdInviteByToken(inviteToken: string) {
 	if (!row) {
 		throw new ORPCError("NOT_FOUND", { message: "Invite not found" });
 	}
+	if (!row.inviteToken || !row.wrappedEncryptionKey) {
+		throw new ORPCError("NOT_FOUND", { message: "Invite not found" });
+	}
+
 	const recipientEmails = [...new Set(rows.map((r) => r.email))];
 
 	const key = `uploads/${row.pieceCid}`;
@@ -125,6 +135,7 @@ export async function filesColdInviteClaim(args: {
 
 	const [invite] = await db
 		.select({
+			id: fileColdInvites.id,
 			filePieceCid: fileColdInvites.filePieceCid,
 			email: fileColdInvites.email,
 			isSigner: fileColdInvites.isSigner,
@@ -133,8 +144,8 @@ export async function filesColdInviteClaim(args: {
 		.where(
 			and(
 				eq(fileColdInvites.inviteToken, inviteToken),
-				gt(fileColdInvites.expiresAt, new Date()),
 				eq(fileColdInvites.email, profileEmail),
+				pendingColdInviteFilter(),
 			),
 		);
 	if (!invite) {
@@ -144,46 +155,51 @@ export async function filesColdInviteClaim(args: {
 	}
 
 	const now = new Date();
-	await db
-		.insert(fileParticipants)
-		.values({
-			filePieceCid: invite.filePieceCid,
-			wallet: userWallet,
-			role: invite.isSigner ? "signer" : "viewer",
-			kemCiphertext: parsedBody.data.kemCiphertext,
-			encryptedEncryptionKey: parsedBody.data.encryptedEncryptionKey,
-			createdAt: now,
-			updatedAt: now,
-		})
-		.onConflictDoUpdate({
-			target: [fileParticipants.filePieceCid, fileParticipants.wallet],
-			set: {
+	await db.transaction(async (tx) => {
+		await tx
+			.insert(fileParticipants)
+			.values({
+				filePieceCid: invite.filePieceCid,
+				wallet: userWallet,
 				role: invite.isSigner ? "signer" : "viewer",
 				kemCiphertext: parsedBody.data.kemCiphertext,
 				encryptedEncryptionKey: parsedBody.data.encryptedEncryptionKey,
+				createdAt: now,
 				updatedAt: now,
-			},
-		});
+			})
+			.onConflictDoUpdate({
+				target: [fileParticipants.filePieceCid, fileParticipants.wallet],
+				set: {
+					role: invite.isSigner ? "signer" : "viewer",
+					kemCiphertext: parsedBody.data.kemCiphertext,
+					encryptedEncryptionKey: parsedBody.data.encryptedEncryptionKey,
+					updatedAt: now,
+				},
+			});
 
-	await db
-		.delete(fileColdInvites)
-		.where(
-			and(
-				eq(fileColdInvites.inviteToken, inviteToken),
-				eq(fileColdInvites.email, profileEmail),
-			),
-		);
+		await tx
+			.update(fileColdInvites)
+			.set(redactColdInviteRow(userWallet))
+			.where(eq(fileColdInvites.id, invite.id));
 
-	await db
-		.insert(fileAcknowledgements)
-		.values({
-			filePieceCid: invite.filePieceCid,
-			wallet: userWallet,
-			ack: FILE_ACK_COLD_CLAIM_SENTINEL_V1,
-			createdAt: now,
-			updatedAt: now,
-		})
-		.onConflictDoNothing();
+		await tx
+			.insert(fileAcknowledgements)
+			.values({
+				filePieceCid: invite.filePieceCid,
+				wallet: userWallet,
+				ack: FILE_ACK_COLD_CLAIM_SENTINEL_V1,
+				createdAt: now,
+				updatedAt: now,
+			})
+			.onConflictDoNothing();
+	});
+
+	trackServerEvent({
+		distinctId: userWallet,
+		event: SERVER_ANALYTICS_EVENTS.coldInviteClaimed,
+		pieceCid: invite.filePieceCid,
+		properties: { is_signer: invite.isSigner },
+	});
 
 	return {
 		filePieceCid: invite.filePieceCid,
@@ -234,7 +250,7 @@ export async function filesColdInviteRegenerate(args: {
 		.where(
 			and(
 				eq(fileColdInvites.filePieceCid, pieceCid),
-				gt(fileColdInvites.expiresAt, new Date()),
+				pendingColdInviteFilter(),
 			),
 		);
 	if (activeInvites.length === 0) {
@@ -255,7 +271,7 @@ export async function filesColdInviteRegenerate(args: {
 		.where(
 			and(
 				eq(fileColdInvites.filePieceCid, pieceCid),
-				gt(fileColdInvites.expiresAt, new Date()),
+				pendingColdInviteFilter(),
 			),
 		);
 
