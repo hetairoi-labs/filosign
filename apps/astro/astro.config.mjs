@@ -6,8 +6,8 @@ import { defineConfig } from "astro/config";
 import remarkGfm from "remark-gfm";
 
 const site =
-	(typeof process !== "undefined" && process.env.PUBLIC_SITE_URL) ||
-	"https://filosign.io";
+	(typeof process !== "undefined" && process.env.PUBLIC_ASTRO_URL) ||
+	"https://filosign.xyz";
 
 // https://astro.build/config
 export default defineConfig({
@@ -30,6 +30,6 @@ export default defineConfig({
 		},
 	},
 	server: {
-		port: 3001,
+		port: 3002,
 	},
 });
