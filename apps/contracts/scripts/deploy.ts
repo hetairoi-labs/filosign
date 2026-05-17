@@ -1,7 +1,8 @@
 import { $ } from "bun";
 import hre from "hardhat";
-import { getAddress, toHex } from "viem";
+import { type Chain, getAddress, toHex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
+import { hardhat } from "viem/chains";
 import type { ChainKey } from "../definitions/index.js";
 
 // Constants
@@ -88,6 +89,13 @@ function abiFromContract(c: { address: string; abi: unknown }) {
 	return { address: getAddress(c.address), abi: c.abi };
 }
 
+function viemChainOverride(): { chain: Chain } | undefined {
+	if (hre.network.name === "localhost") {
+		return { chain: hardhat };
+	}
+	return undefined;
+}
+
 function invoiceAllowlistTokens(
 	chainId: number,
 	mockUsd: MockUsdBundle | undefined,
@@ -115,8 +123,8 @@ type FsManagerDeployed = Awaited<ReturnType<typeof deployFsManager>>;
 
 async function assertManagerBytecodeLive(managerAddress: `0x${string}`) {
 	await sleep(3000);
-	const publicClient = await hre.viem.getPublicClient();
-	const code = await publicClient.getBytecode({ address: managerAddress });
+	const publicClient = await hre.viem.getPublicClient(viemChainOverride());
+	const code = await publicClient.getCode({ address: managerAddress });
 	if (!code || code === "0x") {
 		console.error("Deployment failed - no code at manager address");
 		process.exit(1);
@@ -246,6 +254,7 @@ async function main() {
 	const chainId = requireChainId();
 	const deployer = await hre.viem.getWalletClient(
 		privateKeyToAccount(requireDeployerPrivateKey()).address,
+		viemChainOverride(),
 	);
 
 	console.log("Deploying contracts as", { address: deployer.account.address });

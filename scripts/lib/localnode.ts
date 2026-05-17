@@ -4,30 +4,51 @@ import { runInherit } from "./spawn.ts";
 
 const HARDHAT_RPC = "http://127.0.0.1:8545";
 
-async function hardhatNodeRunning(): Promise<boolean> {
+async function rpcCall(
+	method: string,
+	params: unknown[] = [],
+): Promise<unknown> {
 	try {
 		const res = await fetch(HARDHAT_RPC, {
 			method: "POST",
 			headers: { "Content-Type": "application/json" },
 			body: JSON.stringify({
 				jsonrpc: "2.0",
-				method: "eth_blockNumber",
-				params: [],
+				method,
+				params,
 				id: 1,
 			}),
-			signal: AbortSignal.timeout(1000),
+			signal: AbortSignal.timeout(2_000),
 		});
-		return res.ok;
+		if (!res.ok) return undefined;
+		const json = (await res.json()) as { result?: unknown; error?: unknown };
+		if (json.error) return undefined;
+		return json.result;
 	} catch {
-		return false;
+		return undefined;
 	}
+}
+
+async function portHasJsonRpc(): Promise<boolean> {
+	return (await rpcCall("eth_blockNumber")) !== undefined;
+}
+
+/** True when :8545 is a Hardhat node (not Anvil/other on 31337). */
+async function hardhatNodeReady(): Promise<boolean> {
+	return (await rpcCall("hardhat_metadata")) !== undefined;
 }
 
 /** Start Hardhat JSON-RPC on :8545 if nothing is listening (no deploy/DB). */
 export async function ensureHardhatNode(rootDir: string): Promise<void> {
-	if (await hardhatNodeRunning()) {
-		console.log("Hardhat node already running on :8545\n");
-		return;
+	if (await portHasJsonRpc()) {
+		if (await hardhatNodeReady()) {
+			console.log("Hardhat node already running on :8545\n");
+			return;
+		}
+		die(
+			"Port :8545 is in use but is not a Hardhat node (missing hardhat_metadata). " +
+				"Stop the other process (e.g. Anvil) or run: bun run contracts -- node",
+		);
 	}
 
 	console.log("Starting Hardhat node on :8545…\n");
@@ -41,7 +62,7 @@ export async function ensureHardhatNode(rootDir: string): Promise<void> {
 
 	for (let i = 0; i < 30; i++) {
 		await Bun.sleep(500);
-		if (await hardhatNodeRunning()) {
+		if (await hardhatNodeReady()) {
 			console.log("Hardhat node ready\n");
 			return;
 		}
