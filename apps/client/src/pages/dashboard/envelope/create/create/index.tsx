@@ -1,3 +1,12 @@
+import {
+	CLIENT_ANALYTICS_EVENTS,
+	useCaptureAppEvent,
+} from "@filosign/react/analytics";
+import {
+	useEnvelopeRecipientLimit,
+	useMonthlyDocumentQuota,
+	useRefetchEntitlementsOnMount,
+} from "@filosign/react/billing";
 import { useForm } from "@tanstack/react-form";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { motion } from "motion/react";
@@ -5,6 +14,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { erc20Abi } from "viem";
 import { useAccount, usePublicClient } from "wagmi";
+import { EntitlementPlanHint } from "@/src/lib/components/custom/EntitlementPlanHint";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
@@ -16,6 +26,10 @@ import {
 	invoiceTotalsByTokenWei,
 } from "../utils/incentive-totals-by-token";
 import DocumentsSection from "./_components/DocumentUpload";
+import {
+	EntitlementUpgradeProvider,
+	usePromptPlanUpgrade,
+} from "./_components/entitlement-upgrade-context";
 import { EnvelopeDraftProvider } from "./_components/envelope-draft-context";
 import RecipientsSection from "./_components/RecipientsSection";
 
@@ -24,11 +38,24 @@ function isValidRecipientEmail(email: string) {
 }
 
 export default function CreateEnvelopePage() {
+	return (
+		<EntitlementUpgradeProvider>
+			<CreateEnvelopePageContent />
+		</EntitlementUpgradeProvider>
+	);
+}
+
+function CreateEnvelopePageContent() {
 	const navigate = useNavigate();
 	const { setCreateForm } = useStorePersist();
 	const { address } = useAccount();
 	const publicClient = usePublicClient();
 	const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+	const promptPlanUpgrade = usePromptPlanUpgrade();
+	const captureAppEvent = useCaptureAppEvent();
+	useRefetchEntitlementsOnMount();
+	const { isWithinRecipientLimit } = useEnvelopeRecipientLimit();
+	const { isMonthlyQuotaExhausted } = useMonthlyDocumentQuota();
 
 	const form = useForm({
 		defaultValues: {
@@ -38,6 +65,11 @@ export default function CreateEnvelopePage() {
 			documents: [],
 		} as EnvelopeForm,
 		onSubmit: async ({ value }) => {
+			if (isMonthlyQuotaExhausted) {
+				promptPlanUpgrade("documents.sent.monthly");
+				return;
+			}
+
 			// Validate documents
 			if (!value.documents || value.documents.length === 0) {
 				toast.error("Please upload at least one document");
@@ -55,6 +87,11 @@ export default function CreateEnvelopePage() {
 			);
 			if (invalidRecipients.length > 0) {
 				toast.error("Enter a valid email for every recipient");
+				return;
+			}
+
+			if (!isWithinRecipientLimit(value.recipients.length)) {
+				promptPlanUpgrade("envelope.recipients.max");
 				return;
 			}
 
@@ -135,7 +172,10 @@ export default function CreateEnvelopePage() {
 
 				setCreateForm(createFormData);
 
-				// Navigate to add-sign page
+				captureAppEvent(CLIENT_ANALYTICS_EVENTS.envelopeComposeSubmitted, {
+					recipient_count: value.recipients.length,
+				});
+
 				navigate({ to: "/dashboard/envelope/create/add-sign" });
 			} catch (error) {
 				console.error("Failed to prepare documents:", error);
@@ -177,6 +217,7 @@ export default function CreateEnvelopePage() {
 				}}
 			>
 				<main className="p-8 mx-auto space-y-8 max-w-4xl">
+					<EntitlementPlanHint />
 					<form.Field
 						name="documents"
 						validators={{

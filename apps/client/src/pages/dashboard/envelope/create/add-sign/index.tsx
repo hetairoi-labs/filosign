@@ -1,3 +1,7 @@
+import {
+	CLIENT_ANALYTICS_EVENTS,
+	useCaptureAppEvent,
+} from "@filosign/react/analytics";
 import { useAttachInvoiceToFile, useSendFile } from "@filosign/react/files";
 import { useProfilesByAddresses } from "@filosign/react/users";
 import {
@@ -10,6 +14,7 @@ import React, { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { type Address, parseUnits } from "viem";
 import { SUPPORTED_TOKENS } from "@/src/constants";
+import { EntitlementPlanHint } from "@/src/lib/components/custom/EntitlementPlanHint";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { buildColdInviteMagicLink } from "@/src/lib/routing/cold-invite-search";
 import { safe } from "@/src/lib/utils/safe";
@@ -51,6 +56,7 @@ import { collectViewerEmails } from "./viewer-emails";
 export default function AddSignaturePage() {
 	const navigate = useNavigate();
 	const { createForm, clearCreateForm } = useStorePersist();
+	const captureAppEvent = useCaptureAppEvent();
 	const sendFile = useSendFile();
 	const attachInvoice = useAttachInvoiceToFile();
 
@@ -350,6 +356,10 @@ export default function AddSignaturePage() {
 			}
 		}
 
+		captureAppEvent(CLIENT_ANALYTICS_EVENTS.envelopeSendClicked, {
+			recipient_count: createForm.recipients?.length ?? 0,
+		});
+
 		isSendingRef.current = true;
 		setSendStatus("loading");
 		toast.loading("Sending documents...", { id: "send-progress" });
@@ -438,6 +448,13 @@ export default function AddSignaturePage() {
 				id: "send-progress",
 			});
 
+			captureAppEvent(CLIENT_ANALYTICS_EVENTS.envelopeSendSucceeded, {
+				had_cold_recipients: coldRecipients.length > 0,
+				...(result.success && result.pieceCid
+					? { piece_cid: result.pieceCid }
+					: {}),
+			});
+
 			const shareCode =
 				"coldInviteShareCode" in result && result.coldInviteShareCode
 					? {
@@ -493,6 +510,9 @@ export default function AddSignaturePage() {
 	return (
 		<div className="min-h-screen bg-background flex flex-col">
 			<Header onSend={handleSend} status={sendStatus} />
+			<div className="px-4 py-2 border-b border-border">
+				<EntitlementPlanHint />
+			</div>
 
 			{/* Main Content */}
 			<div className="flex flex-1">

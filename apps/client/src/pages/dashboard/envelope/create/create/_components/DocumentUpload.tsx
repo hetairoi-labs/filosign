@@ -1,3 +1,4 @@
+import { useMonthlyDocumentQuota } from "@filosign/react/billing";
 import {
 	CaretDownIcon,
 	GridFourIcon,
@@ -17,11 +18,14 @@ import { createClientId } from "@/src/lib/utils/id";
 import { cn } from "@/src/lib/utils/utils";
 import type { AllowedFileMime, UploadedFile } from "../../types";
 import { ACCEPTED_FILE_EXTENSIONS, ACCEPTED_FILE_MIME_SET } from "../../types";
+import { usePromptPlanUpgrade } from "./entitlement-upgrade-context";
 import { useDocumentUpload } from "./envelope-draft-context";
 import FileCard from "./FileCard";
 
 export default function DocumentsSection() {
 	const { value: documents, onChange, error, showError } = useDocumentUpload();
+	const promptPlanUpgrade = usePromptPlanUpgrade();
+	const { isMonthlyQuotaExhausted } = useMonthlyDocumentQuota();
 	const [isDocumentsOpen, setIsDocumentsOpen] = useState(true);
 	const [isDragOver, setIsDragOver] = useState(false);
 	const [viewMode, setViewMode] = useState<"list" | "grid">("list");
@@ -35,6 +39,10 @@ export default function DocumentsSection() {
 	const handleFileSelect = useCallback(
 		(files: FileList | null) => {
 			if (!files) return;
+			if (isMonthlyQuotaExhausted) {
+				promptPlanUpgrade("documents.sent.monthly");
+				return;
+			}
 
 			const incoming = Array.from(files);
 			const rejected = incoming
@@ -74,7 +82,7 @@ export default function DocumentsSection() {
 			setUnsupportedFiles(rejected);
 			setOversizedFiles(oversized);
 		},
-		[documents, onChange],
+		[documents, onChange, isMonthlyQuotaExhausted, promptPlanUpgrade],
 	);
 
 	const handleFileInputChange = (
@@ -88,6 +96,10 @@ export default function DocumentsSection() {
 	};
 
 	const handleUploadClick = () => {
+		if (isMonthlyQuotaExhausted) {
+			promptPlanUpgrade("documents.sent.monthly");
+			return;
+		}
 		fileInputRef.current?.click();
 	};
 
@@ -104,6 +116,10 @@ export default function DocumentsSection() {
 	const handleDrop = (event: React.DragEvent) => {
 		event.preventDefault();
 		setIsDragOver(false);
+		if (isMonthlyQuotaExhausted) {
+			promptPlanUpgrade("documents.sent.monthly");
+			return;
+		}
 		handleFileSelect(event.dataTransfer.files);
 	};
 
@@ -173,9 +189,12 @@ export default function DocumentsSection() {
 					<motion.div
 						className={cn(
 							"border-2 border-primary/20 rounded-lg p-16 text-center transition-colors bg-muted/5",
-							isDragOver
+							isMonthlyQuotaExhausted &&
+								"border-border/60 bg-muted/10 opacity-90",
+							isDragOver && !isMonthlyQuotaExhausted
 								? "border-primary bg-primary/5"
-								: "hover:border-muted-foreground/50",
+								: !isMonthlyQuotaExhausted &&
+										"hover:border-muted-foreground/50",
 						)}
 						transition={{ duration: 0.2 }}
 						onDragOver={handleDragOver}
