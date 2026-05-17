@@ -10,22 +10,25 @@ const rootDir = repoRoot(import.meta.url);
 
 type Profile = "local" | "testnet";
 
+const PRESET_FLAGS = ["serloc", "web", "emails"] as const;
+
 const HELP = `
 bun run dev — start dev servers (bun run dev -- --help)
 
 Stacks (pick one):
   dev                 hardhat bootstrap + server + client + astro   [.env.local]
   dev -- --serloc     hardhat bootstrap + server                    [local only]
-  dev -- --web        client + astro
+  dev -- --web        client + astro + emails                       [:30010]
+  dev -- --emails     React Email preview only                      [:30010]
   dev -- --testnet    client + server                       [.env.staging]
 
 Or mix apps:  dev -- --client  --server  --astro  [--local | --testnet]
   (--server on --local runs with hardhat bootstrap first)
 e.g. bun run dev -- --client --local
 
-Ports:  server :3000   client :3001   astro :3002
+Ports:  server :3000   client :3001   astro :3002   emails :30010
 
-Presets (--serloc, --web) cannot be combined with --client / --server / --astro.
+Presets (--serloc, --web, --emails) cannot be combined with each other or with --client / --server / --astro.
 `.trim();
 
 function parseArgv(argv: string[]) {
@@ -43,6 +46,7 @@ function parseArgv(argv: string[]) {
 		}
 		if (arg === "--serloc") flags.add("serloc");
 		if (arg === "--web") flags.add("web");
+		if (arg === "--emails") flags.add("emails");
 		if (arg === "--astro") flags.add("astro");
 		if (arg === "--client") flags.add("client");
 		if (arg === "--server") flags.add("server");
@@ -66,6 +70,10 @@ function serverDevScript(profile: Profile): string {
 	return profile === "local" ? "dev:local" : "dev:testnet";
 }
 
+function activePresets(flags: Set<string>): string[] {
+	return PRESET_FLAGS.filter((p) => flags.has(p));
+}
+
 function assertNoComponentFlags(flags: Set<string>, preset: string) {
 	if (flags.has("client") || flags.has("server") || flags.has("astro")) {
 		die(`Do not combine ${preset} with --client, --server, or --astro`);
@@ -76,8 +84,9 @@ function resolveTasks(
 	flags: Set<string>,
 	profile: Profile | undefined,
 ): SpawnTask[] {
-	if (flags.has("serloc") && flags.has("web")) {
-		die("Pick one preset: --serloc or --web, not both");
+	const presets = activePresets(flags);
+	if (presets.length > 1) {
+		die(`Pick one preset: ${presets.map((p) => `--${p}`).join(", ")}`);
 	}
 
 	if (flags.has("serloc")) {
@@ -94,7 +103,13 @@ function resolveTasks(
 		return [
 			workspaceTask("@filosign/client", `dev:${p}`),
 			workspaceTask("@filosign/astro", "dev:local"),
+			workspaceTask("@filosign/emails", "dev"),
 		];
+	}
+
+	if (flags.has("emails")) {
+		assertNoComponentFlags(flags, "--emails");
+		return [workspaceTask("@filosign/emails", "dev")];
 	}
 
 	const explicit =

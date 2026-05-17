@@ -31,7 +31,8 @@ describe("renderDocumentShared", () => {
 			ctaHref: "https://app.example/sign?pieceCid=abc",
 			variant: "warm",
 		});
-		expect(html).toContain("You have a document to review");
+		expect(html).toContain("You have a new document");
+		expect(html).toContain("Click the button below to review it");
 		expect(html).toContain("Sign in with this email to open it");
 		expect(html).toContain(`${TEST_ASTRO_URL}/logo.webp`);
 		expect(html).toContain(`${TEST_ASTRO_URL}/icons/mail.svg`);
@@ -52,8 +53,10 @@ describe("renderDocumentShared", () => {
 			ctaHref: "https://app.example/?coldPieceCid=abc&coldInvite=tok",
 			variant: "cold",
 		});
-		expect(html).toContain("A document was shared with you");
-		expect(html).toContain("six-word passphrase");
+		expect(html).toContain("You have a new document");
+		expect(html).toContain("Click the button below to review it");
+		expect(html).toContain("password protected");
+		expect(html).toContain("passphrase");
 		expect(html).toContain(`${TEST_ASTRO_URL}/logo.webp`);
 		expect(html).toContain("coldInvite=tok");
 		expect(text.length).toBeGreaterThan(0);

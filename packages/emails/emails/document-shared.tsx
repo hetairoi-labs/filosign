@@ -19,28 +19,33 @@ const disclaimer = (
 );
 
 function copyForVariant(variant: DocumentSharedVariant, senderLabel: string) {
+	const title = "You have a new document";
+	const body = (
+		<>
+			<strong>{senderLabel}</strong> sent you a document on Filosign. Click the
+			button below to review it.
+		</>
+	);
+
 	if (variant === "cold") {
 		return {
-			title: "A document was shared with you",
-			preheader: `${senderLabel} shared a document on Filosign. Open the link, then enter their passphrase.`,
+			title,
+			preheader: `${senderLabel} sent you a document on Filosign. This document is password protected.`,
 			body: (
 				<>
-					<strong>{senderLabel}</strong> sent you a document on Filosign. Open
-					the link below, then enter the six-word passphrase they send you
-					through another channel (for example a message or call).
+					{body}
+					<br />
+					<br />
+					This document is password protected. Contact the sender for the
 				</>
 			),
 		};
 	}
+
 	return {
-		title: "You have a document to review",
+		title,
 		preheader: `${senderLabel} sent you a document on Filosign. Sign in with this email to open it.`,
-		body: (
-			<>
-				<strong>{senderLabel}</strong> sent you a document on Filosign. Sign in
-				with this email to open it.
-			</>
-		),
+		body,
 	};
 }
 

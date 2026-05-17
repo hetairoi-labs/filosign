@@ -39,16 +39,13 @@ export function FilosignFooter() {
 											height={18}
 											className="mx-auto mb-2 block"
 										/>
-										<Text className="font-13 text-fg-3 m-0 font-sans">
-											{channel.label}
-										</Text>
 									</Link>
 								</Column>
 							))}
 						</Row>
 					</Section>
 
-					<Text className="font-11 text-fg-3 mx-auto mt-0 mb-0 max-w-[400px] text-center font-sans">
+					<Text className="font-11 text-fg-3 mx-auto mt-0 mb-0 max-w-[400px] text-center text-xs italic font-sans">
 						This message was sent by Filosign because someone used your email
 						address in the product. If you did not expect it, you can ignore
 						this email.

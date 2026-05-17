@@ -145,6 +145,8 @@ Client (`apps/client/.env.example`): `VITE_SERVER_URL`, `VITE_ASTRO_URL`, `VITE_
 
 Astro (`apps/astro/.env.example`): `PUBLIC_ASTRO_URL`, `PUBLIC_CLIENT_URL`, `PUBLIC_SERVER_URL`.
 
+Emails preview (`packages/emails/.env.example`): `ASTRO_URL` (same unprefixed name as server; copy to `packages/emails/.env.local` or repo-root `.env.local`).
+
 Rename keys in gitignored `.env.local` / `.env.staging` / `.env.production` when upgrading (no runtime aliases).
 
 **Local dev ports:** server `3000`, client `3001`, astro `3002` (see each app’s `.env.example`).
