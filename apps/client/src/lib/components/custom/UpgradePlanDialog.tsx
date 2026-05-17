@@ -1,5 +1,5 @@
 import { useEntitlements } from "@filosign/react/billing";
-import { ArrowSquareOutIcon, SparkleIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import env from "@/src/env";
 import { Button } from "@/src/lib/components/ui/button";
 import {
@@ -10,7 +10,6 @@ import {
 	DialogHeader,
 	DialogTitle,
 } from "@/src/lib/components/ui/dialog";
-import { cn } from "@/src/lib/utils/utils";
 import Logo from "./Logo";
 
 export type UpgradePlanLimitReason =

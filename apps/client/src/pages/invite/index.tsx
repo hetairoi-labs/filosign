@@ -7,7 +7,6 @@ import {
 	UserCircleIcon,
 } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
-import { usePrivyLogin } from "@/src/lib/hooks/use-privy-login";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -16,6 +15,7 @@ import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
 import { InlineLoader } from "@/src/lib/components/ui/inline-loader";
 import { Loader } from "@/src/lib/components/ui/loader";
+import { usePrivyLogin } from "@/src/lib/hooks/use-privy-login";
 import { logger } from "@/src/lib/utils/logger";
 import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
 

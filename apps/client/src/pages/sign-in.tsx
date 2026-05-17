@@ -2,13 +2,13 @@ import { useFilosignContext } from "@filosign/react";
 import { useIsRegistered, useLogout } from "@filosign/react/auth";
 import { SpinnerIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
-import { usePrivyLogin } from "@/src/lib/hooks/use-privy-login";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useWalletClient } from "wagmi";
 import env from "@/src/env";
 import Logo from "@/src/lib/components/custom/Logo";
 import { Button } from "@/src/lib/components/ui/button";
+import { usePrivyLogin } from "@/src/lib/hooks/use-privy-login";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { useColdInviteRecipientWarning } from "@/src/lib/hooks/useColdInviteRecipientWarning";
 import {

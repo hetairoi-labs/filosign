@@ -16,12 +16,12 @@ import {
 import { fetchUserProfile, useUserProfile } from "@filosign/react/users";
 import { buildClaimKemPayload } from "@filosign/react/utils";
 import { usePrivy } from "@privy-io/react-auth";
-import { usePrivyLoginAction } from "@/src/lib/hooks/use-privy-login";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { getAddress, type Hex } from "viem";
+import { usePrivyLoginAction } from "@/src/lib/hooks/use-privy-login";
 import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { coldInviteRecipientMatchesIdentity } from "@/src/lib/routing/cold-invite-search";
 import { executeSwitchAccountLogout } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
