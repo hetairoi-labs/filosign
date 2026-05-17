@@ -8,8 +8,9 @@
 
 | Goal | Command |
 | --- | --- |
-| Local dev (bootstrap + server + client) | `bun run dev` or `bun run dev -- --local` |
-| Local + astro | `bun run dev -- --local --full` |
+| Local dev (bootstrap + server + client + astro) | `bun run dev` or `bun run dev -- --local` |
+| Bootstrap + API only | `bun run dev -- --serloc` |
+| Client + marketing site | `bun run dev -- --web` |
 | Staging (client + server) | `bun run dev -- --testnet` |
 | One app | `bun run dev -- --client --local` etc. or `--cwd apps/<app> dev:local` |
 | Format + types (writes files) | `bun run check` |
@@ -24,6 +25,8 @@
 | Wipe DB + re-push schema | `bun run db -- purge local\|testnet` |
 | Contracts ops | `bun run contracts -- …` |
 | Nuke deps | `bun run purge` then `bun install` |
+| Email template preview | `bun run emails -- dev` |
+| Email package tests | `bun run emails -- test` |
 
 **`check`** = Biome `--write` + types. **`sanity`** = `check --ci --types` + turbo unit tests + Hardhat (`contracts -- test`). **`test`** = all packages with tests (includes contracts). CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (`bun run sanity`, Node 22). Pre-push (husky): `bun check --lint` then `bun sanity`.
 
@@ -39,13 +42,14 @@
 | `build` | `build.ts` | Release builds (`--cwd`, sequential) |
 | `db` | `db.ts` | Drizzle purge/push via server |
 | `contracts` | `contracts.ts` | Hardhat + deploy/migrate |
+| `emails` | `emails.ts` | React Email preview, tests, types (`@filosign/emails`) |
 | `purge` | `shell/purge.sh` | rm all `node_modules` + `bun.lock` |
 
 **Env profiles:** `local` → `.env.local` · `testnet` → `.env.staging` (package scripts: `dev:local`, `db:push:local`, …).
 
 ## `dev`
 
-`dev` / `--local` → node + compile + deploy + db purge/push, then server + client · `--local --full` → + astro · `--testnet` → client + server (no bootstrap) · `--client --local` → Vite only · `--server --local` → bootstrap + API.
+`dev` / `--local` → bootstrap + server + client + astro · `--serloc` → bootstrap + server · `--web` → client + astro · `--testnet` → client + server (no bootstrap) · `--client --local` → Vite only · `--server --local` → bootstrap + API · `--astro` → marketing site only.
 
 Harness: `bun run --cwd packages/test dev` (`VITE_CHAIN`, not env files).
 
@@ -97,6 +101,14 @@ Local deploy uses `deploy:local` (`--network localhost` + `.env.local`).
 | migrate | local/testnet: `db purge` (includes push) after deploy |
 
 Env: `local` / `testnet` / `mainnet` → `.env.local` / `.env.staging` / `.env.production`. Never hand-edit `definitions/` (deploy only). Test before testnet/mainnet deploy/migrate.
+
+## `emails`
+
+`dev` — React Email preview (`email dev`, port 30012).
+
+`test` · `check-types` — package tests and `tsc`.
+
+Scoped types: `bun run check -- --types emails`.
 
 ## Turbo
 

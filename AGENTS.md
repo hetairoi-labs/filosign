@@ -35,7 +35,7 @@ Workspaces: `apps/*`, `packages/*` ([package.json](package.json)).
 
 ## Flow
 
-`definitions/` ← deploy ← `.sol` → `getContracts` ([services/contracts.ts](apps/contracts/services/contracts.ts)) → server `[lib/evm.ts](apps/server/lib/evm.ts)` + SDK `[FilosignProvider](packages/react-sdk/src/context/FilosignProvider.tsx)` (`rpc.runtime` → `chainKey` + wagmi) → hooks → client pages. Typed RPC: `[create-orpc-client.ts](packages/react-sdk/src/orpc/create-orpc-client.ts)` → `{apiBase}/api/rpc`. Client shell: `[filosign-provider.tsx](apps/client/src/lib/context/filosign-provider.tsx)` (WASM, wagmi, `VITE_PLATFORM_URL`). `@filosign/shared` → server, SDK, client; `@filosign/crypto-utils` → SDK, contracts.
+`definitions/` ← deploy ← `.sol` → `getContracts` ([services/contracts.ts](apps/contracts/services/contracts.ts)) → server `[lib/evm.ts](apps/server/lib/evm.ts)` + SDK `[FilosignProvider](packages/react-sdk/src/context/FilosignProvider.tsx)` (`rpc.runtime` → `chainKey` + wagmi) → hooks → client pages. Typed RPC: `[create-orpc-client.ts](packages/react-sdk/src/orpc/create-orpc-client.ts)` → `{apiBase}/api/rpc`. Client shell: `[filosign-provider.tsx](apps/client/src/lib/context/filosign-provider.tsx)` (WASM, wagmi, `VITE_SERVER_URL`). `@filosign/shared` → server, SDK, client; `@filosign/crypto-utils` → SDK, contracts.
 
 ## Boundaries
 

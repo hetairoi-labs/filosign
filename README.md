@@ -124,7 +124,9 @@ bun run test:dev
 Server configuration is defined in `apps/server/env.ts`. The main required values are:
 
 - `CHAIN`
-- `FRONTEND_URL` — public HTTPS origin of the **client app** (no trailing slash). Used in email links and CORS; must not be `http://localhost` in deployed (`testnet` / `mainnet`) environments.
+- `SERVER_URL` — public API origin (no trailing slash).
+- `CLIENT_URL` — React app origin; email CTAs and CORS. Must not be `http://localhost` in deployed (`testnet` / `mainnet`) environments.
+- `ASTRO_URL` — marketing site origin; email static assets (`/logo.webp`, `/icons/*`).
 - `RESEND_API_KEY`
 - `RESEND_FROM_EMAIL`
 - `PG_URI`
@@ -139,18 +141,21 @@ Server configuration is defined in `apps/server/env.ts`. The main required value
 - `TG_ANALYTICS_BOT_GROUP_ID`
 - `TG_ANALYTICS_BOT_TOKEN`
 
-Client configuration includes:
+Client (`apps/client/.env.example`): `VITE_SERVER_URL`, `VITE_ASTRO_URL`, `VITE_PRIVY_APP_ID`, `VITE_CHAIN`.
 
-- `BUN_PUBLIC_PLATFORM_URL`
-- `BUN_PUBLIC_PRIVY_APP_ID`
-- `BUN_PUBLIC_CHAIN`
+Astro (`apps/astro/.env.example`): `PUBLIC_ASTRO_URL`, `PUBLIC_CLIENT_URL`, `PUBLIC_SERVER_URL`.
+
+Rename keys in gitignored `.env.local` / `.env.staging` / `.env.production` when upgrading (no runtime aliases).
+
+**Local dev ports:** server `3000`, client `3001`, astro `3002` (see each app’s `.env.example`).
 
 ## Common Scripts
 
 | Command | Description |
 | --- | --- |
-| `bun run dev` | Local bootstrap (chain + DB + deploy) + server + client. |
-| `bun run dev -- --local --full` | Above + Astro marketing site. |
+| `bun run dev` | Local bootstrap (chain + DB + deploy) + server + client + astro. |
+| `bun run dev -- --serloc` | Bootstrap + server only. |
+| `bun run dev -- --web` | Client + astro (no bootstrap). |
 | `bun run dev -- --testnet` | Client + server (staging env). |
 | `bun run db -- push local` | Push Drizzle schema (local). |
 | `bun run sanity` | Lint + types + unit tests + Hardhat (CI / pre-push). |

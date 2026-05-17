@@ -6,7 +6,7 @@ Marketing / SEO site (Astro 6 + Tailwind v4). Migrated from the React client app
 
 From repo root:
 
-- `bun run dev -- --astro` or `bun run --cwd apps/astro dev:local` — dev server ([localhost:3001](http://localhost:3001))
+- `bun run dev -- --astro` or `bun run --cwd apps/astro dev:local` — dev server ([localhost:3002](http://localhost:3002))
 - `bun run astro:build` — production build to `dist/`
 
 From this package:
@@ -20,20 +20,21 @@ This project uses `@t3-oss/env-core` for type-safe environment variables.
 Copy `.env.example` to `.env` and set:
 
 ```bash
-PUBLIC_SITE_URL=https://filosign.xyz   # Canonical base — override for staging preview URLs
-PUBLIC_APP_URL=http://localhost:3000    # React client — CTAs / redirects
-PUBLIC_SERVER_URL=http://localhost:30011 # API / backend — health, integrations
+# Local dev (server :3000, client :3001, astro :3002)
+PUBLIC_ASTRO_URL=http://localhost:3002
+PUBLIC_CLIENT_URL=http://localhost:3001
+PUBLIC_SERVER_URL=http://localhost:3000
 ```
 
 ### Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `PUBLIC_SITE_URL` | `https://filosign.xyz` | Production origin for canonical URLs, absolute OG image URLs, and `astro.config.mjs` `site` (sitemap). |
-| `PUBLIC_APP_URL` | `http://localhost:3000` | Client app URL for nav CTAs and links off the marketing site |
-| `PUBLIC_SERVER_URL` | `http://localhost:30011` | Backend base URL (health checks, API calls from islands if you add them) |
+| Variable | Default (local) | Description |
+|----------|-----------------|-------------|
+| `PUBLIC_ASTRO_URL` | `http://localhost:3002` | Marketing origin — canonical URLs, OG images, sitemap, email static assets |
+| `PUBLIC_CLIENT_URL` | `http://localhost:3001` | React app URL for nav CTAs and links off the marketing site |
+| `PUBLIC_SERVER_URL` | `http://localhost:3000` | API base URL (health checks, API calls from islands if you add them) |
 
-Canonical URLs default from `PUBLIC_SITE_URL` + current path in `BaseLayout` unless you pass `canonicalUrl`.
+Canonical URLs default from `PUBLIC_ASTRO_URL` + current path in `BaseLayout` unless you pass `canonicalUrl`.
 
 ## Pages
 
@@ -58,7 +59,7 @@ All marketing pages migrated from the React app:
 
 ## CTAs / App Integration
 
-All "Connect", "Get Started", "Try Filosign" buttons redirect to `PUBLIC_APP_URL`. Update your `.env` to point to your React app deployment.
+All "Connect", "Get Started", "Try Filosign" buttons redirect to `PUBLIC_CLIENT_URL`. Update your `.env` to point to your React app deployment.
 
 ## Tailwind
 
@@ -72,7 +73,7 @@ Every page includes:
 - Meta title & description
 - OpenGraph tags (title, description, image, dimensions, URL) — images are **generated at build** with [astro-og-canvas](https://github.com/delucis/astro-og-canvas) (`src/pages/open-graph/[route].ts`, 1200×630 PNGs under `/open-graph/`). Copy for each card lives in `src/content/og-marketing.ts` and should stay aligned with each page’s `<BaseLayout>` title/description.
 - Twitter Card tags (`name=` attributes)
-- Canonical URL (`PUBLIC_SITE_URL` + path in `BaseLayout`, optional override via `canonicalUrl`)
+- Canonical URL (`PUBLIC_ASTRO_URL` + path in `BaseLayout`, optional override via `canonicalUrl`)
 - JSON-LD (`WebSite`, `Organization`, plus `SoftwareApplication` or `BlogPosting` on blog posts)
 - Preconnect hints for external fonts
 - `@astrojs/sitemap` (marketing HTML routes only; `/open-graph/*` PNGs are excluded)
