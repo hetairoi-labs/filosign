@@ -8,8 +8,9 @@ COPY package.json bun.lock ./
 COPY patches ./patches
 COPY --parents apps/*/package.json packages/*/package.json ./
 
+# --ignore-scripts: prepare hooks (husky, crypto-utils sync:wasm) need full tree or committed assets
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-	bun install --frozen-lockfile
+	bun install --frozen-lockfile --ignore-scripts
 
 COPY . .
 

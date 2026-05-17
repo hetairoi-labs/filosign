@@ -3,11 +3,16 @@
  * Copies dilithium.wasm from the installed dilithium-crystals-js package
  * into packages/crypto-utils/assets/ (canonical copy for client, test, Docker).
  */
-import { copyFileSync, mkdirSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 
 const assetsDir = join(import.meta.dir, "..", "assets");
 const dest = join(assetsDir, "dilithium.wasm");
+
+if (existsSync(dest)) {
+	console.log(`[sync-dilithium-wasm] already present: ${dest}`);
+	process.exit(0);
+}
 
 const pkgJson = import.meta.resolveSync("dilithium-crystals-js/package.json");
 const src = join(dirname(pkgJson), "dilithium.wasm");
