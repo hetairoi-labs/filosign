@@ -18,6 +18,12 @@
 		"./users": {
 			"default": "./src/hooks/users/index.ts"
 		},
+		"./billing": {
+			"default": "./src/hooks/billing/index.ts"
+		},
+		"./analytics": {
+			"default": "./src/analytics/index.ts"
+		},
 		"./runtime": {
 			"default": "./src/hooks/useRuntimeChain.ts"
 		},
@@ -45,11 +51,15 @@
 		"viem": "catalog:",
 		"wagmi": "catalog:",
 		"react": "catalog:",
-		"@tanstack/react-query": "catalog:"
+		"@tanstack/react-query": "catalog:",
+		"@posthog/react": "^1.5.2",
+		"posthog-js": "^1.261.0"
 	},
 	"devDependencies": {
 		"@filosign/server": "workspace:*",
+		"@posthog/react": "^1.5.2",
 		"@types/react": "catalog:",
+		"posthog-js": "^1.261.0",
 		"typescript": "catalog:"
 	}
 }
