@@ -4,6 +4,8 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import type { Address } from "viem";
 import { getAddress, isAddress } from "viem";
 import z from "zod";
+import { SERVER_ANALYTICS_EVENTS } from "@/lib/analytics/events";
+import { trackServerEvent } from "@/lib/analytics/track";
 import db from "@/lib/db";
 import { ensureReciprocalShareRequest } from "@/lib/domain/sharing";
 import { evmClient, fsContracts } from "@/lib/evm";
@@ -420,6 +422,11 @@ export async function sharingInviteClaim(wallet: Address, id: string) {
 					: "Invite claim failed",
 		});
 	}
+
+	trackServerEvent({
+		distinctId: wallet,
+		event: SERVER_ANALYTICS_EVENTS.sharingInviteClaimed,
+	});
 
 	return result.data;
 }

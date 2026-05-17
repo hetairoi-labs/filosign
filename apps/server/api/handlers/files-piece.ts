@@ -29,11 +29,14 @@ import type { Address, Hex } from "viem";
 import { getAddress, zeroAddress } from "viem";
 import z from "zod";
 import config from "@/config";
+import { SERVER_ANALYTICS_EVENTS } from "@/lib/analytics/events";
+import { trackServerEvent } from "@/lib/analytics/track";
 import {
 	buildComplianceBundleAndHash,
 	insertComplianceExportLog,
 } from "@/lib/compliance/buildComplianceBundle";
 import db from "@/lib/db";
+import { isEnvelopeFullySigned } from "@/lib/domain/envelope-completion";
 import {
 	isIncentiveTokenAllowed,
 	isSenderAlreadyApprovedError,
@@ -278,6 +281,16 @@ export async function pieceAck(args: {
 			updatedAt,
 		});
 	}
+
+	const ackMode =
+		existingAck?.ack === FILE_ACK_COLD_CLAIM_SENTINEL_V1 ? "cold" : "warm";
+	trackServerEvent({
+		distinctId: walletNorm,
+		event: SERVER_ANALYTICS_EVENTS.pieceAcknowledged,
+		pieceCid: args.pieceCid,
+		properties: { mode: ackMode },
+	});
+
 	return {};
 }
 
@@ -1044,6 +1057,23 @@ export async function pieceSign(args: {
 				eq(fileSignerDrafts.wallet, participantRecord.wallet),
 			),
 		);
+
+	trackServerEvent({
+		distinctId: signerAddr,
+		event: SERVER_ANALYTICS_EVENTS.pieceSigned,
+		pieceCid,
+		properties: {
+			field_count: completedFieldIdsStored.length,
+		},
+	});
+
+	if (await isEnvelopeFullySigned(pieceCid)) {
+		trackServerEvent({
+			distinctId: getAddress(fileRecord.sender),
+			event: SERVER_ANALYTICS_EVENTS.envelopeFullySigned,
+			pieceCid,
+		});
+	}
 
 	return { txHash, signature, approveSenderTxHash };
 }
