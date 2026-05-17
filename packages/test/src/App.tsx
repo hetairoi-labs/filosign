@@ -132,7 +132,7 @@ function App() {
 				<QueryClientProvider client={queryClient1}>
 					<FilosignProvider
 						wallet={wallet1}
-						apiBaseUrl="http://localhost:30011/api"
+						apiBaseUrl="http://localhost:3000/api"
 						wasm={{ dilithium: dilithium as never }}
 					>
 						<Test />
@@ -143,7 +143,7 @@ function App() {
 				<QueryClientProvider client={queryClient2}>
 					<FilosignProvider
 						wallet={wallet2}
-						apiBaseUrl="http://localhost:30011/api"
+						apiBaseUrl="http://localhost:3000/api"
 						wasm={{ dilithium: dilithium as never }}
 					>
 						<Test />
