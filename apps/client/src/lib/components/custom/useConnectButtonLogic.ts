@@ -1,5 +1,6 @@
 import { useIsRegistered } from "@filosign/react/auth";
 import { usePrivy } from "@privy-io/react-auth";
+import { usePrivyLogin } from "@/src/lib/hooks/use-privy-login";
 
 export type ConnectButtonState =
 	| "loading"
@@ -8,7 +9,8 @@ export type ConnectButtonState =
 	| "dashboard";
 
 export function useConnectButtonLogic() {
-	const { ready, authenticated, login: loginPrivy, logout } = usePrivy();
+	const { ready, authenticated, logout } = usePrivy();
+	const { login: loginPrivy } = usePrivyLogin();
 	const isRegistered = useIsRegistered();
 
 	const getButtonState = (): ConnectButtonState => {

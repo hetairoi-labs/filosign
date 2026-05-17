@@ -2,6 +2,7 @@ import { useFilosignContext } from "@filosign/react";
 import { useIsRegistered, useLogout } from "@filosign/react/auth";
 import { SpinnerIcon } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
+import { usePrivyLogin } from "@/src/lib/hooks/use-privy-login";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useWalletClient } from "wagmi";
@@ -21,7 +22,8 @@ import {
 } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
 
 export default function SignInPage() {
-	const { ready, authenticated, login, logout: logoutPrivy } = usePrivy();
+	const { ready, authenticated, logout: logoutPrivy } = usePrivy();
+	const { login } = usePrivyLogin();
 	const { data: walletClient } = useWalletClient();
 	const { wallet } = useFilosignContext();
 	const logoutFilosign = useLogout();

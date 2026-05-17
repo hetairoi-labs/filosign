@@ -7,6 +7,7 @@ import {
 	UserCircleIcon,
 } from "@phosphor-icons/react";
 import { usePrivy } from "@privy-io/react-auth";
+import { usePrivyLogin } from "@/src/lib/hooks/use-privy-login";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -20,7 +21,8 @@ import { OnboardingSwitchAccountLink } from "@/src/pages/onboarding/_components/
 
 export default function InvitePage() {
 	const { inviteId } = useParams({ from: "/invite/$inviteId" });
-	const { ready, authenticated, login } = usePrivy();
+	const { ready, authenticated } = usePrivy();
+	const { login } = usePrivyLogin();
 	const { rpc, ready: filosignReady } = useFilosignContext();
 	const { data: auth } = useAuthedApi();
 	const navigate = useNavigate();
