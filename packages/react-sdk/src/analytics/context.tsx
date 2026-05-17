@@ -1,0 +1,92 @@
+import { usePostHog } from "@posthog/react";
+import {
+	createContext,
+	type ReactNode,
+	useCallback,
+	useContext,
+	useMemo,
+} from "react";
+import { PIECE_CID_PROPERTY, POSTHOG_ENVELOPE_GROUP } from "./envelope";
+import type { CLIENT_ANALYTICS_EVENTS } from "./events";
+
+type CaptureFn = (
+	event: (typeof CLIENT_ANALYTICS_EVENTS)[keyof typeof CLIENT_ANALYTICS_EVENTS],
+	properties?: Record<string, unknown>,
+) => void;
+
+type IdentifyFn = (wallet: string | undefined) => void;
+
+export type AnalyticsContextValue = {
+	capture: CaptureFn;
+	identify: IdentifyFn;
+};
+
+const noopCapture: CaptureFn = () => {};
+const noopIdentify: IdentifyFn = () => {};
+
+const AnalyticsContext = createContext<AnalyticsContextValue>({
+	capture: noopCapture,
+	identify: noopIdentify,
+});
+
+export function AnalyticsContextProvider({
+	value,
+	children,
+}: {
+	value: AnalyticsContextValue;
+	children: ReactNode;
+}) {
+	return (
+		<AnalyticsContext.Provider value={value}>
+			{children}
+		</AnalyticsContext.Provider>
+	);
+}
+
+function useAnalyticsContext(): AnalyticsContextValue {
+	return useContext(AnalyticsContext);
+}
+
+export function useNoopAnalytics(): AnalyticsContextValue {
+	return useMemo(
+		() => ({
+			capture: noopCapture,
+			identify: noopIdentify,
+		}),
+		[],
+	);
+}
+
+/** Bridges `@posthog/react` client into Filosign analytics context (inside `PostHogProvider` only). */
+export function usePostHogAnalyticsBridge(): AnalyticsContextValue {
+	const posthog = usePostHog();
+
+	const capture = useCallback<CaptureFn>(
+		(event, properties) => {
+			const pieceCid = properties?.[PIECE_CID_PROPERTY];
+			if (typeof pieceCid === "string" && pieceCid.trim()) {
+				posthog.group(POSTHOG_ENVELOPE_GROUP, pieceCid.trim());
+			}
+			posthog.capture(event, properties);
+		},
+		[posthog],
+	);
+
+	const identify = useCallback<IdentifyFn>(
+		(wallet) => {
+			if (!wallet) return;
+			posthog.identify(wallet.toLowerCase());
+		},
+		[posthog],
+	);
+
+	return useMemo(() => ({ capture, identify }), [capture, identify]);
+}
+
+export function useCaptureAppEvent(): CaptureFn {
+	return useAnalyticsContext().capture;
+}
+
+export function useIdentifyAnalyticsWallet(): IdentifyFn {
+	return useAnalyticsContext().identify;
+}
