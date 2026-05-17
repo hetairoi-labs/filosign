@@ -280,7 +280,7 @@ export default function SignInPage() {
 							<p className="text-center text-sm text-muted-foreground">
 								New to Filosign?{" "}
 								<a
-									href={env.VITE_MARKETING_SITE_URL}
+									href={env.VITE_ASTRO_URL}
 									target="_blank"
 									rel="noopener noreferrer"
 									className="font-medium text-primary underline-offset-4 hover:underline"

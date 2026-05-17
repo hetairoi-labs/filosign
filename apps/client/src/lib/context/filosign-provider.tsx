@@ -35,7 +35,7 @@ export function FilosignProvider({ children }: { children: React.ReactNode }) {
 
 	return (
 		<FilosignProviderBase
-			apiBaseUrl={env.VITE_PLATFORM_URL}
+			apiBaseUrl={env.VITE_SERVER_URL}
 			wasm={{
 				dilithium: dilithium as never,
 			}}

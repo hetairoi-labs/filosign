@@ -8,8 +8,8 @@ declare module "*.svg" {
 interface ImportMetaEnv {
 	readonly VITE_CHAIN: "local" | "testnet" | "mainnet";
 	readonly VITE_PRIVY_APP_ID: string;
-	readonly VITE_PLATFORM_URL: string;
-	readonly VITE_MARKETING_SITE_URL: string;
+	readonly VITE_SERVER_URL: string;
+	readonly VITE_ASTRO_URL: string;
 }
 
 interface ImportMeta {
