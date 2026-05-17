@@ -12,6 +12,7 @@
 		"build": "bun run scripts/build.ts",
 		"db": "bun run scripts/db.ts",
 		"contracts": "bun run scripts/contracts.ts",
+		"emails": "bun run scripts/emails.ts",
 		"test": "bun run scripts/test.ts",
 		"check": "bun run scripts/check.ts",
 		"sanity": "bun run scripts/sanity.ts",

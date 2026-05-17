@@ -10,6 +10,7 @@ export const PACKAGE_SCOPES = {
 	react: "@filosign/react",
 	"react-sdk": "@filosign/react",
 	contracts: "@filosign/contracts",
+	emails: "@filosign/emails",
 } as const;
 
 export type PackageScopeName = keyof typeof PACKAGE_SCOPES;

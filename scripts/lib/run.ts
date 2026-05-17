@@ -9,6 +9,7 @@ export const PACKAGE_DIRS: Record<string, string> = {
 	"@filosign/crypto-utils": "packages/crypto-utils",
 	"@filosign/react": "packages/react-sdk",
 	"@filosign/shared": "packages/shared",
+	"@filosign/emails": "packages/emails",
 	test: "packages/test",
 };
 
