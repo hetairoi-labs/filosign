@@ -35,9 +35,9 @@ import {
 	fetchSignerIncentivesForCompliancePdf,
 	sha256HexOfBytes,
 } from "@/src/lib/utils/compliance-pdf";
-import type { ColdSharePackage } from "../../../envelope/create/add-sign/_components/ColdShareDialog";
+import type { ColdSharePackage } from "../../envelope/create/add-sign/_components/ColdShareDialog";
 
-export function useWarmSignDocument() {
+export function useSignDocument() {
 	const navigate = useNavigate();
 	const search = useSearch({ from: "/dashboard/document/sign/" });
 	const pieceCid = search.pieceCid;
@@ -255,7 +255,8 @@ export function useWarmSignDocument() {
 		const name = fileData.metadata.name?.toLowerCase() ?? "";
 		const isPdf = mime === "application/pdf" || name.endsWith(".pdf");
 		if (!isPdf) return null;
-		return new Uint8Array(fileData.fileBytes);
+		// Copy once per decrypt so pdf.js Document is not remounted on unrelated re-renders.
+		return fileData.fileBytes.slice();
 	}, [fileData]);
 
 	const isSigningPdf = Boolean(previewPdfBytes);
@@ -584,4 +585,4 @@ export function useWarmSignDocument() {
 	};
 }
 
-export type WarmSignDocumentController = ReturnType<typeof useWarmSignDocument>;
+export type SignDocumentController = ReturnType<typeof useSignDocument>;

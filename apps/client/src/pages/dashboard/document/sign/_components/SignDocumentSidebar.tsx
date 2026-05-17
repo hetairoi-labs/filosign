@@ -7,26 +7,23 @@ import {
 } from "@phosphor-icons/react";
 import { defaultChain } from "@/src/constants";
 import { cn } from "@/src/lib/utils";
-import type { WarmSignDocumentController } from "./useWarmSignDocument";
+import type { SignDocumentController } from "../useSignDocument";
 
-export type WarmSignSidebarProps = {
-	file: NonNullable<WarmSignDocumentController["fileQuery"]["file"]>;
-	identity: Pick<WarmSignDocumentController["identity"], "signerAddress">;
+export type SignDocumentSidebarProps = {
+	file: NonNullable<SignDocumentController["fileQuery"]["file"]>;
+	identity: Pick<SignDocumentController["identity"], "signerAddress">;
 	placement: Pick<
-		WarmSignDocumentController["placement"],
+		SignDocumentController["placement"],
 		| "myPlacementFields"
 		| "togglePlacementField"
 		| "isMyPlacementFieldDone"
 		| "canSubmitPlacementSign"
 	>;
-	signing: Pick<
-		WarmSignDocumentController["signing"],
-		"canSign" | "alreadySigned"
-	>;
-	meta: Pick<WarmSignDocumentController["meta"], "formatAddress">;
+	signing: Pick<SignDocumentController["signing"], "canSign" | "alreadySigned">;
+	meta: Pick<SignDocumentController["meta"], "formatAddress">;
 };
 
-export function WarmSignSidebar({
+export function SignDocumentSidebar({
 	file,
 	identity: { signerAddress },
 	placement: {
@@ -37,7 +34,7 @@ export function WarmSignSidebar({
 	},
 	signing: { canSign, alreadySigned },
 	meta: { formatAddress },
-}: WarmSignSidebarProps) {
+}: SignDocumentSidebarProps) {
 	return (
 		<aside className="hidden lg:block w-72 border-l border-border bg-background overflow-y-auto">
 			<div className="p-4 space-y-4">

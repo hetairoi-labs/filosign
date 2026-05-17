@@ -1,22 +1,22 @@
 import type { RefObject } from "react";
-import type { WarmSignFileContentProps } from "./WarmSignFileContent";
-import { WarmSignFileContent } from "./WarmSignFileContent";
+import type { SignDocumentFileContentProps } from "./SignDocumentFileContent";
+import { SignDocumentFileContent } from "./SignDocumentFileContent";
 
-export type WarmSignDocumentBodyProps = {
+export type SignDocumentBodyProps = {
 	containerRef: RefObject<HTMLDivElement | null>;
 	documentRef: RefObject<HTMLDivElement | null>;
-	fileContent: WarmSignFileContentProps;
+	fileContent: SignDocumentFileContentProps;
 };
 
-export function WarmSignDocumentBody({
+export function SignDocumentBody({
 	containerRef,
 	documentRef,
 	fileContent,
-}: WarmSignDocumentBodyProps) {
+}: SignDocumentBodyProps) {
 	return (
 		<div ref={containerRef} className="flex-1 h-full overflow-auto">
 			<div ref={documentRef} className="relative w-full h-full bg-background">
-				<WarmSignFileContent {...fileContent} />
+				<SignDocumentFileContent {...fileContent} />
 			</div>
 		</div>
 	);

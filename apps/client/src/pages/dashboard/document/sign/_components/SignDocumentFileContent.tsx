@@ -6,7 +6,7 @@ import { Button } from "@/src/lib/components/ui/button";
 import { cn } from "@/src/lib/utils";
 import { SignDocumentPdfPreview } from "../_components/SignDocumentPdfPreview";
 
-export type WarmSignFileContentProps = {
+export type SignDocumentFileContentProps = {
 	pieceCid: string | undefined;
 	viewError: string | null;
 	fileData: ViewFileResult | null;
@@ -25,7 +25,7 @@ export type WarmSignFileContentProps = {
 	canSign: boolean;
 };
 
-type WarmSignPdfPlacementOverlayProps = {
+type SignDocumentPdfPlacementOverlayProps = {
 	pageIndex: number;
 	myPlacementFields: PlacementField[];
 	alreadySigned: boolean;
@@ -33,13 +33,13 @@ type WarmSignPdfPlacementOverlayProps = {
 	togglePlacementField: (fieldId: string) => void;
 };
 
-function WarmSignPdfPlacementOverlay({
+function SignDocumentPdfPlacementOverlay({
 	pageIndex,
 	myPlacementFields,
 	alreadySigned,
 	isMyPlacementFieldDone,
 	togglePlacementField,
-}: WarmSignPdfPlacementOverlayProps) {
+}: SignDocumentPdfPlacementOverlayProps) {
 	return (
 		<>
 			{myPlacementFields
@@ -79,7 +79,7 @@ function WarmSignPdfPlacementOverlay({
 	);
 }
 
-export function WarmSignFileContent({
+export function SignDocumentFileContent({
 	pieceCid,
 	viewError,
 	fileData,
@@ -96,7 +96,7 @@ export function WarmSignFileContent({
 	setSignPdfNumPages,
 	handleDownload,
 	canSign,
-}: WarmSignFileContentProps) {
+}: SignDocumentFileContentProps) {
 	if (viewError) {
 		return (
 			<div className="flex items-center justify-center w-full h-full text-sm text-muted-foreground p-4 text-center">
@@ -265,7 +265,7 @@ export function WarmSignFileContent({
 								setSignPdfPage((p) => Math.min(p, n));
 							}}
 							renderPageOverlay={(pageIndex) => (
-								<WarmSignPdfPlacementOverlay
+								<SignDocumentPdfPlacementOverlay
 									pageIndex={pageIndex}
 									myPlacementFields={myPlacementFields}
 									alreadySigned={alreadySigned}

@@ -12,7 +12,6 @@ import {
 	useClaimColdInvite,
 	useColdInviteDecrypt,
 	useColdInvitePayload,
-	type ViewFileResult,
 } from "@filosign/react/files";
 import { fetchUserProfile, useUserProfile } from "@filosign/react/users";
 import { buildClaimKemPayload } from "@filosign/react/utils";
@@ -26,14 +25,15 @@ import { useStorePersist } from "@/src/lib/hooks/use-store";
 import { coldInviteRecipientMatchesIdentity } from "@/src/lib/routing/cold-invite-search";
 import { executeSwitchAccountLogout } from "@/src/pages/onboarding/_components/OnboardingSwitchAccountLink";
 
-export function useColdInviteSignFlow(args: {
+export function useSignInviteUnlock(args: {
 	pieceCid: string;
 	inviteToken: string;
 }) {
 	const { pieceCid, inviteToken } = args;
+	const active = Boolean(inviteToken.trim());
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
-	const { rpc, session, wallet } = useFilosignContext();
+	const { rpc, session, wallet, rpcQuery } = useFilosignContext();
 	const { ready, authenticated, login, logout: logoutPrivy, user } = usePrivy();
 	const { data: userProfile } = useUserProfile();
 	const sdkLogin = useLogin();
@@ -41,21 +41,25 @@ export function useColdInviteSignFlow(args: {
 	const clearOnboardingForm = useStorePersist((s) => s.clearOnboardingForm);
 	const isRegistered = useIsRegistered();
 	const isLoggedIn = useIsLoggedIn();
-	const { data: invite, isLoading, error } = useColdInvitePayload(inviteToken);
+	const {
+		data: invite,
+		isLoading,
+		error,
+	} = useColdInvitePayload(active ? inviteToken : undefined);
 	const coldDecrypt = useColdInviteDecrypt();
 	const claimColdInvite = useClaimColdInvite();
 	const recoverWithPhrase = useRecoverWithPhrase();
 
 	const [phrase, setPhrase] = useState("");
 	const [filosignRecoveryPhrase, setFilosignRecoveryPhrase] = useState("");
-	const [fileData, setFileData] = useState<ViewFileResult | null>(null);
+	const [claimSucceeded, setClaimSucceeded] = useState(false);
 	const [decryptError, setDecryptError] = useState<string | null>(null);
 	const [tryingWalletUnlock, setTryingWalletUnlock] = useState(false);
 	const [showFilosignRecovery, setShowFilosignRecovery] = useState(false);
 	const walletUnlockStartedRef = useRef(false);
 	const autoPrivyLoginRef = useRef(false);
 
-	const resetColdInviteWizardAfterSwitchAccount = useCallback(() => {
+	const resetWizardAfterSwitchAccount = useCallback(() => {
 		setPhrase("");
 		setFilosignRecoveryPhrase("");
 		setDecryptError(null);
@@ -66,12 +70,13 @@ export function useColdInviteSignFlow(args: {
 	}, []);
 
 	useEffect(() => {
-		if (!invite || authenticated || autoPrivyLoginRef.current) return;
+		if (!active || !invite || authenticated || autoPrivyLoginRef.current)
+			return;
 		autoPrivyLoginRef.current = true;
 		void login();
-	}, [invite, authenticated, login]);
+	}, [active, invite, authenticated, login]);
 
-	const runColdInviteSwitchAccount = useCallback(async () => {
+	const runSwitchAccount = useCallback(async () => {
 		await executeSwitchAccountLogout({
 			clearOnboardingForm,
 			wallet,
@@ -79,7 +84,7 @@ export function useColdInviteSignFlow(args: {
 			logoutPrivy,
 			navigate,
 			stayAfterLogout: true,
-			onStayAfterLogout: resetColdInviteWizardAfterSwitchAccount,
+			onStayAfterLogout: resetWizardAfterSwitchAccount,
 		});
 	}, [
 		clearOnboardingForm,
@@ -87,7 +92,7 @@ export function useColdInviteSignFlow(args: {
 		logoutFilosign,
 		logoutPrivy,
 		navigate,
-		resetColdInviteWizardAfterSwitchAccount,
+		resetWizardAfterSwitchAccount,
 	]);
 
 	const phraseNormalized = useMemo(
@@ -118,13 +123,14 @@ export function useColdInviteSignFlow(args: {
 	const signedInEmailForUi = loggedInEmail || userProfile?.email?.trim() || "";
 
 	const shouldSwitchAccountPrompt =
+		active &&
 		(invite?.recipientEmails.length ?? 0) > 0 &&
 		authenticated &&
-		!fileData &&
+		!claimSucceeded &&
 		!inviteMatchesCurrentUser;
 
 	useEffect(() => {
-		if (!authenticated || !invite || fileData) return;
+		if (!active || !authenticated || !invite || claimSucceeded) return;
 		if (isRegistered.isPending) return;
 		if (isRegistered.data === false) {
 			navigate({
@@ -137,9 +143,10 @@ export function useColdInviteSignFlow(args: {
 			} as never);
 		}
 	}, [
+		active,
 		authenticated,
 		invite,
-		fileData,
+		claimSucceeded,
 		isRegistered.data,
 		isRegistered.isPending,
 		pieceCid,
@@ -148,7 +155,7 @@ export function useColdInviteSignFlow(args: {
 	]);
 
 	useEffect(() => {
-		if (!ready || !authenticated) return;
+		if (!active || !ready || !authenticated) return;
 		if (!isRegistered.data || isRegistered.isPending) return;
 		if (isLoggedIn.data) {
 			setShowFilosignRecovery(false);
@@ -196,6 +203,7 @@ export function useColdInviteSignFlow(args: {
 				setTryingWalletUnlock(false);
 			});
 	}, [
+		active,
 		ready,
 		authenticated,
 		isRegistered.data,
@@ -207,7 +215,7 @@ export function useColdInviteSignFlow(args: {
 	]);
 
 	const wizardPanel = useMemo(() => {
-		if (!invite) return null;
+		if (!active || !invite) return null;
 		if (!authenticated) return "signingIn" as const;
 		if (isRegistered.isPending || isLoggedIn.isPending) return "busy" as const;
 		if (isRegistered.data === false) return "redirecting" as const;
@@ -217,6 +225,7 @@ export function useColdInviteSignFlow(args: {
 		if (!isLoggedIn.data) return "busy" as const;
 		return "passphrase" as const;
 	}, [
+		active,
 		invite,
 		authenticated,
 		isRegistered.isPending,
@@ -356,9 +365,21 @@ export function useColdInviteSignFlow(args: {
 			});
 
 			await claimWithWalletWrap(result.encryptionKey, recipientEncryptionPk);
-			setFileData(result);
+			setClaimSucceeded(true);
 
 			void queryClient.invalidateQueries({ queryKey: ["user"] });
+			void queryClient.invalidateQueries({
+				queryKey: rpcQuery.files.piece.detail.key({
+					input: { pieceCid },
+				}),
+			});
+
+			navigate({
+				to: "/dashboard/document/sign",
+				search: { pieceCid, invite: "" },
+				replace: true,
+			} as never);
+
 			toast.success("Document unlocked and secured to your wallet");
 		} catch (e) {
 			if (e instanceof Error && e.message === "PRIVY_LOGIN_STARTED") return;
@@ -376,29 +397,22 @@ export function useColdInviteSignFlow(args: {
 		shouldSwitchAccountPrompt,
 		ensureLoggedInForUnlock,
 		resolveRecipientEncryptionKey,
-		coldDecrypt.mutateAsync,
+		coldDecrypt,
 		claimWithWalletWrap,
 		queryClient,
+		rpcQuery.files.piece.detail,
 		pieceCid,
+		navigate,
 	]);
 
-	const previewPdfBytes = useMemo(() => {
-		if (!fileData) return null;
-		const mime = fileData.metadata.mimeType;
-		const name = fileData.metadata.name?.toLowerCase() ?? "";
-		const isPdf = mime === "application/pdf" || name.endsWith(".pdf");
-		if (!isPdf) return null;
-		return new Uint8Array(fileData.fileBytes);
-	}, [fileData]);
-
 	return {
+		active,
 		ready,
-		isLoading,
-		error,
-		invite,
-		fileData,
-		user,
-		wizardPanel,
+		isLoading: active && isLoading,
+		error: active ? error : null,
+		invite: active ? invite : undefined,
+		claimSucceeded,
+		wizardPanel: active ? wizardPanel : null,
 		phrase,
 		setPhrase,
 		filosignRecoveryPhrase,
@@ -407,15 +421,14 @@ export function useColdInviteSignFlow(args: {
 		phraseWordCount,
 		shouldSwitchAccountPrompt,
 		signedInEmailForUi,
-		inviteMatchesCurrentUser,
 		submitFilosignRecovery,
 		isFilosignRecoveryPending: recoverWithPhrase.isPending,
 		handleUnlockDocument,
-		runColdInviteSwitchAccount,
-		resetColdInviteWizardAfterSwitchAccount,
-		previewPdfBytes,
-		sdkLogin,
+		runSwitchAccount,
+		resetWizardAfterSwitchAccount,
 		coldDecrypt,
 		claimColdInvite,
 	};
 }
+
+export type SignInviteUnlockController = ReturnType<typeof useSignInviteUnlock>;

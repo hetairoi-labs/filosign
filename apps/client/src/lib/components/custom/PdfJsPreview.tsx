@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Document, Page } from "react-pdf";
 import { configurePdfWorker } from "@/src/lib/pdf/configurePdfWorker";
 import { cn } from "@/src/lib/utils";
@@ -9,7 +9,15 @@ function normalizeFile(file: string | ArrayBuffer | Uint8Array) {
 		return file;
 	}
 	const u8 = file instanceof Uint8Array ? file : new Uint8Array(file);
-	return { data: u8 };
+	return { data: u8.slice() };
+}
+
+function fileIdentity(file: string | ArrayBuffer | Uint8Array): string {
+	if (typeof file === "string") {
+		return file;
+	}
+	const bytes = file instanceof Uint8Array ? file : new Uint8Array(file);
+	return `${bytes.byteLength}:${bytes[0] ?? 0}:${bytes[bytes.byteLength - 1] ?? 0}`;
 }
 
 export type PdfJsPreviewProps = {
@@ -42,13 +50,33 @@ export function PdfJsPreview({
 	onNumPagesLoaded,
 }: PdfJsPreviewProps) {
 	configurePdfWorker();
-	const [loadError, setLoadError] = useState<string | null>(null);
-
-	const fileSource = useMemo(() => normalizeFile(file), [file, documentKey]);
 
 	const docKey =
 		documentKey ??
 		(typeof file === "string" ? file.slice(0, 128) : "pdf-binary");
+
+	const identity = useMemo(() => fileIdentity(file), [file]);
+	const fileSource = useMemo(
+		() => normalizeFile(file),
+		[docKey, identity],
+	);
+
+	const [numPages, setNumPages] = useState<number | null>(null);
+	const [loadError, setLoadError] = useState<string | null>(null);
+	const activeDocKeyRef = useRef(docKey);
+	const onNumPagesLoadedRef = useRef(onNumPagesLoaded);
+	onNumPagesLoadedRef.current = onNumPagesLoaded;
+
+	useEffect(() => {
+		activeDocKeyRef.current = docKey;
+		setNumPages(null);
+		setLoadError(null);
+	}, [docKey, fileSource]);
+
+	const safePageNumber =
+		numPages == null
+			? 1
+			: Math.min(Math.max(1, pageNumber), numPages);
 
 	const pageProps = {
 		width,
@@ -58,25 +86,26 @@ export function PdfJsPreview({
 
 	const overlayWrap = Boolean(renderPageOverlay);
 
-	/**
-	 * Placement manifests normalize field rects against a fixed **width × maxHeight**
-	 * box (see add-sign `DocumentViewer` + `buildPlacementManifestForDocument`).
-	 * The PDF canvas is usually shorter than `maxHeight`, so the overlay must cover
-	 * the full placement grid — not just the page wrapper — or hotspots drift
-	 * (often visibly to the right / vertically) versus where the sender clicked.
-	 */
-	const pageStack = (
-		<div className="absolute inset-0">
-			<div className="absolute inset-0 flex items-start justify-center overflow-hidden">
-				<Page pageNumber={pageNumber} {...pageProps} />
-			</div>
-			{overlayWrap ? (
-				<div className="pointer-events-none absolute inset-0 z-20 [&_button]:pointer-events-auto">
-					{renderPageOverlay?.(pageNumber - 1)}
+	const pageStack =
+		numPages != null ? (
+			<div className="absolute inset-0">
+				<div className="absolute inset-0 flex items-start justify-center overflow-hidden">
+					<Page
+						key={`${docKey}-page-${safePageNumber}`}
+						pageNumber={safePageNumber}
+						{...pageProps}
+						onRenderError={(err) =>
+							setLoadError(err.message || "Could not render PDF page")
+						}
+					/>
 				</div>
-			) : null}
-		</div>
-	);
+				{overlayWrap ? (
+					<div className="pointer-events-none absolute inset-0 z-20 [&_button]:pointer-events-auto">
+						{renderPageOverlay?.(safePageNumber - 1)}
+					</div>
+				) : null}
+			</div>
+		) : null;
 
 	return (
 		<div
@@ -98,8 +127,10 @@ export function PdfJsPreview({
 						setLoadError(err.message || "Could not load PDF")
 					}
 					onLoadSuccess={(pdf) => {
+						if (activeDocKeyRef.current !== docKey) return;
 						setLoadError(null);
-						onNumPagesLoaded?.(pdf.numPages);
+						setNumPages(pdf.numPages);
+						onNumPagesLoadedRef.current?.(pdf.numPages);
 					}}
 					loading={
 						<div className="flex min-h-[120px] w-full items-center justify-center p-4 text-sm text-muted-foreground">

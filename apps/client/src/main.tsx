@@ -13,6 +13,9 @@ import { Buffer as BufferI } from "buffer";
 import { FilosignProvider } from "./lib/context/filosign-provider";
 import { PrivyProvider } from "./lib/context/privy-provider";
 import { WagmiProvider } from "./lib/context/wagmi-provider";
+import { configurePdfWorker } from "./lib/pdf/configurePdfWorker";
+
+configurePdfWorker();
 
 // Root element
 const rootElement = document.getElementById("root");

@@ -3,6 +3,7 @@ import {
 	PaperPlaneTiltIcon,
 	WhatsappLogoIcon,
 } from "@phosphor-icons/react";
+import env from "@/src/env";
 import { CopyButton } from "@/src/lib/components/custom/CopyButton";
 import { Button } from "@/src/lib/components/ui/button";
 import {
@@ -70,6 +71,20 @@ export function ColdShareDialog(props: {
 								</p>
 							</div>
 
+							{env.VITE_CHAIN === "local" && (
+								<div className="space-y-2">
+									<p className="text-xs font-medium text-muted-foreground">
+										Invite link
+									</p>
+									<div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2">
+										<code className="flex-1 break-all font-mono text-xs text-muted-foreground">
+											{fullUrl}
+										</code>
+										<CopyButton text={fullUrl} className="shrink-0" />
+									</div>
+								</div>
+							)}
+
 							<div className="space-y-2">
 								<p className="text-xs font-medium text-muted-foreground">
 									Secret code
@@ -79,18 +94,6 @@ export function ColdShareDialog(props: {
 										{share.phrase}
 									</code>
 									<CopyButton text={share.phrase} className="shrink-0" />
-								</div>
-							</div>
-
-							<div className="space-y-2">
-								<p className="text-xs font-medium text-muted-foreground">
-									Invite link
-								</p>
-								<div className="flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2">
-									<code className="flex-1 break-all font-mono text-xs text-muted-foreground">
-										{fullUrl}
-									</code>
-									<CopyButton text={fullUrl} className="shrink-0" />
 								</div>
 							</div>
 

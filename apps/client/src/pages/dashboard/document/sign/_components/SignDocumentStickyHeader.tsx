@@ -18,24 +18,24 @@ import { formatUnits } from "viem";
 import { CopyButton } from "@/src/lib/components/custom/CopyButton";
 import { Badge } from "@/src/lib/components/ui/badge";
 import { Button } from "@/src/lib/components/ui/button";
-import type { WarmSignDocumentController } from "./useWarmSignDocument";
+import type { SignDocumentController } from "../useSignDocument";
 
-export type WarmSignStickyHeaderProps = {
-	navigation: WarmSignDocumentController["navigation"];
-	file: NonNullable<WarmSignDocumentController["fileQuery"]["file"]>;
+export type SignDocumentStickyHeaderProps = {
+	navigation: SignDocumentController["navigation"];
+	file: NonNullable<SignDocumentController["fileQuery"]["file"]>;
 	pieceCid: string;
-	identity: Pick<WarmSignDocumentController["identity"], "signerAddress">;
+	identity: Pick<SignDocumentController["identity"], "signerAddress">;
 	signing: Pick<
-		WarmSignDocumentController["signing"],
+		SignDocumentController["signing"],
 		"canSign" | "alreadySigned" | "signFile" | "handleSign"
 	>;
-	incentive: WarmSignDocumentController["incentive"];
+	incentive: SignDocumentController["incentive"];
 	meta: Pick<
-		WarmSignDocumentController["meta"],
+		SignDocumentController["meta"],
 		"isSender" | "signedTxExplorerUrl" | "explorerLabel" | "formatAddress"
 	>;
 	viewer: Pick<
-		WarmSignDocumentController["viewer"],
+		SignDocumentController["viewer"],
 		| "zoom"
 		| "handleZoomIn"
 		| "handleZoomOut"
@@ -46,23 +46,23 @@ export type WarmSignStickyHeaderProps = {
 		| "fileData"
 	>;
 	compliance: Pick<
-		WarmSignDocumentController["compliance"],
+		SignDocumentController["compliance"],
 		| "pdfExportBusy"
 		| "handleDownload"
 		| "handleDownloadCompliancePdf"
 		| "handleDownloadDocumentWithCompliancePdf"
 	>;
 	coldShare: Pick<
-		WarmSignDocumentController["coldShare"],
+		SignDocumentController["coldShare"],
 		"handleRotateInvite" | "regenerateColdInvite"
 	>;
 	placement: Pick<
-		WarmSignDocumentController["placement"],
+		SignDocumentController["placement"],
 		"canSubmitPlacementSign"
 	>;
 };
 
-export function WarmSignStickyHeader({
+export function SignDocumentStickyHeader({
 	navigation: { navigate },
 	file,
 	pieceCid,
@@ -88,7 +88,7 @@ export function WarmSignStickyHeader({
 	},
 	coldShare: { handleRotateInvite, regenerateColdInvite },
 	placement: { canSubmitPlacementSign },
-}: WarmSignStickyHeaderProps) {
+}: SignDocumentStickyHeaderProps) {
 	return (
 		<>
 			<div className="md:hidden">
