@@ -34,6 +34,11 @@ export const env = createEnv({
 			.enum(["true", "false"])
 			.default("false")
 			.transform((v) => v === "true"),
+		POSTHOG_API_KEY: z.string().min(1).optional(),
+		POSTHOG_HOST: z.url().default("https://us.i.posthog.com"),
+		POSTHOG_ENABLED: z.coerce.boolean().default(false),
+		/** Comma-separated wallet addresses allowed to call metrics.* admin RPC. */
+		ADMIN_WALLETS: z.string().optional(),
 	},
 	runtimeEnv: Bun.env,
 	emptyStringAsUndefined: true,
