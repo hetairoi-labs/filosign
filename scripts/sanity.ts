@@ -1,13 +1,14 @@
 #!/usr/bin/env bun
 /**
- * Sanity gate: check + tests + Hardhat (CI / pre-push).
+ * Sanity gate: build + check + tests + Hardhat.
  *
  * Usage:
- *   bun run sanity                 # check (--ci + types) + unit tests + Hardhat
- *   bun run sanity -- --fast       # check + unit tests only (no Hardhat)
+ *   bun run sanity                 # build + check (lint + types) + unit tests + Hardhat
+ *   bun run sanity -- --ci         # same, but Biome read-only (pre-push / CI)
  *   bun run sanity -- --check      # check only
  *   bun run sanity -- --test       # test only (excludes contracts)
  *   bun run sanity -- --contracts  # Hardhat only
+ *   bun run sanity -- --build      # build only
  *   bun run sanity -- --help
  */
 import { die, runMain, scriptArgv, wantsHelp } from "./lib/cli.ts";
@@ -16,50 +17,46 @@ import { runSequentialExit } from "./lib/spawn.ts";
 
 const rootDir = repoRoot(import.meta.url);
 
-const FAST_TEST_FILTER = "@filosign/*";
+const UNIT_TEST_FILTER = "@filosign/*";
 const EXCLUDE_CONTRACTS = "!@filosign/contracts";
 
-type Step = "check" | "test" | "contracts";
+type Step = "build" | "check" | "test" | "contracts";
 
 const STEP_FLAGS: Record<Step, string[]> = {
+	build: ["--build", "build"],
 	check: ["--check", "check"],
 	test: ["--test", "test"],
 	contracts: ["--contracts", "contracts"],
 };
 
-const MODE_FLAGS = {
-	fast: ["--fast", "fast"],
-	full: ["--full", "full"],
-} as const;
+const CI_FLAGS = ["--ci", "ci"] as const;
 
 const HELP = `
-Filosign sanity orchestrator (pre-push / CI)
+Filosign sanity orchestrator
 
-  bun run sanity                 check (--ci + types) + unit tests + Hardhat (default)
-  bun run sanity -- --fast       check + unit tests only (skip Hardhat)
+  bun run sanity                 build + check (lint + types) + unit tests + Hardhat
+  bun run sanity -- --ci         build + check (read-only Biome + types) + tests + Hardhat
 
-Uses check --ci so CI/pre-push never mutates files (see check --help).
-
-Steps only:
+Steps only (combine any):
+  bun run sanity -- --build
   bun run sanity -- --check
   bun run sanity -- --test
   bun run sanity -- --test server   forwarded to test orchestrator
   bun run sanity -- --contracts     Hardhat only
-
-  --full is an alias for the default (all steps).
 `.trim();
 
+function isCiFlag(arg: string): boolean {
+	return (CI_FLAGS as readonly string[]).includes(arg);
+}
+
 function parseArgv(argv: string[]) {
-	let fast = false;
+	let ci = false;
 	const steps = new Set<Step>();
 	const passthrough: string[] = [];
 
 	for (const arg of argv) {
-		if (MODE_FLAGS.fast.includes(arg)) {
-			fast = true;
-			continue;
-		}
-		if (MODE_FLAGS.full.includes(arg)) {
+		if (isCiFlag(arg)) {
+			ci = true;
 			continue;
 		}
 
@@ -78,26 +75,33 @@ function parseArgv(argv: string[]) {
 	}
 
 	if (steps.size === 0) {
+		steps.add("build");
 		steps.add("check");
 		steps.add("test");
-		if (!fast) steps.add("contracts");
+		steps.add("contracts");
 	}
 
-	return { steps, passthrough };
+	return { steps, passthrough, ci };
 }
 
-/** Read-only Biome + types — safe for CI and pre-push (no workspace writes). */
-function checkCmd(): string[] {
-	return ["bun", "run", "check", "--", "--ci", "--types"];
+function checkCmd(ci: boolean): string[] {
+	if (ci) {
+		return ["bun", "run", "check", "--", "--ci", "--types"];
+	}
+	return ["bun", "run", "check", "--", "--lint", "--types"];
 }
 
-function fastUnitTestsCmd(): string[] {
+function buildCmd(): string[] {
+	return ["bun", "run", "build"];
+}
+
+function unitTestsCmd(): string[] {
 	return [
 		"bunx",
 		"turbo",
 		"run",
 		"test",
-		`--filter=${FAST_TEST_FILTER}`,
+		`--filter=${UNIT_TEST_FILTER}`,
 		`--filter=${EXCLUDE_CONTRACTS}`,
 	];
 }
@@ -109,18 +113,26 @@ function testCmd(steps: Set<Step>, passthrough: string[]): string[] | null {
 		return ["bun", "run", "test", "--", ...passthrough];
 	}
 
-	return fastUnitTestsCmd();
+	return unitTestsCmd();
 }
 
 function contractsTestCmd(): string[] {
 	return ["bun", "run", "contracts", "--", "test"];
 }
 
-function buildCommands(steps: Set<Step>, passthrough: string[]): string[][] {
+function buildCommands(
+	steps: Set<Step>,
+	passthrough: string[],
+	ci: boolean,
+): string[][] {
 	const cmds: string[][] = [];
 
+	if (steps.has("build")) {
+		cmds.push(buildCmd());
+	}
+
 	if (steps.has("check")) {
-		cmds.push(checkCmd());
+		cmds.push(checkCmd(ci));
 	}
 
 	const test = testCmd(steps, passthrough);
@@ -141,8 +153,8 @@ runMain(async () => {
 		process.exit(0);
 	}
 
-	const { steps, passthrough } = parseArgv(argv);
-	const cmds = buildCommands(steps, passthrough);
+	const { steps, passthrough, ci } = parseArgv(argv);
+	const cmds = buildCommands(steps, passthrough, ci);
 
 	if (cmds.length === 0) die("No sanity steps selected");
 

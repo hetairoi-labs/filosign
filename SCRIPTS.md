@@ -75,9 +75,9 @@ Turbo runs `^check-types` first (dependency typecheck before scoped test is expe
 
 ## `build`
 
-Default order: crypto wasm → client → astro → server `compile` → harness → contracts `compile`.
+Default order: client → astro → server `compile` → harness → contracts `compile`.
 
-Flags: `--crypto`, `--client`, `--astro`, `--server`, `--harness` (`--test`), `--contracts`, `--react` (not ready). Not `turbo run build`.
+Flags: `--client`, `--astro`, `--server`, `--harness` (`--test`), `--contracts`, `--react` (not ready). Not `turbo run build`.
 
 ## `db`
 
