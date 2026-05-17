@@ -10,7 +10,6 @@
 	},
 	"scripts": {
 		"dev": "bun run --env-file=../../.env.local --env-file=.env.local --env-file=.env -- email dev --port 30010",
-		"test": "bun test",
 		"check-types": "tsc --noEmit -p tsconfig.json"
 	},
 	"dependencies": {
