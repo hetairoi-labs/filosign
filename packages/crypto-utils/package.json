@@ -8,19 +8,23 @@
 		},
 		"./node": {
 			"default": "./src/lib-node.ts"
+		},
+		"./dilithium.wasm": "./assets/dilithium.wasm",
+		"./browser/dilithium": {
+			"default": "./src/browser/load-dilithium.ts"
 		}
 	},
 	"scripts": {
 		"check-types": "tsc --noEmit -p tsconfig.json",
 		"test": "bun test lib.test.ts",
-		"wasm:build": "wasm-pack build --target web --out-dir pkg; wasm-pack build --target nodejs --out-dir pkg-node;"
+		"sync:wasm": "bun run scripts/sync-dilithium-wasm.ts",
+		"prepare": "bun run sync:wasm"
 	},
 	"devDependencies": {
 		"typescript": "catalog:",
 		"@types/argon2": "^0.15.4",
 		"@types/argon2-browser": "^1.18.4",
 		"@types/bun": "catalog:",
-		"@types/libsodium-wrappers-sumo": "^0.7.8",
 		"@types/node": "catalog:"
 	},
 	"dependencies": {

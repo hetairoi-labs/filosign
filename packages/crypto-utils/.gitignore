@@ -1,4 +1,4 @@
-# Build artifacts (keep pkg-node for GitHub distribution)
+# Local scratch
 /target
 
 # Dependencies  

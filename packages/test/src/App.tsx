@@ -93,14 +93,17 @@ export function useOtherReload() {
 	};
 }
 
-import dilithiumPromise from "dilithium-crystals-js";
+import {
+	type BrowserDilithium,
+	loadBrowserDilithium,
+} from "@filosign/crypto-utils/browser/dilithium";
 
 function App() {
-	const [dilithium, setDilithium] = useState<unknown>(null);
+	const [dilithium, setDilithium] = useState<BrowserDilithium | null>(null);
 
 	useEffect(() => {
 		let mounted = true;
-		dilithiumPromise
+		void loadBrowserDilithium()
 			.then((dil) => {
 				if (mounted) setDilithium(dil);
 			})
@@ -130,7 +133,7 @@ function App() {
 					<FilosignProvider
 						wallet={wallet1}
 						apiBaseUrl="http://localhost:30011/api"
-						wasm={{ dilithium }}
+						wasm={{ dilithium: dilithium as never }}
 					>
 						<Test />
 					</FilosignProvider>
@@ -141,7 +144,7 @@ function App() {
 					<FilosignProvider
 						wallet={wallet2}
 						apiBaseUrl="http://localhost:30011/api"
-						wasm={{ dilithium }}
+						wasm={{ dilithium: dilithium as never }}
 					>
 						<Test />
 					</FilosignProvider>

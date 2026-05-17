@@ -6,7 +6,7 @@ ML-KEM-1024, Dilithium3, AES-GCM, wallet-bound key derivation, and cold-invite p
 
 ## Quick rules
 
-1. **Browser:** `@filosign/crypto-utils` — KEM via `mlkem`, Dilithium via app-loaded WASM (`wasm.dilithium`), cold-invite via `argon2-browser`.
+1. **Browser:** `@filosign/crypto-utils` — KEM via `mlkem`, Dilithium via [`assets/dilithium.wasm`](assets/dilithium.wasm) + [`loadBrowserDilithium`](src/browser/load-dilithium.ts), cold-invite via `argon2-browser`.
 2. **Server / shared:** `@filosign/crypto-utils/node` — same algorithms; KEM via `crystals-kyber-js` (same v2.5.0 impl as `mlkem`). **No cold-invite** on `/node`.
 3. **Do not change** `computeCommitment([publicKey.toString()])` encoding — on-chain commitments depend on it.
 4. **Real Argon2id** is only in [`cold-invite.ts`](src/cold-invite.ts) (`COLD_INVITE_ARGON_PARAMS`). Do not confuse with removed legacy Keccak helpers.
@@ -22,6 +22,8 @@ Context: root [`AGENTS.md`](../../AGENTS.md), consumers in [`packages/react-sdk`
 |-------|-----|
 | `@filosign/crypto-utils` | Client / SDK: default `{ encryption, hash, KEM, signatures, …utils }`, plus cold-invite named exports |
 | `@filosign/crypto-utils/node` | Server / shared: same surface **without** `wrapColdInviteDek` / `unwrapColdInviteDek` |
+| `@filosign/crypto-utils/browser/dilithium` | `loadBrowserDilithium()` for FilosignProvider |
+| `@filosign/crypto-utils/dilithium.wasm` | Canonical Dilithium WASM (synced from `dilithium-crystals-js` on `bun install`) |
 
 ### Default namespace
 
@@ -100,7 +102,9 @@ src/
   lib-node.ts         # Node entry
   cold-invite.ts      # Phrase + Argon2id wrap (web only)
   constants.ts        # DILITHIUM_KIND
-  impl/browser/       # mlkem + dilithium (WASM from app)
+  assets/             # dilithium.wasm (sync:wasm)
+  browser/            # loadBrowserDilithium
+  impl/browser/       # mlkem + dilithium types
   impl/node/          # crystals-kyber-js, encryption, hash, utils, signatures
 lib.test.ts           # bun test
 ```
@@ -110,8 +114,9 @@ lib.test.ts           # bun test
 ## Development
 
 ```bash
-bun install
+bun install            # runs sync:wasm → assets/dilithium.wasm
 bun test lib.test.ts   # from packages/crypto-utils
+bun run sync:wasm      # refresh WASM after dilithium-crystals-js bump
 ```
 
 Root CI does not yet run this package by default — run locally when touching crypto.

@@ -21,7 +21,8 @@
 		"dilithium-crystals-js": "catalog:",
 		"react": "catalog:",
 		"react-dom": "catalog:",
-		"tailwind-merge": "catalog:"
+		"tailwind-merge": "catalog:",
+		"viem": "catalog:"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.36.0",
