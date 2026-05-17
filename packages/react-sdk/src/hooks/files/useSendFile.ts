@@ -20,6 +20,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Address, Hex } from "viem";
 import z from "zod";
 import { useFilosignContext } from "../../context/useFilosignContext";
+import { invalidateEntitlements } from "../../lib/invalidate-entitlements";
 import { useFilosignRpc } from "../../lib/use-filosign-rpc";
 import { calculatePieceCid } from "../../utils/piece.ts";
 import { useUserProfile } from "../users";
@@ -274,6 +275,7 @@ export function useSendFile() {
 			void queryClient.invalidateQueries({
 				queryKey: rpcQuery.files.list.sent.key(),
 			});
+			void invalidateEntitlements(queryClient, rpcQuery);
 
 			return {
 				success: true as const,
