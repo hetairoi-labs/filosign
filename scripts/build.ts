@@ -5,7 +5,6 @@
  * Usage:
  *   bun run build                      # all targets (default)
  *   bun run build -- --client
- *   bun run build -- --crypto --client
  *   bun run build -- --help
  */
 import { die, runMain, scriptArgv, wantsHelp } from "./lib/cli.ts";
@@ -16,28 +15,15 @@ import { runSequentialExit } from "./lib/spawn.ts";
 
 const rootDir = repoRoot(import.meta.url);
 
-type Target =
-	| "crypto"
-	| "react"
-	| "client"
-	| "astro"
-	| "server"
-	| "harness"
-	| "contracts";
+type Target = "react" | "client" | "astro" | "server" | "harness" | "contracts";
 
 type TargetDef = {
 	package: string;
 	script: string;
-	/** When false, flag is accepted but exits with a clear message (e.g. publish build TBD). */
 	ready: boolean;
 };
 
 const TARGETS: Record<Target, TargetDef> = {
-	crypto: {
-		package: PACKAGE_SCOPES.crypto,
-		script: "wasm:build",
-		ready: true,
-	},
 	react: {
 		package: PACKAGE_SCOPES.react,
 		script: "build",
@@ -54,9 +40,7 @@ const TARGETS: Record<Target, TargetDef> = {
 	},
 };
 
-/** Default build order (deps-ish: wasm before apps). */
 const DEFAULT_TARGETS: Target[] = [
-	"crypto",
 	"client",
 	"astro",
 	"server",
@@ -65,7 +49,6 @@ const DEFAULT_TARGETS: Target[] = [
 ];
 
 const TARGET_FLAGS: Record<Target, string[]> = {
-	crypto: ["--crypto", "--crypto-utils", "crypto", "crypto-utils"],
 	react: ["--react", "--react-sdk", "--sdk", "react", "react-sdk", "sdk"],
 	client: ["--client", "client"],
 	astro: ["--astro", "astro"],
@@ -80,7 +63,6 @@ Filosign build orchestrator
   bun run build                 all targets below (default)
 
 Targets (combine any):
-  bun run build -- --crypto       @filosign/crypto-utils wasm:build
   bun run build -- --react        SDK publish build (not wired yet)
   bun run build -- --client       Vite production build
   bun run build -- --astro        Astro static build
@@ -90,7 +72,7 @@ Targets (combine any):
 
   --test is an alias for --harness
 
-Server/contracts use compile, not Turbo build. @filosign/shared has no build script.
+Server/contracts use compile, not Turbo build. @filosign/shared and @filosign/crypto-utils have no Vite/Hardhat build step (crypto-utils: bun test + sync:wasm on install).
 `.trim();
 
 function resolveTargetFlag(arg: string): Target | undefined {
