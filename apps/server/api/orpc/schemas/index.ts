@@ -2,6 +2,7 @@ export {
 	rpcAuthNonceOutputSchema,
 	rpcAuthVerifyOutputSchema,
 } from "./auth-output";
+export { rpcBillingEntitlementsOutputSchema } from "./billing-output";
 export {
 	rpcColdInviteByTokenOutputSchema,
 	rpcColdInviteClaimOutputSchema,
@@ -20,6 +21,10 @@ export {
 	rpcPieceSignDraftFieldIdsOutputSchema,
 	rpcPieceSignOutputSchema,
 } from "./files-piece-output";
+export {
+	rpcMetricsInvitesSummaryOutputSchema,
+	rpcMetricsSenderUsageOutputSchema,
+} from "./metrics-output";
 export { rpcEmptyOutputSchema, zDateWire } from "./rpc-wire";
 export {
 	rpcSharingAcceptRequestOutputSchema,

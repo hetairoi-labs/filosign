@@ -1,6 +1,7 @@
 import type { RouterClient } from "@orpc/server";
 import { z } from "zod";
 import { authNonce, authVerify, zAuthVerifyBody } from "@/api/handlers/auth";
+import { billingEntitlements } from "@/api/handlers/billing-handlers";
 import {
 	filesColdInviteByToken,
 	filesColdInviteClaim,
@@ -14,6 +15,10 @@ import {
 } from "@/api/handlers/files-list-upload";
 import * as pieceHandlers from "@/api/handlers/files-piece";
 import { filesRegister } from "@/api/handlers/files-register";
+import {
+	metricsInvitesSummary,
+	metricsSenderUsage,
+} from "@/api/handlers/metrics-handlers";
 import * as sharingHandlers from "@/api/handlers/sharing-handlers";
 import {
 	storagePresignPut,
@@ -27,6 +32,7 @@ import { authenticatedProcedure, publicProcedure } from "./procedures";
 import {
 	rpcAuthNonceOutputSchema,
 	rpcAuthVerifyOutputSchema,
+	rpcBillingEntitlementsOutputSchema,
 	rpcColdInviteByTokenOutputSchema,
 	rpcColdInviteClaimOutputSchema,
 	rpcColdInviteRegenerateOutputSchema,
@@ -34,6 +40,8 @@ import {
 	rpcFilesListSentOutputSchema,
 	rpcFilesRegisterOutputSchema,
 	rpcFilesUploadStartOutputSchema,
+	rpcMetricsInvitesSummaryOutputSchema,
+	rpcMetricsSenderUsageOutputSchema,
 	rpcPieceAckOutputSchema,
 	rpcPieceComplianceBundleOutputSchema,
 	rpcPieceDetailOutputSchema,
@@ -286,6 +294,39 @@ export const appRouter = {
 					}),
 				),
 		},
+	},
+	billing: {
+		entitlements: authenticatedProcedure
+			.output(rpcBillingEntitlementsOutputSchema)
+			.handler(({ context }) => billingEntitlements(context.userWallet)),
+	},
+	metrics: {
+		invitesSummary: authenticatedProcedure
+			.input(
+				z.object({
+					senderWallet: z.string().optional(),
+					from: z.string().datetime().optional(),
+					to: z.string().datetime().optional(),
+				}),
+			)
+			.output(rpcMetricsInvitesSummaryOutputSchema)
+			.handler(({ context, input }) =>
+				metricsInvitesSummary({
+					adminWallet: context.userWallet,
+					senderWallet: input.senderWallet,
+					from: input.from ? new Date(input.from) : undefined,
+					to: input.to ? new Date(input.to) : undefined,
+				}),
+			),
+		senderUsage: authenticatedProcedure
+			.input(z.object({ wallet: z.string().min(1) }))
+			.output(rpcMetricsSenderUsageOutputSchema)
+			.handler(({ context, input }) =>
+				metricsSenderUsage({
+					adminWallet: context.userWallet,
+					wallet: input.wallet,
+				}),
+			),
 	},
 	sharing: {
 		receivedRequests: authenticatedProcedure

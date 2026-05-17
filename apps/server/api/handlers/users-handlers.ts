@@ -8,6 +8,8 @@ import { and, eq } from "drizzle-orm";
 import type { Address } from "viem";
 import { isAddress } from "viem";
 import { z } from "zod";
+import { SERVER_ANALYTICS_EVENTS } from "@/lib/analytics/events";
+import { trackServerEvent } from "@/lib/analytics/track";
 import db from "@/lib/db";
 import { materializePendingInvitesForEmail } from "@/lib/domain/sharing";
 import { userAvatarWebpKey } from "@/lib/domain/storage-keys";
@@ -474,6 +476,12 @@ export async function userRegister(body: unknown) {
 		signaturePublicKey,
 		email,
 		privyDid,
+	});
+
+	trackServerEvent({
+		distinctId: walletAddress,
+		event: SERVER_ANALYTICS_EVENTS.userRegistered,
+		properties: { entry: skipToken ? "dev" : "organic" },
 	});
 
 	return {};
