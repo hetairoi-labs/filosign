@@ -1,3 +1,7 @@
+import {
+	CLIENT_ANALYTICS_EVENTS,
+	useCaptureAppEvent,
+} from "@filosign/react/analytics";
 import { useAuthedApi, useIsRegistered } from "@filosign/react/auth";
 import { useUpdateUserProfile } from "@filosign/react/users";
 import { CaretRightIcon } from "@phosphor-icons/react";
@@ -22,6 +26,7 @@ import {
 import { logger } from "@/src/lib/utils/logger";
 
 export default function OnboardingWelcomeCompletePage() {
+	const captureAppEvent = useCaptureAppEvent();
 	const [userName, setUserName] = useState("");
 	const { onboardingForm, setOnboardingForm } = useStorePersist();
 	const { ready } = usePrivy();
@@ -69,6 +74,10 @@ export default function OnboardingWelcomeCompletePage() {
 	]);
 
 	async function handleSubmit() {
+		const coldPieceCid = search.coldPieceCid?.trim();
+		captureAppEvent(CLIENT_ANALYTICS_EVENTS.onboardingCompleted, {
+			...(coldPieceCid ? { piece_cid: coldPieceCid } : {}),
+		});
 		if (onboardingForm?.firstName) {
 			void updateUserProfile.mutateAsync({
 				firstName: onboardingForm.firstName,

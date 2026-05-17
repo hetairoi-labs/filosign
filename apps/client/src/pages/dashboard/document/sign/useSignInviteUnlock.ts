@@ -16,6 +16,7 @@ import {
 import { fetchUserProfile, useUserProfile } from "@filosign/react/users";
 import { buildClaimKemPayload } from "@filosign/react/utils";
 import { usePrivy } from "@privy-io/react-auth";
+import { usePrivyLoginAction } from "@/src/lib/hooks/use-privy-login";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -34,7 +35,8 @@ export function useSignInviteUnlock(args: {
 	const navigate = useNavigate();
 	const queryClient = useQueryClient();
 	const { rpc, session, wallet, rpcQuery } = useFilosignContext();
-	const { ready, authenticated, login, logout: logoutPrivy, user } = usePrivy();
+	const { ready, authenticated, logout: logoutPrivy, user } = usePrivy();
+	const login = usePrivyLoginAction();
 	const { data: userProfile } = useUserProfile();
 	const sdkLogin = useLogin();
 	const logoutFilosign = useLogout();

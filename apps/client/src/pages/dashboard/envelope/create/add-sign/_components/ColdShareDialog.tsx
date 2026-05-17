@@ -1,8 +1,13 @@
 import {
+	CLIENT_ANALYTICS_EVENTS,
+	useCaptureAppEvent,
+} from "@filosign/react/analytics";
+import {
 	EnvelopeSimpleIcon,
 	PaperPlaneTiltIcon,
 	WhatsappLogoIcon,
 } from "@phosphor-icons/react";
+import { useEffect } from "react";
 import env from "@/src/env";
 import { CopyButton } from "@/src/lib/components/custom/CopyButton";
 import { Button } from "@/src/lib/components/ui/button";
@@ -42,10 +47,17 @@ export function ColdShareDialog(props: {
 	share: ColdSharePackage | null;
 	onDone: () => void;
 }) {
+	const captureAppEvent = useCaptureAppEvent();
 	const share = props.share;
 	const links = share ? shareLinks(share) : null;
 
 	const fullUrl = share ? buildFullUrl(share) : "";
+
+	useEffect(() => {
+		if (props.open && share) {
+			captureAppEvent(CLIENT_ANALYTICS_EVENTS.coldShareDialogShown);
+		}
+	}, [props.open, share, captureAppEvent]);
 
 	return (
 		<Dialog open={props.open}>

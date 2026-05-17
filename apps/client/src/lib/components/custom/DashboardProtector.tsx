@@ -1,4 +1,5 @@
 import { useFilosignContext } from "@filosign/react";
+import { useIdentifyAnalyticsWallet } from "@filosign/react/analytics";
 import {
 	LOGIN_RECOVERY_PHRASE_REQUIRED,
 	useIsLoggedIn,
@@ -47,6 +48,13 @@ export default function DashboardProtector({
 	const [error, setError] = useState("");
 	const [tryingWalletUnlock, setTryingWalletUnlock] = useState(false);
 	const walletUnlockStartedRef = useRef(false);
+	const identifyAnalyticsWallet = useIdentifyAnalyticsWallet();
+
+	useEffect(() => {
+		if (isLoggedIn && wallet?.account?.address) {
+			identifyAnalyticsWallet(wallet.account.address);
+		}
+	}, [isLoggedIn, wallet?.account?.address, identifyAnalyticsWallet]);
 
 	useEffect(() => {
 		if (isLoggedIn.data) {
