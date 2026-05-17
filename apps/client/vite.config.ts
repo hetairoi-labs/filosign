@@ -11,7 +11,7 @@ import {
 
 export default defineConfig(({ mode, command }) => {
 	const env = loadEnv(mode, process.cwd(), "");
-	const apiOrigin = parseApiOrigin(env.VITE_PLATFORM_URL);
+	const apiOrigin = parseApiOrigin(env.VITE_SERVER_URL);
 	const isDev = mode === "development";
 
 	return {
@@ -58,7 +58,7 @@ export default defineConfig(({ mode, command }) => {
 			global: "globalThis",
 		},
 		server: {
-			port: 3000,
+			port: 3001,
 			headers: securityHeadersRecord(isDev, apiOrigin),
 		},
 		preview: {

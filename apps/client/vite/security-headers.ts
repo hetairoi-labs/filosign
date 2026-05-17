@@ -24,7 +24,7 @@ export function parseApiOrigin(platformUrl: string | undefined): string | null {
 
 /**
  * `isDev`: Vite dev server (HMR needs relaxed script-src).
- * `apiOrigin`: origin of `VITE_PLATFORM_URL` (API), e.g. `http://127.0.0.1:30011`.
+ * `apiOrigin`: origin of `VITE_SERVER_URL` (API), e.g. `http://127.0.0.1:3000`.
  */
 export function buildContentSecurityPolicy(
 	isDev: boolean,
