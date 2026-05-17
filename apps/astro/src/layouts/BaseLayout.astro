@@ -43,7 +43,7 @@ const {
 	ogImageAlt,
 } = Astro.props;
 
-const siteUrl = env.PUBLIC_SITE_URL.replace(/\/$/, "");
+const siteUrl = env.PUBLIC_ASTRO_URL.replace(/\/$/, "");
 
 const ogSlug = ogSlugFromPathname(Astro.url.pathname);
 const resolvedOgImage = image ?? `/open-graph/${ogSlug}.png`;
