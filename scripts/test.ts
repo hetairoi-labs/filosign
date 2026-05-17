@@ -24,7 +24,7 @@ Scoped (one package):
   bun run test -- --server
   bun run test -- server         same (-- optional)
 
-  --client  --server  --astro  --emails  --shared  --crypto-utils  --react  --contracts
+  --client  --server  --astro  --emails  --entitlements  --shared  --crypto-utils  --react  --contracts
 
 Turbo runs upstream check-types first (turbo.json: test dependsOn ^check-types).
 So --client may show check-types for dependencies before the client test noop.
