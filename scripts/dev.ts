@@ -1,18 +1,5 @@
 #!/usr/bin/env bun
-/**
- * Dev stack orchestrator. Spawns workspace dev scripts; does not embed app logic.
- *
- * Usage:
- *   bun run dev                         # local: bootstrap + server + client
- *   bun run dev -- --local              # same
- *   bun run dev -- --local --full       # above + astro
- *   bun run dev -- --testnet            # client + server (staging env)
- *   bun run dev -- --astro              # marketing site only
- *   bun run dev -- --client --local     # client only (no bootstrap)
- *   bun run dev -- --server --local     # bootstrap + API only
- *   bun run dev -- --server --testnet   # API only (staging)
- *   bun run dev -- --help
- */
+/** Dev stack orchestrator. See `bun run dev -- --help` for all stacks and flags. */
 import { die, runMain, scriptArgv, wantsHelp } from "./lib/cli.ts";
 import { runLocalBootstrap } from "./lib/localnode.ts";
 import { repoRoot } from "./lib/root.ts";
@@ -24,25 +11,21 @@ const rootDir = repoRoot(import.meta.url);
 type Profile = "local" | "testnet";
 
 const HELP = `
-Filosign dev orchestrator
+bun run dev — start dev servers (bun run dev -- --help)
 
-Profiles (env files):
-  local    .env.local   — Hardhat + local API
-  testnet  .env.staging — Base Sepolia + staging API
+Stacks (pick one):
+  dev                 hardhat bootstrap + server + client + astro   [.env.local]
+  dev -- --serloc     hardhat bootstrap + server                    [local only]
+  dev -- --web        client + astro
+  dev -- --testnet    client + server                       [.env.staging]
 
-Stacks:
-  bun run dev                         bootstrap + @filosign/server + @filosign/client
-  bun run dev -- --local              same
-  bun run dev -- --local --full         above + @filosign/astro
-  bun run dev -- --testnet              @filosign/client + @filosign/server (no bootstrap)
+Or mix apps:  dev -- --client  --server  --astro  [--local | --testnet]
+  (--server on --local runs with hardhat bootstrap first)
+e.g. bun run dev -- --client --local
 
-Single app (pass a profile when the app needs one):
-  bun run dev -- --astro
-  bun run dev -- --client --local       Vite only (no chain/DB reset)
-  bun run dev -- --server --local       bootstrap + API
-  bun run dev -- --server --testnet
+Ports:  server :3000   client :3001   astro :3002
 
-Local bootstrap (when server starts on local): Hardhat node, compile, deploy, db purge+push.
+Presets (--serloc, --web) cannot be combined with --client / --server / --astro.
 `.trim();
 
 function parseArgv(argv: string[]) {
@@ -53,12 +36,13 @@ function parseArgv(argv: string[]) {
 		if (arg === "--help" || arg === "-h") {
 			return { help: true as const, flags, profile };
 		}
-		if (arg === "--serloc") {
-			die("Removed --serloc; use bun run dev (local bootstrap is the default)");
-		}
 		if (arg === "--local") profile = "local";
 		if (arg === "--testnet") profile = "testnet";
-		if (arg === "--full") flags.add("full");
+		if (arg === "--full") {
+			die("Removed --full; astro is included in the default bun run dev stack");
+		}
+		if (arg === "--serloc") flags.add("serloc");
+		if (arg === "--web") flags.add("web");
 		if (arg === "--astro") flags.add("astro");
 		if (arg === "--client") flags.add("client");
 		if (arg === "--server") flags.add("server");
@@ -82,10 +66,37 @@ function serverDevScript(profile: Profile): string {
 	return profile === "local" ? "dev:local" : "dev:testnet";
 }
 
+function assertNoComponentFlags(flags: Set<string>, preset: string) {
+	if (flags.has("client") || flags.has("server") || flags.has("astro")) {
+		die(`Do not combine ${preset} with --client, --server, or --astro`);
+	}
+}
+
 function resolveTasks(
 	flags: Set<string>,
 	profile: Profile | undefined,
 ): SpawnTask[] {
+	if (flags.has("serloc") && flags.has("web")) {
+		die("Pick one preset: --serloc or --web, not both");
+	}
+
+	if (flags.has("serloc")) {
+		assertNoComponentFlags(flags, "--serloc");
+		if (profile === "testnet") {
+			die("--serloc is local only (bootstrap + server)");
+		}
+		return [workspaceTask("@filosign/server", "dev:local")];
+	}
+
+	if (flags.has("web")) {
+		assertNoComponentFlags(flags, "--web");
+		const p = profile ?? "local";
+		return [
+			workspaceTask("@filosign/client", `dev:${p}`),
+			workspaceTask("@filosign/astro", "dev:local"),
+		];
+	}
+
 	const explicit =
 		flags.has("client") || flags.has("server") || flags.has("astro");
 
@@ -110,18 +121,14 @@ function resolveTasks(
 	}
 
 	if (profile === "local") {
-		const tasks: SpawnTask[] = [
+		return [
 			workspaceTask("@filosign/server", "dev:local"),
 			workspaceTask("@filosign/client", "dev:local"),
+			workspaceTask("@filosign/astro", "dev:local"),
 		];
-		if (flags.has("full")) {
-			tasks.push(workspaceTask("@filosign/astro", "dev:local"));
-		}
-		return tasks;
 	}
 
 	if (profile === "testnet") {
-		if (flags.has("full")) die("--full only applies with --local");
 		return [
 			workspaceTask("@filosign/client", "dev:testnet"),
 			workspaceTask("@filosign/server", "dev:testnet"),
