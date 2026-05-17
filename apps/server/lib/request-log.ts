@@ -5,16 +5,6 @@ import { logger } from "@/lib/logger";
 export const requestLog: MiddlewareHandler = async (c, next) => {
 	const start = performance.now();
 	await next();
-	logger.info(
-		{
-			req: {
-				method: c.req.method,
-				path: c.req.path,
-				url: c.req.url,
-			},
-			res: { status: c.res.status },
-			responseTime: Math.round(performance.now() - start),
-		},
-		"request handled",
-	);
+	const ms = Math.round(performance.now() - start);
+	logger.info(`${c.req.method} ${c.req.path} ${c.res.status} ${ms}ms`);
 };
