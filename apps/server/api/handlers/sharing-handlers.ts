@@ -6,7 +6,6 @@ import { getAddress, isAddress } from "viem";
 import z from "zod";
 import db from "@/lib/db";
 import { ensureReciprocalShareRequest } from "@/lib/domain/sharing";
-import { sendInviteEmail, sendShareRequestEmail } from "@/lib/email/invites";
 import { evmClient, fsContracts } from "@/lib/evm";
 import { processTransaction } from "@/lib/indexer/process";
 import { tryCatch } from "@/lib/utils/tryCatch";
@@ -440,7 +439,7 @@ export async function sharingCreateRequest(wallet: Address, body: unknown) {
 		throw new ORPCError("BAD_REQUEST", { message: parsedBody.error.message });
 	}
 
-	const { recipientWallet, recipientEmail, message } = parsedBody.data;
+	const { recipientWallet, message } = parsedBody.data;
 	const recipient = getAddress(recipientWallet);
 	const sender = wallet;
 
@@ -526,54 +525,7 @@ export async function sharingCreateRequest(wallet: Address, body: unknown) {
 			createdAt: shareRequests.createdAt,
 		});
 
-	let emailSent = false;
-	let emailError: string | undefined;
-
-	const [self] = await db
-		.select()
-		.from(users)
-		.where(eq(users.walletAddress, sender));
-	const senderName =
-		[self?.firstName, self?.lastName].filter(Boolean).join(" ") ||
-		self?.username ||
-		self?.email ||
-		undefined;
-
-	const emailToNotify = recipientEmail
-		? recipientEmail
-		: ((
-				await db
-					.select({ email: users.email })
-					.from(users)
-					.where(eq(users.walletAddress, recipient))
-			)[0]?.email ?? undefined);
-
-	if (emailToNotify) {
-		const emailRes = await tryCatch(
-			sendShareRequestEmail({
-				to: emailToNotify,
-				senderWallet: sender as Address,
-				recipientWallet: recipient as Address,
-				senderName,
-				message: message || null,
-			}),
-		);
-		if (!emailRes.error) {
-			emailSent = true;
-		} else {
-			emailError =
-				emailRes.error instanceof Error
-					? emailRes.error.message
-					: "Failed to send notification";
-			console.error("Failed to send share request email", emailRes.error);
-		}
-	}
-
-	return {
-		...newRequest,
-		emailSent,
-		emailError,
-	};
+	return newRequest;
 }
 
 export async function sharingRequestInvite(wallet: Address, body: unknown) {
@@ -606,14 +558,6 @@ export async function sharingRequestInvite(wallet: Address, body: unknown) {
 			message: "Message too long (max 500 characters)",
 		});
 	}
-
-	const [self] = await db
-		.select({
-			firstName: users.firstName,
-			lastName: users.lastName,
-		})
-		.from(users)
-		.where(eq(users.walletAddress, wallet));
 
 	const [existingUser] = await db
 		.select({ walletAddress: users.walletAddress })
@@ -658,18 +602,6 @@ export async function sharingRequestInvite(wallet: Address, body: unknown) {
 			message: message ?? null,
 		});
 
-		await tryCatch(
-			sendShareRequestEmail({
-				to: inviteeEmail,
-				senderWallet: wallet,
-				recipientWallet: existingUser.walletAddress,
-				senderName: self?.firstName
-					? `${self.firstName} ${self.lastName || ""}`.trim()
-					: undefined,
-				message: message ?? null,
-			}),
-		);
-
 		return { exists: true as const, requested: true as const };
 	}
 
@@ -687,29 +619,11 @@ export async function sharingRequestInvite(wallet: Address, body: unknown) {
 		return { invited: true as const, alreadyInvited: true as const };
 	}
 
-	const [newInvite] = await db
-		.insert(userInvites)
-		.values({
-			sender: wallet,
-			inviteeEmail,
-			message: message ?? null,
-		})
-		.returning();
-
-	const inviteEmailRes = await tryCatch(
-		sendInviteEmail({
-			to: inviteeEmail,
-			senderWallet: wallet,
-			senderName: self?.firstName
-				? `${self.firstName} ${self.lastName || ""}`.trim()
-				: undefined,
-			message: message ?? null,
-			inviteId: newInvite.id,
-		}),
-	);
-	if (inviteEmailRes.error) {
-		console.error("Failed to send invite email:", inviteEmailRes.error);
-	}
+	await db.insert(userInvites).values({
+		sender: wallet,
+		inviteeEmail,
+		message: message ?? null,
+	});
 
 	return { invited: true as const };
 }

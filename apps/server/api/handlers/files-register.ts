@@ -268,7 +268,6 @@ export async function filesRegister(sender: Address, rawBody: unknown) {
 					sendDocumentReceivedEmail({
 						to: profile.email as string,
 						senderWallet: sender as Address,
-						recipientWallet: profile.walletAddress as Address,
 						pieceCid,
 						senderName,
 					}),

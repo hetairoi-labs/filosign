@@ -102,10 +102,7 @@ const shareRequestInsertedRowSchema = z.object({
 });
 
 export const rpcSharingCreateRequestOutputSchema =
-	shareRequestInsertedRowSchema.extend({
-		emailSent: z.boolean(),
-		emailError: z.string().optional(),
-	});
+	shareRequestInsertedRowSchema;
 
 export const rpcSharingRequestInviteOutputSchema = z.union([
 	z.object({
