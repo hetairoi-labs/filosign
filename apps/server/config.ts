@@ -41,11 +41,7 @@ console.log("runtime chain:", {
 
 const http = {
 	cors: {
-		origin: [
-			env.FRONTEND_URL,
-			"http://localhost:3001",
-			"http://localhost:3000",
-		],
+		origin: [env.CLIENT_URL, "http://localhost:3001", "http://localhost:3002"],
 		allowHeaders: ["Content-Type", "Authorization", "x-session-token"],
 		allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 		credentials: true,
@@ -58,7 +54,7 @@ const http = {
 		"img-src 'self' data: blob: https:; " +
 		"font-src 'self' data:; " +
 		"frame-src 'self' https://waap.xyz https://*.waap.xyz https://verify.walletconnect.com;",
-	port: env.PORT ?? 30011,
+	port: env.PORT ?? 3000,
 };
 
 const config = {
