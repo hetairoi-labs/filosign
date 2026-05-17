@@ -13,14 +13,14 @@
 		}
 	},
 	"scripts": {
-		"node": "bunx hardhat node",
-		"compile": "bun gen:interfaces; bunx hardhat compile",
+		"node": "bunx --bun hardhat node",
+		"compile": "bun gen:interfaces; bunx --bun hardhat compile",
 		"test": "bun compile; bun --bun hardhat test",
 		"gen:interfaces": "bun run scripts/interfaces.ts",
-		"deploy": "bunx hardhat run scripts/deploy.ts",
-		"deploy:local": "bun run --env-file=.env.local -- bunx hardhat run scripts/deploy.ts --network localhost",
-		"deploy:testnet": "bunx hardhat run scripts/deploy.ts --network baseSepolia",
-		"deploy:mainnet": "bunx hardhat run scripts/deploy.ts --network base",
+		"deploy": "bunx --bun hardhat run scripts/deploy.ts",
+		"deploy:local": "bun run --env-file=.env.local -- bunx --bun hardhat run scripts/deploy.ts --network localhost",
+		"deploy:testnet": "bunx --bun hardhat run scripts/deploy.ts --network baseSepolia",
+		"deploy:mainnet": "bunx --bun hardhat run scripts/deploy.ts --network base",
 		"migrate": "bun run --env-file=.env.local test && bun run --env-file=.env.local deploy:local",
 		"migrate:testnet": "bun run --env-file=.env.staging test && bun run --env-file=.env.staging deploy:testnet",
 		"migrate:mainnet": "bun run --env-file=.env.production test && bun run --env-file=.env.production deploy:mainnet",
@@ -54,5 +54,8 @@
 	},
 	"peerDependencies": {
 		"viem": "catalog:"
+	},
+	"engines": {
+		"bun": ">=1.3.14"
 	}
 }
