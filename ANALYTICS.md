@@ -75,10 +75,10 @@ Defined in [`apps/server/lib/analytics/events.ts`](apps/server/lib/analytics/eve
 | `user_registered` | Registrant | — | Filosign keygen registration completes | `entry`: `organic` \| `dev` |
 | `file_registered` | Sender | ✓ | File/envelope registered | `signer_count`, `cold_invite_count`, `warm_participant_count`, `recipient_slot_count` |
 | `cold_invite_created` | Sender | ✓ | Same request, if cold invites exist | `cold_invite_count` |
-| `cold_invite_claimed` | Claimant | ✓ | Cold invite claimed | `is_signer` |
+| `cold_invite_claimed` | Claimant | ✓ | Cold invite claimed (also emits `piece_acknowledged` `mode=cold`) | `is_signer` |
 | `cold_invite_expired` | `system` | ✓ | Cron expires one invite row | `invite_id` |
 | `sharing_invite_claimed` | Wallet | — | Warm sharing invite claimed | — |
-| `piece_acknowledged` | Recipient/signer | ✓ | Piece acknowledged | `mode`: `cold` \| `warm` |
+| `piece_acknowledged` | Recipient/signer | ✓ | Piece acknowledged (warm: ack API; cold: same request as claim) | `mode`: `cold` \| `warm` |
 | `piece_signed` | Signer | ✓ | Signing completes | `field_count` |
 | `envelope_fully_signed` | Sender | ✓ | All required signatures done | — |
 
@@ -116,7 +116,7 @@ Use **Unique users** aggregation. Each funnel follows one wallet through its ste
 **Signer — claim to sign**
 
 1. `cold_invite_claimed`
-2. `piece_acknowledged` (optional: `mode = cold`)
+2. `piece_acknowledged` (`mode = cold` on claim, or `mode = warm` via ack API)
 3. `piece_signed`
 
 Do not start with `cold_invite_created` (that event is on the sender).

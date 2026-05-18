@@ -200,6 +200,13 @@ export async function filesColdInviteClaim(args: {
 		pieceCid: invite.filePieceCid,
 		properties: { is_signer: invite.isSigner },
 	});
+	// Cold claim inserts FILE_ACK_COLD_CLAIM_SENTINEL; sign UI skips warm ack.
+	trackServerEvent({
+		distinctId: userWallet,
+		event: SERVER_ANALYTICS_EVENTS.pieceAcknowledged,
+		pieceCid: invite.filePieceCid,
+		properties: { mode: "cold" as const },
+	});
 
 	return {
 		filePieceCid: invite.filePieceCid,
